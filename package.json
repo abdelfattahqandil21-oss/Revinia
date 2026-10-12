@@ -9,9 +9,11 @@
     "test": "ng test",
     "schematics:http": "tsc -p projects/http/schematics/tsconfig.schematics.json && mv projects/http/schematics/ng-add/index.js projects/http/schematics/ng-add/index.cjs",
     "schematics:toast": "tsc -p projects/toast/schematics/tsconfig.schematics.json && mv projects/toast/schematics/ng-add/index.js projects/toast/schematics/ng-add/index.cjs",
+    "schematics:i18n": "tsc -p projects/i18n/schematics/tsconfig.schematics.json && mv projects/i18n/schematics/ng-add/index.js projects/i18n/schematics/ng-add/index.cjs",
     "build:http": "pnpm schematics:http && ng build http",
     "build:toast": "pnpm schematics:toast && ng build toast",
-    "test:schematics": "vitest run projects/http/schematics projects/toast/schematics"
+    "build:i18n": "pnpm schematics:i18n && ng build i18n",
+    "test:schematics": "vitest run projects/http/schematics projects/toast/schematics projects/i18n/schematics"
   },
   "private": true,
   "packageManager": "pnpm@12.8.1",
