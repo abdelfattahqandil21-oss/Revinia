@@ -1,0 +1,10 @@
+{
+  "$schema": "../../../node_modules/@angular-devkit/schematics/collection-schema.json",
+  "schematics": {
+    "ng-add": {
+      "description": "Add provideRiviniaI18n() with an ar/en starter to the application config.",
+      "factory": "./ng-add/index.cjs#ngAdd",
+      "schema": "./ng-add/schema.json"
+    }
+  }
+}

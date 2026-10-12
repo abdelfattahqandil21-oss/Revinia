@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "rivinia-i18n-ng-add",
+  "title": "Rivinia i18n ng-add options",
+  "type": "object",
+  "properties": {
+    "defaultLanguage": {
+      "type": "string",
+      "description": "Default language id for the starter config (must exist in your languages list).",
+      "x-prompt": {
+        "message": "Default language id for this project (Enter for 'ar')?",
+        "type": "input"
+      }
+    },
+    "detectBrowser": {
+      "type": "boolean",
+      "description": "Match navigator.languages on first visit (stored preference always wins).",
+      "x-prompt": {
+        "message": "Detect the browser language on first visit?",
+        "type": "confirmation"
+      }
+    },
+    "project": {
+      "type": "string",
+      "description": "Angular CLI project name — only for multi-app workspaces. Defaults to the workspace default project.",
+      "default": ""
+    }
+  },
+  "required": []
+}
