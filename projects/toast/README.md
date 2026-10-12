@@ -1,0 +1,98 @@
+# @rivinia/toast
+
+[![npm version](https://img.shields.io/npm/v/@rivinia/toast.svg)](https://www.npmjs.com/package/@rivinia/toast)
+[![license](https://img.shields.io/npm/l/@rivinia/toast.svg)](https://www.npmjs.com/package/@rivinia/toast)
+
+Headless toast queue for Angular 22+. Signals, pause-on-hover timers, actions,
+dedupe, overflow policies — zero DOM, zero styles, zero router dependency.
+A future `@rivinia/toast/ui` entry point will render this state; Core never
+imports UI.
+
+- Version: **0.1.0**
+- Requires: **Angular `^22.0.0`**, `tslib`
+
+## Install
+
+```bash
+npm install @rivinia/toast
+```
+
+```ts
+// app.config.ts
+import { provideRiviniaToast } from '@rivinia/toast';
+
+providers: [provideRiviniaToast({ duration: 5000, maxVisible: 5 })];
+```
+
+## Quick start
+
+```ts
+export class Checkout {
+  private toast = injectRiviniaToast();
+
+  pay() {
+    const id = this.toast.show({ message: 'Payment sent', kind: 'success' });
+    // id: number | null (null = rejected by the 'reject' overflow policy)
+  }
+
+  saving() {
+    // Same key updates in place instead of stacking duplicates:
+    this.toast.show({ message: 'Saving…', dedupeKey: 'save' });
+    this.toast.show({ message: 'Saved', kind: 'success', dedupeKey: 'save' });
+  }
+}
+```
+
+```html
+<!-- your outlet (or the future @rivinia/toast/ui): -->
+@for (t of toast.active(); track t.id) {
+  <div [attr.data-kind]="t.kind">{{ textOf(t) }}</div>
+}
+```
+
+## API
+
+| Export | Kind | Purpose |
+|---|---|---|
+| `provideRiviniaToast(config?)` | provider | `{ duration?=5000, durations?, maxVisible?=5, maxQueue?=∞, overflow?='dismiss-oldest' }` |
+| `RiviniaToast` | `@Service()` | `show/dismiss/dismissAll/update/pause/resume/runAction`, `active` + `queue` signals |
+| `injectRiviniaToast()` | function | shorthand for `inject(RiviniaToast)` |
+| `resolveToastText(msg)` | util | reads `string \| Signal<string>` (reactive re-translation without i18n coupling) |
+| `clampDuration(v, fallback)` | util | normalizes durations (`0`/negative/`NaN`/infinite = persistent) |
+| types | types | `Toast`, `ToastKind`, `ToastMessage`, `ToastAction`, `ToastOptions`, `ToastChanges`, `ToastOverflowPolicy`, `RiviniaToastConfig` |
+
+`show()` returns the stable id, or `null` under `'reject'` (or a full finite
+queue). `dismiss/update/pause/resume/runAction` return `false` for unknown ids
+(and repeated dismissal) instead of throwing. `duration: 0` = persistent.
+Timers start at queue **promotion**, never while queued. Per-toast options
+always beat globals. A key alone never enables anything by itself.
+
+## Recipes (app-owned, deliberately not in the library)
+
+```ts
+// Clear timed toasts on navigation (BRT behavior, 3 lines, no library peer needed):
+router.events.pipe(filter((e) => e instanceof NavigationStart))
+  .subscribe(() => toast.active().forEach((t) => t.duration > 0 && toast.dismiss(t.id)));
+
+// Backend-shaped errors stay in your error mapper, then:
+toast.show({ message: 'Order failed', kind: 'error', action: {
+  label: 'Retry', onPress: () => retry(),
+} }); // dismisses after press unless dismissAfterPress: false
+```
+
+Future UI must render inside `role="region" aria-live="polite"`, pause on
+hover **and** keyboard focus (WCAG 2.2.1 timing control), and offer a labelled
+dismiss button — the Core API (`pause/resume/dismiss`) already supports all of it.
+
+## Testing your app code
+
+```ts
+vi.useFakeTimers();
+toast.show({ message: 'x' });
+vi.advanceTimersByTime(5000);
+expect(toast.active()).toEqual([]);
+```
+
+## License
+
+MIT.
