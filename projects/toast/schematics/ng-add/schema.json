@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "rivinia-toast-ng-add",
+  "title": "Rivinia Toast ng-add options",
+  "type": "object",
+  "properties": {
+    "duration": {
+      "type": "number",
+      "description": "Global default auto-dismiss delay in milliseconds for provideRiviniaToast({ duration }). Omit to keep the 5000 default."
+    },
+    "maxVisible": {
+      "type": "number",
+      "description": "Maximum simultaneously visible toasts for provideRiviniaToast({ maxVisible }). Omit to keep the 5 default."
+    },
+    "project": {
+      "type": "string",
+      "description": "Angular CLI project name — only for multi-app workspaces. Defaults to the workspace default project.",
+      "default": ""
+    }
+  },
+  "required": []
+}

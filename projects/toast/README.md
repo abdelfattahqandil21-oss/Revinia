@@ -15,6 +15,7 @@ imports UI.
 
 ```bash
 npm install @rivinia/toast
+ng add @rivinia/toast   # wires provideRiviniaToast() into app.config.ts
 ```
 
 ```ts
