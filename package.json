@@ -8,8 +8,10 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "schematics:http": "tsc -p projects/http/schematics/tsconfig.schematics.json && mv projects/http/schematics/ng-add/index.js projects/http/schematics/ng-add/index.cjs",
+    "schematics:toast": "tsc -p projects/toast/schematics/tsconfig.schematics.json && mv projects/toast/schematics/ng-add/index.js projects/toast/schematics/ng-add/index.cjs",
     "build:http": "pnpm schematics:http && ng build http",
-    "test:schematics": "vitest run projects/http/schematics"
+    "build:toast": "pnpm schematics:toast && ng build toast",
+    "test:schematics": "vitest run projects/http/schematics projects/toast/schematics"
   },
   "private": true,
   "packageManager": "pnpm@12.8.1",
