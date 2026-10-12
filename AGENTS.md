@@ -44,6 +44,9 @@ dependency boundaries or publishing correctness for convenience.
 1. `pnpm build <pkg>` (ng-packagr production) succeeds.
 2. Unit tests pass (`ng test` / Karma+Jasmine baseline).
 3. `npm pack` tarball inspected: `exports`, `types`, `peerDependencies`, files.
+   Grep dist FESM for runtime imports — any import beyond declared
+   peers/allowances (e.g. an actual `tslib` import) fails the release.
+   (ng-packagr injects an unused `tslib` dep entry by default; see D20.)
 4. Tarball installed in a clean consumer fixture; consumer production build succeeds.
 5. Public imports tested exactly as consumer uses them.
 6. Bundle sizes recorded (baseline → core-only → core+UI sync → UI lazy).
