@@ -8,7 +8,7 @@ and validated by tarball install into a clean consumer before any publish.
 
 | Package | Version | Description |
 |---|---|---|
-| `@rivinia/http` | **0.2.0** (tag `http/v0.2.0`, publish pending) · [0.1.0 live on npm](https://www.npmjs.com/package/@rivinia/http) | Headless typed HTTP client: envelope unwrapping, Observables + `httpResource` (`projects/http`) |
+| `@rivinia/http` | [0.2.0](https://www.npmjs.com/package/@rivinia/http) | Headless typed HTTP client: envelope unwrapping, Observables + `httpResource` (`projects/http`) |
 
 Proof-of-architecture packages (not for publish): `@rivinia/proof-core`,
 `@rivinia/proof-second` (`projects/proof-*`, consumer fixture in `/tmp`).
