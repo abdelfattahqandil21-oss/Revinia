@@ -8,7 +8,7 @@ dedupe, overflow policies — zero DOM, zero styles, zero router dependency.
 A future `@rivinia/toast/ui` entry point will render this state; Core never
 imports UI.
 
-- Version: **0.1.0**
+- Version: **0.2.0**
 - Requires: **Angular `^22.0.0`**, `tslib`
 
 ## Install
