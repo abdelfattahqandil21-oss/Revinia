@@ -12,6 +12,7 @@ import type { StorageStrategy } from './i18n-types';
 import type { TranslateParams } from './i18n-types';
 import type { Translation } from './i18n-types';
 import type { TranslationLoader } from './loaders';
+import { jsonLoader } from './loaders';
 import { browserLanguages, detectBrowserLanguage, safeGetItem, safeSetItem } from './i18n-utils';
 import { formatIcu } from './icu';
 import { ViewTransitionService } from './view-transition.service';
@@ -35,8 +36,14 @@ export class RiviniaI18n<L extends string = string> {
   private readonly _currentLanguageId = signal<L>(this._resolveInitialLanguage());
   private readonly _languages = signal<readonly Language<L>[]>(this._config.languages);
   private readonly _loadedTranslations = signal<Record<string, unknown>>({});
-  private readonly _getLoader: (() => Promise<TranslationLoader<L>>) | null =
-    this._config.loader?.resolve ?? null;
+  /**
+   * Explicit loader wins; otherwise the conventional JSON layout
+   * (`assets/i18n/{language}.json` unless the consumer overrides the path).
+   * The descriptor still code-splits: the fetch implementation loads only on
+   * first resolve.
+   */
+  private readonly _getLoader: () => Promise<TranslationLoader<L>> =
+    this._config.loader?.resolve ?? (() => jsonLoader().resolve() as Promise<TranslationLoader<L>>);
   private _resolvedLoader: TranslationLoader<L> | null = null;
   private readonly _translationsCache = new Map<L, Record<string, unknown>>();
   private readonly _inflight = new Map<L, Promise<Record<string, unknown>>>();
@@ -45,7 +52,6 @@ export class RiviniaI18n<L extends string = string> {
    * stale out-of-order responses stay cached but never overwrite the signal.
    */
   private _requestToken = 0;
-  private _warnedNoLoader = false;
   private _applyCount = 0;
 
   readonly languageChanged = computed<L>(() => this._currentLanguageId());
@@ -114,14 +120,6 @@ export class RiviniaI18n<L extends string = string> {
       const resolved = this._resolveKey(loaded, keyOrTranslations);
       if (resolved !== undefined) {
         return this.render(resolved, params);
-      }
-      if (!this._config.loader && !this._warnedNoLoader) {
-        this._warnedNoLoader = true;
-        if (typeof ngDevMode === 'undefined' || ngDevMode) {
-          console.warn(
-            '[rivinia/i18n] Key-based translate() requires a loader configured via RiviniaI18nConfig.loader.',
-          );
-        }
       }
       const fallback = defaultValue ?? keyOrTranslations;
       return params ? this.render(fallback, params) : fallback;
@@ -231,8 +229,6 @@ export class RiviniaI18n<L extends string = string> {
     languageId: L,
     opts?: { silent?: boolean },
   ): Promise<Record<string, unknown>> {
-    if (!this._getLoader) return {};
-
     const cached = this._translationsCache.get(languageId);
     if (cached) {
       if (!opts?.silent) {

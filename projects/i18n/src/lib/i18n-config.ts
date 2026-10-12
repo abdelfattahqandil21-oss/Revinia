@@ -17,6 +17,12 @@ export interface RiviniaI18nConfig<T extends string = string> {
   readonly storageStrategy?: StorageStrategy;
   readonly autoApplyDirection?: boolean;
   readonly viewTransition?: ViewTransitionConfig;
+  /**
+   * Dictionary source. Defaults to `jsonLoader()` — the conventional
+   * `assets/i18n/{language}.json` layout. Override with any descriptor
+   * (custom path, HTTP endpoint, in-memory). Inline-only apps that want zero
+   * network traffic pass `customLoader(async () => ({}))`.
+   */
   readonly loader?: LoaderDescriptor<T>;
   readonly switchStrategy?: SwitchStrategy;
   /** Called when a dictionary load fails. The service still falls back safely. */

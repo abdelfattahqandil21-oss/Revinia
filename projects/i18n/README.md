@@ -14,8 +14,28 @@ zero DOM opinions beyond `<html dir/lang>`, zero styling.
 
 ```bash
 npm install @rivinia/i18n
-ng add @rivinia/i18n   # interactive: browser detection, then wires app.config.ts
+ng add @rivinia/i18n   # asks default language + browser detection, wires an ar/en starter
 ```
+
+## Dictionaries by convention (no config needed)
+
+Key-based `translate('booking.seats')` works out of the box with the conventional
+layout — the default loader fetches `assets/i18n/{language}.json`
+(`assets/i18n/ar.json`, `assets/i18n/en.json`, …). Override only when you differ:
+
+```json
+// src/assets/i18n/ar.json
+{ "booking": { "seats": "{count, plural, zero {لا مقاعد} one {مقعد واحد} other {# مقاعد}}" } }
+```
+
+```ts
+// custom path / HTTP endpoint / in-memory (first truth wins):
+provideRiviniaI18n({ loader: jsonLoader({ path: '/my-i18n' }), ... });
+provideRiviniaI18n({ loader: httpLoader({ endpoint: 'https://api.example.com/i18n' }), ... });
+// inline-only apps (zero network): loader: customLoader(async () => ({}))
+```
+
+Loaders code-split: fetch implementations load on first use only.
 
 ```ts
 // app.config.ts
