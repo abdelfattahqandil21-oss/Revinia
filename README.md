@@ -10,6 +10,7 @@ and validated by tarball install into a clean consumer before any publish.
 |---|---|---|
 | `@rivinia/http` | [0.2.0](https://www.npmjs.com/package/@rivinia/http) | Headless typed HTTP client: envelope unwrapping, Observables + `httpResource` (`projects/http`) |
 | `@rivinia/toast` | [0.2.0](https://www.npmjs.com/package/@rivinia/toast) | Headless toast queue: signals, timers, actions, dedupe (`projects/toast`, UI later) |
+| `@rivinia/modal` | 0.1.0 | Headless modal manager: stack/queue, typed results, guards (`projects/modal`, UI later) |
 
 Proof-of-architecture packages (not for publish): `@rivinia/proof-core`,
 `@rivinia/proof-second` (`projects/proof-*`, consumer fixture in `/tmp`).
