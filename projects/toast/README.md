@@ -46,7 +46,7 @@ export class Checkout {
 ```html
 <!-- your outlet (or the future @rivinia/toast/ui): -->
 @for (t of toast.active(); track t.id) {
-  <div [attr.data-kind]="t.kind">{{ textOf(t) }}</div>
+  <div [attr.data-kind]="t.kind">{{ resolveToastText(t.message) }}</div>
 }
 ```
 
@@ -65,11 +65,14 @@ export class Checkout {
 queue). `dismiss/update/pause/resume/runAction` return `false` for unknown ids
 (and repeated dismissal) instead of throwing. `duration: 0` = persistent.
 Timers start at queue **promotion**, never while queued. Per-toast options
-always beat globals. A key alone never enables anything by itself.
+always beat globals.
 
 ## Recipes (app-owned, deliberately not in the library)
 
 ```ts
+import { filter } from 'rxjs';
+import { NavigationStart } from '@angular/router';
+
 // Clear timed toasts on navigation (BRT behavior, 3 lines, no library peer needed):
 router.events.pipe(filter((e) => e instanceof NavigationStart))
   .subscribe(() => toast.active().forEach((t) => t.duration > 0 && toast.dismiss(t.id)));
