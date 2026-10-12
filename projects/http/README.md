@@ -7,7 +7,7 @@ Headless typed HTTP client for Angular 22+. Configurable envelope
 unwrapping, plain Observables **and** `httpResource` — URLs always used as
 given, zero styling, zero backend opinions, interceptors left to your app.
 
-- Version: **0.2.0**
+- Version: **0.3.0**
 - Requires: **Angular `^22.0.0`**, `rxjs` (same range Angular uses), `tslib`
 - Since Angular 21 `HttpClient` (fetch backend) is injectable with zero setup.
   Call `provideHttpClient()` / pass `httpFeatures` only when you configure
