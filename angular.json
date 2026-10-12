@@ -83,6 +83,32 @@
           }
         }
       }
+    },
+    "toast": {
+      "projectType": "library",
+      "root": "projects/toast",
+      "sourceRoot": "projects/toast/src",
+      "prefix": "rv",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/toast/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/toast/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/toast/tsconfig.spec.json"
+          }
+        }
+      }
     }
   }
 }
