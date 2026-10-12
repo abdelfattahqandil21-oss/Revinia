@@ -59,3 +59,16 @@ dependency boundaries or publishing correctness for convenience.
 - Foundational rule changes need user approval + `docs/DECISIONS.md` entry.
 - Report what succeeded, what failed, what remains unverified. Never claim an
   unexecuted build/test/publish/bundle measurement succeeded.
+
+## Git workflow (trunk-based, per-package releases)
+
+- `main` is always releasable. Work in short-lived branches:
+  `pkg/<package>/<topic>` (e.g. `pkg/http/retry-policy`); merge with `--no-ff`.
+- Conventional Commits, scope = package: `feat(http): …`, `fix(toast): …`,
+  `chore(repo): …`, `docs(http): …`, `test(modal): …`, `build(repo): …`.
+- One logical change per commit; never mix packages in one commit.
+- Release with namespaced tags on `main`: `<pkg>/v<semver>` (e.g. `http/v0.2.0`).
+  Tags are immutable — fixes ship as new versions. Pre-1.0: minor bump = breaking.
+- Never commit `dist/`, `pack/`, `node_modules/`, credentials, or OTPs (ignored
+  by `.gitignore`, but stay vigilant with `git add -A`).
+- Publish only from a tagged commit, from the exact inspected tarball.
