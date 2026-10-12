@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RiviniaI18nConfig } from './i18n-config';
 import { customLoader } from './loaders';
 import { provideRiviniaI18n } from './provide-i18n';
@@ -65,7 +65,7 @@ describe('RiviniaI18n init and validation', () => {
 
 describe('RiviniaI18n switching', () => {
   it('setLanguage/toggle/next/previous cycle correctly', () => {
-    const i18n = setup();
+    const i18n = setup({ loader: customLoader(async () => ({})) });
     i18n.setLanguage('en');
     expect(i18n.currentLanguage()).toBe('en');
     expect(i18n.dir()).toBe('ltr');
@@ -80,7 +80,7 @@ describe('RiviniaI18n switching', () => {
   });
 
   it('persists through storage strategy local', () => {
-    const i18n = setup({ storageStrategy: 'local' });
+    const i18n = setup({ storageStrategy: 'local', loader: customLoader(async () => ({})) });
     i18n.setLanguage('en');
     TestBed.flushEffects();
     expect(window.localStorage.getItem('rivinia.i18n.language')).toBe('en');
@@ -89,7 +89,7 @@ describe('RiviniaI18n switching', () => {
 
 describe('RiviniaI18n translate', () => {
   it('inline objects resolve per language with first-value fallback', () => {
-    const i18n = setup();
+    const i18n = setup({ loader: customLoader(async () => ({})) });
     expect(i18n.translate({ ar: 'حفظ', en: 'Save' })).toBe('حفظ');
     i18n.setLanguage('en');
     expect(i18n.translate({ ar: 'حفظ', en: 'Save' })).toBe('Save');
@@ -142,9 +142,42 @@ describe('RiviniaI18n translate', () => {
   });
 });
 
+describe('RiviniaI18n default loader', () => {
+  it('fetches assets/i18n/{language}.json unless the consumer overrides', async () => {
+    const seen: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        seen.push(url);
+        return { ok: true, statusText: 'OK', json: async () => ({}) } as Response;
+      }),
+    );
+    try {
+      const i18n = setup();
+      await i18n.loadTranslations('en');
+      expect(seen).toEqual(['assets/i18n/en.json']);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('inline-only apps silence network with an empty customLoader', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const i18n = setup({ loader: customLoader(async () => ({})) });
+      await i18n.loadTranslations('en');
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(i18n.translate({ ar: 'حفظ', en: 'Save' })).toBe('حفظ');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
 describe('RiviniaI18n formatting and state', () => {
   it('formats numbers/dates in the current language', () => {
-    const i18n = setup();
+    const i18n = setup({ loader: customLoader(async () => ({})) });
     expect(i18n.formatNumber(1234567.89, { maximumFractionDigits: 0 })).toBe(
       new Intl.NumberFormat('ar', { maximumFractionDigits: 0 }).format(1234567.89),
     );
