@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/i18n",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Headless language manager for Angular: signals, RTL, loaders, ICU plurals, browser detection, Intl formatting.",
   "keywords": ["angular", "i18n", "localization", "signals", "rtl", "typescript"],
   "license": "MIT",
