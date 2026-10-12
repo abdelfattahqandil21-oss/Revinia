@@ -36,11 +36,24 @@ describe('ng-add', () => {
     expect(content).not.toContain('detectBrowser');
   });
 
-  it('honours defaultLanguage and detectBrowser flags', async () => {
-    const tree = await run({ defaultLanguage: 'en', detectBrowser: true });
+  it('honours a language list and detectBrowser flag', async () => {
+    const tree = await run({ languages: 'en, ar', detectBrowser: true });
     const content = tree.readContent('/src/app/app.config.ts');
     expect(content).toContain(`defaultLanguage: 'en',`);
     expect(content).toContain('detectBrowser: true');
+  });
+
+  it("parses the exact messy input users type (quotes, spaces, case)", async () => {
+    const tree = await run({ languages: `'ar' , 'en' , 'fr'` });
+    const content = tree.readContent('/src/app/app.config.ts');
+    expect(content).toContain(`defaultLanguage: 'ar',`);
+    expect(content).toContain(`{ id: 'ar', nativeName: 'العربية', dir: 'rtl' },`);
+    expect(content).toContain(`{ id: 'en', nativeName: 'English', dir: 'ltr' },`);
+    expect(content).toContain(`{ id: 'fr', nativeName: 'Français', dir: 'ltr' },`);
+  });
+
+  it('rejects invalid ids instead of emitting broken code', async () => {
+    await expect(run({ languages: 'ar, 123, en!!' })).rejects.toThrow(/invalid language id/);
   });
 
   it('is idempotent (second run changes nothing)', async () => {

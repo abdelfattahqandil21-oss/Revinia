@@ -4,11 +4,11 @@
   "title": "Rivinia i18n ng-add options",
   "type": "object",
   "properties": {
-    "defaultLanguage": {
+    "languages": {
       "type": "string",
-      "description": "Default language id for the starter config (must exist in your languages list).",
+      "description": "Comma-separated language ids for the starter config (Enter for 'ar, en'). The first id becomes the default language.",
       "x-prompt": {
-        "message": "Default language id for this project (Enter for 'ar')?",
+        "message": "Language ids for this project (comma-separated, Enter for 'ar, en')?",
         "type": "input"
       }
     },
