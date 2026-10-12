@@ -6,9 +6,9 @@
   "properties": {
     "languages": {
       "type": "string",
-      "description": "Comma-separated language ids for the starter config (Enter for 'ar, en'). The first id becomes the default language.",
+      "description": "Comma-separated language ids — bare (ar, en), quoted ('ar', 'en') or bracketed ([ar, en]). First id becomes the default language.",
       "x-prompt": {
-        "message": "Language ids for this project (comma-separated, Enter for 'ar, en')?",
+        "message": "Language ids for this project (ar, en — brackets and quotes also fine)?",
         "type": "input"
       }
     },

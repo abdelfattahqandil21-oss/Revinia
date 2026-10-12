@@ -52,7 +52,12 @@ const STARTER = (ids: string[], detectBrowser: boolean): string => {
  */
 export function parseLanguageIds(raw: string | undefined): string[] {
   if (!raw || raw.trim() === '') return ['ar', 'en'];
-  const ids = raw
+  // Accept bare lists (`ar, en`), quoted parts (`'ar', "en"`), and bracketed
+  // arrays (`[ar, en]`, `['ar','en']`) — then validate strictly regardless.
+  let text = raw.trim();
+  if (text.startsWith('[')) text = text.slice(1);
+  if (text.endsWith(']')) text = text.slice(0, -1);
+  const ids = text
     .split(',')
     .map((part) =>
       part

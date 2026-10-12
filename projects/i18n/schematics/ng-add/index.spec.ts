@@ -52,6 +52,17 @@ describe('ng-add', () => {
     expect(content).toContain(`{ id: 'fr', nativeName: 'Français', dir: 'ltr' },`);
   });
 
+  it('accepts bracketed arrays with or without quotes', async () => {
+    const tree = await run({ languages: `[ar,fn , en ,du , it]` });
+    const content = tree.readContent('/src/app/app.config.ts');
+    expect(content).toContain(`defaultLanguage: 'ar',`);
+    for (const id of ['ar', 'fn', 'en', 'du', 'it']) {
+      expect(content).toContain(`{ id: '${id}',`);
+    }
+    const quoted = await run({ languages: `['ar', 'en']` });
+    expect(quoted.readContent('/src/app/app.config.ts')).toContain(`defaultLanguage: 'ar',`);
+  });
+
   it('rejects invalid ids instead of emitting broken code', async () => {
     await expect(run({ languages: 'ar, 123, en!!' })).rejects.toThrow(/invalid language id/);
   });
