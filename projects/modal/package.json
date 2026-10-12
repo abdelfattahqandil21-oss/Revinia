@@ -1,0 +1,14 @@
+{
+  "name": "@rivinia/modal",
+  "version": "0.1.0",
+  "description": "Headless modal manager for Angular: stack/queue strategies, typed results, guards, ownership.",
+  "keywords": ["angular", "modal", "dialog", "signals", "typescript"],
+  "license": "MIT",
+  "peerDependencies": {
+    "@angular/core": "^22.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": false
+}

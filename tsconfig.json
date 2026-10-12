@@ -17,7 +17,8 @@
       "@rivinia/proof-second": ["./dist/proof-second"],
       "@rivinia/http": ["./dist/http"],
       "@rivinia/toast": ["./dist/toast"],
-      "@rivinia/toast/ui": ["./dist/toast/ui"]
+      "@rivinia/toast/ui": ["./dist/toast/ui"],
+      "@rivinia/modal": ["./dist/modal"]
     },
     "target": "ES2022",
     "module": "preserve"
@@ -52,6 +53,12 @@
     },
     {
       "path": "./projects/toast/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/modal/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/modal/tsconfig.spec.json"
     }
   ]
 }
