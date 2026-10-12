@@ -194,6 +194,22 @@ describe('RiviniaHttp.getResource', () => {
     ctrl.verify();
   });
 
+  it('accepts a reactive function endpoint like httpResource itself', () => {
+    const { http, ctrl } = setup();
+    const id = signal('a');
+    const res = TestBed.runInInjectionContext(() =>
+      http.getResource(() => `https://api.test/items/${id()}`, { unwrap: false }),
+    );
+    TestBed.flushEffects();
+    ctrl.expectOne('https://api.test/items/a').flush({});
+    TestBed.flushEffects();
+    id.set('b');
+    TestBed.flushEffects();
+    ctrl.expectOne('https://api.test/items/b').flush({});
+    expect(res).toBeDefined();
+    ctrl.verify();
+  });
+
   it('disables the request while the endpoint signal is undefined', () => {
     const { http, ctrl } = setup();
     const endpoint = signal<string | undefined>(undefined);

@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/http",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Headless typed HTTP client for Angular: envelope unwrapping, plain Observables and httpResource.",
   "keywords": ["angular", "http", "http-client", "signals", "http-resource", "typescript"],
   "license": "MIT",

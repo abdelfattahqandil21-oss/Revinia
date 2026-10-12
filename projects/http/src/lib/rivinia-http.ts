@@ -5,7 +5,7 @@ import {
   httpResource,
   type HttpResourceRef,
 } from '@angular/common/http';
-import { Service, inject, type Signal } from '@angular/core';
+import { Service, computed, inject, isSignal, type Signal } from '@angular/core';
 import { map, type Observable } from 'rxjs';
 import {
   DEFAULT_UNWRAP,
@@ -98,16 +98,22 @@ export class RiviniaHttp {
 
   /**
    * Reactive GET as an `httpResource` (stable since Angular v22).
-   * Re-fetches when the endpoint signal changes; `undefined` disables.
-   * Unwrap applies through `parse`, composed before a user `parse` if given.
+   * The endpoint can be a static string, a signal, or a reactive function
+   * (same as `httpResource` itself) — it re-fetches on change, and
+   * `undefined` disables the request. Unwrap applies through `parse`,
+   * composed before a user `parse` if given.
    */
   getResource<T>(
-    endpoint: string | Signal<string | undefined>,
+    endpoint: string | Signal<string | undefined> | (() => string | undefined),
     options?: RiviniaResourceOptions<T>,
   ): HttpResourceRef<T | undefined> {
     const { defaultValue, parse, reportProgress, ...requestOptions } = options ?? {};
+    const source: string | Signal<string | undefined> =
+      typeof endpoint === 'function' && !isSignal(endpoint)
+        ? computed(endpoint)
+        : (endpoint as string | Signal<string | undefined>);
     const request = () => {
-      const ep = typeof endpoint === 'string' ? endpoint : endpoint();
+      const ep = typeof source === 'string' ? source : source();
       if (ep === undefined) return undefined;
       return {
         url: this.url(ep),
