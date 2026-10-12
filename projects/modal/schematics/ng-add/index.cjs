@@ -1,0 +1,101 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ngAdd = ngAdd;
+const schematics_1 = require("@angular-devkit/schematics");
+const PROVIDE_IMPORT = `import { provideRiviniaModal } from '@rivinia/modal';`;
+/**
+ * `ng add @rivinia/modal` — wires the manager into a standalone app config.
+ *
+ * - Never overwrites user files; only inserts one import + one provider.
+ * - Idempotent: safe to run twice. No prompts by design (strategy is a
+ *   one-line edit; pass `--strategy queue` or edit afterwards).
+ * - Rendering outlet (`<rv-modal-outlet/>` in a future `/ui` entry) is a
+ *   layout decision the schematic never makes for you.
+ */
+function ngAdd(options) {
+    return (tree, context) => {
+        let configPath;
+        try {
+            configPath = findAppConfig(tree, options.project);
+        }
+        catch (error) {
+            context.logger.warn(`[rivinia/modal] workspace lookup failed (${error instanceof Error ? error.message : error}) — skipping. ` +
+                `Add provideRiviniaModal() manually (see README).`);
+            return tree;
+        }
+        if (!configPath || !tree.exists(configPath)) {
+            context.logger.warn(`[rivinia/modal] app.config.ts not found — skipping. ` +
+                `Add provideRiviniaModal() manually (see README).`);
+            return tree;
+        }
+        let content = tree.read(configPath)?.toString('utf-8') ?? '';
+        if (!content) {
+            throw new schematics_1.SchematicsException(`[rivinia/modal] ${configPath} is empty.`);
+        }
+        const provideCall = options.strategy !== undefined ? `provideRiviniaModal({ strategy: '${options.strategy}' })` : 'provideRiviniaModal()';
+        let changed = false;
+        if (!content.includes(PROVIDE_IMPORT)) {
+            content = insertAfterLastImport(content, PROVIDE_IMPORT);
+            changed = true;
+        }
+        if (!content.includes('provideRiviniaModal(')) {
+            content = insertProvider(content, provideCall);
+            changed = true;
+        }
+        else {
+            context.logger.info('[rivinia/modal] provideRiviniaModal() already present — skipped.');
+        }
+        if (changed) {
+            tree.overwrite(configPath, content);
+            context.logger.info(`[rivinia/modal] wired into ${configPath}.`);
+        }
+        return tree;
+    };
+}
+function defaultProjectName(tree, requested) {
+    if (requested)
+        return requested;
+    const angularJson = tree.read('/angular.json')?.toString('utf-8');
+    if (!angularJson) {
+        throw new schematics_1.SchematicsException('[rivinia/modal] angular.json not found.');
+    }
+    const workspace = JSON.parse(angularJson);
+    if (workspace.defaultProject && typeof workspace.defaultProject === 'string') {
+        return workspace.defaultProject;
+    }
+    const names = Object.keys(workspace.projects ?? {});
+    if (names.length === 0) {
+        throw new schematics_1.SchematicsException('[rivinia/modal] no projects in angular.json.');
+    }
+    return names[0];
+}
+function findAppConfig(tree, requestedProject) {
+    const angularJson = tree.read('/angular.json')?.toString('utf-8');
+    if (!angularJson)
+        return null;
+    const workspace = JSON.parse(angularJson);
+    const name = defaultProjectName(tree, requestedProject);
+    const project = workspace.projects?.[name];
+    if (!project)
+        return null;
+    const sourceRoot = project.sourceRoot ?? (project.root ? `${project.root}/src` : 'src');
+    return `/${sourceRoot}/app/app.config.ts`;
+}
+function insertAfterLastImport(content, line) {
+    const lines = content.split('\n');
+    let idx = -1;
+    for (let i = 0; i < lines.length; i++) {
+        if (/^\s*import\s/.test(lines[i]))
+            idx = i;
+    }
+    lines.splice(idx + 1, 0, line);
+    return lines.join('\n');
+}
+function insertProvider(content, call) {
+    const match = /providers\s*:\s*\[/.exec(content);
+    if (!match) {
+        throw new schematics_1.SchematicsException('[rivinia/modal] no `providers: [` array found in app.config.ts — add providers manually.');
+    }
+    const at = match.index + match[0].length;
+    return `${content.slice(0, at)}\n    ${call},${content.slice(at)}`;
+}

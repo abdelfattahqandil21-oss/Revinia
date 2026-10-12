@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "rivinia-modal-ng-add",
+  "title": "Rivinia Modal ng-add options",
+  "type": "object",
+  "properties": {
+    "strategy": {
+      "type": "string",
+      "description": "Ordering policy for provideRiviniaModal({ strategy }). Omit for the 'stack' default.",
+      "enum": ["stack", "queue"]
+    },
+    "project": {
+      "type": "string",
+      "description": "Angular CLI project name — only for multi-app workspaces. Defaults to the workspace default project.",
+      "default": ""
+    }
+  },
+  "required": []
+}
