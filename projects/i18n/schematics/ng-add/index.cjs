@@ -1,18 +1,62 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.parseLanguageIds = parseLanguageIds;
 exports.ngAdd = ngAdd;
 const schematics_1 = require("@angular-devkit/schematics");
 const PROVIDE_IMPORT = `import { provideRiviniaI18n } from '@rivinia/i18n';`;
-const STARTER = (defaultLanguage, detectBrowser) => {
+/** Known display names/directions; anything else gets `{ nativeName: id, dir }`. */
+const KNOWN_LANGUAGES = {
+    ar: { nativeName: 'العربية', dir: 'rtl' },
+    en: { nativeName: 'English', dir: 'ltr' },
+    fr: { nativeName: 'Français', dir: 'ltr' },
+    de: { nativeName: 'Deutsch', dir: 'ltr' },
+    es: { nativeName: 'Español', dir: 'ltr' },
+    he: { nativeName: 'עברית', dir: 'rtl' },
+    fa: { nativeName: 'فارسی', dir: 'rtl' },
+    ur: { nativeName: 'اردو', dir: 'rtl' },
+};
+const RTL_IDS = new Set(['ar', 'he', 'fa', 'ur', 'ps', 'yi', 'dv', 'ku', 'sd']);
+const STARTER = (ids, detectBrowser) => {
+    const languages = ids
+        .map((id) => {
+        const known = KNOWN_LANGUAGES[id];
+        const nativeName = known?.nativeName ?? id;
+        const dir = known?.dir ?? (RTL_IDS.has(id) ? 'rtl' : 'ltr');
+        return `      { id: '${id}', nativeName: '${nativeName}', dir: '${dir}' },`;
+    })
+        .join('\n');
     const detect = detectBrowser ? ',\n    detectBrowser: true' : '';
     return (`provideRiviniaI18n({\n` +
-        `    defaultLanguage: '${defaultLanguage}',\n` +
-        `    languages: [\n` +
-        `      { id: 'ar', nativeName: 'العربية', dir: 'rtl' },\n` +
-        `      { id: 'en', nativeName: 'English', dir: 'ltr' },\n` +
-        `    ],${detect}\n` +
+        `    defaultLanguage: '${ids[0]}',\n` +
+        `    languages: [\n${languages}\n    ],${detect}\n` +
         `  })`);
 };
+/**
+ * Parses a free-form language list (`ar, en`, `'ar','en'`, `AR EN`…).
+ * Never trusts raw input: strips quotes/whitespace, lowercases, validates
+ * BCP-47-ish tags, dedupes. Throws a clear error instead of emitting code.
+ */
+function parseLanguageIds(raw) {
+    if (!raw || raw.trim() === '')
+        return ['ar', 'en'];
+    const ids = raw
+        .split(',')
+        .map((part) => part
+        .trim()
+        .replace(/^['"`]+|['"`]+$/g, '')
+        .trim()
+        .toLowerCase())
+        .filter((id) => id.length > 0);
+    const unique = [...new Set(ids)];
+    if (unique.length === 0)
+        return ['ar', 'en'];
+    const bad = unique.filter((id) => !/^[a-z]{2,8}(-[a-z0-9]{2,8})?$/.test(id));
+    if (bad.length > 0) {
+        throw new schematics_1.SchematicsException(`[rivinia/i18n] invalid language id(s): ${bad.join(', ')}. ` +
+            `Use comma-separated codes like 'ar, en' or 'ar-EG, en'.`);
+    }
+    return unique;
+}
 /**
  * `ng add @rivinia/i18n` — wires a starter bilingual config.
  *
@@ -47,9 +91,7 @@ function ngAdd(options) {
             changed = true;
         }
         if (!content.includes('provideRiviniaI18n(')) {
-            const call = STARTER(options.defaultLanguage && options.defaultLanguage.length > 0
-                ? options.defaultLanguage
-                : 'ar', options.detectBrowser === true);
+            const call = STARTER(parseLanguageIds(options.languages), options.detectBrowser === true);
             content = insertProvider(content, call);
             changed = true;
         }
