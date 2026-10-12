@@ -1,20 +1,31 @@
 # Rivinia
 
 Production-ready ecosystem of reusable Angular libraries (Angular 22+).
+Headless-first like TanStack Table: packages sell complex logic, never pixels —
+every Core is fully usable without any UI, and Core releases never wait for UI.
 Each package is independently versioned, built with `ng-packagr` (APF),
-and validated by tarball install into a clean consumer before any publish.
+ships an `ng-add` schematic, and is validated by tarball install into a clean
+consumer before any publish.
 
 ## Packages
 
-| Package | Version | Description |
-|---|---|---|
-| `@rivinia/http` | [0.2.0](https://www.npmjs.com/package/@rivinia/http) | Headless typed HTTP client: envelope unwrapping, Observables + `httpResource` (`projects/http`) |
-| `@rivinia/toast` | [0.2.0](https://www.npmjs.com/package/@rivinia/toast) | Headless toast queue: signals, timers, actions, dedupe (`projects/toast`, UI later) |
-| `@rivinia/modal` | 0.1.0 | Headless modal manager: stack/queue, typed results, guards (`projects/modal`, UI later) |
-| `@rivinia/i18n` | 0.1.0 | Headless language manager: signals, RTL, ICU plurals, detection (`projects/i18n`, UI later) |
+| Package | Version | `ng add` | Description |
+|---|---|---|---|
+| `@rivinia/http` | [0.2.0](https://www.npmjs.com/package/@rivinia/http) | ✅ | Headless typed HTTP client: envelope unwrapping, Observables + `httpResource` (`projects/http`) |
+| `@rivinia/toast` | [0.2.0](https://www.npmjs.com/package/@rivinia/toast) | ✅ | Headless toast queue: signals, timers, actions, dedupe (`projects/toast`) |
+| `@rivinia/modal` | 0.2.0 | ✅ | Headless modal manager: stack/queue, typed results, guards (`projects/modal`) |
+| `@rivinia/i18n` | 0.1.0 | ✅ | Headless language manager: signals, RTL, ICU plurals, detection (`projects/i18n`) |
 
-Proof-of-architecture packages (not for publish): `@rivinia/proof-core`,
-`@rivinia/proof-second` (`projects/proof-*`, consumer fixture in `/tmp`).
+```bash
+npm install @rivinia/http @rivinia/toast @rivinia/modal @rivinia/i18n
+ng add @rivinia/http   # prompts: unwrapping + envelope key
+ng add @rivinia/toast  # wires provideRiviniaToast()
+ng add @rivinia/modal  # optional: --strategy queue
+ng add @rivinia/i18n   # prompts: default language + browser detection
+```
+
+Proof-of-architecture packages (not for publish, no schematics):
+`@rivinia/proof-core`, `@rivinia/proof-second` (`projects/proof-*`).
 
 ## Workspace commands (pnpm)
 
