@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "rivinia-env-ng-add",
+  "title": "Rivinia env ng-add options",
+  "type": "object",
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "Angular CLI project name — only for multi-app workspaces. Defaults to the workspace default project.",
+      "default": ""
+    }
+  },
+  "required": []
+}

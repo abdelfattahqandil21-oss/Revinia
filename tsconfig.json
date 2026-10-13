@@ -19,7 +19,8 @@
       "@rivinia/toast": ["./dist/toast"],
       "@rivinia/toast/ui": ["./dist/toast/ui"],
       "@rivinia/modal": ["./dist/modal"],
-      "@rivinia/i18n": ["./dist/i18n"]
+      "@rivinia/i18n": ["./dist/i18n"],
+      "@rivinia/env": ["./dist/env"]
     },
     "target": "ES2022",
     "module": "preserve"
@@ -66,6 +67,12 @@
     },
     {
       "path": "./projects/i18n/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/env/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/env/tsconfig.spec.json"
     }
   ]
 }
