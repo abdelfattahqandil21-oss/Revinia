@@ -14,11 +14,13 @@ export function joinUrl(baseUrl: string, endpoint: string): string {
 /**
  * Extracts `body[key]` when the backend wraps payloads in an envelope
  * (e.g. `{ data, error, isSuccess }`); passes anything else through
- * unchanged. Recursive, so nested envelopes collapse.
+ * unchanged. Unwraps EXACTLY ONE level: a payload that itself contains the
+ * key (`{ data: { data: […], page: 1 } }`) is returned whole — recursive
+ * unwrapping silently destroyed sibling fields (data-loss bug, fixed).
  */
 export function unwrapAs<T>(body: unknown, key: string): T {
   if (isObjectRecord(body) && hasOwn(body, key)) {
-    return unwrapAs<T>(body[key], key);
+    return body[key] as T;
   }
   return body as T;
 }
