@@ -19,15 +19,18 @@ ng add @rivinia/env   # multi-select: development / staging / production
 ```
 
 Interactive runs ask which environments to scaffold (checkbox, all checked by
-default); non-interactive runs take all. From flags, comma-separate:
+default); non-interactive runs take all. From flags, comma-separate (short
+aliases work: `dev`, `prod`, `stag`):
 
 ```bash
 ng add @rivinia/env --environments staging,production
 ```
 
 Only the selection is scaffolded and wired (model + base file always — the
-base is the replacement source). Re-runs never overwrite files or duplicate
-configuration.
+base is the replacement source). Each wired configuration gets its output
+directory (`builds/dev`, `builds/stag`, `builds/prod`) unless it already
+defines one, and `/builds` is appended to `.gitignore` once. Re-runs never
+overwrite files or duplicate configuration.
 
 `ng add` creates (never overwrites) `src/environments/`:
 

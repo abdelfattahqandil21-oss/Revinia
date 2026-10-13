@@ -39,6 +39,7 @@ function appTree(overrides?: {
     '/package.json',
     JSON.stringify(overrides?.packageJson ?? { name: 'demo', version: '1.2.3' }),
   );
+  t.create('/.gitignore', '/dist\n');
   t.create(
     '/src/app/app.config.ts',
     `export const appConfig = { providers: [] };\n`,
@@ -92,7 +93,8 @@ describe('ng-add', () => {
         with: 'src/environments/environment.prod.ts',
       },
     ]);
-    expect(configs['development']).toEqual({});
+    expect(configs['development']['outputPath']).toBe('builds/dev');
+    expect(configs['development']['fileReplacements']).toBeUndefined();
   });
 
   it('never overwrites existing files but still wires missing config', async () => {
@@ -123,7 +125,37 @@ describe('ng-add', () => {
   });
 
   it('rejects unknown environment names via schema validation', async () => {
-    await expect(run({ environments: ['prod'] })).rejects.toThrow();
+    await expect(run({ environments: ['preprod'] })).rejects.toThrow();
+  });
+
+  it('accepts short aliases (dev/prod/stag) and sets output dirs', async () => {
+    const tree = await run({ environments: ['prod', 'dev'] });
+    expect(tree.exists('/src/environments/environment.prod.ts')).toBe(true);
+    expect(tree.exists('/src/environments/environment.staging.ts')).toBe(false);
+    const configs = configurations(tree);
+    expect(configs['production']['outputPath']).toBe('builds/prod');
+    expect(configs['development']['outputPath']).toBe('builds/dev');
+    expect(Object.keys(configs)).not.toContain('staging');
+  });
+
+  it('keeps customized outputPath and appends /builds to .gitignore once', async () => {
+    const base = appTree();
+    const angular = JSON.parse(base.readContent('/angular.json'));
+    angular.projects['demo'].architect.build.configurations['production']['outputPath'] =
+      'dist/custom';
+    base.overwrite('/angular.json', JSON.stringify(angular, null, 2));
+    const first = await run({}, base);
+    const afterFirst = JSON.parse(first.readContent('/angular.json'));
+    expect(afterFirst.projects['demo'].architect.build.configurations['production']['outputPath']).toBe(
+      'dist/custom',
+    );
+    expect(afterFirst.projects['demo'].architect.build.configurations['staging']['outputPath']).toBe(
+      'builds/stag',
+    );
+    expect(first.readContent('/.gitignore')).toContain('/builds');
+    const second = await run({}, first);
+    const gitignore = second.readContent('/.gitignore');
+    expect(gitignore.match(/\/builds/g)?.length).toBe(1);
   });
 
   it('accepts comma-separated strings (CLI flag form)', async () => {
@@ -134,7 +166,7 @@ describe('ng-add', () => {
   });
 
   it('throws a clear error on unknown names in string form', async () => {
-    await expect(run({ environments: 'prod' })).rejects.toThrow(/unknown environment/);
+    await expect(run({ environments: 'preprod' })).rejects.toThrow(/unknown environment/);
   });
 
   it('is idempotent (second run changes nothing)', async () => {
