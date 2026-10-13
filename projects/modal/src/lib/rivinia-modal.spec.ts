@@ -234,8 +234,25 @@ describe('RiviniaModal ownership and nesting', () => {
     });
     owner.destroy();
     expect(await active.result).toEqual({ status: 'owner-destroyed' });
-    expect(await queued.result).toEqual({ status: 'queued-cancelled' });
-    expect(modal.debugState()).toMatchObject({ active: [], queued: [] });
+    // Same dead owner: promoted then torn down as owner-destroyed (truthful).
+    expect(await queued.result).toEqual({ status: 'owner-destroyed' });
+    expect(modal.debugState()).toMatchObject({ active: [], queued: [], closing: [] });
+  });
+
+  it('teardown promotes an independently-owned queued modal', async () => {
+    const modal = setup({ strategy: 'queue' });
+    const owner = childInjector();
+    const active = modal.openModal<string>(componentContent(), {
+      owner: owner.get(DestroyRef),
+    });
+    const queued = modal.openModal<string>(componentContent());
+    owner.destroy();
+    expect(await active.result).toEqual({ status: 'owner-destroyed' });
+    expect(modal.active().map((i) => i.id)).toEqual([queued.id]);
+    expect(modal.queued()).toEqual([]);
+    expect(queued.dismiss()).toBe(true);
+    expect(await queued.result).toEqual({ status: 'dismissed', reason: undefined });
+    drain(modal);
   });
 
   it('independent lifetime survives owner injector destruction', async () => {

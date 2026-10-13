@@ -44,6 +44,7 @@ export class RiviniaToast {
   readonly queue = this._queue.asReadonly();
 
   private readonly _timers = new Map<number, TimerRecord>();
+  private readonly _paused = new Set<number>();
   private readonly _generations = new Map<number, number>();
   private readonly _dedupeByKey = new Map<string, number>();
   private readonly _dedupeKeyById = new Map<number, string>();
@@ -80,6 +81,7 @@ export class RiviniaToast {
       message: options.message,
       duration,
       remaining: duration,
+      paused: false,
       action: options.action ?? null,
     };
     if (options.dedupeKey !== undefined) {
@@ -142,7 +144,7 @@ export class RiviniaToast {
           return next;
         }),
       );
-      if (next) this.arm(id, next.duration);
+      if (next && !this._paused.has(id)) this.arm(id, next.duration);
       return true;
     }
     let found = false;
@@ -163,6 +165,7 @@ export class RiviniaToast {
    */
   dismiss(id: number): boolean {
     this.disarm(id);
+    this._paused.delete(id);
     let removed = false;
     this._active.update((list) => {
       const next = list.filter((t) => t.id !== id);
@@ -186,6 +189,7 @@ export class RiviniaToast {
   /** Clears timers, active and queue. Ids keep incrementing (never reused). */
   dismissAll(): void {
     this.clearTimers();
+    this._paused.clear();
     this._active.set([]);
     this._queue.set([]);
     this._dedupeByKey.clear();
@@ -193,36 +197,44 @@ export class RiviniaToast {
   }
 
   /**
-   * Suspends the active timer, preserving `remaining`. UI binds this to
-   * hover/focus (WCAG 2.2.1 timing control). Returns `false` for unknown ids,
-   * queued/persistent toasts, or already-paused timers.
+   * Suspends the active timer, preserving `remaining` and marking `paused`.
+   * UI binds this to hover/focus (WCAG 2.2.1 timing control). Returns `false`
+   * for unknown ids, queued/persistent toasts, or already-paused timers —
+   * a persistent toast can never be paused, so hover-leave cannot dismiss it.
    */
   pause(id: number): boolean {
     const record = this._timers.get(id);
     if (!record) return false;
     clearTimeout(record.handle);
     this._timers.delete(id);
+    this._paused.add(id);
     const elapsed = Date.now() - record.startedAt;
     this._active.update((list) =>
       list.map((t) =>
-        t.id === id ? { ...t, remaining: Math.max(0, t.remaining - elapsed) } : t,
+        t.id === id
+          ? { ...t, remaining: Math.max(0, t.remaining - elapsed), paused: true }
+          : t,
       ),
     );
     return true;
   }
 
   /**
-   * Restarts a paused timer with the preserved `remaining`. A toast paused at
-   * zero remaining is dismissed instead (it logically already expired).
+   * Restarts a paused timer with the preserved `remaining`. No-op (`false`) on
+   * anything that was never paused — including persistent toasts. A paused
+   * toast whose remaining reached zero is dismissed instead (it logically
+   * already expired).
    */
   resume(id: number): boolean {
-    if (this._timers.has(id)) return false;
+    if (!this._paused.has(id)) return false;
+    this._paused.delete(id);
     const toast = this._active().find((t) => t.id === id);
     if (!toast) return false;
     if (toast.remaining <= 0) {
       this.dismiss(id);
       return true;
     }
+    this._active.update((list) => list.map((t) => (t.id === id ? { ...t, paused: false } : t)));
     this.arm(id, toast.remaining);
     return true;
   }

@@ -111,7 +111,7 @@ after unwrapping — ideal for Zod/Valibot validation).
 | `RiviniaHttp` | `@Service()` | `get/post/put/patch/delete`, `getBlob`, `getResource` |
 | `injectRiviniaHttp()` | function | shorthand for `inject(RiviniaHttp)` |
 | `joinUrl(base, endpoint)` | util | slash-safe join; absolute URLs pass through |
-| `unwrapAs(body, key)` | util | recursive envelope extraction |
+| `unwrapAs(body, key)` | util | single-level envelope extraction (nested keys preserved) |
 | types | types | `RiviniaHttpConfig`, `RiviniaRequestOptions`, `RiviniaDeleteOptions`, `RiviniaResourceOptions`, `QueryParamsInput` |
 
 `getBlob` is never unwrapped. `HttpContext` passes through untouched, so

@@ -72,6 +72,10 @@ this.modals.openModal(tpl, { owner: this.destroyRef });
 this.modals.openModal(tpl);
 ```
 
+Owner teardown frees capacity like any other removal: queued requests promote
+normally (a queued toast sharing the dead owner is still torn down by its own
+callback, settling `owner-destroyed`).
+
 Closing a parent cascades to descendants (`dismissed: parent-closed`) unless
 `descendants: 'prevent-parent-close'` blocks it. Swapping strategies with live
 modals throws — close everything first.

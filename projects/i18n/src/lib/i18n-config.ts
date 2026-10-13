@@ -28,6 +28,18 @@ export interface RiviniaI18nConfig<T extends string = string> {
   /** Called when a dictionary load fails. The service still falls back safely. */
   readonly onLoadError?: (language: T, error: unknown) => void;
   /**
+   * Load the initial language during provider setup (before first paint).
+   * SSR waits via `PendingTasks`. Set `false` to skip (e.g. fully inline apps
+   * that call `loadTranslations` themselves).
+   * @default true
+   */
+  readonly preload?: boolean;
+  /**
+   * Inline per-language dictionaries. Seeded before any network load (zero
+   * network + SSR-safe first paint); a successful loader response still wins.
+   */
+  readonly translations?: Partial<Record<T, Record<string, unknown>>>;
+  /**
    * Match `navigator.languages` against supported ids on first visit
    * (stored preference always wins; base tags match, e.g. `ar-EG` → `ar`).
    * @default false — explicit opt-in, no surprises.
