@@ -130,8 +130,11 @@ global one wholesale.
 | types | types | `RiviniaHttpConfig`, `RiviniaRequestOptions`, `RiviniaDeleteOptions`, `RiviniaResourceOptions`, `RiviniaEnvelopePolicy`, `ReactiveInput`, `QueryParamsInput` |
 
 `getResponse`/`postResponse` return the raw `HttpResponse` (status + headers,
-no unwrapping — compose `unwrapAs`/`assertEnvelope` yourself); `getText`
-returns raw text. In `getResource`, the URL, `params`, `headers` and `context`
+body never unwrapped — compose `unwrapAs` yourself if needed). A configured
+`envelope` policy still validates the body on these paths: a globally declared
+failure rule holds on every JSON path, never just the unwrapped ones. `getText`
+returns raw text; binary/text bodies cannot carry envelopes, so the policy does
+not apply there. In `getResource`, the URL, `params`, `headers` and `context`
 accept values, signals or reactive functions (everything else is static).
 
 `getBlob` is never unwrapped. `HttpContext` passes through untouched, so

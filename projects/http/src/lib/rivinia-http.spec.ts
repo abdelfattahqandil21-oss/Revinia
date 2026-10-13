@@ -166,6 +166,29 @@ describe('RiviniaHttp (plain Observables)', () => {
     ctrl.verify();
   });
 
+  it('applies the envelope policy on raw response paths too', () => {
+    const { http, ctrl } = setup({ envelope: {} });
+    let error: unknown;
+    let next = false;
+    http.getResponse('https://api.test/pay').subscribe({
+      next: () => (next = true),
+      error: (e) => (error = e),
+    });
+    ctrl.expectOne('https://api.test/pay').flush({ data: null, isSuccess: false, error: 'X' });
+    expect(next).toBe(false);
+    expect(error).toBeInstanceOf(RiviniaHttpEnvelopeError);
+    ctrl.verify();
+  });
+
+  it('leaves binary/text bodies outside envelope validation', () => {
+    const { http, ctrl } = setup({ envelope: {} });
+    let text = '';
+    http.getText('https://cdn.test/note.txt').subscribe((v) => (text = v));
+    ctrl.expectOne('https://cdn.test/note.txt').flush('{"isSuccess":false}');
+    expect(text).toBe('{"isSuccess":false}');
+    ctrl.verify();
+  });
+
   it('getText returns raw text without unwrapping', () => {
     const { http, ctrl } = setup();
     let received = '';
