@@ -4,7 +4,7 @@ import { TransferState, makeStateKey, provideAppInitializer } from '@angular/cor
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RiviniaI18nConfig } from './i18n-config';
 import { customLoader } from './loaders';
-import { provideRiviniaI18n } from './provide-i18n';
+import { defineRiviniaI18n, injectRiviniaI18n, provideRiviniaI18n } from './provide-i18n';
 import { RiviniaI18n } from './rivinia-i18n';
 
 const AR = { id: 'ar', nativeName: 'العربية', dir: 'rtl' } as const;
@@ -304,6 +304,77 @@ describe('RiviniaI18n transfer state', () => {
       expect(i18n.ready()).toBe(true);
     } finally {
       vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe('RiviniaI18n language typing', () => {
+  it('defineRiviniaI18n infers the union; wrong ids fail compilation', () => {
+    const preset = defineRiviniaI18n({
+      defaultLanguage: 'ar',
+      languages: [
+        { id: 'ar', nativeName: 'العربية', dir: 'rtl' },
+        { id: 'en', nativeName: 'English', dir: 'ltr' },
+      ],
+    });
+    expect(preset.config.defaultLanguage).toBe('ar');
+    // The lines below are compile-time assertions (tsc --strict over specs):
+    // @ts-expect-error 'fr' is not a configured language
+    preset.config.defaultLanguage satisfies 'fr';
+    void preset;
+  });
+
+  it('injectRiviniaI18n preserves an explicit union', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideRiviniaI18n({
+          defaultLanguage: 'ar',
+          languages: [AR, EN],
+          storageStrategy: 'none',
+        }),
+      ],
+    });
+    const i18n = TestBed.runInInjectionContext(() => injectRiviniaI18n<'ar' | 'en'>());
+    expect(i18n.currentLanguage()).toBe('ar');
+  });
+});
+
+describe('RiviniaI18n preload-first failure', () => {
+  it('aborts the switch: language, direction and dictionary stay untouched', async () => {
+    const i18n = setup({
+      loader: customLoader(async () => {
+        throw new Error('down');
+      }),
+    });
+    await i18n.setLanguageAsync('en');
+    expect(i18n.currentLanguage()).toBe('ar');
+    expect(i18n.dir()).toBe('rtl');
+    expect(i18n.loadingState()).toBe('error');
+    expect(i18n.translate('hello', 'مرحبا')).toBe('مرحبا');
+  });
+});
+
+describe('RiviniaI18n locale formatting', () => {
+  it('uses locale (not id) and caches Intl instances', () => {
+    const i18n = setup({
+      languages: [
+        { id: 'ar', nativeName: 'العربية', dir: 'rtl', locale: 'ar-EG' },
+        EN,
+      ],
+    });
+    expect(i18n.locale()).toBe('ar-EG');
+    const arabic = i18n.formatNumber(1234.5);
+    expect(arabic).toBe(new Intl.NumberFormat('ar-EG').format(1234.5));
+    expect(arabic).not.toBe(new Intl.NumberFormat('ar').format(1234.5));
+    const make = vi.spyOn(Intl, 'NumberFormat');
+    try {
+      // Fresh options: exactly one construction for two identical calls.
+      i18n.formatNumber(1, { useGrouping: false });
+      i18n.formatNumber(2, { useGrouping: false });
+      expect(make).toHaveBeenCalledTimes(1);
+    } finally {
+      make.mockRestore();
     }
   });
 });

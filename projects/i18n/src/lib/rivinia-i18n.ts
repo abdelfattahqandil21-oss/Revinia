@@ -68,7 +68,7 @@ export class RiviniaI18n<L extends string = string> {
     this._config.loader?.resolve ?? (() => jsonLoader().resolve() as Promise<TranslationLoader<L>>);
   private _resolvedLoader: TranslationLoader<L> | null = null;
   private readonly _translationsCache = new Map<L, Record<string, unknown>>();
-  private readonly _inflight = new Map<L, Promise<Record<string, unknown>>>();
+  private readonly _inflight = new Map<L, Promise<{ data: Record<string, unknown>; ok: boolean }>>();
   /**
    * Out-of-order safety: a response reaches the visible signals only when it
    * belongs to the currently intended language (`_currentLanguageId()`).
@@ -202,7 +202,7 @@ export class RiviniaI18n<L extends string = string> {
     languageId: L,
     opts?: { silent?: boolean },
   ): Promise<Record<string, unknown>> {
-    return this._loadTranslations(languageId, opts);
+    return (await this._loadTranslations(languageId, opts)).data;
   }
 
   toggle(): void {
@@ -237,22 +237,51 @@ export class RiviniaI18n<L extends string = string> {
     this.applyLanguage(id);
   }
 
-  /** Preload-first switch: await the dictionary, then flip — no raw-key flash. */
+  /** Preload-first switch: await the dictionary, then flip — no raw-key flash.
+   * A failed load aborts: language, direction and dictionary stay untouched. */
   async setLanguageAsync(id: L): Promise<void> {
     if (id === this._currentLanguageId()) return;
     if (!this._languages().some((l) => l.id === id)) return;
-    await this._loadTranslations(id, { silent: true });
+    const { ok } = await this._loadTranslations(id, { silent: true });
+    if (!ok) return;
     this.applyLanguage(id);
   }
 
-  /** Number formatting bound to the current language (pure Intl wrapper). */
+  /** Number formatting bound to the current language locale (cached Intl). */
   formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
-    return new Intl.NumberFormat(this._currentLanguageId(), options).format(value);
+    return this.numberFormatter(options).format(value);
   }
 
-  /** Date/time formatting bound to the current language (pure Intl wrapper). */
+  /** Date/time formatting bound to the current language locale (cached Intl). */
   formatDate(value: Date | number, options?: Intl.DateTimeFormatOptions): string {
-    return new Intl.DateTimeFormat(this._currentLanguageId(), options).format(value);
+    return this.dateTimeFormatter(options).format(value);
+  }
+
+  /** BCP-47 locale driving Intl + ICU plural rules (falls back to the id). */
+  readonly locale = computed<string>(() => {
+    return this.currentLanguageObject().locale ?? this._currentLanguageId();
+  });
+
+  private readonly _formatters = new Map<string, Intl.NumberFormat | Intl.DateTimeFormat>();
+
+  private numberFormatter(options?: Intl.NumberFormatOptions): Intl.NumberFormat {
+    const key = `n|${this.locale()}|${JSON.stringify(options ?? null)}`;
+    let formatter = this._formatters.get(key) as Intl.NumberFormat | undefined;
+    if (!formatter) {
+      formatter = new Intl.NumberFormat(this.locale(), options);
+      this._formatters.set(key, formatter);
+    }
+    return formatter;
+  }
+
+  private dateTimeFormatter(options?: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+    const key = `d|${this.locale()}|${JSON.stringify(options ?? null)}`;
+    let formatter = this._formatters.get(key) as Intl.DateTimeFormat | undefined;
+    if (!formatter) {
+      formatter = new Intl.DateTimeFormat(this.locale(), options);
+      this._formatters.set(key, formatter);
+    }
+    return formatter;
   }
 
   private applyLanguage(id: L, opts?: { skipLoad?: boolean }): void {
@@ -286,7 +315,7 @@ export class RiviniaI18n<L extends string = string> {
     if (!params) return template;
     if (!template.includes('{')) return template;
     try {
-      return formatIcu(template, params, this._currentLanguageId());
+      return formatIcu(template, params, this.locale());
     } catch {
       return template;
     }
@@ -295,7 +324,7 @@ export class RiviniaI18n<L extends string = string> {
   private async _loadTranslations(
     languageId: L,
     opts?: { silent?: boolean },
-  ): Promise<Record<string, unknown>> {
+  ): Promise<{ data: Record<string, unknown>; ok: boolean }> {
     // A dictionary only ever reaches the visible signals when it belongs to
     // the currently intended language. Anything else (slow out-of-order
     // responses, explicit preloads of other languages) stays cached.
@@ -305,7 +334,7 @@ export class RiviniaI18n<L extends string = string> {
       if (!opts?.silent && current()) {
         this._loadedTranslations.set(cached);
       }
-      return cached;
+      return { data: cached, ok: true };
     }
 
     const inflight = this._inflight.get(languageId);
@@ -313,7 +342,7 @@ export class RiviniaI18n<L extends string = string> {
 
     this._loadingState.set('loading');
 
-    const task = (async () => {
+    const task: Promise<{ data: Record<string, unknown>; ok: boolean }> = (async () => {
       try {
         if (!this._resolvedLoader) {
           this._resolvedLoader = await this._getLoader!();
@@ -329,14 +358,14 @@ export class RiviniaI18n<L extends string = string> {
           this._loadingState.set('idle');
         }
 
-        return translations;
+        return { data: translations, ok: true };
       } catch (error) {
         if (current()) {
           this._loadingError.set(error);
           this._loadingState.set('error');
         }
         this._config.onLoadError?.(languageId, error);
-        return {};
+        return { data: {}, ok: false };
       } finally {
         this._inflight.delete(languageId);
         if (this._inflight.size === 0 && this._loadingState() === 'loading') {

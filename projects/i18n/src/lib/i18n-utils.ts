@@ -36,9 +36,9 @@ export function safeSetItem(key: string, value: string, strategy: StorageStrateg
 }
 
 /**
- * Matches the browser language priority list against supported ids.
- * Exact (case-insensitive) matches win first; otherwise base tags match
- * (`ar-EG` → `ar`). Returns `null` when nothing matches or off-browser.
+ * Matches the browser language priority list against supported ids, in order.
+ * For each browser entry (highest preference first) tries the exact tag, then
+ * its base subtag (`ar-EG` → `ar`). Returns the first hit, or `null`.
  * Pure and exported for testing — pass `navigator.languages` in app code.
  */
 export function detectBrowserLanguage<T extends string>(
@@ -52,12 +52,11 @@ export function detectBrowserLanguage<T extends string>(
     if (!tag) continue;
     const exact = supported.indexOf(tag);
     if (exact !== -1) return supportedIds[exact];
-  }
-  for (const raw of browserLanguages) {
-    const base = raw.trim().toLowerCase().split(/[-_]/)[0];
-    if (!base) continue;
-    const hit = supported.indexOf(base);
-    if (hit !== -1) return supportedIds[hit];
+    const base = tag.split(/[-_]/)[0];
+    if (base && base !== tag) {
+      const hit = supported.indexOf(base);
+      if (hit !== -1) return supportedIds[hit];
+    }
   }
   return null;
 }
