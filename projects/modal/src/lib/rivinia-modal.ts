@@ -1,4 +1,5 @@
-import { DestroyRef, computed, inject, Service, signal } from '@angular/core';
+import { DestroyRef, TemplateRef, computed, inject, Service, signal } from '@angular/core';
+import type { Type } from '@angular/core';
 import {
   DEFAULT_CLOSING_TIMEOUT,
   DEFAULT_MAX_VISIBLE,
@@ -7,13 +8,16 @@ import {
   type RiviniaModalConfig,
 } from './modal-config';
 import type {
+  ModalContent,
   ModalDiagnostic,
   ModalDismissOrigin,
+  ModalDismissPolicy,
   ModalGuard,
   ModalHandle,
   ModalInstance,
   ModalOpenOptions,
   ModalResult,
+  ModalTemplateContext,
   ModalUpdate,
 } from './modal-types';
 import { QueueStrategy, StackStrategy, type ModalStrategy } from './modal-strategy';
@@ -94,13 +98,24 @@ export class RiviniaModal {
   }
 
   openModal<TData = unknown, TResult = unknown>(
-    content: import('./modal-types').ModalContent<TData>,
+    template: TemplateRef<ModalTemplateContext<TData>>,
+    options?: ModalOpenOptions<TData>,
+  ): ModalHandle<TResult>;
+  openModal<TComponent, TData = unknown, TResult = unknown>(
+    component: Type<TComponent>,
+    options?: ModalOpenOptions<TData>,
+  ): ModalHandle<TResult>;
+  openModal<TData = unknown, TResult = unknown>(
+    content: ModalContent<TData>,
+    options?: ModalOpenOptions<TData>,
+  ): ModalHandle<TResult>;
+  openModal<TData = unknown, TResult = unknown>(
+    content: ModalContent<TData> | TemplateRef<ModalTemplateContext<TData>> | Type<unknown>,
     options: ModalOpenOptions<TData> = {},
   ): ModalHandle<TResult> {
     const id = `modal-${++this._seq}`;
     const pending = this.deferred();
-    this._results.set(id, pending);
-    const handle: ModalHandle<TResult> = {
+    this._results.set(id, pending);    const handle: ModalHandle<TResult> = {
       id,
       result: pending.promise as Promise<ModalResult<TResult>>,
       close: (value?: TResult) => this.close(id, value),
@@ -130,14 +145,11 @@ export class RiviniaModal {
       caller: options.caller ?? null,
       parentId: this.knownParent(options.parentId) ? (options.parentId as string) : null,
       data: options.data as unknown,
-      content: content as ModalRecord['content'],
+      content: this.normalizeContent(content, options),
       status,
-      dismiss: {
-        closeOnEscape: true,
-        backdrop: 'close',
-        ...this.presetDismiss(options.preset),
-        ...options.dismiss,
-      },
+      // Precedence: built-in defaults < global config < named preset < per-call.
+      // Layers merge field-by-field so an absent key never clobbers a default.
+      dismiss: this.resolveDismiss(options.dismiss, options.preset),
       metadata: { ...(options.metadata ?? {}) },
       openedSeq: this._seq,
       generation: 0,
@@ -151,8 +163,17 @@ export class RiviniaModal {
     this._instances.update((list) => [...list, record]);
 
     if (options.owner) {
-      const off = options.owner.onDestroy(() => this.teardownOwned(id));
-      this.patch(id, { ownerCleanup: off });
+      let ownerCleanup: (() => void) | null = null;
+      try {
+        ownerCleanup = options.owner.onDestroy(() => this.teardownOwned(id));
+      } catch {
+        // Owner already destroyed (NG0205): settle immediately and never add.
+        this._instances.update((list) => list.filter((i) => i.id !== id));
+        this.settle(id, { status: 'owner-destroyed' });
+        this.diagnose('rejected', id, record.ref, 'owner-destroyed');
+        return handle;
+      }
+      this.patch(id, { ownerCleanup });
     }
     this.diagnose(intent === 'activate' ? 'activated' : 'queued', id, record.ref);
     return handle;
@@ -329,6 +350,27 @@ export class RiviniaModal {
     return this._instances().find((i) => i.id === id);
   }
 
+  /** Accepts raw `TemplateRef`/`Type` or a full descriptor (README form). */
+  private normalizeContent<TData>(
+    content: ModalContent<TData> | TemplateRef<ModalTemplateContext<TData>> | Type<unknown>,
+    options: ModalOpenOptions<TData>,
+  ): ModalRecord['content'] {
+    if (content instanceof TemplateRef) {
+      return {
+        kind: 'template',
+        template: content as unknown as TemplateRef<ModalTemplateContext<unknown>>,
+      };
+    }
+    if (typeof content === 'function') {
+      return {
+        kind: 'component',
+        component: content as Type<unknown>,
+        ...(options.inputs ? { inputs: { ...options.inputs } } : {}),
+      };
+    }
+    return content as ModalRecord['content'];
+  }
+
   private queuedCount(): number {
     return this._instances().filter((i) => i.status === 'queued').length;
   }
@@ -353,6 +395,28 @@ export class RiviniaModal {
   private presetDismiss(preset?: string): Record<string, unknown> {
     if (!preset) return {};
     return { ...(this.config?.presets?.[preset]?.dismiss ?? {}) };
+  }
+
+  private resolveDismiss(
+    perCall?: Partial<ModalDismissPolicy>,
+    preset?: string,
+  ): ModalDismissPolicy {
+    const merged: { closeOnEscape?: boolean; backdrop?: 'close' | 'static' | 'disabled' } = {
+      closeOnEscape: true,
+      backdrop: 'close',
+    };
+    const layers: Array<Partial<ModalDismissPolicy> | Record<string, unknown> | undefined> = [
+      this.config?.dismiss,
+      this.presetDismiss(preset),
+      perCall,
+    ];
+    for (const layer of layers) {
+      if (!layer) continue;
+      const typed = layer as { closeOnEscape?: boolean; backdrop?: 'close' | 'static' | 'disabled' };
+      if (typed.closeOnEscape !== undefined) merged.closeOnEscape = typed.closeOnEscape;
+      if (typed.backdrop !== undefined) merged.backdrop = typed.backdrop;
+    }
+    return merged as import('./modal-types').ModalDismissPolicy;
   }
 
   private knownParent(parentId: string | undefined): parentId is string {

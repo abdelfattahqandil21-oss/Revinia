@@ -119,6 +119,8 @@ export interface ModalOpenOptions<TData = unknown> {
   readonly dismiss?: Partial<ModalDismissPolicy>;
   readonly guards?: readonly ModalGuard[];
   readonly metadata?: Record<string, unknown>;
+  /** Inputs for component content (bound by the UI via `NgComponentOutlet`). */
+  readonly inputs?: Record<string, unknown>;
 }
 
 /** Partial changes for `update()` (content shape itself is immutable). */
