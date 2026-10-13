@@ -4,6 +4,22 @@
   "title": "Rivinia env ng-add options",
   "type": "object",
   "properties": {
+    "environments": {
+      "type": ["array", "string"],
+      "description": "Which environments to scaffold and wire: array, or comma-separated string on the CLI (--environments staging,production). Model + base file always. Omit for all three.",
+      "default": ["development", "staging", "production"],
+      "items": { "type": "string", "enum": ["development", "staging", "production"] },
+      "x-prompt": {
+        "message": "Which environments should ng-add scaffold and wire?",
+        "type": "list",
+        "multiselect": true,
+        "items": [
+          { "value": "development", "label": "development — base file, no replacement" },
+          { "value": "staging", "label": "staging — staging file + configuration" },
+          { "value": "production", "label": "production — prod file + replacement" }
+        ]
+      }
+    },
     "project": {
       "type": "string",
       "description": "Angular CLI project name — only for multi-app workspaces. Defaults to the workspace default project.",

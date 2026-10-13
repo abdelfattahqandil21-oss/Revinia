@@ -15,8 +15,19 @@ build-time constants; this package ships types plus setup tooling only.
 
 ```bash
 npm install @rivinia/env
-ng add @rivinia/env
+ng add @rivinia/env   # multi-select: development / staging / production
 ```
+
+Interactive runs ask which environments to scaffold (checkbox, all checked by
+default); non-interactive runs take all. From flags, comma-separate:
+
+```bash
+ng add @rivinia/env --environments staging,production
+```
+
+Only the selection is scaffolded and wired (model + base file always — the
+base is the replacement source). Re-runs never overwrite files or duplicate
+configuration.
 
 `ng add` creates (never overwrites) `src/environments/`:
 
