@@ -7,7 +7,7 @@ Headless language manager for Angular 22+. Signals, RTL/LTR, lazy loaders,
 ICU plurals (all six Arabic forms), browser detection, Intl formatting —
 zero DOM opinions beyond `<html dir/lang>`, zero styling.
 
-- Version: **0.1.1**
+- Version: **0.2.0**
 - Requires: **Angular `^22.0.0`**, `tslib`
 
 ## Install
