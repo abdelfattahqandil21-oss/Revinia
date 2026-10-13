@@ -5,6 +5,7 @@ import {
   httpResource,
   type HttpHeaders,
   type HttpResourceRef,
+  type HttpResponse,
 } from '@angular/common/http';
 import { Service, computed, inject, isSignal, type Signal } from '@angular/core';
 import { map, type Observable } from 'rxjs';
@@ -105,6 +106,38 @@ export class RiviniaHttp {
     return this.http.get(this.url(endpoint), {
       ...this.httpOptions(options),
       responseType: 'blob',
+    });
+  }
+
+  /** Plain-text download. Never unwrapped. */
+  getText(endpoint: string, options?: RiviniaRequestOptions): Observable<string> {
+    return this.http.get(this.url(endpoint), {
+      ...this.httpOptions(options),
+      responseType: 'text',
+    });
+  }
+
+  /**
+   * Full response access (status, headers — e.g. pagination counts or a 201
+   * `Location`). Deliberately raw: no unwrapping, no envelope validation
+   * (compose `unwrapAs`/`assertEnvelope` yourself when needed).
+   */
+  getResponse<T>(endpoint: string, options?: RiviniaRequestOptions): Observable<HttpResponse<T>> {
+    return this.http.get<T>(this.url(endpoint), {
+      ...this.httpOptions(options),
+      observe: 'response',
+    });
+  }
+
+  /** Full response access for creates (status, `Location` header). Raw, like `getResponse`. */
+  postResponse<T>(
+    endpoint: string,
+    body?: unknown,
+    options?: RiviniaRequestOptions,
+  ): Observable<HttpResponse<T>> {
+    return this.http.post<T>(this.url(endpoint), body, {
+      ...this.httpOptions(options),
+      observe: 'response',
     });
   }
 

@@ -136,6 +136,44 @@ describe('RiviniaHttp (plain Observables)', () => {
     expect(received).toBe(blob);
     ctrl.verify();
   });
+
+  it('getResponse exposes status and headers raw', () => {
+    const { http, ctrl } = setup();
+    let total: string | null = null;
+    http.getResponse<unknown[]>('https://api.test/items').subscribe((res) => {
+      total = res.headers.get('X-Total-Count');
+    });
+    ctrl
+      .expectOne('https://api.test/items')
+      .flush([], { status: 200, statusText: 'OK', headers: { 'X-Total-Count': '42' } });
+    expect(total).toBe('42');
+    ctrl.verify();
+  });
+
+  it('postResponse exposes the 201 Location header raw', () => {
+    const { http, ctrl } = setup();
+    let location: string | null = null;
+    let status = 0;
+    http.postResponse('https://api.test/items', { title: 'x' }).subscribe((res) => {
+      location = res.headers.get('Location');
+      status = res.status;
+    });
+    ctrl
+      .expectOne('https://api.test/items')
+      .flush({ id: 9 }, { status: 201, statusText: 'Created', headers: { Location: '/items/9' } });
+    expect(status).toBe(201);
+    expect(location).toBe('/items/9');
+    ctrl.verify();
+  });
+
+  it('getText returns raw text without unwrapping', () => {
+    const { http, ctrl } = setup();
+    let received = '';
+    http.getText('https://cdn.test/note.txt').subscribe((v) => (received = v));
+    ctrl.expectOne('https://cdn.test/note.txt').flush('{"data":"not-an-envelope"}');
+    expect(received).toBe('{"data":"not-an-envelope"}');
+    ctrl.verify();
+  });
 });
 
 describe('provideRiviniaHttp httpFeatures', () => {
