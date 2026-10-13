@@ -103,11 +103,26 @@ export class MixedService {
 `getResource` applies the same rules through `parse` (your own `parse` runs
 after unwrapping — ideal for Zod/Valibot validation).
 
+## Envelope failure validation (opt-in)
+
+Backends that report failure inside HTTP 200 (`{ data: null, isSuccess: false }`)
+must never flow into `next()` as success — critical in payment flows:
+
+```ts
+provideRiviniaHttp({ envelope: {} });                 // whole app (isSuccess/error keys)
+this.api.get(url, { envelope: { successKey: 'ok', errorKey: 'message' } });
+```
+
+A failed envelope throws `RiviniaHttpEnvelopeError` (`body` + `code` attached;
+in `getResource` it surfaces as `resource.error()`). Validation runs on the raw
+body before unwrapping, independent of `unwrap`. Per-call policy replaces any
+global one wholesale.
+
 ## API
 
 | Export | Kind | Purpose |
 |---|---|---|
-| `provideRiviniaHttp(config?)` | provider | `{ unwrap?=false, unwrapKey?='data', httpFeatures? }` |
+| `provideRiviniaHttp(config?)` | provider | `{ unwrap?=false, unwrapKey?='data', envelope?, httpFeatures? }` |
 | `RiviniaHttp` | `@Service()` | `get/post/put/patch/delete`, `getBlob`, `getResource` |
 | `injectRiviniaHttp()` | function | shorthand for `inject(RiviniaHttp)` |
 | `joinUrl(base, endpoint)` | util | slash-safe join; absolute URLs pass through |

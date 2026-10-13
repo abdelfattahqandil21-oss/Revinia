@@ -3,6 +3,7 @@ import {
   HttpContext,
   HttpParams,
   httpResource,
+  type HttpHeaders,
   type HttpResourceRef,
 } from '@angular/common/http';
 import { Service, computed, inject, isSignal, type Signal } from '@angular/core';
@@ -15,13 +16,24 @@ import {
 } from './http-config';
 import {
   type QueryParamsInput,
+  type ReactiveInput,
   type RiviniaDeleteOptions,
   type RiviniaRequestOptions,
 } from './http-options';
 import { unwrapAs } from './http-utils';
+import { assertEnvelope, type RiviniaEnvelopePolicy } from './http-envelope';
 
 /** Options for `getResource` in addition to per-request options. */
-export interface RiviniaResourceOptions<T> extends RiviniaRequestOptions {
+export interface RiviniaResourceOptions<T>
+  extends Omit<RiviniaRequestOptions, 'params' | 'headers' | 'context'> {
+  /**
+   * Query params re-evaluated on every request: value, signal, or reactive
+   * function. Anything else in these options is read once per call site —
+   * only the URL, params, headers and context are reactive.
+   */
+  params?: ReactiveInput<QueryParamsInput>;
+  headers?: ReactiveInput<HttpHeaders | Record<string, string | string[]>>;
+  context?: ReactiveInput<HttpContext>;
   /** Value while idle/loading. Defaults to `undefined`. */
   defaultValue?: T;
   /**
@@ -42,10 +54,10 @@ export interface RiviniaResourceOptions<T> extends RiviniaRequestOptions {
  *
  * Thin over `HttpClient` (so app interceptors, `HttpContext` escape hatches
  * and `provideHttpClient()` testing all keep working). Owns no backend:
- * the app provides `HttpClient`, this library only adds base-URL joining
- * plus configurable envelope unwrapping.
+ * URLs pass through untouched; the library adds opt-in envelope handling —
+ * unwrapping (`unwrap`/`unwrapKey`) and failure validation (`envelope`).
  *
- * Unwrap resolution per call: `options.unwrap ?? config.unwrap ?? true`,
+ * Unwrap resolution per call: `options.unwrap ?? config.unwrap ?? false`,
  * key: `options.unwrapKey ?? config.unwrapKey ?? 'data'`.
  */
 @Service()
@@ -117,33 +129,30 @@ export class RiviniaHttp {
       if (ep === undefined) return undefined;
       return {
         url: this.url(ep),
-        params: this.toParams(requestOptions.params),
-        headers: requestOptions.headers,
-        context: requestOptions.context,
+        params: this.toParams(resolveInput(requestOptions.params)),
+        headers: resolveInput(requestOptions.headers),
+        context: resolveInput(requestOptions.context),
         withCredentials: requestOptions.withCredentials,
         ...(reportProgress !== undefined ? { reportProgress } : {}),
       };
     };
     const unwrapKey = this.resolveKey(requestOptions);
     const unwrapEnabled = this.resolveUnwrap(requestOptions);
+    const envelope = this.resolveEnvelope(requestOptions);
     const base = { defaultValue: defaultValue as T | undefined };
-    if (unwrapEnabled) {
-      const applyParse = (raw: unknown): T =>
-        parse ? parse(unwrapAs<T>(raw, unwrapKey)) : unwrapAs<T>(raw, unwrapKey);
-      return defaultValue === undefined
-        ? httpResource<T>(request, { ...base, parse: applyParse })
-        : httpResource<T>(request, {
-            ...base,
-            defaultValue: defaultValue as T,
-            parse: applyParse,
-          });
-    }
+    // Pipeline order: envelope validation (raw) -> unwrap -> user parse.
+    // A throwing envelope surfaces as resource.error() automatically.
+    const applyParse = (raw: unknown): T => {
+      if (envelope) assertEnvelope(raw, envelope);
+      const unwrapped = unwrapEnabled ? unwrapAs<T>(raw, unwrapKey) : (raw as T);
+      return parse ? parse(unwrapped) : unwrapped;
+    };
     return defaultValue === undefined
-      ? httpResource<T>(request, { ...base, ...(parse ? { parse } : {}) })
+      ? httpResource<T>(request, { ...base, parse: applyParse })
       : httpResource<T>(request, {
           ...base,
           defaultValue: defaultValue as T,
-          ...(parse ? { parse } : {}),
+          parse: applyParse,
         });
   }
 
@@ -153,15 +162,21 @@ export class RiviniaHttp {
     return endpoint;
   }
 
-  private resolveUnwrap(options?: RiviniaRequestOptions): boolean {
+  private resolveUnwrap(options?: { unwrap?: boolean }): boolean {
     return options?.unwrap ?? this.config?.unwrap ?? DEFAULT_UNWRAP;
   }
 
-  private resolveKey(options?: RiviniaRequestOptions): string {
+  private resolveKey(options?: { unwrapKey?: string }): string {
     return options?.unwrapKey ?? this.config?.unwrapKey ?? DEFAULT_UNWRAP_KEY;
   }
 
+  private resolveEnvelope(options?: { envelope?: RiviniaEnvelopePolicy }): RiviniaEnvelopePolicy | undefined {
+    return options?.envelope ?? this.config?.envelope;
+  }
+
   private applyUnwrap<T>(body: unknown, options?: RiviniaRequestOptions): T {
+    const envelope = this.resolveEnvelope(options);
+    if (envelope) assertEnvelope(body, envelope);
     if (!this.resolveUnwrap(options)) return body as T;
     return unwrapAs<T>(body, this.resolveKey(options));
   }
@@ -175,8 +190,7 @@ export class RiviniaHttp {
     };
   }
 
-  private toParams(input?: QueryParamsInput): HttpParams | undefined {
-    if (!input) return undefined;
+  private toParams(input?: QueryParamsInput): HttpParams | undefined {    if (!input) return undefined;
     if (input instanceof HttpParams) return input;
     let params = new HttpParams();
     for (const [key, value] of Object.entries(input)) {
@@ -186,4 +200,15 @@ export class RiviniaHttp {
     }
     return params;
   }
+}
+
+/**
+ * Evaluates a reactive input inside the request function: signals are read
+ * (tracked), plain functions are called, values pass through.
+ */
+function resolveInput<T>(value: ReactiveInput<T> | undefined): T | undefined {
+  if (value === undefined) return undefined;
+  if (isSignal(value)) return (value as Signal<T>)();
+  if (typeof value === 'function') return (value as () => T)();
+  return value as T;
 }
