@@ -109,11 +109,40 @@ describe('RiviniaToast pause and resume', () => {
     toast.dismissAll();
   });
 
-  it('resume at zero remaining dismisses instead of leaking', () => {
+  it('resume on a persistent toast is a no-op (never paused, never dismissed)', () => {
     const toast = setup();
     const id = toast.show({ message: 'sticky', duration: 0 }) as number;
+    expect(toast.pause(id)).toBe(false);
+    expect(toast.resume(id)).toBe(false);
+    expect(toast.active().length).toBe(1);
+    expect(toast.active()[0].paused).toBe(false);
+    toast.dismissAll();
+  });
+
+  it('resume at zero remaining dismisses a paused timed toast', () => {
+    const toast = setup({ duration: 1000 });
+    const id = toast.show({ message: 'x' }) as number;
+    vi.advanceTimersByTime(400);
+    expect(toast.pause(id)).toBe(true);
+    expect(toast.active()[0].paused).toBe(true);
+    expect(toast.update(id, { duration: 0 })).toBe(true);
     expect(toast.active()[0].remaining).toBe(0);
     expect(toast.resume(id)).toBe(true);
+    expect(toast.active()).toEqual([]);
+  });
+
+  it('update while paused stores remaining without arming the timer', () => {
+    const toast = setup({ duration: 1000 });
+    const id = toast.show({ message: 'x' }) as number;
+    vi.advanceTimersByTime(400);
+    expect(toast.pause(id)).toBe(true);
+    expect(toast.update(id, { message: 'y', duration: 200 })).toBe(true);
+    expect(toast.active()[0].remaining).toBe(200);
+    vi.advanceTimersByTime(5000);
+    expect(toast.active().length).toBe(1);
+    expect(toast.resume(id)).toBe(true);
+    expect(toast.active()[0].paused).toBe(false);
+    vi.advanceTimersByTime(200);
     expect(toast.active()).toEqual([]);
   });
 });

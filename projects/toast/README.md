@@ -65,6 +65,9 @@ export class Checkout {
 `show()` returns the stable id, or `null` under `'reject'` (or a full finite
 queue). `dismiss/update/pause/resume/runAction` return `false` for unknown ids
 (and repeated dismissal) instead of throwing. `duration: 0` = persistent.
+`pause()` suspends only running timers (persistent toasts can never pause, so
+hover-leave cannot dismiss them); `resume()` on anything unpaused is a no-op;
+each toast exposes its `paused` flag for progress UI.
 Timers start at queue **promotion**, never while queued. Per-toast options
 always beat globals.
 

@@ -39,6 +39,12 @@ export interface Toast {
   readonly duration: number;
   /** Milliseconds left on the active timer. Equals `duration` when fresh/queued. */
   readonly remaining: number;
+  /**
+   * Whether the timer is currently suspended (`pause()` called, `resume()`
+   * pending). UI binds this to hover/focus state and progress display.
+   * Persistent toasts are never paused.
+   */
+  readonly paused: boolean;
   readonly action: ToastAction | null;
 }
 
