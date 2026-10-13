@@ -15,9 +15,10 @@ consumer before any publish.
 | `@rivinia/toast` | [0.3.0](https://www.npmjs.com/package/@rivinia/toast) | ✅ | Headless toast queue: signals, timers, actions, dedupe (`projects/toast`) |
 | `@rivinia/modal` | [0.3.0](https://www.npmjs.com/package/@rivinia/modal) | ✅ | Headless modal manager: stack/queue, typed results, guards (`projects/modal`) |
 | `@rivinia/i18n` | [0.2.0](https://www.npmjs.com/package/@rivinia/i18n) | ✅ | Headless language manager: signals, RTL, ICU plurals, detection (`projects/i18n`) |
+| `@rivinia/env` | 0.1.0 | ✅ | Typed app environments dev/staging/prod + setup schematic (`projects/env`) |
 
 ```bash
-npm install @rivinia/http @rivinia/toast @rivinia/modal @rivinia/i18n
+npm install @rivinia/http @rivinia/toast @rivinia/modal @rivinia/i18n @rivinia/env
 ng add @rivinia/http   # prompts: unwrapping + envelope key
 ng add @rivinia/toast  # wires provideRiviniaToast()
 ng add @rivinia/modal  # optional: --strategy queue

@@ -3,6 +3,15 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
+## Unreleased
+
+### @rivinia/env
+- **New package (0.1.0):** `BaseEnvironment` contract + `ng-add` scaffolding
+  typed `environment.model/dev/staging/prod` files (version snapshotted from
+  the app's `package.json`) and wiring `production`/`staging` file replacements
+  (staging copied from production when present). Never overwrites, never
+  removes user config; `development` untouched by design.
+
 ## 2026-10-13 — http 0.4.0, toast 0.3.0, modal 0.3.0, i18n 0.2.0
 
 ### @rivinia/http
