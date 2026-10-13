@@ -1,4 +1,16 @@
-import { PendingTasks, Service, computed, effect, inject, signal } from '@angular/core';
+import {
+  DOCUMENT,
+  PendingTasks,
+  REQUEST,
+  Service,
+  TransferState,
+  computed,
+  effect,
+  inject,
+  makeStateKey,
+  signal,
+  type StateKey,
+} from '@angular/core';
 import {
   DEFAULT_AUTO_APPLY_DIRECTION,
   DEFAULT_STORAGE_KEY,
@@ -14,6 +26,7 @@ import type { Translation } from './i18n-types';
 import type { TranslationLoader } from './loaders';
 import { jsonLoader } from './loaders';
 import { browserLanguages, detectBrowserLanguage, safeGetItem, safeSetItem } from './i18n-utils';
+import { parseCookie, serializeCookie } from './cookies';
 import { formatIcu } from './icu';
 import { ViewTransitionService } from './view-transition.service';
 
@@ -32,6 +45,15 @@ export class RiviniaI18n<L extends string = string> {
     this._config.storageStrategy ?? DEFAULT_STORAGE_STRATEGY;
   private readonly _autoApplyDirection: boolean =
     this._config.autoApplyDirection ?? DEFAULT_AUTO_APPLY_DIRECTION;
+  /**
+   * Injected (not global) document: the dir/lang effect renders on the
+   * server too, avoiding an RTL first-paint shift on hydration.
+   * Declared before any field initializer that reads storage.
+   */
+  private readonly _doc = inject(DOCUMENT);
+  /** Present only on the server: used for cookie reads + transfer writes. */
+  private readonly _request = inject(REQUEST, { optional: true });
+  private readonly _transfer = inject(TransferState, { optional: true });
 
   private readonly _currentLanguageId = signal<L>(this._resolveInitialLanguage());
   private readonly _languages = signal<readonly Language<L>[]>(this._config.languages);
@@ -48,10 +70,11 @@ export class RiviniaI18n<L extends string = string> {
   private readonly _translationsCache = new Map<L, Record<string, unknown>>();
   private readonly _inflight = new Map<L, Promise<Record<string, unknown>>>();
   /**
-   * Last-request-wins guard for rapid switches: each load captures a token;
-   * stale out-of-order responses stay cached but never overwrite the signal.
+   * Out-of-order safety: a response reaches the visible signals only when it
+   * belongs to the currently intended language (`_currentLanguageId()`).
+   * Everything else stays cached. (A monotonic request token used to guard
+   * this, but it over-constrained legitimate same-language loads.)
    */
-  private _requestToken = 0;
   private _applyCount = 0;
   private _initialized = false;
   private readonly _tasks = inject(PendingTasks, { optional: true });
@@ -96,17 +119,16 @@ export class RiviniaI18n<L extends string = string> {
 
     effect(() => {
       const id = this._currentLanguageId();
-      safeSetItem(this._storageKey, id, this._storageStrategy);
+      this._writeStored(id);
     });
 
     if (this._autoApplyDirection) {
       effect(() => {
-        if (typeof document === 'undefined') {
-          return;
-        }
         const lang = this.currentLanguageObject();
-        document.documentElement.dir = lang.dir;
-        document.documentElement.lang = lang.id;
+        const root = this._doc.documentElement;
+        if (!root) return;
+        root.dir = lang.dir;
+        root.lang = lang.id;
       });
     }
   }
@@ -128,15 +150,21 @@ export class RiviniaI18n<L extends string = string> {
     const done = this._tasks?.add();
     try {
       const current = this._currentLanguageId();
-      const inline = this._config.translations?.[current];
-      if (inline) {
-        // Instant paint without touching the cache: the refresh below still
-        // runs, so a successful loader response wins; on failure the seed
-        // stays visible and the error surfaces on loadingState/onLoadError.
-        this._loadedTranslations.set(inline);
-      }
-      if ((this._config.preload ?? true)) {
-        await this._loadTranslations(current);
+      const transferred = this.readTransfer(current);
+      if (transferred) {
+        this._translationsCache.set(current, transferred);
+        this._loadedTranslations.set(transferred);
+      } else {
+        const inline = this._config.translations?.[current];
+        if (inline) {
+          // Instant paint without touching the cache: the refresh below still
+          // runs, so a successful loader response wins; on failure the seed
+          // stays visible and the error surfaces on loadingState/onLoadError.
+          this._loadedTranslations.set(inline);
+        }
+        if (this._config.preload ?? true) {
+          await this._loadTranslations(current);
+        }
       }
     } finally {
       this._ready.set(true);
@@ -268,9 +296,13 @@ export class RiviniaI18n<L extends string = string> {
     languageId: L,
     opts?: { silent?: boolean },
   ): Promise<Record<string, unknown>> {
+    // A dictionary only ever reaches the visible signals when it belongs to
+    // the currently intended language. Anything else (slow out-of-order
+    // responses, explicit preloads of other languages) stays cached.
+    const current = (): boolean => languageId === this._currentLanguageId();
     const cached = this._translationsCache.get(languageId);
     if (cached) {
-      if (!opts?.silent) {
+      if (!opts?.silent && current()) {
         this._loadedTranslations.set(cached);
       }
       return cached;
@@ -279,7 +311,6 @@ export class RiviniaI18n<L extends string = string> {
     const inflight = this._inflight.get(languageId);
     if (inflight) return inflight;
 
-    const myToken = ++this._requestToken;
     this._loadingState.set('loading');
 
     const task = (async () => {
@@ -290,8 +321,9 @@ export class RiviniaI18n<L extends string = string> {
         const translations = await this._resolvedLoader.load(languageId);
 
         this._translationsCache.set(languageId, translations);
+        this.writeTransfer(languageId, translations);
 
-        if (myToken === this._requestToken && !opts?.silent) {
+        if (!opts?.silent && current()) {
           this._loadedTranslations.set(translations);
           this._loadingError.set(null);
           this._loadingState.set('idle');
@@ -299,7 +331,7 @@ export class RiviniaI18n<L extends string = string> {
 
         return translations;
       } catch (error) {
-        if (myToken === this._requestToken) {
+        if (current()) {
           this._loadingError.set(error);
           this._loadingState.set('error');
         }
@@ -317,6 +349,59 @@ export class RiviniaI18n<L extends string = string> {
     return task;
   }
 
+  /**
+   * Reads the persisted language. Cookie strategy: server reads the request
+   * `Cookie` header (no hydration mismatch), browser reads `document.cookie`.
+   * Everything else delegates to the SSR-safe storage helpers.
+   */
+  private _readStored(): string | null {
+    if (this._storageStrategy === 'cookie') {
+      const header = this._request?.headers.get('cookie') ?? null;
+      if (header !== null) return parseCookie(header, this._storageKey);
+      try {
+        return parseCookie(this._doc.cookie, this._storageKey);
+      } catch {
+        return null;
+      }
+    }
+    return safeGetItem(this._storageKey, this._storageStrategy);
+  }
+
+  /** Persists the language. Server never writes (response cookies are app-owned). */
+  private _writeStored(id: L): void {
+    if (this._storageStrategy === 'cookie') {
+      if (this._request) return;
+      try {
+        this._doc.cookie = serializeCookie(this._storageKey, id);
+      } catch {
+        // Best-effort persistence.
+      }
+      return;
+    }
+    safeSetItem(this._storageKey, id, this._storageStrategy);
+  }
+
+  private transferKey(languageId: L): StateKey<Record<string, unknown>> {
+    return makeStateKey<Record<string, unknown>>(`rivinia.i18n.dict.${languageId}`);
+  }
+
+  /** Consumes server-rendered dictionaries so the client never refetches. */
+  private readTransfer(languageId: L): Record<string, unknown> | null {
+    const transfer = this._transfer;
+    if (!transfer) return null;
+    const key = this.transferKey(languageId);
+    if (!transfer.hasKey(key)) return null;
+    const dict = transfer.get(key, null);
+    transfer.remove(key);
+    return dict;
+  }
+
+  /** Stores freshly loaded dictionaries for hydration (server only). */
+  private writeTransfer(languageId: L, dict: Record<string, unknown>): void {
+    if (!this._request) return;
+    this._transfer?.set(this.transferKey(languageId), dict);
+  }
+
   private _resolveKey(obj: Record<string, unknown>, path: string): string | undefined {
     const value = path.split('.').reduce<unknown>(
       (acc, segment) =>
@@ -331,7 +416,7 @@ export class RiviniaI18n<L extends string = string> {
   }
 
   private _resolveInitialLanguage(): L {
-    const stored = safeGetItem(this._storageKey, this._storageStrategy);
+    const stored = this._readStored();
     if (stored && this._config.languages.some((l) => l.id === stored)) {
       return stored as L;
     }

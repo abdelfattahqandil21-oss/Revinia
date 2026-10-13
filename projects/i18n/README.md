@@ -54,6 +54,16 @@ Gate skeletons on the `ready` signal (true once initial content is available),
 not on `isLoading`. Load failures never reject setup — they land on
 `loadingError`/`onLoadError` with safe fallbacks preserved.
 
+## Persistence and SSR
+
+- `storageStrategy: 'cookie'` syncs SSR and browser through one cookie:
+  the server reads the request cookie (correct first paint, no hydration
+  mismatch), the browser writes it. `local`/`session` fall back to the
+  default language on the server.
+- Dictionaries loaded on the server travel to the browser via `TransferState`
+  (no double fetch). The `<html dir/lang>` effect uses injected `DOCUMENT`,
+  so it renders on the server too.
+
 ```ts
 // app.config.ts
 import { provideRiviniaI18n } from '@rivinia/i18n';

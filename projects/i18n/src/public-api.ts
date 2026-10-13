@@ -13,6 +13,7 @@ export type { TranslationLoader, LoaderDescriptor } from './lib/loaders';
 export type { HttpLoaderOptions, RemoteLoaderOptions } from './lib/loaders';
 export { customLoader, httpLoader, jsonLoader, remoteLoader } from './lib/loaders';
 export { browserLanguages, detectBrowserLanguage } from './lib/i18n-utils';
+export { parseCookie, serializeCookie } from './lib/cookies';
 export { formatIcu } from './lib/icu';
 export { injectRiviniaI18n, provideRiviniaI18n } from './lib/provide-i18n';
 export { RiviniaI18n } from './lib/rivinia-i18n';
