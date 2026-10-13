@@ -1,3 +1,4 @@
+import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RiviniaI18nConfig } from './i18n-config';
@@ -16,6 +17,9 @@ function setup(config?: Partial<RiviniaI18nConfig<'ar' | 'en'>>): RiviniaI18n<'a
         defaultLanguage: 'ar',
         languages: [AR, EN],
         storageStrategy: 'none',
+        // Hermetic default: tests that don't exercise loading neutralize the
+        // default jsonLoader, or its fire-and-forget fetches leak across tests.
+        loader: customLoader(async () => ({})),
         ...config,
       }),
     ],
@@ -153,9 +157,22 @@ describe('RiviniaI18n default loader', () => {
       }),
     );
     try {
-      const i18n = setup();
+      // Raw TestBed on purpose: the shared helper neutralizes the loader,
+      // but this test exercises the REAL default (no loader key at all).
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          provideRiviniaI18n({
+            defaultLanguage: 'ar',
+            languages: [AR, EN],
+            storageStrategy: 'none',
+          }),
+        ],
+      });
+      const i18n = TestBed.inject(RiviniaI18n<'ar' | 'en'>);
+      await TestBed.inject(ApplicationRef).whenStable();
       await i18n.loadTranslations('en');
-      expect(seen).toEqual(['assets/i18n/en.json']);
+      expect(seen).toEqual(['assets/i18n/ar.json', 'assets/i18n/en.json']);
     } finally {
       vi.unstubAllGlobals();
     }
@@ -169,6 +186,57 @@ describe('RiviniaI18n default loader', () => {
       await i18n.loadTranslations('en');
       expect(fetchMock).not.toHaveBeenCalled();
       expect(i18n.translate({ ar: 'حفظ', en: 'Save' })).toBe('حفظ');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe('RiviniaI18n provider setup loading', () => {
+  it('loads the initial language before first paint (initializer)', async () => {
+    const seen: string[] = [];
+    setup({
+      loader: customLoader(async (lang) => {
+        seen.push(lang);
+        return { hello: lang === 'ar' ? 'مرحبا' : 'Hello' };
+      }),
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(seen).toEqual(['ar']);
+    const i18n = TestBed.inject(RiviniaI18n<'ar' | 'en'>);
+    expect(i18n.translate('hello')).toBe('مرحبا');
+    expect(i18n.ready()).toBe(true);
+  });
+
+  it('preload:false skips setup loading but marks ready', async () => {
+    const seen: string[] = [];
+    setup({
+      preload: false,
+      loader: customLoader(async (lang) => {
+        seen.push(lang);
+        return {};
+      }),
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(seen).toEqual([]);
+    expect(TestBed.inject(RiviniaI18n<'ar' | 'en'>).ready()).toBe(true);
+  });
+
+  it('inline dictionaries seed without network and survive load failure', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const i18n = setup({
+        translations: { ar: { hello: 'مرحبا' } },
+        loader: customLoader(async () => {
+          throw new Error('down');
+        }),
+      });
+      await TestBed.inject(ApplicationRef).whenStable();
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(i18n.translate('hello')).toBe('مرحبا');
+      expect(i18n.ready()).toBe(true);
+      expect(i18n.loadingState()).toBe('error');
     } finally {
       vi.unstubAllGlobals();
     }

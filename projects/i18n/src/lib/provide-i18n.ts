@@ -1,9 +1,16 @@
-import { EnvironmentProviders, inject, makeEnvironmentProviders } from '@angular/core';
+import {
+  EnvironmentProviders,
+  inject,
+  makeEnvironmentProviders,
+  provideAppInitializer,
+} from '@angular/core';
 import { RIVINIA_I18N_CONFIG, type RiviniaI18nConfig } from './i18n-config';
 import { RiviniaI18n } from './rivinia-i18n';
 
 /**
  * Configures `@rivinia/i18n` for the application. Call once at bootstrap.
+ * Also registers an app initializer that loads the initial language before
+ * first paint (opt out with `preload: false`).
  *
  * @example
  * ```ts
@@ -19,7 +26,13 @@ import { RiviniaI18n } from './rivinia-i18n';
 export function provideRiviniaI18n<L extends string>(
   config: RiviniaI18nConfig<L>,
 ): EnvironmentProviders {
-  return makeEnvironmentProviders([{ provide: RIVINIA_I18N_CONFIG, useValue: config }]);
+  return makeEnvironmentProviders([
+    { provide: RIVINIA_I18N_CONFIG, useValue: config },
+    provideAppInitializer(() => {
+      const i18n = inject(RiviniaI18n) as RiviniaI18n<string>;
+      return i18n.initialize();
+    }),
+  ]);
 }
 
 /** Shorthand for `inject(RiviniaI18n)`. */

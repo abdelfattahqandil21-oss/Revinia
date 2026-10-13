@@ -1,4 +1,4 @@
-import { Service, computed, effect, inject, signal } from '@angular/core';
+import { PendingTasks, Service, computed, effect, inject, signal } from '@angular/core';
 import {
   DEFAULT_AUTO_APPLY_DIRECTION,
   DEFAULT_STORAGE_KEY,
@@ -53,6 +53,8 @@ export class RiviniaI18n<L extends string = string> {
    */
   private _requestToken = 0;
   private _applyCount = 0;
+  private _initialized = false;
+  private readonly _tasks = inject(PendingTasks, { optional: true });
 
   readonly languageChanged = computed<L>(() => this._currentLanguageId());
   readonly languages = this._languages.asReadonly();
@@ -73,6 +75,14 @@ export class RiviniaI18n<L extends string = string> {
   readonly loadingState = this._loadingState.asReadonly();
   readonly loadingError = this._loadingError.asReadonly();
   readonly isLoading = computed(() => this._loadingState() === 'loading');
+
+  private readonly _ready = signal(false);
+  /**
+   * True once the initial language content is available (inline seed and/or
+   * initial load settled) — or immediately when `preload: false` skips setup
+   * loading. Gate first-paint skeletons on this, not on `isLoading`.
+   */
+  readonly ready = this._ready.asReadonly();
 
   constructor() {
     if (this._config.languages.length === 0) {
@@ -103,6 +113,35 @@ export class RiviniaI18n<L extends string = string> {
 
   getLanguage(id: L): Language<L> | undefined {
     return this._languages().find((l) => l.id === id);
+  }
+
+  /**
+   * Runs the provider-setup loading: seeds inline dictionaries, then loads
+   * the initial language (unless `preload: false`). Called automatically by
+   * the `provideRiviniaI18n` app initializer; call manually only when driving
+   * setup yourself. Idempotent. Never rejects (load failures land on
+   * `loadingError`/`onLoadError`, inline seeds are preserved).
+   */
+  async initialize(): Promise<void> {
+    if (this._initialized) return;
+    this._initialized = true;
+    const done = this._tasks?.add();
+    try {
+      const current = this._currentLanguageId();
+      const inline = this._config.translations?.[current];
+      if (inline) {
+        // Instant paint without touching the cache: the refresh below still
+        // runs, so a successful loader response wins; on failure the seed
+        // stays visible and the error surfaces on loadingState/onLoadError.
+        this._loadedTranslations.set(inline);
+      }
+      if ((this._config.preload ?? true)) {
+        await this._loadTranslations(current);
+      }
+    } finally {
+      this._ready.set(true);
+      done?.();
+    }
   }
 
   translate(key: string, defaultValue?: string, params?: TranslateParams): string;

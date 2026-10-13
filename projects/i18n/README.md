@@ -37,6 +37,23 @@ provideRiviniaI18n({ loader: httpLoader({ endpoint: 'https://api.example.com/i18
 
 Loaders code-split: fetch implementations load on first use only.
 
+## Startup loading (no raw keys on first paint)
+
+`provideRiviniaI18n()` registers an app initializer that loads the initial
+language before first paint (SSR waits via `PendingTasks`):
+
+```ts
+provideRiviniaI18n({
+  // ...
+  preload: false,                       // opt out: load manually instead
+  translations: { ar: { hello: 'مرحبا' } }, // inline seed: instant, zero network,
+});                                     // a successful loader response still wins
+```
+
+Gate skeletons on the `ready` signal (true once initial content is available),
+not on `isLoading`. Load failures never reject setup — they land on
+`loadingError`/`onLoadError` with safe fallbacks preserved.
+
 ```ts
 // app.config.ts
 import { provideRiviniaI18n } from '@rivinia/i18n';
