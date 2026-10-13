@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/env",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Typed application environments for Angular (dev/staging/prod) with an ng-add schematic.",
   "keywords": ["angular", "environment", "configuration", "typescript"],
   "license": "MIT",
