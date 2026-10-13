@@ -45,6 +45,8 @@ export class RiviniaToast {
 
   private readonly _timers = new Map<number, TimerRecord>();
   private readonly _paused = new Set<number>();
+  /** Ids whose duration was set explicitly (per-toast override wins forever). */
+  private readonly _explicitDuration = new Set<number>();
   private readonly _generations = new Map<number, number>();
   private readonly _dedupeByKey = new Map<string, number>();
   private readonly _dedupeKeyById = new Map<number, string>();
@@ -75,6 +77,7 @@ export class RiviniaToast {
     const id = ++this._nextId;
     const kind = options.kind ?? 'info';
     const duration = this.resolveDuration(kind, options.duration);
+    if (options.duration !== undefined) this._explicitDuration.add(id);
     const toast: Toast = {
       id,
       kind,
@@ -109,9 +112,13 @@ export class RiviniaToast {
         return null;
       case 'dismiss-oldest':
       default: {
-        const oldest = this._active()[0];
-        if (oldest) this.dismiss(oldest.id);
-        this._active.update((list) => [...list, toast]);
+        // Prefer evicting the oldest dismissible toast: timed and actionless
+        // first (a persistent error with a Retry action is never collateral).
+        // Only when everything is persistent/with-action does the oldest go.
+        const list = this._active();
+        const victim = list.find((t) => t.duration > 0 && !t.action) ?? list[0];
+        if (victim) this.dismiss(victim.id);
+        this._active.update((next) => [...next, toast]);
         this.arm(id, duration);
         return id;
       }
@@ -125,15 +132,28 @@ export class RiviniaToast {
    */
   update(id: number, changes: ToastChanges): boolean {
     const inActive = this._active().some((t) => t.id === id);
-    const apply = (t: Toast): Toast => ({
-      ...t,
-      message: changes.message ?? t.message,
-      kind: changes.kind ?? t.kind,
-      duration: changes.duration !== undefined ? clampDuration(changes.duration, t.duration) : t.duration,
-      remaining:
-        changes.duration !== undefined ? clampDuration(changes.duration, t.duration) : t.duration,
-      action: changes.action !== undefined ? changes.action : t.action,
-    });
+    // Duration resolution on update: an explicit new duration always wins and
+    // becomes sticky; otherwise a kind change re-resolves the per-kind default
+    // (unless the toast already carries an explicit duration).
+    let nextDuration = 0;
+    const apply = (t: Toast): Toast => {
+      if (changes.duration !== undefined) {
+        nextDuration = clampDuration(changes.duration, t.duration);
+        this._explicitDuration.add(id);
+      } else if (changes.kind !== undefined && !this._explicitDuration.has(id)) {
+        nextDuration = this.fallbackDuration(changes.kind);
+      } else {
+        nextDuration = t.duration;
+      }
+      return {
+        ...t,
+        message: changes.message ?? t.message,
+        kind: changes.kind ?? t.kind,
+        duration: nextDuration,
+        remaining: nextDuration,
+        action: changes.action !== undefined ? changes.action : t.action,
+      };
+    };
     if (inActive) {
       this.disarm(id);
       let next: Toast | undefined;
@@ -166,6 +186,7 @@ export class RiviniaToast {
   dismiss(id: number): boolean {
     this.disarm(id);
     this._paused.delete(id);
+    this._explicitDuration.delete(id);
     let removed = false;
     this._active.update((list) => {
       const next = list.filter((t) => t.id !== id);
@@ -190,6 +211,7 @@ export class RiviniaToast {
   dismissAll(): void {
     this.clearTimers();
     this._paused.clear();
+    this._explicitDuration.clear();
     this._active.set([]);
     this._queue.set([]);
     this._dedupeByKey.clear();
