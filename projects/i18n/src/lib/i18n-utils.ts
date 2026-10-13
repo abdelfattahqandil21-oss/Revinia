@@ -1,7 +1,10 @@
 import type { StorageStrategy } from './i18n-types';
 
 function getStorage(strategy: StorageStrategy): Storage | null {
-  if (strategy === 'none') return null;
+  // NOTE: 'cookie' resolves to null on purpose — cookies need request/document
+  // context, so the service handles that strategy itself (server REQUEST
+  // header, browser document.cookie). See RiviniaI18n storage methods.
+  if (strategy === 'none' || strategy === 'cookie') return null;
   if (typeof window === 'undefined') return null;
   try {
     return strategy === 'session' ? window.sessionStorage : window.localStorage;

@@ -1,5 +1,6 @@
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { TransferState, makeStateKey, provideAppInitializer } from '@angular/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RiviniaI18nConfig } from './i18n-config';
 import { customLoader } from './loaders';
@@ -243,6 +244,70 @@ describe('RiviniaI18n provider setup loading', () => {
   });
 });
 
+describe('RiviniaI18n document direction (injected DOCUMENT)', () => {
+  it('applies dir/lang to <html> on switch', () => {
+    const i18n = setup({ loader: customLoader(async () => ({})) });
+    i18n.setLanguage('en');
+    TestBed.flushEffects();
+    expect(document.documentElement.dir).toBe('ltr');
+    expect(document.documentElement.lang).toBe('en');
+  });
+});
+
+describe('RiviniaI18n cookie strategy (browser side)', () => {
+  const KEY = 'rivinia.i18n.language';
+
+  function clearCookie(): void {
+    document.cookie = `${KEY}=; Path=/; Max-Age=0`;
+  }
+
+  it('writes the cookie on switch and reads it on next bootstrap', () => {
+    clearCookie();
+    try {
+      const first = setup({ storageStrategy: 'cookie' });
+      first.setLanguage('en');
+      TestBed.flushEffects();
+      expect(document.cookie).toContain(`${KEY}=en`);
+      const second = setup({ storageStrategy: 'cookie' });
+      expect(second.currentLanguage()).toBe('en');
+    } finally {
+      clearCookie();
+    }
+  });
+});
+
+describe('RiviniaI18n transfer state', () => {
+  it('consumes server-rendered dictionaries without network', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          provideAppInitializer(() => {
+            inject(TransferState).set(
+              makeStateKey<Record<string, unknown>>('rivinia.i18n.dict.ar'),
+              { hello: 'مرحبا' },
+            );
+          }),
+          provideRiviniaI18n({
+            defaultLanguage: 'ar',
+            languages: [AR, EN],
+            storageStrategy: 'none',
+          }),
+        ],
+      });
+      const i18n = TestBed.inject(RiviniaI18n<'ar' | 'en'>);
+      await TestBed.inject(ApplicationRef).whenStable();
+      expect(i18n.translate('hello')).toBe('مرحبا');
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(i18n.ready()).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
 describe('RiviniaI18n formatting and state', () => {
   it('formats numbers/dates in the current language', () => {
     const i18n = setup({ loader: customLoader(async () => ({})) });
@@ -263,7 +328,7 @@ describe('RiviniaI18n formatting and state', () => {
     expect(i18n.getLanguage('xx' as 'ar')).toBeUndefined();
   });
 
-  it('last-request-wins on rapid switches', async () => {
+  it('commits only the currently intended language, regardless of arrival order', async () => {
     const resolvers: Array<(v: Record<string, unknown>) => void> = [];
     const i18n = setup({
       loader: customLoader(
@@ -279,6 +344,32 @@ describe('RiviniaI18n formatting and state', () => {
     resolvers[1]({ v: 'en-dict' });
     resolvers[0]({ v: 'ar-dict' });
     await Promise.all([p1, p2]);
-    expect(i18n.loadedTranslations()).toEqual({ v: 'en-dict' });
+    // Visible language is still 'ar': the out-of-order English response stays cached.
+    expect(i18n.loadedTranslations()).toEqual({ v: 'ar-dict' });
+    expect(i18n.currentLanguage()).toBe('ar');
+  });
+
+  it('stale responses never overwrite after switching back to a cached language', async () => {
+    const gates = new Map<string, (v: Record<string, unknown>) => void>();
+    const i18n = setup({
+      loader: customLoader(
+        (lang) =>
+          new Promise<Record<string, unknown>>((res) => {
+            gates.set(lang, res);
+          }),
+      ),
+    });
+    const initial = i18n.loadTranslations('ar');
+    await new Promise((r) => setTimeout(r, 0));
+    gates.get('ar')!({ hello: 'مرحبا' });
+    await initial;
+    i18n.setLanguage('en');
+    i18n.setLanguage('ar');
+    expect(i18n.currentLanguage()).toBe('ar');
+    expect(i18n.translate('hello')).toBe('مرحبا');
+    gates.get('en')!({ hello: 'Hello' });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(i18n.currentLanguage()).toBe('ar');
+    expect(i18n.loadedTranslations()).toEqual({ hello: 'مرحبا' });
   });
 });

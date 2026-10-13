@@ -15,7 +15,7 @@ export interface Language<T extends string = string> {
 export type Translation<T extends string> = Record<T, string>;
 
 /** Persistence backend. SSR-safe: everything degrades to no-op off-browser. */
-export type StorageStrategy = 'local' | 'session' | 'none';
+export type StorageStrategy = 'local' | 'session' | 'none' | 'cookie';
 
 /** Interpolation + ICU params (`{count}`, `{gender}`). */
 export type TranslateParams = Record<string, string | number | boolean>;

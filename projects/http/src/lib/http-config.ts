@@ -1,5 +1,6 @@
 import type { HttpFeature, HttpFeatureKind } from '@angular/common/http';
 import { InjectionToken } from '@angular/core';
+import type { RiviniaEnvelopePolicy } from './http-envelope';
 
 /**
  * Global configuration for `@rivinia/http`.
@@ -32,6 +33,12 @@ export interface RiviniaHttpConfig {
    * `HttpClient` (fetch backend) is injectable by default.
    */
   httpFeatures?: HttpFeature<HttpFeatureKind>[];
+  /**
+   * Opt-in backend-envelope validation applied to every call unless the call
+   * provides its own `envelope` (which replaces this wholesale). See
+   * `RiviniaEnvelopePolicy`. Off by default — plain bodies flow untouched.
+   */
+  envelope?: RiviniaEnvelopePolicy;
 }
 
 /**

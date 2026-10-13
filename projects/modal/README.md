@@ -62,6 +62,11 @@ delay callers. `close/dismiss/cancel` are guard-free primitives (booleans);
 (owner destroy, overflow eviction, `dismissAll`) bypass guards. Render failures
 reject the promise instead of becoming variants.
 
+`openModal` accepts a raw `TemplateRef`, a component `Type`, or a full
+`ModalContent` descriptor (component inputs via `options.inputs`). Dismissal
+policy merges field-by-field: built-in defaults < global `dismiss` < named
+preset < per-call options — absent keys never clobber.
+
 ## Ownership (who cleans up)
 
 ```ts
@@ -73,8 +78,9 @@ this.modals.openModal(tpl);
 ```
 
 Owner teardown frees capacity like any other removal: queued requests promote
-normally (a queued toast sharing the dead owner is still torn down by its own
-callback, settling `owner-destroyed`).
+normally (a queued request sharing the dead owner is still torn down by its own
+callback, settling `owner-destroyed`). Opening with an already-destroyed owner
+settles `owner-destroyed` immediately without adding anything.
 
 Closing a parent cascades to descendants (`dismissed: parent-closed`) unless
 `descendants: 'prevent-parent-close'` blocks it. Swapping strategies with live

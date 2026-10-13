@@ -1,4 +1,4 @@
-import { DestroyRef, EnvironmentInjector, TemplateRef, createEnvironmentInjector } from '@angular/core';
+import { DestroyRef, ElementRef, EmbeddedViewRef, EnvironmentInjector, TemplateRef, createEnvironmentInjector, type Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RiviniaModalConfig } from './modal-config';
@@ -13,11 +13,27 @@ import { RiviniaModal } from './rivinia-modal';
 
 class FakeDialog {}
 
-function componentContent<T = unknown>(): ModalContent<T> {
-  return { kind: 'component', component: FakeDialog } as ModalContent<T>;
+class FakeTemplateRef extends TemplateRef<import('./modal-types').ModalTemplateContext<{ title: string }>> {
+  declare readonly elementRef: ElementRef;
+  override createEmbeddedView(): EmbeddedViewRef<
+    import('./modal-types').ModalTemplateContext<{ title: string }>
+  > {
+    throw new Error('test-only: never rendered in core tests');
+  }
 }
 
-function templateContent<T = unknown>(): ModalContent<T> {
+function componentContent(): {
+  readonly kind: 'component';
+  readonly component: Type<unknown>;
+  readonly inputs?: Record<string, unknown>;
+} {
+  return { kind: 'component', component: FakeDialog };
+}
+
+function templateContent<T = unknown>(): {
+  readonly kind: 'template';
+  readonly template: TemplateRef<ModalTemplateContext<T>>;
+} {
   return { kind: 'template', template: {} as TemplateRef<ModalTemplateContext<T>> };
 }
 
@@ -80,6 +96,33 @@ describe('RiviniaModal stack strategy', () => {
     expect(modal.cancel('nope')).toBe(false);
     expect(modal.close('nope')).toBe(false);
     expect(modal.confirmClosed('nope')).toBe(false);
+  });
+});
+
+describe('RiviniaModal content forms', () => {
+  it('accepts a raw TemplateRef like the README quick start', () => {
+    const modal = setup();
+    const handle = modal.openModal<{ title: string }, boolean>(new FakeTemplateRef(), {
+      data: { title: 'x' },
+      ref: 'confirm-delete',
+    });
+    const stored = modal.active()[0];
+    expect(stored.content.kind).toBe('template');
+    expect(stored.ref).toBe('confirm-delete');
+    expect(handle.dismiss()).toBe(true);
+    drain(modal);
+  });
+
+  it('accepts a raw component Type with inputs', () => {
+    const modal = setup();
+    modal.openModal(FakeDialog, { inputs: { title: 'hi' } });
+    const stored = modal.active()[0];
+    expect(stored.content.kind).toBe('component');
+    if (stored.content.kind === 'component') {
+      expect(stored.content.component).toBe(FakeDialog);
+      expect(stored.content.inputs).toEqual({ title: 'hi' });
+    }
+    drain(modal);
   });
 });
 
@@ -216,6 +259,34 @@ describe('RiviniaModal dismissal policies and guards', () => {
     expect(modal.findByRef('confirm').length).toBe(1);
     drain(modal);
   });
+
+  it('merges dismissal policy: defaults < global < preset < per-call', () => {
+    const modal = setup({
+      dismiss: { closeOnEscape: false },
+      presets: { danger: { dismiss: { backdrop: 'static' } } },
+    });
+    modal.openModal(componentContent());
+    expect(modal.active()[0].dismiss).toMatchObject({ closeOnEscape: false, backdrop: 'close' });
+    modal.openModal(componentContent(), { preset: 'danger' });
+    expect(modal.active()[1].dismiss).toMatchObject({ closeOnEscape: false, backdrop: 'static' });
+    modal.openModal(componentContent(), {
+      preset: 'danger',
+      dismiss: { closeOnEscape: true },
+    });
+    expect(modal.active()[2].dismiss).toMatchObject({ closeOnEscape: true, backdrop: 'static' });
+    drain(modal);
+  });
+
+  it('absent policy keys never clobber defaults', () => {
+    // Global backdrop-only keeps closeOnEscape true (no undefined spread).
+    const modal = setup({ dismiss: { backdrop: 'static' } });
+    modal.openModal(componentContent());
+    expect(modal.active()[0].dismiss).toMatchObject({
+      closeOnEscape: true,
+      backdrop: 'static',
+    });
+    drain(modal);
+  });
 });
 
 describe('RiviniaModal ownership and nesting', () => {
@@ -236,6 +307,16 @@ describe('RiviniaModal ownership and nesting', () => {
     expect(await active.result).toEqual({ status: 'owner-destroyed' });
     // Same dead owner: promoted then torn down as owner-destroyed (truthful).
     expect(await queued.result).toEqual({ status: 'owner-destroyed' });
+    expect(modal.debugState()).toMatchObject({ active: [], queued: [], closing: [] });
+  });
+
+  it('opening with an already-destroyed owner settles immediately, adds nothing', async () => {
+    const modal = setup();
+    const owner = childInjector();
+    const staleOwner = owner.get(DestroyRef);
+    owner.destroy();
+    const handle = modal.openModal<string>(componentContent(), { owner: staleOwner });
+    expect(await handle.result).toEqual({ status: 'owner-destroyed' });
     expect(modal.debugState()).toMatchObject({ active: [], queued: [], closing: [] });
   });
 
@@ -326,7 +407,7 @@ describe('RiviniaModal closing handshake and registry', () => {
 
   it('update merges data and metadata; unknown ids are false', () => {
     const modal = setup();
-    const handle = modal.openModal<{ n: number }>(templateContent(), {
+    const handle = modal.openModal<{ n: number }>(templateContent<{ n: number }>(), {
       data: { n: 1 },
       metadata: { a: 1 },
     });

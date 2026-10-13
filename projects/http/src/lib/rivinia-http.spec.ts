@@ -4,9 +4,10 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { signal, computed } from '@angular/core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { RiviniaHttpConfig } from './http-config';
+import { RiviniaHttpEnvelopeError } from './http-envelope';
 import { provideRiviniaHttp } from './provide-http';
 import { RiviniaHttp } from './rivinia-http';
 
@@ -162,6 +163,60 @@ describe('provideRiviniaHttp httpFeatures', () => {
     ctrl.verify();
   });
 });
+describe('RiviniaHttp envelope failures', () => {
+  const failed = { data: null, isSuccess: false, error: 'CARD_DECLINED' };
+
+  it('throws RiviniaHttpEnvelopeError instead of delivering failure as success', () => {
+    const { http, ctrl } = setup();
+    let error: unknown;
+    http
+      .get<unknown>('https://api.test/pay', { unwrap: true, envelope: {} })
+      .subscribe({ next: () => {}, error: (e) => (error = e) });
+    ctrl.expectOne('https://api.test/pay').flush(failed);
+    expect(error).toBeInstanceOf(RiviniaHttpEnvelopeError);
+    expect((error as RiviniaHttpEnvelopeError).code).toBe('CARD_DECLINED');
+    expect((error as RiviniaHttpEnvelopeError).body).toEqual(failed);
+    ctrl.verify();
+  });
+
+  it('passes successful envelopes through to unwrap', () => {
+    const { http, ctrl } = setup();
+    let received: unknown;
+    http
+      .get<unknown>('https://api.test/pay', { unwrap: true, envelope: {} })
+      .subscribe((v) => (received = v));
+    ctrl.expectOne('https://api.test/pay').flush({ data: { id: 1 }, isSuccess: true });
+    expect(received).toEqual({ id: 1 });
+    ctrl.verify();
+  });
+
+  it('supports custom keys and a global policy', () => {
+    const { http, ctrl } = setup({
+      envelope: { successKey: 'ok', errorKey: 'message' },
+    });
+    let error: unknown;
+    http.get<unknown>('https://api.test/x').subscribe({ next: () => {}, error: (e) => (error = e) });
+    ctrl.expectOne('https://api.test/x').flush({ ok: false, message: 'NOPE' });
+    expect((error as RiviniaHttpEnvelopeError).code).toBe('NOPE');
+    ctrl.verify();
+  });
+
+  it('surfaces envelope failure as resource.error() in getResource', async () => {
+    const { http, ctrl } = setup();
+    const res = TestBed.runInInjectionContext(() =>
+      http.getResource('https://api.test/pay', { unwrap: true, envelope: {} }),
+    );
+    TestBed.flushEffects();
+    ctrl.expectOne('https://api.test/pay').flush(failed);
+    await Promise.resolve();
+    await new Promise((r) => setTimeout(r, 0));
+    TestBed.flushEffects();
+    expect(res.error()).toBeInstanceOf(RiviniaHttpEnvelopeError);
+    expect(res.hasValue()).toBe(false);
+    ctrl.verify();
+  });
+});
+
 describe('RiviniaHttp.getResource', () => {
   it('exposes unwrapped JSON as a resource value', async () => {
     const { http, ctrl } = setup();
@@ -207,6 +262,29 @@ describe('RiviniaHttp.getResource', () => {
     TestBed.flushEffects();
     ctrl.expectOne('https://api.test/items/b').flush({});
     expect(res).toBeDefined();
+    ctrl.verify();
+  });
+
+  it('re-evaluates signal params and function headers per request', () => {
+    const { http, ctrl } = setup();
+    const page = signal(1);
+    TestBed.runInInjectionContext(() =>
+      http.getResource('https://api.test/items', {
+        unwrap: false,
+        params: computed(() => ({ page: page() })),
+        headers: () => ({ 'X-N': 'v' }),
+      }),
+    );
+    TestBed.flushEffects();
+    const first = ctrl.expectOne((r) => r.url === 'https://api.test/items');
+    expect(first.request.params.get('page')).toBe('1');
+    expect(first.request.headers.get('X-N')).toBe('v');
+    first.flush([]);
+    page.set(2);
+    TestBed.flushEffects();
+    const second = ctrl.expectOne((r) => r.url === 'https://api.test/items');
+    expect(second.request.params.get('page')).toBe('2');
+    second.flush([]);
     ctrl.verify();
   });
 
