@@ -127,6 +127,27 @@ describe('RiviniaHttp (plain Observables)', () => {
     ctrl.verify();
   });
 
+  it('never touches outgoing request bodies, even shaped like envelopes', () => {
+    const { http, ctrl } = setup({ unwrap: true });
+    const payload = { data: {}, messegaAr: 'dasds' };
+    http.post<unknown>('https://api.test/save', payload).subscribe();
+    const req = ctrl.expectOne('https://api.test/save');
+    expect(req.request.body).toEqual(payload);
+    req.flush({ ok: true });
+    ctrl.verify();
+  });
+
+  it('keeps sibling fields next to nested data (token survives)', () => {
+    const { http, ctrl } = setup({ unwrap: true });
+    let received: unknown;
+    http.get<unknown>('https://api.test/me').subscribe((v) => (received = v));
+    ctrl.expectOne('https://api.test/me').flush({
+      data: { data: { name: 'abdo' }, token: 'eyx-signature' },
+    });
+    expect(received).toEqual({ data: { name: 'abdo' }, token: 'eyx-signature' });
+    ctrl.verify();
+  });
+
   it('passes absolute URLs through and never unwraps blobs', () => {
     const { http, ctrl } = setup();
     const blob = new Blob(['x']);
