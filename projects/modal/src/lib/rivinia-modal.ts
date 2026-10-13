@@ -488,9 +488,10 @@ export class RiviniaModal {
     this.patch(id, { status: 'closing' });
     this.settle(id, { status: 'owner-destroyed' });
     this.diagnose('closing', id, record.ref, 'owner-destroyed');
-    // No promotion: tearing down must not activate queued requests
-    // only to destroy them a moment later (changes their settlement).
-    this.finalize(id, false);
+    // Promote normally: freeing room must activate the queued head (whose own
+    // owner is alive). A queued toast sharing the dead owner is torn down by
+    // its own owner callback in the same pass, settling owner-destroyed.
+    this.finalize(id);
   }
 
   private patch(id: string, changes: Partial<ModalRecord>): void {
