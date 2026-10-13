@@ -6,6 +6,7 @@ import {
 } from '@angular-devkit/schematics';
 
 export interface NgAddOptions {
+  environments?: Array<'development' | 'staging' | 'production'> | string;
   project?: string;
 }
 
@@ -27,41 +28,53 @@ export interface AppEnvironment extends BaseEnvironment {
 }
 `;
 
-const fileDefs = (sourceRoot: string): FileDef[] => [
-  { name: `${sourceRoot}/environments/environment.model.ts`, content: () => MODEL_FILE },
-  {
-    name: `${sourceRoot}/environments/environment.ts`,
-    content: (version: string) =>
-      `import type { AppEnvironment } from './environment.model';\n\n` +
-      `/** Development defaults. Used as-is by the \`development\` configuration. */\n` +
-      `export const environment: AppEnvironment = {\n` +
-      `  production: false,\n` +
-      `  version: '${version}',\n` +
-      `  apiUrl: 'http://localhost:3000/api',\n` +
-      `};\n`,
-  },
-  {
-    name: `${sourceRoot}/environments/environment.staging.ts`,
-    content: (version: string) =>
-      `import type { AppEnvironment } from './environment.model';\n\n` +
-      `/** Staging mirrors production. Wired via the \`staging\` configuration. */\n` +
-      `export const environment: AppEnvironment = {\n` +
-      `  production: true,\n` +
-      `  version: '${version}',\n` +
-      `  apiUrl: 'https://staging.example.com/api',\n` +
-      `};\n`,
-  },
-  {
-    name: `${sourceRoot}/environments/environment.prod.ts`,
-    content: (version: string) =>
-      `import type { AppEnvironment } from './environment.model';\n\n` +
-      `export const environment: AppEnvironment = {\n` +
-      `  production: true,\n` +
-      `  version: '${version}',\n` +
-      `  apiUrl: 'https://api.example.com/api',\n` +
-      `};\n`,
-  },
-];
+const ALL_ENVIRONMENTS = ['development', 'staging', 'production'] as const;
+type EnvironmentName = (typeof ALL_ENVIRONMENTS)[number];
+
+const fileDefs = (sourceRoot: string, selected: readonly EnvironmentName[]): FileDef[] => {
+  const files: FileDef[] = [
+    { name: `${sourceRoot}/environments/environment.model.ts`, content: () => MODEL_FILE },
+    // The base file is always scaffolded: it is the `replace` source for
+    // prod/staging swaps (and what `development` uses directly).
+    {
+      name: `${sourceRoot}/environments/environment.ts`,
+      content: (version: string) =>
+        `import type { AppEnvironment } from './environment.model';\n\n` +
+        `/** Development defaults. Used as-is by the \`development\` configuration. */\n` +
+        `export const environment: AppEnvironment = {\n` +
+        `  production: false,\n` +
+        `  version: '${version}',\n` +
+        `  apiUrl: 'http://localhost:3000/api',\n` +
+        `};\n`,
+    },
+  ];
+  if (selected.includes('staging')) {
+    files.push({
+      name: `${sourceRoot}/environments/environment.staging.ts`,
+      content: (version: string) =>
+        `import type { AppEnvironment } from './environment.model';\n\n` +
+        `/** Staging mirrors production. Wired via the \`staging\` configuration. */\n` +
+        `export const environment: AppEnvironment = {\n` +
+        `  production: true,\n` +
+        `  version: '${version}',\n` +
+        `  apiUrl: 'https://staging.example.com/api',\n` +
+        `};\n`,
+    });
+  }
+  if (selected.includes('production')) {
+    files.push({
+      name: `${sourceRoot}/environments/environment.prod.ts`,
+      content: (version: string) =>
+        `import type { AppEnvironment } from './environment.model';\n\n` +
+        `export const environment: AppEnvironment = {\n` +
+        `  production: true,\n` +
+        `  version: '${version}',\n` +
+        `  apiUrl: 'https://api.example.com/api',\n` +
+        `};\n`,
+    });
+  }
+  return files;
+};
 
 /**
  * `ng add @rivinia/env` — scaffolds typed environment files and wires
@@ -83,12 +96,36 @@ export function ngAdd(options: NgAddOptions): Rule {
 
     const sourceRoot = project.sourceRoot ?? (project.root ? `${project.root}/src` : 'src');
     const version = readAppVersion(tree);
+    // Empty selection (or engine default) means everything — same as --defaults.
+    // Accepts arrays (prompt/programmatic) and comma strings (CLI flags).
+    const rawSelected = options.environments;
+    const asArray: string[] = Array.isArray(rawSelected)
+      ? [...rawSelected]
+      : typeof rawSelected === 'string'
+        ? rawSelected.split(',')
+        : [];
+    const cleaned = asArray
+      .map((e) => e.trim().toLowerCase())
+      .filter((e) => e.length > 0);
+    const unknown = [...new Set(cleaned)].filter(
+      (e) => !(ALL_ENVIRONMENTS as readonly string[]).includes(e),
+    );
+    if (unknown.length > 0) {
+      throw new SchematicsException(
+        `[rivinia/env] unknown environment(s): ${unknown.join(', ')}. ` +
+          `Choose from development, staging, production.`,
+      );
+    }
+    const selected: EnvironmentName[] =
+      cleaned.length > 0
+        ? ([...new Set(cleaned)] as EnvironmentName[])
+        : [...ALL_ENVIRONMENTS];
     const configsSnapshot = (): string =>
       JSON.stringify(project.architect?.build?.configurations ?? null);
     const configsBefore = configsSnapshot();
 
     let created = 0;
-    for (const file of fileDefs(sourceRoot)) {
+    for (const file of fileDefs(sourceRoot, selected)) {
       const path = `/${file.name}`;
       if (tree.exists(path)) {
         context.logger.info(`[rivinia/env] exists, skipped: ${path}`);
@@ -98,11 +135,15 @@ export function ngAdd(options: NgAddOptions): Rule {
       created++;
     }
 
-    ensureReplacement(tree, angular, name, 'production', {
-      replace: `${sourceRoot}/environments/environment.ts`,
-      with: `${sourceRoot}/environments/environment.prod.ts`,
-    });
-    ensureStaging(tree, angular, name, sourceRoot, context);
+    if (selected.includes('production')) {
+      ensureReplacement(tree, angular, name, 'production', {
+        replace: `${sourceRoot}/environments/environment.ts`,
+        with: `${sourceRoot}/environments/environment.prod.ts`,
+      });
+    }
+    if (selected.includes('staging')) {
+      ensureStaging(tree, angular, name, sourceRoot, context);
+    }
 
     if (created > 0 || configsSnapshot() !== configsBefore) {
       tree.overwrite('/angular.json', JSON.stringify(angular, null, 2) + '\n');

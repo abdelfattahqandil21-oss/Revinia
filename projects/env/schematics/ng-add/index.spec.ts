@@ -103,6 +103,40 @@ describe('ng-add', () => {
     expect(configurations(tree)['production']['fileReplacements']).toHaveLength(1);
   });
 
+  it('scaffolds only the selected environments (prod only)', async () => {
+    const tree = await run({ environments: ['production'] });
+    expect(tree.exists('/src/environments/environment.model.ts')).toBe(true);
+    expect(tree.exists('/src/environments/environment.ts')).toBe(true);
+    expect(tree.exists('/src/environments/environment.prod.ts')).toBe(true);
+    expect(tree.exists('/src/environments/environment.staging.ts')).toBe(false);
+    const configs = configurations(tree);
+    expect(Object.keys(configs)).not.toContain('staging');
+    expect(configs['production']['fileReplacements']).toHaveLength(1);
+  });
+
+  it('dev only: files without any wiring', async () => {
+    const tree = await run({ environments: ['development'] });
+    expect(tree.exists('/src/environments/environment.ts')).toBe(true);
+    expect(tree.exists('/src/environments/environment.prod.ts')).toBe(false);
+    const configs = configurations(tree);
+    expect('fileReplacements' in (configs['production'] ?? {})).toBe(false);
+  });
+
+  it('rejects unknown environment names via schema validation', async () => {
+    await expect(run({ environments: ['prod'] })).rejects.toThrow();
+  });
+
+  it('accepts comma-separated strings (CLI flag form)', async () => {
+    const tree = await run({ environments: 'staging,production' });
+    expect(tree.exists('/src/environments/environment.staging.ts')).toBe(true);
+    expect(tree.exists('/src/environments/environment.prod.ts')).toBe(true);
+    expect(Object.keys(configurations(tree))).toContain('staging');
+  });
+
+  it('throws a clear error on unknown names in string form', async () => {
+    await expect(run({ environments: 'prod' })).rejects.toThrow(/unknown environment/);
+  });
+
   it('is idempotent (second run changes nothing)', async () => {
     const runner = new SchematicTestRunner('rivinia-env', COLLECTION);
     const once = await runner.runSchematic('ng-add', {}, appTree());
