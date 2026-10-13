@@ -260,6 +260,29 @@ describe('RiviniaModal dismissal policies and guards', () => {
     drain(modal);
   });
 
+  it('concurrent requestDismiss shares one guard run', async () => {
+    const modal = setup();
+    let guardCalls = 0;
+    let release!: (value: boolean) => void;
+    const gate = new Promise<boolean>((res) => (release = res));
+    const handle = modal.openModal<string>(componentContent(), {
+      guards: [
+        () => {
+          guardCalls++;
+          return gate;
+        },
+      ],
+    });
+    const first = modal.requestDismiss(handle.id, 'escape');
+    const second = modal.requestDismiss(handle.id, 'backdrop');
+    release(true);
+    expect(await first).toBe(true);
+    expect(await second).toBe(true);
+    expect(guardCalls).toBe(1);
+    expect(await handle.result).toEqual({ status: 'dismissed', reason: 'escape' });
+    drain(modal);
+  });
+
   it('merges dismissal policy: defaults < global < preset < per-call', () => {
     const modal = setup({
       dismiss: { closeOnEscape: false },
@@ -436,6 +459,30 @@ describe('RiviniaModal closing handshake and registry', () => {
     expect(modal.getDiagnostics().length).toBeLessThanOrEqual(100);
     modal.clearDiagnostics();
     expect(modal.getDiagnostics()).toEqual([]);
+  });
+
+  it('registry entries drain to zero across every terminal path', async () => {
+    const modal = setup({ strategy: 'queue', maxVisible: 1 });
+    const results = modal as unknown as { _results: Map<string, unknown> };
+    const a = modal.openModal<string>(componentContent());
+    const b = modal.openModal<string>(componentContent());
+    b.cancel();
+    expect(await b.result).toEqual({ status: 'queued-cancelled' });
+    expect(results._results.size).toBe(1);
+    modal.openModal<string>(componentContent(), { ref: 'c' });
+    expect(results._results.size).toBe(2);
+    a.dismiss();
+    drain(modal);
+    expect(results._results.size).toBe(0);
+  });
+
+  it('rejected opens leave no registry residue', async () => {
+    const modal = setup({ maxVisible: 1, overflow: 'reject' });
+    modal.openModal(componentContent());
+    const rejected = modal.openModal<string>(componentContent());
+    expect(await rejected.result).toEqual({ status: 'rejected', reason: 'overflow' });
+    expect((modal as unknown as { _results: Map<string, unknown> })._results.size).toBe(1);
+    drain(modal);
   });
 
   it('manager destruction settles everything without hangs', async () => {
