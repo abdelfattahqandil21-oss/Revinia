@@ -8,7 +8,7 @@ Typed application environments for Angular: dev/staging/prod file layout, a
 files and wires the build configurations. Zero runtime code — environments are
 build-time constants; this package ships types plus setup tooling only.
 
-- Version: **0.1.0**
+- Version: **0.2.0**
 - Requires: nothing at runtime (types only). Schematic runs under Angular CLI 22+.
 
 ## Install
