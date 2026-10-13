@@ -31,6 +31,21 @@ export interface AppEnvironment extends BaseEnvironment {
 const ALL_ENVIRONMENTS = ['development', 'staging', 'production'] as const;
 type EnvironmentName = (typeof ALL_ENVIRONMENTS)[number];
 
+/** Short aliases users actually type (`prod`, `dev`, `stag`). */
+const ENVIRONMENT_ALIASES: Record<string, EnvironmentName> = {
+  dev: 'development',
+  prod: 'production',
+  stag: 'staging',
+  stage: 'staging',
+};
+
+/** Output directory short names: builds/dev, builds/prod, builds/stag. */
+const OUTPUT_DIR: Record<EnvironmentName, string> = {
+  development: 'builds/dev',
+  staging: 'builds/stag',
+  production: 'builds/prod',
+};
+
 const fileDefs = (sourceRoot: string, selected: readonly EnvironmentName[]): FileDef[] => {
   const files: FileDef[] = [
     { name: `${sourceRoot}/environments/environment.model.ts`, content: () => MODEL_FILE },
@@ -97,7 +112,8 @@ export function ngAdd(options: NgAddOptions): Rule {
     const sourceRoot = project.sourceRoot ?? (project.root ? `${project.root}/src` : 'src');
     const version = readAppVersion(tree);
     // Empty selection (or engine default) means everything — same as --defaults.
-    // Accepts arrays (prompt/programmatic) and comma strings (CLI flags).
+    // Accepts arrays (prompt/programmatic) and comma strings (CLI flags), with
+    // short aliases (dev/prod/stag/stage) normalized before validation.
     const rawSelected = options.environments;
     const asArray: string[] = Array.isArray(rawSelected)
       ? [...rawSelected]
@@ -106,14 +122,15 @@ export function ngAdd(options: NgAddOptions): Rule {
         : [];
     const cleaned = asArray
       .map((e) => e.trim().toLowerCase())
-      .filter((e) => e.length > 0);
+      .filter((e) => e.length > 0)
+      .map((e) => ENVIRONMENT_ALIASES[e] ?? e);
     const unknown = [...new Set(cleaned)].filter(
       (e) => !(ALL_ENVIRONMENTS as readonly string[]).includes(e),
     );
     if (unknown.length > 0) {
       throw new SchematicsException(
         `[rivinia/env] unknown environment(s): ${unknown.join(', ')}. ` +
-          `Choose from development, staging, production.`,
+          `Choose from development (dev), staging (stag), production (prod).`,
       );
     }
     const selected: EnvironmentName[] =
@@ -144,6 +161,7 @@ export function ngAdd(options: NgAddOptions): Rule {
     if (selected.includes('staging')) {
       ensureStaging(tree, angular, name, sourceRoot, context);
     }
+    ensureOutputPaths(tree, angular, name, selected, context);
 
     if (created > 0 || configsSnapshot() !== configsBefore) {
       tree.overwrite('/angular.json', JSON.stringify(angular, null, 2) + '\n');
@@ -261,6 +279,39 @@ function ensureReplacement(
       (item as Record<string, unknown>)['with'] === entry.with,
   );
   if (!exists) list.push({ ...entry });
+}
+
+/**
+ * Points each selected configuration at its build directory
+ * (builds/dev, builds/stag, builds/prod) — but only when the app has not
+ * customized `outputPath` already. Never overwrites user output locations.
+ */
+function ensureOutputPaths(
+  tree: Tree,
+  angular: { projects?: Record<string, ProjectDef> },
+  name: string,
+  selected: readonly EnvironmentName[],
+  context: SchematicContext,
+): void {
+  if (!tree.exists('/angular.json')) return;
+  const configurations = getConfigurations(angular, name);
+  let touched = false;
+  for (const env of selected) {
+    const target = configurations[env];
+    if (!target || 'outputPath' in target) continue;
+    target['outputPath'] = OUTPUT_DIR[env];
+    touched = true;
+  }
+  if (touched) ensureGitignore(tree, context);
+}
+
+/** Appends `/builds` to the app .gitignore once (build outputs don't commit). */
+function ensureGitignore(tree: Tree, context: SchematicContext): void {
+  if (!tree.exists('/.gitignore')) return;
+  const content = tree.read('/.gitignore')?.toString('utf-8') ?? '';
+  if (/(^|\n)\/*builds\/?(\n|$)/.test(content)) return;
+  tree.overwrite('/.gitignore', content.replace(/\s*$/, '\n') + '/builds\n');
+  context.logger.info('[rivinia/env] added /builds to .gitignore.');
 }
 
 function ensureStaging(

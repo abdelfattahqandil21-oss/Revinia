@@ -15,6 +15,19 @@ export interface AppEnvironment extends BaseEnvironment {
 }
 `;
 const ALL_ENVIRONMENTS = ['development', 'staging', 'production'];
+/** Short aliases users actually type (`prod`, `dev`, `stag`). */
+const ENVIRONMENT_ALIASES = {
+    dev: 'development',
+    prod: 'production',
+    stag: 'staging',
+    stage: 'staging',
+};
+/** Output directory short names: builds/dev, builds/prod, builds/stag. */
+const OUTPUT_DIR = {
+    development: 'builds/dev',
+    staging: 'builds/stag',
+    production: 'builds/prod',
+};
 const fileDefs = (sourceRoot, selected) => {
     const files = [
         { name: `${sourceRoot}/environments/environment.model.ts`, content: () => MODEL_FILE },
@@ -77,7 +90,8 @@ function ngAdd(options) {
         const sourceRoot = project.sourceRoot ?? (project.root ? `${project.root}/src` : 'src');
         const version = readAppVersion(tree);
         // Empty selection (or engine default) means everything — same as --defaults.
-        // Accepts arrays (prompt/programmatic) and comma strings (CLI flags).
+        // Accepts arrays (prompt/programmatic) and comma strings (CLI flags), with
+        // short aliases (dev/prod/stag/stage) normalized before validation.
         const rawSelected = options.environments;
         const asArray = Array.isArray(rawSelected)
             ? [...rawSelected]
@@ -86,11 +100,12 @@ function ngAdd(options) {
                 : [];
         const cleaned = asArray
             .map((e) => e.trim().toLowerCase())
-            .filter((e) => e.length > 0);
+            .filter((e) => e.length > 0)
+            .map((e) => ENVIRONMENT_ALIASES[e] ?? e);
         const unknown = [...new Set(cleaned)].filter((e) => !ALL_ENVIRONMENTS.includes(e));
         if (unknown.length > 0) {
             throw new schematics_1.SchematicsException(`[rivinia/env] unknown environment(s): ${unknown.join(', ')}. ` +
-                `Choose from development, staging, production.`);
+                `Choose from development (dev), staging (stag), production (prod).`);
         }
         const selected = cleaned.length > 0
             ? [...new Set(cleaned)]
@@ -116,6 +131,7 @@ function ngAdd(options) {
         if (selected.includes('staging')) {
             ensureStaging(tree, angular, name, sourceRoot, context);
         }
+        ensureOutputPaths(tree, angular, name, selected, context);
         if (created > 0 || configsSnapshot() !== configsBefore) {
             tree.overwrite('/angular.json', JSON.stringify(angular, null, 2) + '\n');
         }
@@ -196,6 +212,36 @@ function ensureReplacement(tree, angular, name, configuration, entry) {
         item['with'] === entry.with);
     if (!exists)
         list.push({ ...entry });
+}
+/**
+ * Points each selected configuration at its build directory
+ * (builds/dev, builds/stag, builds/prod) — but only when the app has not
+ * customized `outputPath` already. Never overwrites user output locations.
+ */
+function ensureOutputPaths(tree, angular, name, selected, context) {
+    if (!tree.exists('/angular.json'))
+        return;
+    const configurations = getConfigurations(angular, name);
+    let touched = false;
+    for (const env of selected) {
+        const target = configurations[env];
+        if (!target || 'outputPath' in target)
+            continue;
+        target['outputPath'] = OUTPUT_DIR[env];
+        touched = true;
+    }
+    if (touched)
+        ensureGitignore(tree, context);
+}
+/** Appends `/builds` to the app .gitignore once (build outputs don't commit). */
+function ensureGitignore(tree, context) {
+    if (!tree.exists('/.gitignore'))
+        return;
+    const content = tree.read('/.gitignore')?.toString('utf-8') ?? '';
+    if (/(^|\n)\/*builds\/?(\n|$)/.test(content))
+        return;
+    tree.overwrite('/.gitignore', content.replace(/\s*$/, '\n') + '/builds\n');
+    context.logger.info('[rivinia/env] added /builds to .gitignore.');
 }
 function ensureStaging(tree, angular, name, sourceRoot, context) {
     if (!tree.exists('/angular.json'))
