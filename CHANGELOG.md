@@ -14,18 +14,29 @@ A change is listed the moment it lands on `main`, not when npm is published.
 - **H-02 (feature):** `getResource` accepts signals and reactive functions for
   `params`/`headers`/`context` (evaluated per request, like `httpResource`).
   New `ReactiveInput<T>` type. URL was already reactive; the rest was static.
+- **H-04 (feature):** `getResponse`/`postResponse` expose raw status + headers
+  (pagination counts, 201 `Location`), plus `getText` for raw text. Raw by
+  design — compose `unwrapAs`/`assertEnvelope` yourself when needed.
 - **H-01 (breaking fix):** `unwrapAs` unwraps exactly one envelope level.
   Nested payloads (`{ data: { data, page } }`) are returned whole; recursive
   unwrapping silently dropped sibling fields. No `recursive` option — file an
   issue if a double-wrapped backend genuinely needs it.
 
 ### @rivinia/toast
+- **T-04 (fix):** overflow eviction prefers the oldest timed, actionless toast;
+  persistent errors with actions are evicted only when nothing else can go.
+- **T-03 (fix):** a kind change re-resolves the per-kind default duration
+  unless the toast carries an explicit duration (explicit is sticky forever).
 - **T-01 (breaking fix):** `pause()`/`resume()` track suspension explicitly.
   Persistent toasts can never pause, so hover-leave no longer dismisses them;
   `resume()` on anything unpaused returns `false`. Toasts expose `paused`.
   Updating a paused toast stores the new remaining without re-arming.
 
 ### @rivinia/modal
+- **M-06 (fix):** concurrent `requestDismiss` calls share one in-flight guard
+  run (identical results) instead of double-prompting.
+- **M-05 (fix):** registry entries are deleted on settle — queued-cancelled
+  and rejected opens leave no residue.
 - **M-04 (breaking fix):** opening with an already-destroyed owner settles
   `owner-destroyed` immediately without adding a ghost instance (previously
   threw NG0205 after adding).
@@ -40,6 +51,16 @@ A change is listed the moment it lands on `main`, not when npm is published.
   their own owner callback); independently-owned ones activate.
 
 ### @rivinia/i18n
+- **I-07 (feature):** `injectRiviniaI18n<L>()` preserves the language union and
+  `defineRiviniaI18n(config)` binds config + accessors with inference, so
+  unconfigured ids fail compilation (`@ts-expect-error` covered).
+- **I-06 (feature):** `Language.locale` (BCP-47) drives Intl formatting and ICU
+  plurals (`ar-EG` digits, not bare-`ar` Latin); formatters cached by
+  locale + options.
+- **I-05 (breaking fix):** `setLanguageAsync` aborts on load failure —
+  language, direction and dictionary stay untouched.
+- **I-04 (fix):** browser detection follows priority order (exact then base
+  tag per entry) instead of scanning all exact matches first.
 - **I-01 (feature):** `provideRiviniaI18n()` loads the initial language during
   setup (SSR waits via `PendingTasks`). New `preload: false` opt-out, inline
   `translations` seed (network refresh still wins; failures preserve the

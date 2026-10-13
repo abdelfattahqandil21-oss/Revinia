@@ -15,7 +15,7 @@ export { customLoader, httpLoader, jsonLoader, remoteLoader } from './lib/loader
 export { browserLanguages, detectBrowserLanguage } from './lib/i18n-utils';
 export { parseCookie, serializeCookie } from './lib/cookies';
 export { formatIcu } from './lib/icu';
-export { injectRiviniaI18n, provideRiviniaI18n } from './lib/provide-i18n';
+export { defineRiviniaI18n, injectRiviniaI18n, provideRiviniaI18n } from './lib/provide-i18n';
 export { RiviniaI18n } from './lib/rivinia-i18n';
 export { ViewTransitionService } from './lib/view-transition.service';
 export { RTranslatePipe } from './lib/translate.pipe';

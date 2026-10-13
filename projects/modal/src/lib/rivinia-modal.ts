@@ -63,6 +63,8 @@ export class RiviniaModal {
 
   private readonly _instances = signal<readonly ModalRecord[]>([]);
   private readonly _results = new Map<string, PendingResult>();
+  /** In-flight guarded dismissals: concurrent intents share one guard run. */
+  private readonly _dismissInflight = new Map<string, Promise<boolean>>();
   private _strategy: ModalStrategy = this.resolveStrategy(this.config?.strategy);
   private _seq = 0;
   private _diagSeq = 0;
@@ -242,6 +244,24 @@ export class RiviniaModal {
   ): Promise<boolean> {
     const record = this.get(id);
     if (!record || record.status !== 'active' || this.blockedByDescendants(id)) return false;
+    const inflight = this._dismissInflight.get(id);
+    if (inflight) return inflight;
+    const run = this.runGuards(id, origin, reason);
+    this._dismissInflight.set(id, run);
+    try {
+      return await run;
+    } finally {
+      if (this._dismissInflight.get(id) === run) this._dismissInflight.delete(id);
+    }
+  }
+
+  private async runGuards(
+    id: string,
+    origin: ModalDismissOrigin,
+    reason?: string,
+  ): Promise<boolean> {
+    const record = this.get(id);
+    if (!record) return false;
     const generation = record.generation;
     for (const guard of record.guards) {
       let allowed: boolean;
@@ -580,6 +600,9 @@ export class RiviniaModal {
     const pending = this._results.get(id);
     if (!pending || pending.settled) return; // Exactly-once, even under reentrancy.
     pending.settled = true;
+    // Delete on settle: entries must not outlive their promises. finalize()
+    // keeps its own delete as a backstop for paths that bypass settle.
+    this._results.delete(id);
     pending.resolve(value);
   }
 

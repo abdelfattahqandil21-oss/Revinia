@@ -9,6 +9,13 @@ export interface Language<T extends string = string> {
   readonly id: T;
   readonly nativeName?: string;
   readonly dir: Direction;
+  /**
+   * BCP-47 locale for `Intl` formatting and plural rules (e.g. `ar-EG` for
+   * Arabic-Indic digits, `en-GB` vs `en-US`). Defaults to the language id —
+   * note a bare id like `ar` formats Latin digits, which is often NOT what
+   * Arabic readers expect.
+   */
+  readonly locale?: string;
 }
 
 /** Inline typed translations: `{ ar: 'حفظ', en: 'Save' }`. */

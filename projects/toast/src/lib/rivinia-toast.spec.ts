@@ -11,6 +11,11 @@ function setup(config: RiviniaToastConfig = {}): RiviniaToast {
   return TestBed.inject(RiviniaToast);
 }
 
+function drain(toast: RiviniaToast): void {
+  toast.dismissAll();
+  vi.advanceTimersByTime(60_000);
+}
+
 beforeEach(() => {
   TestBed.resetTestingModule();
   vi.useFakeTimers();
@@ -178,6 +183,50 @@ describe('RiviniaToast update', () => {
   });
 });
 
+describe('RiviniaToast kind and duration interaction', () => {
+  it('kind change re-resolves the per-kind default unless duration was explicit', () => {
+    const toast = setup({ duration: 5000, durations: { error: 9000 } });
+    const a = toast.show({ message: 'x', kind: 'info' }) as number;
+    expect(toast.update(a, { kind: 'error' })).toBe(true);
+    expect(toast.active()[0].duration).toBe(9000);
+    vi.advanceTimersByTime(5000);
+    expect(toast.active().length).toBe(1);
+    vi.advanceTimersByTime(4000);
+    expect(toast.active()).toEqual([]);
+
+    const b = toast.show({ message: 'y', kind: 'info', duration: 1000 }) as number;
+    expect(toast.update(b, { kind: 'error' })).toBe(true);
+    expect(toast.active()[0].duration).toBe(1000);
+    toast.dismissAll();
+  });
+});
+
+describe('RiviniaToast overflow eviction', () => {
+  it('prefers evicting timed actionless toasts over persistent errors with actions', () => {
+    const toast = setup({ maxVisible: 2, overflow: 'dismiss-oldest' });
+    const plain = toast.show({ message: 'plain', duration: 60_000 }) as number;
+    const critical = toast.show({
+      message: 'failed',
+      kind: 'error',
+      duration: 0,
+      action: { label: 'Retry', onPress: () => {} },
+    }) as number;
+    const third = toast.show({ message: 'third', duration: 60_000 }) as number;
+    const ids = toast.active().map((t) => t.id);
+    expect(ids).toEqual([critical, third]);
+    expect(ids).not.toContain(plain);
+    drain(toast);
+  });
+
+  it('falls back to the oldest when everything is persistent', () => {
+    const toast = setup({ maxVisible: 1, overflow: 'dismiss-oldest' });
+    const first = toast.show({ message: 'a', duration: 0 }) as number;
+    const second = toast.show({ message: 'b', duration: 0 }) as number;
+    expect(toast.active().map((t) => t.id)).toEqual([second]);
+    expect(first).not.toEqual(second);
+    drain(toast);
+  });
+});
 describe('RiviniaToast capacity and queue', () => {
   it("dismiss-oldest (default) evicts the head and ids stay unique", () => {
     const toast = setup({ maxVisible: 2, duration: 10_000 });

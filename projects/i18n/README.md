@@ -103,16 +103,20 @@ export class Header {
 
 | Export | Kind | Purpose |
 |---|---|---|
-| `provideRiviniaI18n(config)` | provider | languages, default, storage, loader, `detectBrowser?` (off), `switchStrategy?` |
-| `RiviniaI18n` | `@Service()` | signals + `translate/setLanguage(toggle/next/previous)/loadTranslations/formatNumber/formatDate` |
-| `injectRiviniaI18n()` | function | shorthand for `inject(RiviniaI18n)` |
+| `provideRiviniaI18n(config)` | provider | languages, default, storage (+`cookie`), loader, `detectBrowser?` (off), `switchStrategy?`, `preload?`, `translations?` (inline seed) |
+| `RiviniaI18n` | `@Service()` | signals (`locale`, `ready`) + `translate/setLanguage(toggle/next/previous)/loadTranslations/formatNumber/formatDate` |
+| `injectRiviniaI18n()` | function | shorthand, preserves the language union; `defineRiviniaI18n(config)` binds config + accessors with inference |
 | `jsonLoader/httpLoader/remoteLoader/customLoader` | loaders | lazy code-split dictionaries (fetch, no HttpClient) |
 | `formatIcu(template, params, locale)` | util | ICU subset: plural/select/`#`/nesting via native `Intl.PluralRules` |
-| `detectBrowserLanguage(ids, langs)` | util | priority match + base-tag fallback (`ar-EG` → `ar`), pure/testable |
+| `detectBrowserLanguage(ids, langs)` | util | in-order priority + base-tag fallback (`ar-EG` → `ar`), pure/testable |
+| `parseCookie/serializeCookie` | utils | cookie strategy primitives (server header / browser cookie) |
 | `RTranslatePipe` | pipe | `rTranslate` (impure by necessity — prefer `translate()` in code for lists) |
-| types | types | `RiviniaI18nConfig`, `Language`, `Translation`, `LoaderDescriptor`, … |
+| types | types | `RiviniaI18nConfig`, `Language` (+`locale?`), `Translation`, `LoaderDescriptor`, … |
 
-ICU subset is deliberately small (`plural`/`select` only) — full ICU belongs to
+Dictionaries commit to visible signals only for the currently intended
+language — out-of-order responses stay cached. `setLanguageAsync` aborts on
+load failure (language, direction and dictionary untouched). ICU subset is
+deliberately small (`plural`/`select` only) — full ICU belongs to
 FormatJS, not to a 10 kB core. Malformed templates render raw, never throw.
 Stored preference always beats browser detection; detection runs only when
 nothing is stored. `switchStrategy: 'preload-first'` (or `setLanguageAsync`)

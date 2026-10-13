@@ -35,7 +35,38 @@ export function provideRiviniaI18n<L extends string>(
   ]);
 }
 
-/** Shorthand for `inject(RiviniaI18n)`. */
-export function injectRiviniaI18n(): RiviniaI18n<string> {
-  return inject(RiviniaI18n);
+/** Shorthand for `inject(RiviniaI18n)` — preserves the configured language union. */
+export function injectRiviniaI18n<L extends string = string>(): RiviniaI18n<L> {
+  return inject(RiviniaI18n) as unknown as RiviniaI18n<L>;
+}
+
+/**
+ * Binds a config and its typed accessors together so `L` is inferred once
+ * from the configuration instead of being lost at the injection site.
+ *
+ * @example
+ * ```ts
+ * export const i18n = defineRiviniaI18n({
+ *   defaultLanguage: 'ar',
+ *   languages: [
+ *     { id: 'ar', nativeName: 'العربية', dir: 'rtl' },
+ *     { id: 'en', nativeName: 'English', dir: 'ltr' },
+ *   ],
+ * });
+ * // app.config.ts
+ * providers: [i18n.provide()]
+ * // anywhere (typed 'ar' | 'en'):
+ * const lang = i18n.inject();
+ * ```
+ */
+export function defineRiviniaI18n<L extends string>(config: RiviniaI18nConfig<L>): {
+  readonly config: RiviniaI18nConfig<L>;
+  provide: () => EnvironmentProviders;
+  inject: () => RiviniaI18n<L>;
+} {
+  return {
+    config,
+    provide: () => provideRiviniaI18n(config),
+    inject: () => injectRiviniaI18n<L>(),
+  };
 }
