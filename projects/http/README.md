@@ -123,11 +123,16 @@ global one wholesale.
 | Export | Kind | Purpose |
 |---|---|---|
 | `provideRiviniaHttp(config?)` | provider | `{ unwrap?=false, unwrapKey?='data', envelope?, httpFeatures? }` |
-| `RiviniaHttp` | `@Service()` | `get/post/put/patch/delete`, `getBlob`, `getResource` |
+| `RiviniaHttp` | `@Service()` | `get/post/put/patch/delete`, `getBlob`, `getText`, `getResponse`, `postResponse`, `getResource` |
 | `injectRiviniaHttp()` | function | shorthand for `inject(RiviniaHttp)` |
 | `joinUrl(base, endpoint)` | util | slash-safe join; absolute URLs pass through |
 | `unwrapAs(body, key)` | util | single-level envelope extraction (nested keys preserved) |
-| types | types | `RiviniaHttpConfig`, `RiviniaRequestOptions`, `RiviniaDeleteOptions`, `RiviniaResourceOptions`, `QueryParamsInput` |
+| types | types | `RiviniaHttpConfig`, `RiviniaRequestOptions`, `RiviniaDeleteOptions`, `RiviniaResourceOptions`, `RiviniaEnvelopePolicy`, `ReactiveInput`, `QueryParamsInput` |
+
+`getResponse`/`postResponse` return the raw `HttpResponse` (status + headers,
+no unwrapping — compose `unwrapAs`/`assertEnvelope` yourself); `getText`
+returns raw text. In `getResource`, the URL, `params`, `headers` and `context`
+accept values, signals or reactive functions (everything else is static).
 
 `getBlob` is never unwrapped. `HttpContext` passes through untouched, so
 app interceptors (auth opt-out, error toasts) keep working. For caching,

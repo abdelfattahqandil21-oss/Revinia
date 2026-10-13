@@ -69,7 +69,9 @@ queue). `dismiss/update/pause/resume/runAction` return `false` for unknown ids
 hover-leave cannot dismiss them); `resume()` on anything unpaused is a no-op;
 each toast exposes its `paused` flag for progress UI.
 Timers start at queue **promotion**, never while queued. Per-toast options
-always beat globals.
+always beat globals; a kind change re-resolves the per-kind default unless the
+toast carries an explicit duration. Overflow eviction prefers timed,
+actionless toasts — persistent errors with actions are last resort.
 
 ## Recipes (app-owned, deliberately not in the library)
 
