@@ -11,6 +11,8 @@ A change is listed the moment it lands on `main`, not when npm is published.
   envelope throws a typed `RiviniaHttpEnvelopeError` (body + code) instead of
   flowing into `next()` as success; in `getResource` it surfaces as
   `resource.error()`. Off by default; per-call policy replaces global.
+  `getResponse`/`postResponse` validate too (raw body kept); binary/text
+  paths are exempt (non-JSON by construction).
 - **H-02 (feature):** `getResource` accepts signals and reactive functions for
   `params`/`headers`/`context` (evaluated per request, like `httpResource`).
   New `ReactiveInput<T>` type. URL was already reactive; the rest was static.

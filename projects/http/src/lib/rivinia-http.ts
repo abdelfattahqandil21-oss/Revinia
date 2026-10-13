@@ -119,26 +119,46 @@ export class RiviniaHttp {
 
   /**
    * Full response access (status, headers — e.g. pagination counts or a 201
-   * `Location`). Deliberately raw: no unwrapping, no envelope validation
-   * (compose `unwrapAs`/`assertEnvelope` yourself when needed).
+   * `Location`). Raw body (no unwrapping), but the configured/per-call
+   * `envelope` validation still applies to the body — a globally declared
+   * failure policy must hold on every JSON path, not just the unwrapped ones.
    */
   getResponse<T>(endpoint: string, options?: RiviniaRequestOptions): Observable<HttpResponse<T>> {
-    return this.http.get<T>(this.url(endpoint), {
-      ...this.httpOptions(options),
-      observe: 'response',
-    });
+    const envelope = this.resolveEnvelope(options);
+    return this.http
+      .get<T>(this.url(endpoint), {
+        ...this.httpOptions(options),
+        observe: 'response',
+      })
+      .pipe(
+        map((res) => {
+          if (envelope) assertEnvelope(res.body, envelope);
+          return res;
+        }),
+      );
   }
 
-  /** Full response access for creates (status, `Location` header). Raw, like `getResponse`. */
+  /**
+   * Full response access for creates (status, `Location` header). Same
+   * envelope-validation rule as `getResponse`; body otherwise raw.
+   */
   postResponse<T>(
     endpoint: string,
     body?: unknown,
     options?: RiviniaRequestOptions,
   ): Observable<HttpResponse<T>> {
-    return this.http.post<T>(this.url(endpoint), body, {
-      ...this.httpOptions(options),
-      observe: 'response',
-    });
+    const envelope = this.resolveEnvelope(options);
+    return this.http
+      .post<T>(this.url(endpoint), body, {
+        ...this.httpOptions(options),
+        observe: 'response',
+      })
+      .pipe(
+        map((res) => {
+          if (envelope) assertEnvelope(res.body, envelope);
+          return res;
+        }),
+      );
   }
 
   /**
