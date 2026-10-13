@@ -3,7 +3,7 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
-## Unreleased
+## 2026-10-13 — http 0.4.0, toast 0.3.0, modal 0.3.0, i18n 0.2.0
 
 ### @rivinia/http
 - **H-03 (feature):** opt-in backend-envelope validation via an `envelope`

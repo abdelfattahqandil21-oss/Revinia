@@ -8,7 +8,7 @@ Headless modal manager for Angular 22+. Stack/Queue strategies, typed
 zero styles, zero router dependency. A future `@rivinia/modal/ui` entry point
 will render this state; Core never imports UI.
 
-- Version: **0.2.0**
+- Version: **0.3.0**
 - Requires: **Angular `^22.0.0`**, `tslib`
 
 ## Install
