@@ -5,7 +5,9 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ## Unreleased
 
-### @rivinia/i18n (proposed 0.3.0 — breaking default, NOT bumped yet)
+## 2026-10-15 — i18n 0.3.0
+
+### @rivinia/i18n
 
 - **I-08 (breaking):** default loader path `assets/i18n` → `i18n` (files in
   `public/i18n/`, served from the site root; matches the app template's
@@ -13,6 +15,10 @@ A change is listed the moment it lands on `main`, not when npm is published.
   `src/assets/i18n/*.json` → `public/i18n/*.json`, or pin the old layout with
   `jsonLoader({ path: 'assets/i18n' })`. `ng-add` starter, schema descriptions,
   README and JSDoc synced.
+- **I-09 (fix):** language cookie gets `Secure` automatically on `https:`
+  (never on `localhost`); server never writes cookies (unchanged).
+- **Cleanup:** removed dead `_supported` getter and redundant
+  `standalone: true` on `RTranslatePipe` (Angular 20+ default).
 
 ## 2026-10-13 — env 0.2.0
 
