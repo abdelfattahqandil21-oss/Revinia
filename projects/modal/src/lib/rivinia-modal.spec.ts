@@ -498,3 +498,45 @@ describe('RiviniaModal closing handshake and registry', () => {
     expect(settled).toEqual([{ status: 'dismissed', reason: 'manager-destroyed' }]);
   });
 });
+
+describe('RiviniaModal record isolation', () => {
+  const INTERNAL_KEYS = ['guards', 'closingTimer', 'ownerCleanup', 'generation', 'openedSeq'];
+  const PUBLIC_KEYS = [
+    'id',
+    'ref',
+    'caller',
+    'parentId',
+    'data',
+    'content',
+    'status',
+    'dismiss',
+    'metadata',
+  ];
+
+  it('public snapshots expose only ModalInstance fields', () => {
+    const modal = setup();
+    modal.openModal(componentContent(), { ref: 'iso', guards: [() => true] });
+    const snapshots = [...modal.active(), ...modal.queued(), ...modal.findByRef('iso')];
+    expect(snapshots.length).toBeGreaterThan(0);
+    for (const snap of snapshots) {
+      for (const key of INTERNAL_KEYS) {
+        expect(snap).not.toHaveProperty(key);
+      }
+      expect(Object.keys(snap).sort()).toEqual([...PUBLIC_KEYS].sort());
+    }
+    expect(modal.top()).not.toHaveProperty('guards');
+  });
+
+  it('returned snapshots are immutable copies, not live records', () => {
+    const modal = setup();
+    const handle = modal.openModal<{ n: number }>(templateContent<{ n: number }>(), {
+      data: { n: 1 },
+    });
+    const before = modal.active()[0];
+    expect(modal.update(handle.id, { data: { n: 2 } })).toBe(true);
+    // The previously returned object is untouched by the update.
+    expect(before.data).toEqual({ n: 1 });
+    expect(modal.active()[0].data).toEqual({ n: 2 });
+    drain(modal);
+  });
+});
