@@ -141,6 +141,14 @@ accept values, signals or reactive functions (everything else is static).
 app interceptors (auth opt-out, error toasts) keep working. For caching,
 polling, retry and TanStack Query interop see [RECIPES.md](./RECIPES.md).
 
+## Type holes (honest, by design)
+
+`unwrapAs<T>` is an unchecked cast — a wrong `T` compiles and mistypes the
+payload at runtime. What IS checked is generic flow (see
+`http-type-safety.spec.ts` `@ts-expect-error` tests). For untyped backends,
+pair unwrapping with `envelope` validation or a `parse` hook (Zod/Valibot —
+see [RECIPES.md](./RECIPES.md)).
+
 ## Testing your app code
 
 Standard Angular tooling — nothing custom to learn:
