@@ -3,9 +3,29 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
-## Unreleased
+## 2026-10-15 — toast 0.3.1
 
-### @rivinia/i18n (proposed 0.3.0 — breaking default, NOT bumped yet)
+### @rivinia/toast
+
+- **T-05 (fix):** generation tracking no longer leaks across show/dismiss
+  cycles (`_generations` entry deleted on dismiss, cleared in `dismissAll`).
+- Description wording no longer claims a nonexistent "UI outlet".
+
+## 2026-10-15 — modal 0.4.0
+
+### @rivinia/modal
+
+- **M-07 (feature):** additive readonly `closing` (status `closing`) and
+  `visible` (active + closing) signals in strategy display order.
+  `active`/`queued`/`top` semantics unchanged.
+- **M-08 (fix):** public snapshots (`active`, `queued`, `closing`, `visible`,
+  `top`, `findByRef`) no longer expose `guards`, `closingTimer`,
+  `ownerCleanup`, `generation`, `openedSeq`; state updates consistently
+  immutable.
+
+## 2026-10-15 — i18n 0.3.0
+
+### @rivinia/i18n
 
 - **I-08 (breaking):** default loader path `assets/i18n` → `i18n` (files in
   `public/i18n/`, served from the site root; matches the app template's
@@ -13,6 +33,10 @@ A change is listed the moment it lands on `main`, not when npm is published.
   `src/assets/i18n/*.json` → `public/i18n/*.json`, or pin the old layout with
   `jsonLoader({ path: 'assets/i18n' })`. `ng-add` starter, schema descriptions,
   README and JSDoc synced.
+- **I-09 (fix):** language cookie gets `Secure` automatically on `https:`
+  (never on `localhost`); server never writes cookies (unchanged).
+- **Cleanup:** removed dead `_supported` getter and redundant
+  `standalone: true` on `RTranslatePipe` (Angular 20+ default).
 
 ## 2026-10-13 — env 0.2.0
 

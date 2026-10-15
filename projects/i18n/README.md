@@ -7,7 +7,7 @@ Headless language manager for Angular 22+. Signals, RTL/LTR, lazy loaders,
 ICU plurals (all six Arabic forms), browser detection, Intl formatting —
 zero DOM opinions beyond `<html dir/lang>`, zero styling.
 
-- Version: **0.2.0**
+- Version: **0.3.0**
 - Requires: **Angular `^22.0.0`**, `tslib`
 
 ## Install
@@ -39,7 +39,7 @@ provideRiviniaI18n({ loader: httpLoader({ endpoint: 'https://api.example.com/i18
 
 Loaders code-split: fetch implementations load on first use only.
 
-> **Migration (unreleased, proposed 0.3.0 — breaking default):** the default
+> **Migration (0.3.0 — breaking default):** the default
 > loader path changed from `assets/i18n` to `i18n`. Move
 > `src/assets/i18n/*.json` → `public/i18n/*.json` (served from the site root),
 > or keep the old layout explicitly with
