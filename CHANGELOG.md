@@ -3,6 +3,14 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
+## 2026-10-15 — toast 0.3.1
+
+### @rivinia/toast
+
+- **T-05 (fix):** generation tracking no longer leaks across show/dismiss
+  cycles (`_generations` entry deleted on dismiss, cleared in `dismissAll`).
+- Description wording no longer claims a nonexistent "UI outlet".
+
 ## 2026-10-15 — modal 0.4.0
 
 ### @rivinia/modal
