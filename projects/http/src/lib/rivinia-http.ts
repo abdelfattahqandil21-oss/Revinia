@@ -25,8 +25,10 @@ import { unwrapAs } from './http-utils';
 import { assertEnvelope, type RiviniaEnvelopePolicy } from './http-envelope';
 
 /** Options for `getResource` in addition to per-request options. */
-export interface RiviniaResourceOptions<T>
-  extends Omit<RiviniaRequestOptions, 'params' | 'headers' | 'context'> {
+export interface RiviniaResourceOptions<T> extends Omit<
+  RiviniaRequestOptions,
+  'params' | 'headers' | 'context'
+> {
   /**
    * Query params re-evaluated on every request: value, signal, or reactive
    * function. Anything else in these options is read once per call site —
@@ -223,7 +225,9 @@ export class RiviniaHttp {
     return options?.unwrapKey ?? this.config?.unwrapKey ?? DEFAULT_UNWRAP_KEY;
   }
 
-  private resolveEnvelope(options?: { envelope?: RiviniaEnvelopePolicy }): RiviniaEnvelopePolicy | undefined {
+  private resolveEnvelope(options?: {
+    envelope?: RiviniaEnvelopePolicy;
+  }): RiviniaEnvelopePolicy | undefined {
     return options?.envelope ?? this.config?.envelope;
   }
 
@@ -243,7 +247,8 @@ export class RiviniaHttp {
     };
   }
 
-  private toParams(input?: QueryParamsInput): HttpParams | undefined {    if (!input) return undefined;
+  private toParams(input?: QueryParamsInput): HttpParams | undefined {
+    if (!input) return undefined;
     if (input instanceof HttpParams) return input;
     let params = new HttpParams();
     for (const [key, value] of Object.entries(input)) {

@@ -117,7 +117,8 @@ export class RiviniaModal {
   ): ModalHandle<TResult> {
     const id = `modal-${++this._seq}`;
     const pending = this.deferred();
-    this._results.set(id, pending);    const handle: ModalHandle<TResult> = {
+    this._results.set(id, pending);
+    const handle: ModalHandle<TResult> = {
       id,
       result: pending.promise as Promise<ModalResult<TResult>>,
       close: (value?: TResult) => this.close(id, value),
@@ -237,11 +238,7 @@ export class RiviniaModal {
    * programmatic review. Guards run sequentially; any `false` or throw denies
    * (stays open + diagnostic). Stale guard completions are ignored.
    */
-  async requestDismiss(
-    id: string,
-    origin: ModalDismissOrigin,
-    reason?: string,
-  ): Promise<boolean> {
+  async requestDismiss(id: string, origin: ModalDismissOrigin, reason?: string): Promise<boolean> {
     const record = this.get(id);
     if (!record || record.status !== 'active' || this.blockedByDescendants(id)) return false;
     const inflight = this._dismissInflight.get(id);
@@ -432,7 +429,10 @@ export class RiviniaModal {
     ];
     for (const layer of layers) {
       if (!layer) continue;
-      const typed = layer as { closeOnEscape?: boolean; backdrop?: 'close' | 'static' | 'disabled' };
+      const typed = layer as {
+        closeOnEscape?: boolean;
+        backdrop?: 'close' | 'static' | 'disabled';
+      };
       if (typed.closeOnEscape !== undefined) merged.closeOnEscape = typed.closeOnEscape;
       if (typed.backdrop !== undefined) merged.backdrop = typed.backdrop;
     }
@@ -468,7 +468,8 @@ export class RiviniaModal {
     const blocked = this._instances().some(
       (i) => i.parentId === id && i.status !== 'closed' && i.status !== 'closing',
     );
-    if (blocked) this.diagnose('strategy-rejected', id, this.get(id)?.ref ?? null, 'prevent-parent-close');
+    if (blocked)
+      this.diagnose('strategy-rejected', id, this.get(id)?.ref ?? null, 'prevent-parent-close');
     return blocked;
   }
 
