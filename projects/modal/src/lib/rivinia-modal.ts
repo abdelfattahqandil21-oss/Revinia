@@ -78,6 +78,16 @@ export class RiviniaModal {
   readonly queued = computed<readonly ModalInstance[]>(() =>
     this._instances().filter((i) => i.status === 'queued'),
   );
+  /** Closing instances (exit animations), in strategy display order. */
+  readonly closing = computed<readonly ModalInstance[]>(() =>
+    this._strategy.order(this._instances().filter((i) => i.status === 'closing')),
+  );
+  /** Everything rendered (active + closing), in strategy display order. */
+  readonly visible = computed<readonly ModalInstance[]>(() =>
+    this._strategy.order(
+      this._instances().filter((i) => i.status === 'active' || i.status === 'closing'),
+    ),
+  );
   /** Topmost active instance (the only Escape-eligible one), if any. */
   readonly top = computed<ModalInstance | null>(() => {
     const list = this.active();
