@@ -86,6 +86,19 @@ Closing a parent cascades to descendants (`dismissed: parent-closed`) unless
 `descendants: 'prevent-parent-close'` blocks it. Swapping strategies with live
 modals throws — close everything first.
 
+## Type holes (honest, by design)
+
+Core checks `ModalHandle<TResult>.close(result?: TResult)` and
+`ModalResult`/`ModalContext.data` typing (see `modal-type-safety.spec.ts`
+`@ts-expect-error` tests). It does NOT check:
+
+- `ModalContext.close(result?: unknown)` — any payload compiles; the mismatch
+  reaches the opener's awaited `ModalResult` unchecked.
+- `inputs?: Record<string, unknown>` (options + component content) — any shape
+  compiles; misspelled keys fail silently at render. The UI owns binding.
+- The internal deferred-promise cast to `Promise<ModalResult<TResult>>` —
+  `close()` settles whatever it receives, never validated.
+
 ## License
 
 MIT.
