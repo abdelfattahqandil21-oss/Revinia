@@ -1,19 +1,25 @@
-import { DestroyRef, ElementRef, EmbeddedViewRef, EnvironmentInjector, TemplateRef, createEnvironmentInjector, type Type } from '@angular/core';
+import {
+  DestroyRef,
+  ElementRef,
+  EmbeddedViewRef,
+  EnvironmentInjector,
+  TemplateRef,
+  createEnvironmentInjector,
+  type Type,
+} from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RiviniaModalConfig } from './modal-config';
 import { QueueStrategy, StackStrategy } from './modal-strategy';
-import type {
-  ModalContent,
-  ModalResult,
-  ModalTemplateContext,
-} from './modal-types';
+import type { ModalContent, ModalResult, ModalTemplateContext } from './modal-types';
 import { provideRiviniaModal } from './provide-modal';
 import { RiviniaModal } from './rivinia-modal';
 
 class FakeDialog {}
 
-class FakeTemplateRef extends TemplateRef<import('./modal-types').ModalTemplateContext<{ title: string }>> {
+class FakeTemplateRef extends TemplateRef<
+  import('./modal-types').ModalTemplateContext<{ title: string }>
+> {
   declare readonly elementRef: ElementRef;
   override createEmbeddedView(): EmbeddedViewRef<
     import('./modal-types').ModalTemplateContext<{ title: string }>
@@ -379,7 +385,11 @@ describe('RiviniaModal ownership and nesting', () => {
     expect(await parent.result).toEqual({ status: 'confirmed', value: undefined });
     expect(await child.result).toEqual({ status: 'dismissed', reason: 'parent-closed' });
     expect(await grandchild.result).toEqual({ status: 'dismissed', reason: 'parent-closed' });
-    expect(modal.debugState()).toMatchObject({ active: [], queued: [], closing: [parent.id, child.id, grandchild.id] });
+    expect(modal.debugState()).toMatchObject({
+      active: [],
+      queued: [],
+      closing: [parent.id, child.id, grandchild.id],
+    });
     vi.advanceTimersByTime(1000);
     expect(modal.debugState()).toMatchObject({ active: [], queued: [], closing: [] });
   });
@@ -496,5 +506,79 @@ describe('RiviniaModal closing handshake and registry', () => {
     vi.advanceTimersByTime(60_000);
     await Promise.resolve();
     expect(settled).toEqual([{ status: 'dismissed', reason: 'manager-destroyed' }]);
+  });
+});
+
+describe('RiviniaModal record isolation', () => {
+  const INTERNAL_KEYS = ['guards', 'closingTimer', 'ownerCleanup', 'generation', 'openedSeq'];
+  const PUBLIC_KEYS = [
+    'id',
+    'ref',
+    'caller',
+    'parentId',
+    'data',
+    'content',
+    'status',
+    'dismiss',
+    'metadata',
+  ];
+
+  it('public snapshots expose only ModalInstance fields', () => {
+    const modal = setup();
+    const keep = modal.openModal(componentContent(), { ref: 'keep' });
+    const shutting = modal.openModal(componentContent(), { ref: 'iso', guards: [() => true] });
+    expect(shutting.dismiss('bye')).toBe(true);
+    // `shutting` is now `closing` (auto-finalize pending on fake timers);
+    // `keep` stays active. Every surface must hide internals.
+    expect(modal.active().map((i) => i.id)).toEqual([keep.id]);
+    const snapshots = [
+      ...modal.active(),
+      ...modal.closing(),
+      ...modal.visible(),
+      ...modal.queued(),
+      ...modal.findByRef('iso'),
+    ];
+    expect(snapshots.length).toBeGreaterThan(0);
+    for (const snap of snapshots) {
+      for (const key of INTERNAL_KEYS) {
+        expect(snap).not.toHaveProperty(key);
+      }
+      expect(Object.keys(snap).sort()).toEqual([...PUBLIC_KEYS].sort());
+    }
+    expect(modal.top()).not.toHaveProperty('guards');
+    drain(modal);
+  });
+
+  it('returned snapshots are immutable copies, not live records', () => {
+    const modal = setup();
+    const handle = modal.openModal<{ n: number }>(templateContent<{ n: number }>(), {
+      data: { n: 1 },
+    });
+    const before = modal.active()[0];
+    expect(modal.update(handle.id, { data: { n: 2 } })).toBe(true);
+    // The previously returned object is untouched by the update.
+    expect(before.data).toEqual({ n: 1 });
+    expect(modal.active()[0].data).toEqual({ n: 2 });
+    drain(modal);
+  });
+});
+
+describe('RiviniaModal closing/visible signals', () => {
+  it('exposes closing instances reactively while active/top stay unchanged', async () => {
+    const modal = setup({ closingTimeout: 0 });
+    const a = modal.openModal<string>(componentContent(), { ref: 'a' });
+    const b = modal.openModal<string>(componentContent(), { ref: 'b' });
+    expect(b.dismiss('bye')).toBe(true);
+    expect(await b.result).toEqual({ status: 'dismissed', reason: 'bye' });
+    // Consumer-visible: closing holds the dismissed instance until teardown.
+    expect(modal.closing().map((i) => i.id)).toEqual([b.id]);
+    // Visible = active + closing in strategy order; active/top unchanged.
+    expect(modal.visible().map((i) => i.id)).toEqual([a.id, b.id]);
+    expect(modal.active().map((i) => i.id)).toEqual([a.id]);
+    expect(modal.top()?.id).toBe(a.id);
+    expect(modal.confirmClosed(b.id)).toBe(true);
+    expect(modal.closing()).toEqual([]);
+    expect(modal.visible().map((i) => i.id)).toEqual([a.id]);
+    drain(modal);
   });
 });

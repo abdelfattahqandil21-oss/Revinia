@@ -17,6 +17,11 @@ export function joinUrl(baseUrl: string, endpoint: string): string {
  * unchanged. Unwraps EXACTLY ONE level: a payload that itself contains the
  * key (`{ data: { data: […], page: 1 } }`) is returned whole — recursive
  * unwrapping silently destroyed sibling fields (data-loss bug, fixed).
+ *
+ * Type hole (by design, never validated): the return is an unchecked cast
+ * (`body[key] as T`, `body as T`). A wrong `T` compiles and mistypes the
+ * payload at runtime — pair with `envelope` validation or a `parse` hook
+ * (Zod/Valibot recipe) when the backend is untyped.
  */
 export function unwrapAs<T>(body: unknown, key: string): T {
   if (isObjectRecord(body) && hasOwn(body, key)) {

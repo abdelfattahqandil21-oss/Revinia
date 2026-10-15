@@ -228,7 +228,7 @@ describe('RiviniaToast overflow eviction', () => {
   });
 });
 describe('RiviniaToast capacity and queue', () => {
-  it("dismiss-oldest (default) evicts the head and ids stay unique", () => {
+  it('dismiss-oldest (default) evicts the head and ids stay unique', () => {
     const toast = setup({ maxVisible: 2, duration: 10_000 });
     const a = toast.show({ message: 'a' }) as number;
     toast.show({ message: 'b' });
@@ -358,5 +358,31 @@ describe('RiviniaToast teardown and state', () => {
     expect(clampDuration(undefined, 5000)).toBe(5000);
     expect(clampDuration(Number.POSITIVE_INFINITY, 5000)).toBe(0);
     toast.dismissAll();
+  });
+});
+
+describe('RiviniaToast generations cleanup', () => {
+  function generations(toast: RiviniaToast): number {
+    return (toast as unknown as { _generations: Map<number, number> })._generations.size;
+  }
+
+  it('does not grow _generations across show/dismiss cycles', () => {
+    const toast = setup();
+    for (let i = 0; i < 10; i++) {
+      const id = toast.show({ message: `m${i}` });
+      expect(id).not.toBeNull();
+      expect(toast.dismiss(id as number)).toBe(true);
+    }
+    expect(generations(toast)).toBe(0);
+    drain(toast);
+  });
+
+  it('clears _generations on dismissAll', () => {
+    const toast = setup();
+    toast.show({ message: 'a' });
+    toast.show({ message: 'b' });
+    expect(generations(toast)).toBeGreaterThan(0);
+    toast.dismissAll();
+    expect(generations(toast)).toBe(0);
   });
 });

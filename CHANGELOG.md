@@ -5,16 +5,31 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ## Unreleased
 
+### @rivinia/i18n (proposed 0.3.0 — breaking default, NOT bumped yet)
+
+- **I-08 (breaking):** default loader path `assets/i18n` → `i18n` (files in
+  `public/i18n/`, served from the site root; matches the app template's
+  `{ "glob": "**/*", "input": "public" }`). Migration: move
+  `src/assets/i18n/*.json` → `public/i18n/*.json`, or pin the old layout with
+  `jsonLoader({ path: 'assets/i18n' })`. `ng-add` starter, schema descriptions,
+  README and JSDoc synced.
+
+## 2026-10-13 — env 0.2.0
+
 ### @rivinia/env
-- **New package (0.1.0):** `BaseEnvironment` contract + `ng-add` scaffolding
-  typed `environment.model/dev/staging/prod` files (version snapshotted from
-  the app's `package.json`) and wiring `production`/`staging` file replacements
-  (staging copied from production when present). Never overwrites, never
-  removes user config; `development` untouched by design.
+
+- **New package (0.2.0):** `BaseEnvironment` contract + `ng-add` scaffolding
+  with environment multi-select, short aliases (`dev`/`stag`/`prod`) and
+  per-environment output directories. Typed `environment.model/dev/staging/prod`
+  files (version snapshotted from the app's `package.json`) and wiring
+  `production`/`staging` file replacements (staging copied from production when
+  present). Never overwrites, never removes user config; `development`
+  untouched by design.
 
 ## 2026-10-13 — http 0.4.0, toast 0.3.0, modal 0.3.0, i18n 0.2.0
 
 ### @rivinia/http
+
 - **H-03 (feature):** opt-in backend-envelope validation via an `envelope`
   policy (`successKey`/`errorKey`, default `isSuccess`/`error`). A failed
   envelope throws a typed `RiviniaHttpEnvelopeError` (body + code) instead of
@@ -34,6 +49,7 @@ A change is listed the moment it lands on `main`, not when npm is published.
   issue if a double-wrapped backend genuinely needs it.
 
 ### @rivinia/toast
+
 - **T-04 (fix):** overflow eviction prefers the oldest timed, actionless toast;
   persistent errors with actions are evicted only when nothing else can go.
 - **T-03 (fix):** a kind change re-resolves the per-kind default duration
@@ -44,6 +60,7 @@ A change is listed the moment it lands on `main`, not when npm is published.
   Updating a paused toast stores the new remaining without re-arming.
 
 ### @rivinia/modal
+
 - **M-06 (fix):** concurrent `requestDismiss` calls share one in-flight guard
   run (identical results) instead of double-prompting.
 - **M-05 (fix):** registry entries are deleted on settle — queued-cancelled
@@ -62,6 +79,7 @@ A change is listed the moment it lands on `main`, not when npm is published.
   their own owner callback); independently-owned ones activate.
 
 ### @rivinia/i18n
+
 - **I-07 (feature):** `injectRiviniaI18n<L>()` preserves the language union and
   `defineRiviniaI18n(config)` binds config + accessors with inference, so
   unconfigured ids fail compilation (`@ts-expect-error` covered).

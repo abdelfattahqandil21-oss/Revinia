@@ -62,10 +62,10 @@ export class TripPage {
 ```
 
 ```html
-@if (trips.hasValue()) {
-  @for (t of trips.value(); track t.id) { <p>{{ t.title }}</p> }
-} @else if (trips.isLoading()) {
-  <p>Loading…</p>
+@if (trips.hasValue()) { @for (t of trips.value(); track t.id) {
+<p>{{ t.title }}</p>
+} } @else if (trips.isLoading()) {
+<p>Loading…</p>
 }
 ```
 
@@ -76,10 +76,10 @@ unless unwrapping is enabled. Backends that wrap payloads
 (`{ data, error, isSuccess }`) opt in globally or per call:
 
 ```ts
-provideRiviniaHttp({ unwrap: true });                               // whole app, 'data' key
-provideRiviniaHttp({ unwrap: true, unwrapKey: 'result' });          // whole app, custom key
-this.api.get<Legacy>(url, { unwrap: true, unwrapKey: 'result' });   // this call only
-this.api.get<Raw>(url);                                             // raw body (default)
+provideRiviniaHttp({ unwrap: true }); // whole app, 'data' key
+provideRiviniaHttp({ unwrap: true, unwrapKey: 'result' }); // whole app, custom key
+this.api.get<Legacy>(url, { unwrap: true, unwrapKey: 'result' }); // this call only
+this.api.get<Raw>(url); // raw body (default)
 ```
 
 NOTE: a key alone never enables unwrapping — only `unwrap: true` does,
@@ -109,7 +109,7 @@ Backends that report failure inside HTTP 200 (`{ data: null, isSuccess: false }`
 must never flow into `next()` as success — critical in payment flows:
 
 ```ts
-provideRiviniaHttp({ envelope: {} });                 // whole app (isSuccess/error keys)
+provideRiviniaHttp({ envelope: {} }); // whole app (isSuccess/error keys)
 this.api.get(url, { envelope: { successKey: 'ok', errorKey: 'message' } });
 ```
 
@@ -120,14 +120,14 @@ global one wholesale.
 
 ## API
 
-| Export | Kind | Purpose |
-|---|---|---|
-| `provideRiviniaHttp(config?)` | provider | `{ unwrap?=false, unwrapKey?='data', envelope?, httpFeatures? }` |
-| `RiviniaHttp` | `@Service()` | `get/post/put/patch/delete`, `getBlob`, `getText`, `getResponse`, `postResponse`, `getResource` |
-| `injectRiviniaHttp()` | function | shorthand for `inject(RiviniaHttp)` |
-| `joinUrl(base, endpoint)` | util | slash-safe join; absolute URLs pass through |
-| `unwrapAs(body, key)` | util | single-level envelope extraction (nested keys preserved) |
-| types | types | `RiviniaHttpConfig`, `RiviniaRequestOptions`, `RiviniaDeleteOptions`, `RiviniaResourceOptions`, `RiviniaEnvelopePolicy`, `ReactiveInput`, `QueryParamsInput` |
+| Export                        | Kind         | Purpose                                                                                                                                                      |
+| ----------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `provideRiviniaHttp(config?)` | provider     | `{ unwrap?=false, unwrapKey?='data', envelope?, httpFeatures? }`                                                                                             |
+| `RiviniaHttp`                 | `@Service()` | `get/post/put/patch/delete`, `getBlob`, `getText`, `getResponse`, `postResponse`, `getResource`                                                              |
+| `injectRiviniaHttp()`         | function     | shorthand for `inject(RiviniaHttp)`                                                                                                                          |
+| `joinUrl(base, endpoint)`     | util         | slash-safe join; absolute URLs pass through                                                                                                                  |
+| `unwrapAs(body, key)`         | util         | single-level envelope extraction (nested keys preserved)                                                                                                     |
+| types                         | types        | `RiviniaHttpConfig`, `RiviniaRequestOptions`, `RiviniaDeleteOptions`, `RiviniaResourceOptions`, `RiviniaEnvelopePolicy`, `ReactiveInput`, `QueryParamsInput` |
 
 `getResponse`/`postResponse` return the raw `HttpResponse` (status + headers,
 body never unwrapped — compose `unwrapAs` yourself if needed). A configured
@@ -140,6 +140,14 @@ accept values, signals or reactive functions (everything else is static).
 `getBlob` is never unwrapped. `HttpContext` passes through untouched, so
 app interceptors (auth opt-out, error toasts) keep working. For caching,
 polling, retry and TanStack Query interop see [RECIPES.md](./RECIPES.md).
+
+## Type holes (honest, by design)
+
+`unwrapAs<T>` is an unchecked cast — a wrong `T` compiles and mistypes the
+payload at runtime. What IS checked is generic flow (see
+`http-type-safety.spec.ts` `@ts-expect-error` tests). For untyped backends,
+pair unwrapping with `envelope` validation or a `parse` hook (Zod/Valibot —
+see [RECIPES.md](./RECIPES.md)).
 
 ## Testing your app code
 

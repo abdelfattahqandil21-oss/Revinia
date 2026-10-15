@@ -26,7 +26,7 @@ import type { Translation } from './i18n-types';
 import type { TranslationLoader } from './loaders';
 import { jsonLoader } from './loaders';
 import { browserLanguages, detectBrowserLanguage, safeGetItem, safeSetItem } from './i18n-utils';
-import { parseCookie, serializeCookie } from './cookies';
+import { parseCookie, serializeCookie, shouldSecureCookie } from './cookies';
 import { formatIcu } from './icu';
 import { ViewTransitionService } from './view-transition.service';
 
@@ -60,7 +60,8 @@ export class RiviniaI18n<L extends string = string> {
   private readonly _loadedTranslations = signal<Record<string, unknown>>({});
   /**
    * Explicit loader wins; otherwise the conventional JSON layout
-   * (`assets/i18n/{language}.json` unless the consumer overrides the path).
+   * (`i18n/{language}.json` — files in `public/i18n/`, served from the site
+   * root — unless the consumer overrides the path).
    * The descriptor still code-splits: the fetch implementation loads only on
    * first resolve.
    */
@@ -68,7 +69,10 @@ export class RiviniaI18n<L extends string = string> {
     this._config.loader?.resolve ?? (() => jsonLoader().resolve() as Promise<TranslationLoader<L>>);
   private _resolvedLoader: TranslationLoader<L> | null = null;
   private readonly _translationsCache = new Map<L, Record<string, unknown>>();
-  private readonly _inflight = new Map<L, Promise<{ data: Record<string, unknown>; ok: boolean }>>();
+  private readonly _inflight = new Map<
+    L,
+    Promise<{ data: Record<string, unknown>; ok: boolean }>
+  >();
   /**
    * Out-of-order safety: a response reaches the visible signals only when it
    * belongs to the currently intended language (`_currentLanguageId()`).
@@ -109,7 +113,9 @@ export class RiviniaI18n<L extends string = string> {
 
   constructor() {
     if (this._config.languages.length === 0) {
-      throw new Error('[rivinia/i18n] At least one language must be provided in the languages array.');
+      throw new Error(
+        '[rivinia/i18n] At least one language must be provided in the languages array.',
+      );
     }
     if (!this._config.languages.some((l) => l.id === this._config.defaultLanguage)) {
       throw new Error(
@@ -401,7 +407,12 @@ export class RiviniaI18n<L extends string = string> {
     if (this._storageStrategy === 'cookie') {
       if (this._request) return;
       try {
-        this._doc.cookie = serializeCookie(this._storageKey, id);
+        const location = (
+          this._doc as unknown as { location?: { protocol?: string; hostname?: string } }
+        )?.location;
+        this._doc.cookie = serializeCookie(this._storageKey, id, {
+          secure: shouldSecureCookie(location),
+        });
       } catch {
         // Best-effort persistence.
       }
@@ -432,13 +443,13 @@ export class RiviniaI18n<L extends string = string> {
   }
 
   private _resolveKey(obj: Record<string, unknown>, path: string): string | undefined {
-    const value = path.split('.').reduce<unknown>(
-      (acc, segment) =>
-        acc && typeof acc === 'object'
-          ? (acc as Record<string, unknown>)[segment]
-          : undefined,
-      obj,
-    );
+    const value = path
+      .split('.')
+      .reduce<unknown>(
+        (acc, segment) =>
+          acc && typeof acc === 'object' ? (acc as Record<string, unknown>)[segment] : undefined,
+        obj,
+      );
     if (typeof value === 'string') return value;
     if (typeof value === 'number' || typeof value === 'boolean') return String(value);
     return undefined;

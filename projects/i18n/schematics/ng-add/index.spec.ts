@@ -34,6 +34,7 @@ describe('ng-add', () => {
     expect(content).toContain(`defaultLanguage: 'ar',`);
     expect(content).toContain(`{ id: 'en', nativeName: 'English', dir: 'ltr' },`);
     expect(content).not.toContain('detectBrowser');
+    expect(content).toContain('public/i18n/{id}.json');
   });
 
   it('honours a language list and detectBrowser flag', async () => {
@@ -43,7 +44,7 @@ describe('ng-add', () => {
     expect(content).toContain('detectBrowser: true');
   });
 
-  it("parses the exact messy input users type (quotes, spaces, case)", async () => {
+  it('parses the exact messy input users type (quotes, spaces, case)', async () => {
     const tree = await run({ languages: `'ar' , 'en' , 'fr'` });
     const content = tree.readContent('/src/app/app.config.ts');
     expect(content).toContain(`defaultLanguage: 'ar',`);

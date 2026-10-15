@@ -20,11 +20,13 @@ ng add @rivinia/i18n   # asks default language + browser detection, wires an ar/
 ## Dictionaries by convention (no config needed)
 
 Key-based `translate('booking.seats')` works out of the box with the conventional
-layout — the default loader fetches `assets/i18n/{language}.json`
-(`assets/i18n/ar.json`, `assets/i18n/en.json`, …). Override only when you differ:
+layout — the default loader fetches `i18n/{language}.json`
+(`public/i18n/ar.json`, `public/i18n/en.json`, … served from the site root;
+modern Angular templates map `public/` via `{ "glob": "**/*", "input": "public" }`).
+Override only when you differ:
 
 ```json
-// src/assets/i18n/ar.json
+// public/i18n/ar.json
 { "booking": { "seats": "{count, plural, zero {لا مقاعد} one {مقعد واحد} other {# مقاعد}}" } }
 ```
 
@@ -37,6 +39,12 @@ provideRiviniaI18n({ loader: httpLoader({ endpoint: 'https://api.example.com/i18
 
 Loaders code-split: fetch implementations load on first use only.
 
+> **Migration (unreleased, proposed 0.3.0 — breaking default):** the default
+> loader path changed from `assets/i18n` to `i18n`. Move
+> `src/assets/i18n/*.json` → `public/i18n/*.json` (served from the site root),
+> or keep the old layout explicitly with
+> `jsonLoader({ path: 'assets/i18n' })`.
+
 ## Startup loading (no raw keys on first paint)
 
 `provideRiviniaI18n()` registers an app initializer that loads the initial
@@ -45,9 +53,9 @@ language before first paint (SSR waits via `PendingTasks`):
 ```ts
 provideRiviniaI18n({
   // ...
-  preload: false,                       // opt out: load manually instead
+  preload: false, // opt out: load manually instead
   translations: { ar: { hello: 'مرحبا' } }, // inline seed: instant, zero network,
-});                                     // a successful loader response still wins
+}); // a successful loader response still wins
 ```
 
 Gate skeletons on the `ready` signal (true once initial content is available),
@@ -90,7 +98,7 @@ export class Header {
 ```
 
 ```json
-// assets/i18n/en.json
+// public/i18n/en.json
 { "booking": { "seats": "{count, plural, one {# seat} other {# seats}}" } }
 ```
 
@@ -101,17 +109,17 @@ export class Header {
 
 ## API
 
-| Export | Kind | Purpose |
-|---|---|---|
-| `provideRiviniaI18n(config)` | provider | languages, default, storage (+`cookie`), loader, `detectBrowser?` (off), `switchStrategy?`, `preload?`, `translations?` (inline seed) |
-| `RiviniaI18n` | `@Service()` | signals (`locale`, `ready`) + `translate/setLanguage(toggle/next/previous)/loadTranslations/formatNumber/formatDate` |
-| `injectRiviniaI18n()` | function | shorthand, preserves the language union; `defineRiviniaI18n(config)` binds config + accessors with inference |
-| `jsonLoader/httpLoader/remoteLoader/customLoader` | loaders | lazy code-split dictionaries (fetch, no HttpClient) |
-| `formatIcu(template, params, locale)` | util | ICU subset: plural/select/`#`/nesting via native `Intl.PluralRules` |
-| `detectBrowserLanguage(ids, langs)` | util | in-order priority + base-tag fallback (`ar-EG` → `ar`), pure/testable |
-| `parseCookie/serializeCookie` | utils | cookie strategy primitives (server header / browser cookie) |
-| `RTranslatePipe` | pipe | `rTranslate` (impure by necessity — prefer `translate()` in code for lists) |
-| types | types | `RiviniaI18nConfig`, `Language` (+`locale?`), `Translation`, `LoaderDescriptor`, … |
+| Export                                            | Kind         | Purpose                                                                                                                               |
+| ------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `provideRiviniaI18n(config)`                      | provider     | languages, default, storage (+`cookie`), loader, `detectBrowser?` (off), `switchStrategy?`, `preload?`, `translations?` (inline seed) |
+| `RiviniaI18n`                                     | `@Service()` | signals (`locale`, `ready`) + `translate/setLanguage(toggle/next/previous)/loadTranslations/formatNumber/formatDate`                  |
+| `injectRiviniaI18n()`                             | function     | shorthand, preserves the language union; `defineRiviniaI18n(config)` binds config + accessors with inference                          |
+| `jsonLoader/httpLoader/remoteLoader/customLoader` | loaders      | lazy code-split dictionaries (fetch, no HttpClient)                                                                                   |
+| `formatIcu(template, params, locale)`             | util         | ICU subset: plural/select/`#`/nesting via native `Intl.PluralRules`                                                                   |
+| `detectBrowserLanguage(ids, langs)`               | util         | in-order priority + base-tag fallback (`ar-EG` → `ar`), pure/testable                                                                 |
+| `parseCookie/serializeCookie`                     | utils        | cookie strategy primitives (server header / browser cookie)                                                                           |
+| `RTranslatePipe`                                  | pipe         | `rTranslate` (impure by necessity — prefer `translate()` in code for lists)                                                           |
+| types                                             | types        | `RiviniaI18nConfig`, `Language` (+`locale?`), `Translation`, `LoaderDescriptor`, …                                                    |
 
 Dictionaries commit to visible signals only for the currently intended
 language — out-of-order responses stay cached. `setLanguageAsync` aborts on

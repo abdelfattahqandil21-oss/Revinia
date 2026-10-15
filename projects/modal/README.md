@@ -47,14 +47,14 @@ export class Users {
 
 ## API
 
-| Export | Kind | Purpose |
-|---|---|---|
-| `provideRiviniaModal(config?)` | provider | `{ strategy?, dismiss?, maxVisible?, maxQueue?, overflow?, descendants?, presets?, closingTimeout?, diagnostics? }` |
-| `RiviniaModal` | `@Service()` | `openModal/close/dismiss/cancel/requestDismiss/update/confirmClosed/dismissAll/findByRef/useStrategy/debugState` + `active/queued/top` signals |
-| `injectRiviniaModal()` | function | shorthand for `inject(RiviniaModal)` |
-| `RIVINIA_MODAL_CONTEXT` | token | per-instance context for dynamic components |
-| `StackStrategy` / `QueueStrategy` | classes | built-in ordering policies (`ModalStrategy` for custom) |
-| types | types | `ModalHandle`, `ModalResult`, `ModalContent`, `ModalOpenOptions`, `ModalDismissPolicy`, `ModalGuard`, … |
+| Export                            | Kind         | Purpose                                                                                                                                                        |
+| --------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `provideRiviniaModal(config?)`    | provider     | `{ strategy?, dismiss?, maxVisible?, maxQueue?, overflow?, descendants?, presets?, closingTimeout?, diagnostics? }`                                            |
+| `RiviniaModal`                    | `@Service()` | `openModal/close/dismiss/cancel/requestDismiss/update/confirmClosed/dismissAll/findByRef/useStrategy/debugState` + `active/queued/closing/visible/top` signals |
+| `injectRiviniaModal()`            | function     | shorthand for `inject(RiviniaModal)`                                                                                                                           |
+| `RIVINIA_MODAL_CONTEXT`           | token        | per-instance context for dynamic components                                                                                                                    |
+| `StackStrategy` / `QueueStrategy` | classes      | built-in ordering policies (`ModalStrategy` for custom)                                                                                                        |
+| types                             | types        | `ModalHandle`, `ModalResult`, `ModalContent`, `ModalOpenOptions`, `ModalDismissPolicy`, `ModalGuard`, …                                                        |
 
 Results settle exactly once, at dismissal initiation — exit animations never
 delay callers. `close/dismiss/cancel` are guard-free primitives (booleans);
@@ -85,6 +85,19 @@ settles `owner-destroyed` immediately without adding anything.
 Closing a parent cascades to descendants (`dismissed: parent-closed`) unless
 `descendants: 'prevent-parent-close'` blocks it. Swapping strategies with live
 modals throws — close everything first.
+
+## Type holes (honest, by design)
+
+Core checks `ModalHandle<TResult>.close(result?: TResult)` and
+`ModalResult`/`ModalContext.data` typing (see `modal-type-safety.spec.ts`
+`@ts-expect-error` tests). It does NOT check:
+
+- `ModalContext.close(result?: unknown)` — any payload compiles; the mismatch
+  reaches the opener's awaited `ModalResult` unchecked.
+- `inputs?: Record<string, unknown>` (options + component content) — any shape
+  compiles; misspelled keys fail silently at render. The UI owns binding.
+- The internal deferred-promise cast to `Promise<ModalResult<TResult>>` —
+  `close()` settles whatever it receives, never validated.
 
 ## License
 

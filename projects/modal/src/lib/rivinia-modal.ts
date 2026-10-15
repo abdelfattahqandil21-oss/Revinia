@@ -37,6 +37,25 @@ interface PendingResult {
 }
 
 /**
+ * Public snapshot of an internal record. Strips lifecycle internals (`guards`,
+ * `closingTimer`, `ownerCleanup`, `generation`, `openedSeq`) so consumers can
+ * never observe or mutate manager state. Frozen: UI must use `update()`.
+ */
+function toPublicInstance(record: ModalRecord): ModalInstance {
+  return Object.freeze({
+    id: record.id,
+    ref: record.ref,
+    caller: record.caller,
+    parentId: record.parentId,
+    data: record.data,
+    content: record.content,
+    status: record.status,
+    dismiss: Object.freeze({ ...record.dismiss }),
+    metadata: Object.freeze({ ...record.metadata }),
+  }) as ModalInstance;
+}
+
+/**
  * Headless modal manager. Owns identity, lifecycle coordination, result
  * settlement and diagnostics. Ordering/admission policy is delegated to a
  * `ModalStrategy` (Stack/Queue/custom) — the manager never branches on mode.
@@ -72,11 +91,27 @@ export class RiviniaModal {
 
   /** Active instances in strategy display order (bottom-first). */
   readonly active = computed<readonly ModalInstance[]>(() =>
-    this._strategy.order(this._instances().filter((i) => i.status === 'active')),
+    this._strategy
+      .order(this._instances().filter((i) => i.status === 'active'))
+      .map(toPublicInstance),
   );
   /** Queued instances, FIFO admission order. */
   readonly queued = computed<readonly ModalInstance[]>(() =>
-    this._instances().filter((i) => i.status === 'queued'),
+    this._instances()
+      .filter((i) => i.status === 'queued')
+      .map(toPublicInstance),
+  );
+  /** Closing instances (exit animations), in strategy display order. */
+  readonly closing = computed<readonly ModalInstance[]>(() =>
+    this._strategy
+      .order(this._instances().filter((i) => i.status === 'closing'))
+      .map(toPublicInstance),
+  );
+  /** Everything rendered (active + closing), in strategy display order. */
+  readonly visible = computed<readonly ModalInstance[]>(() =>
+    this._strategy
+      .order(this._instances().filter((i) => i.status === 'active' || i.status === 'closing'))
+      .map(toPublicInstance),
   );
   /** Topmost active instance (the only Escape-eligible one), if any. */
   readonly top = computed<ModalInstance | null>(() => {
@@ -91,7 +126,7 @@ export class RiviniaModal {
           this.remove(record.id);
           this.settle(record.id, { status: 'queued-cancelled' });
         } else if (record.status !== 'closed') {
-          this.clearClosingTimer(record);
+          this.clearClosingTimer(record.id);
           this.remove(record.id);
           this.settle(record.id, { status: 'dismissed', reason: 'manager-destroyed' });
         }
@@ -117,7 +152,13 @@ export class RiviniaModal {
   ): ModalHandle<TResult> {
     const id = `modal-${++this._seq}`;
     const pending = this.deferred();
-    this._results.set(id, pending);    const handle: ModalHandle<TResult> = {
+    // Type hole (internal, by design): the deferred promise is created as
+    // `ModalResult<unknown>` and cast to `ModalResult<TResult>`. A `TResult`
+    // mismatch is never validated at runtime — `close()` settles whatever it
+    // receives. The handle's `close(result?: TResult)` signature IS checked
+    // (see type tests); this cast only forwards that contract.
+    this._results.set(id, pending);
+    const handle: ModalHandle<TResult> = {
       id,
       result: pending.promise as Promise<ModalResult<TResult>>,
       close: (value?: TResult) => this.close(id, value),
@@ -237,11 +278,7 @@ export class RiviniaModal {
    * programmatic review. Guards run sequentially; any `false` or throw denies
    * (stays open + diagnostic). Stale guard completions are ignored.
    */
-  async requestDismiss(
-    id: string,
-    origin: ModalDismissOrigin,
-    reason?: string,
-  ): Promise<boolean> {
+  async requestDismiss(id: string, origin: ModalDismissOrigin, reason?: string): Promise<boolean> {
     const record = this.get(id);
     if (!record || record.status !== 'active' || this.blockedByDescendants(id)) return false;
     const inflight = this._dismissInflight.get(id);
@@ -324,7 +361,9 @@ export class RiviniaModal {
 
   /** Non-closed snapshots for a definition ref (e.g. avoid duplicate confirms). */
   findByRef(ref: string): ModalInstance[] {
-    return this._instances().filter((i) => i.ref === ref && i.status !== 'closed');
+    return this._instances()
+      .filter((i) => i.ref === ref && i.status !== 'closed')
+      .map(toPublicInstance);
   }
 
   /**
@@ -432,7 +471,10 @@ export class RiviniaModal {
     ];
     for (const layer of layers) {
       if (!layer) continue;
-      const typed = layer as { closeOnEscape?: boolean; backdrop?: 'close' | 'static' | 'disabled' };
+      const typed = layer as {
+        closeOnEscape?: boolean;
+        backdrop?: 'close' | 'static' | 'disabled';
+      };
       if (typed.closeOnEscape !== undefined) merged.closeOnEscape = typed.closeOnEscape;
       if (typed.backdrop !== undefined) merged.backdrop = typed.backdrop;
     }
@@ -468,7 +510,8 @@ export class RiviniaModal {
     const blocked = this._instances().some(
       (i) => i.parentId === id && i.status !== 'closed' && i.status !== 'closing',
     );
-    if (blocked) this.diagnose('strategy-rejected', id, this.get(id)?.ref ?? null, 'prevent-parent-close');
+    if (blocked)
+      this.diagnose('strategy-rejected', id, this.get(id)?.ref ?? null, 'prevent-parent-close');
     return blocked;
   }
 
@@ -480,9 +523,9 @@ export class RiviniaModal {
   ): void {
     const record = this.get(id);
     if (!record || record.status !== 'active') return;
-    record.generation++;
+    const generation = record.generation + 1;
     this.closeDescendants(id, false);
-    this.patch(id, { status: 'closing' });
+    this.patch(id, { status: 'closing', generation });
     if (status === 'confirmed') {
       this.settle(id, { status, value } as ModalResult<unknown>);
     } else {
@@ -491,15 +534,13 @@ export class RiviniaModal {
     this.diagnose('closing', id, record.ref, reason);
     const timeout = Math.max(0, this.config?.closingTimeout ?? DEFAULT_CLOSING_TIMEOUT);
     if (timeout === 0) return; // Manual teardown: UI must call confirmClosed().
-    const generation = record.generation;
-    record.closingTimer = setTimeout(() => {
+    const timer = setTimeout(() => {
       const current = this.get(id);
       if (current && current.status === 'closing' && current.generation === generation) {
         this.finalize(id);
       }
     }, timeout);
-    // Patch the timer into the stored record (same object identity held above).
-    this.patch(id, { closingTimer: record.closingTimer });
+    this.patch(id, { closingTimer: timer });
   }
 
   private closeDescendants(parentId: string, force: boolean): void {
@@ -523,12 +564,14 @@ export class RiviniaModal {
   private finalize(id: string, promoteAfter = true): void {
     const record = this.get(id);
     if (!record) return;
-    this.clearClosingTimer(record);
-    this.patch(id, { status: 'closed' });
-    record.ownerCleanup?.();
+    this.clearClosingTimer(id);
+    const cleanup = record.ownerCleanup;
+    const ref = record.ref;
+    this.patch(id, { status: 'closed', closingTimer: null });
+    cleanup?.();
     this._instances.update((list) => list.filter((i) => i.id !== id));
     this._results.delete(id);
-    this.diagnose('closed', id, record.ref);
+    this.diagnose('closed', id, ref);
     if (promoteAfter) this.promote();
   }
 
@@ -545,15 +588,15 @@ export class RiviniaModal {
   }
 
   private remove(id: string): void {
-    const record = this.get(id);
-    if (record) this.clearClosingTimer(record);
+    this.clearClosingTimer(id);
     this._instances.update((list) => list.filter((i) => i.id !== id));
   }
 
-  private clearClosingTimer(record: ModalRecord): void {
-    if (record.closingTimer) {
+  private clearClosingTimer(id: string): void {
+    const record = this.get(id);
+    if (record?.closingTimer) {
       clearTimeout(record.closingTimer);
-      record.closingTimer = null;
+      this.patch(id, { closingTimer: null });
     }
   }
 
@@ -567,9 +610,8 @@ export class RiviniaModal {
       this.diagnose('dismissed', id, record.ref, 'owner-destroyed');
       return;
     }
-    record.generation++;
     this.closeDescendants(id, true);
-    this.patch(id, { status: 'closing' });
+    this.patch(id, { status: 'closing', generation: record.generation + 1 });
     this.settle(id, { status: 'owner-destroyed' });
     this.diagnose('closing', id, record.ref, 'owner-destroyed');
     // Promote normally: freeing room must activate the queued head (whose own

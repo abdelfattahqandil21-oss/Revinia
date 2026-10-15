@@ -5,10 +5,7 @@
  */
 
 /** Extracts a cookie value by name from a `Cookie` header or `document.cookie`. */
-export function parseCookie(
-  header: string | null | undefined,
-  name: string,
-): string | null {
+export function parseCookie(header: string | null | undefined, name: string): string | null {
   if (!header) return null;
   const prefix = `${name}=`;
   for (const part of header.split(';')) {
@@ -24,7 +21,31 @@ export function parseCookie(
   return null;
 }
 
-/** Serializes a language cookie ( Lax, root path, one year). */
-export function serializeCookie(name: string, value: string): string {
-  return `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=31536000; SameSite=Lax`;
+/** Serializes a language cookie (Lax, root path, one year). */
+export function serializeCookie(
+  name: string,
+  value: string,
+  options?: { secure?: boolean },
+): string {
+  const base = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=31536000; SameSite=Lax`;
+  return options?.secure ? `${base}; Secure` : base;
+}
+
+/**
+ * Decides whether the language cookie gets `Secure`: only on `https:`, never
+ * on `localhost` (dev TLS included — `Secure` there buys nothing and risks
+ * silent persistence loss). Pure and SSR-safe: unknown locations → `false`.
+ * The server never writes cookies regardless (app-owned responses).
+ */
+export function shouldSecureCookie(
+  location: { protocol?: string; hostname?: string } | null | undefined,
+): boolean {
+  try {
+    if (!location) return false;
+    if (location.protocol !== 'https:') return false;
+    if (location.hostname === 'localhost') return false;
+    return true;
+  } catch {
+    return false;
+  }
 }

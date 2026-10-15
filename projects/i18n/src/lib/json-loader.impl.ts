@@ -1,6 +1,6 @@
 import type { TranslationLoader } from './loaders';
 
-const DEFAULT_BASE_PATH = 'assets/i18n';
+const DEFAULT_BASE_PATH = 'i18n';
 
 export class JsonLoader<L extends string = string> implements TranslationLoader<L> {
   constructor(private readonly _options?: { path?: string }) {}

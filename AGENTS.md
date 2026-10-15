@@ -27,7 +27,7 @@ dependency boundaries or publishing correctness for convenience.
   (e.g. `@rivinia/modal/core`, `@rivinia/modal/ui`). A secondary entry point is an
   npm export boundary, NOT an automatic lazy chunk — prove chunks with production builds.
 - Async code-splitting inside a package uses the proven `LoaderDescriptor.resolve() →
-  dynamic import()` pattern from i18n-egy, not speculative abstractions.
+dynamic import()` pattern from i18n-egy, not speculative abstractions.
 
 ## Reusable patterns from i18n-egy v2.2.0 (do not duplicate its functionality)
 
@@ -42,7 +42,7 @@ dependency boundaries or publishing correctness for convenience.
 ## Workflow gates (a change is NOT done until all pass)
 
 1. `pnpm build <pkg>` (ng-packagr production) succeeds.
-2. Unit tests pass (`ng test` / Karma+Jasmine baseline).
+2. Unit tests pass (`ng test` / vitest via `@angular/build:unit-test`).
 3. `npm pack` tarball inspected: `exports`, `types`, `peerDependencies`, files.
    Grep dist FESM for runtime imports — any import beyond declared
    peers/allowances (e.g. an actual `tslib` import) fails the release.

@@ -18,11 +18,11 @@ afterEach(() => {
 });
 
 describe('jsonLoader', () => {
-  it('defaults to assets/i18n/{language}.json unless overridden', async () => {
+  it('defaults to i18n/{language}.json unless overridden', async () => {
     const seen = stubFetch({ a: 1 });
     const loader = await jsonLoader().resolve();
     expect(await loader.load('ar')).toEqual({ a: 1 });
-    expect(seen).toEqual(['assets/i18n/ar.json']);
+    expect(seen).toEqual(['i18n/ar.json']);
 
     const custom = await jsonLoader({ path: '/my-i18n' }).resolve();
     expect(await custom.load('en')).toEqual({ a: 1 });
@@ -32,7 +32,7 @@ describe('jsonLoader', () => {
   it('throws a descriptive error on missing files', async () => {
     stubFetch({}, false);
     const loader = await jsonLoader().resolve();
-    await expect(loader.load('ar')).rejects.toThrow('assets/i18n/ar.json');
+    await expect(loader.load('ar')).rejects.toThrow('i18n/ar.json');
   });
 });
 

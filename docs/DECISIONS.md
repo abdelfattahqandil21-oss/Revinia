@@ -45,11 +45,12 @@ alternatives rejected, impact.
 ## 2026-10-12 — D05: Publish validation is architectural, not final
 
 - Decision: manual per-package flow first (`build → test → npm pack → inspect →
-  clean-consumer install → prod build → confirm name/access/version`), user confirms each
+clean-consumer install → prod build → confirm name/access/version`), user confirms each
   public publish. Automation only after the manual flow is proven and recorded.
 - Impact: blocks Phase 5 until Phase 3 experiment + Phase 4 first-package flow succeed.
 
 ## 2026-10-12 — D06: UI secondaries stay import-free from Core (proof finding)
+
 - Context: cross-entry relative imports (`primary → ../core/...`) fail ng-packagr with
   TS6059 (`rootDir` locked to the entry dir); TS6 deprecates `baseUrl`, so source-mapped
   `paths` need migration care. Proven in `proof-core` build attempts.
@@ -346,3 +347,42 @@ alternatives rejected, impact.
 - Verified: new spec (function endpoint + refetch on signal change), 21/21,
   rebuilt + repacked as 0.3.0 (feature, pre-1.0 minor), Desktop demo builds
   against the tarball; i18n loader impls split into real lazy chunks there.
+
+## 2026-10-15 — D27: i18n default loader path `assets/i18n` → `i18n` (breaking)
+
+- Context: the default `jsonLoader()` fetched `assets/i18n/{language}.json`,
+  but modern Angular app templates serve `public/` at the site root —
+  evidence (installed `@schematics/angular@22.2.2`, checked 2026-10-15):
+  `application/index.js:253`
+  `assets: [{ 'glob': '**/*', 'input': \`${projectRoot}public\` }]`and template dir`application/files/common-files/public/`(favicon only).
+Files in`public/i18n/{lang}.json`are served at`i18n/{lang}.json`, so the
+  old default 404s in convention-following apps.
+- Decision: `DEFAULT_BASE_PATH = 'i18n'` (relative, site-root). Breaking
+  default change → ships as **i18n 0.3.0** (pre-1.0 minor; PROPOSED, not
+  bumped in this pass). Migration: move `src/assets/i18n/*.json` →
+  `public/i18n/*.json`, or pin the old layout with
+  `jsonLoader({ path: 'assets/i18n' })`. Synced: `ng-add` starter comment +
+  schema `languages` description + tests, README + JSDoc, specs.
+- Alternatives rejected: keep `assets/i18n` + document the `public/` mapping
+  (leaves the zero-config path broken); an HttpClient-based loader
+  (interceptors) and renaming/aliasing `httpLoader` — NOT approved in this
+  pass, report only. Any SSR absolute-URL/base-href fix: NOT implemented;
+  SSR proof reported separately, options proposed on failure.
+- Verified: i18n lib 49/49, schematics 7/7, `ng build i18n`, 14-file tarball.
+  NOT published (no explicit user confirmation).
+
+## 2026-10-15 — D28: correcting entry — D07 unwrap default is `false`, not `true`
+
+- Drift: D07 (2026-10-12) records `provideHttp({…, unwrap?=true…})` and
+  "per call `options.unwrap ?? config.unwrap ?? true`", but the shipped code
+  has always been opt-in: `DEFAULT_UNWRAP = false` (`http-config.ts:52`),
+  resolver `options?.unwrap ?? config?.unwrap ?? DEFAULT_UNWRAP`
+  (`rivinia-http.ts`), JSDoc `@default false`, README "opt-in, default off".
+  D07's text is wrong; the code is right. This append-only entry corrects the
+  log — D07 itself is untouched.
+- Decision: the documented-and-shipped default is `unwrap: false` (library
+  assumes nothing about the backend; a key alone never enables unwrapping).
+  No code change, no version bump (docs-follow-code).
+- Numbering note: minted as D27 on its branch; renumbered to D28 on the
+  `integration/audit-2026-10` branch where D27 was already taken by the i18n
+  loader-path entry (merged first).

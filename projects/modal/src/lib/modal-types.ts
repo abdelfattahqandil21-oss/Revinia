@@ -16,12 +16,7 @@ export type ModalResult<T> =
 export type ModalStatus = 'queued' | 'active' | 'closing' | 'closed';
 
 /** Origin of a dismissal intent. Guards see it; forced paths bypass guards. */
-export type ModalDismissOrigin =
-  | 'escape'
-  | 'backdrop'
-  | 'button'
-  | 'program'
-  | 'system';
+export type ModalDismissOrigin = 'escape' | 'backdrop' | 'button' | 'program' | 'system';
 
 /** Content a modal renders. Core stores the descriptor; UI interprets it. */
 export type ModalContent<TData> =
@@ -29,6 +24,13 @@ export type ModalContent<TData> =
   | {
       readonly kind: 'component';
       readonly component: Type<unknown>;
+      /**
+       * Component inputs bound by the UI via `NgComponentOutlet`.
+       *
+       * Type hole (by design, not checked): `Record<string, unknown>` accepts
+       * any shape — a misspelled input key compiles and fails silently at
+       * render. The UI layer, not Core, owns binding.
+       */
       readonly inputs?: Record<string, unknown>;
     };
 
@@ -48,6 +50,12 @@ export interface ModalContext<TData> {
   readonly id: string;
   readonly data: TData;
   readonly parentId: string | null;
+  /**
+   * Type hole (by design): `result` is `unknown`, so passing the wrong payload
+   * type compiles — the mismatch surfaces only in the `ModalResult` value the
+   * opener awaits. Prefer the typed `ModalHandle<TResult>.close()` at the
+   * call site, which IS checked (see type tests).
+   */
   close(result?: unknown): boolean;
   dismiss(reason?: string): boolean;
 }
@@ -119,7 +127,11 @@ export interface ModalOpenOptions<TData = unknown> {
   readonly dismiss?: Partial<ModalDismissPolicy>;
   readonly guards?: readonly ModalGuard[];
   readonly metadata?: Record<string, unknown>;
-  /** Inputs for component content (bound by the UI via `NgComponentOutlet`). */
+  /** Inputs for component content (bound by the UI via `NgComponentOutlet`).
+   *
+   * Type hole (by design, not checked): any shape compiles; misspelled keys
+   * fail silently at render. See `ModalContent` inputs.
+   */
   readonly inputs?: Record<string, unknown>;
 }
 

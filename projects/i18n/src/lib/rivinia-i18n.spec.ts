@@ -148,7 +148,7 @@ describe('RiviniaI18n translate', () => {
 });
 
 describe('RiviniaI18n default loader', () => {
-  it('fetches assets/i18n/{language}.json unless the consumer overrides', async () => {
+  it('fetches i18n/{language}.json unless the consumer overrides', async () => {
     const seen: string[] = [];
     vi.stubGlobal(
       'fetch',
@@ -173,7 +173,7 @@ describe('RiviniaI18n default loader', () => {
       const i18n = TestBed.inject(RiviniaI18n<'ar' | 'en'>);
       await TestBed.inject(ApplicationRef).whenStable();
       await i18n.loadTranslations('en');
-      expect(seen).toEqual(['assets/i18n/ar.json', 'assets/i18n/en.json']);
+      expect(seen).toEqual(['i18n/ar.json', 'i18n/en.json']);
     } finally {
       vi.unstubAllGlobals();
     }
@@ -358,10 +358,7 @@ describe('RiviniaI18n preload-first failure', () => {
 describe('RiviniaI18n locale formatting', () => {
   it('uses locale (not id) and caches Intl instances', () => {
     const i18n = setup({
-      languages: [
-        { id: 'ar', nativeName: 'العربية', dir: 'rtl', locale: 'ar-EG' },
-        EN,
-      ],
+      languages: [{ id: 'ar', nativeName: 'العربية', dir: 'rtl', locale: 'ar-EG' }, EN],
     });
     expect(i18n.locale()).toBe('ar-EG');
     const arabic = i18n.formatNumber(1234.5);

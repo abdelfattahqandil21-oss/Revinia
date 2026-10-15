@@ -5,12 +5,7 @@ import {
   RIVINIA_TOAST_CONFIG,
   type RiviniaToastConfig,
 } from './toast-config';
-import type {
-  Toast,
-  ToastChanges,
-  ToastKind,
-  ToastOptions,
-} from './toast-types';
+import type { Toast, ToastChanges, ToastKind, ToastOptions } from './toast-types';
 import { clampDuration } from './toast-utils';
 
 interface TimerRecord {
@@ -202,6 +197,7 @@ export class RiviniaToast {
     }
     if (removed) {
       this.forgetDedupe(id);
+      this._generations.delete(id);
       this.promote();
     }
     return removed;
@@ -212,6 +208,7 @@ export class RiviniaToast {
     this.clearTimers();
     this._paused.clear();
     this._explicitDuration.clear();
+    this._generations.clear();
     this._active.set([]);
     this._queue.set([]);
     this._dedupeByKey.clear();
@@ -233,9 +230,7 @@ export class RiviniaToast {
     const elapsed = Date.now() - record.startedAt;
     this._active.update((list) =>
       list.map((t) =>
-        t.id === id
-          ? { ...t, remaining: Math.max(0, t.remaining - elapsed), paused: true }
-          : t,
+        t.id === id ? { ...t, remaining: Math.max(0, t.remaining - elapsed), paused: true } : t,
       ),
     );
     return true;
@@ -267,8 +262,7 @@ export class RiviniaToast {
    * Returns `false` when the toast or its action is missing.
    */
   runAction(id: number): boolean {
-    const toast =
-      this._active().find((t) => t.id === id) ?? this._queue().find((t) => t.id === id);
+    const toast = this._active().find((t) => t.id === id) ?? this._queue().find((t) => t.id === id);
     if (!toast?.action) return false;
     toast.action.onPress();
     if (toast.action.dismissAfterPress ?? true) this.dismiss(id);
