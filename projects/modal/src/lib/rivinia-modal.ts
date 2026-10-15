@@ -152,6 +152,11 @@ export class RiviniaModal {
   ): ModalHandle<TResult> {
     const id = `modal-${++this._seq}`;
     const pending = this.deferred();
+    // Type hole (internal, by design): the deferred promise is created as
+    // `ModalResult<unknown>` and cast to `ModalResult<TResult>`. A `TResult`
+    // mismatch is never validated at runtime — `close()` settles whatever it
+    // receives. The handle's `close(result?: TResult)` signature IS checked
+    // (see type tests); this cast only forwards that contract.
     this._results.set(id, pending);    const handle: ModalHandle<TResult> = {
       id,
       result: pending.promise as Promise<ModalResult<TResult>>,
