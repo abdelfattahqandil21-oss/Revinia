@@ -10,6 +10,7 @@
     "schematics:http": "tsc -p projects/http/schematics/tsconfig.schematics.json && mv projects/http/schematics/ng-add/index.js projects/http/schematics/ng-add/index.cjs",
     "schematics:toast": "tsc -p projects/toast/schematics/tsconfig.schematics.json && mv projects/toast/schematics/ng-add/index.js projects/toast/schematics/ng-add/index.cjs",
     "schematics:i18n": "tsc -p projects/i18n/schematics/tsconfig.schematics.json && mv projects/i18n/schematics/ng-add/index.js projects/i18n/schematics/ng-add/index.cjs",
+    "schematics:modal": "tsc -p projects/modal/schematics/tsconfig.schematics.json && mv projects/modal/schematics/ng-add/index.js projects/modal/schematics/ng-add/index.cjs",
     "schematics:env": "tsc -p projects/env/schematics/tsconfig.schematics.json && mv projects/env/schematics/ng-add/index.js projects/env/schematics/ng-add/index.cjs",
     "build:http": "pnpm schematics:http && ng build http",
     "build:toast": "pnpm schematics:toast && ng build toast",
