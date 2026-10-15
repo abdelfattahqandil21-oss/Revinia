@@ -540,3 +540,23 @@ describe('RiviniaModal record isolation', () => {
     drain(modal);
   });
 });
+
+describe('RiviniaModal closing/visible signals', () => {
+  it('exposes closing instances reactively while active/top stay unchanged', async () => {
+    const modal = setup({ closingTimeout: 0 });
+    const a = modal.openModal<string>(componentContent(), { ref: 'a' });
+    const b = modal.openModal<string>(componentContent(), { ref: 'b' });
+    expect(b.dismiss('bye')).toBe(true);
+    expect(await b.result).toEqual({ status: 'dismissed', reason: 'bye' });
+    // Consumer-visible: closing holds the dismissed instance until teardown.
+    expect(modal.closing().map((i) => i.id)).toEqual([b.id]);
+    // Visible = active + closing in strategy order; active/top unchanged.
+    expect(modal.visible().map((i) => i.id)).toEqual([a.id, b.id]);
+    expect(modal.active().map((i) => i.id)).toEqual([a.id]);
+    expect(modal.top()?.id).toBe(a.id);
+    expect(modal.confirmClosed(b.id)).toBe(true);
+    expect(modal.closing()).toEqual([]);
+    expect(modal.visible().map((i) => i.id)).toEqual([a.id]);
+    drain(modal);
+  });
+});
