@@ -202,6 +202,7 @@ export class RiviniaToast {
     }
     if (removed) {
       this.forgetDedupe(id);
+      this._generations.delete(id);
       this.promote();
     }
     return removed;
@@ -212,6 +213,7 @@ export class RiviniaToast {
     this.clearTimers();
     this._paused.clear();
     this._explicitDuration.clear();
+    this._generations.clear();
     this._active.set([]);
     this._queue.set([]);
     this._dedupeByKey.clear();
