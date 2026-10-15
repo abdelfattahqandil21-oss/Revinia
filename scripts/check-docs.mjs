@@ -69,6 +69,11 @@ const ALLOWLIST = new Set(
     'Observable',
     'Promise',
     'HttpRequest',
+    // Generic type names used in prose (type params / TS builtins):
+    'Record',
+    'T',
+    'TData',
+    'TResult',
   ],
 );
 
