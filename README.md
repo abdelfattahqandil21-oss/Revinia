@@ -11,7 +11,7 @@ consumer before any publish.
 
 | Package | Version | `ng add` | Description |
 |---|---|---|---|
-| `@rivinia/http` | [0.2.0](https://www.npmjs.com/package/@rivinia/http) | ✅ | Headless typed HTTP client: envelope unwrapping, Observables + `httpResource` (`projects/http`) |
+| `@rivinia/http` | [0.4.0](https://www.npmjs.com/package/@rivinia/http) | ✅ | Headless typed HTTP client: envelope unwrapping, Observables + `httpResource` (`projects/http`) |
 | `@rivinia/toast` | [0.3.0](https://www.npmjs.com/package/@rivinia/toast) | ✅ | Headless toast queue: signals, timers, actions, dedupe (`projects/toast`) |
 | `@rivinia/modal` | [0.3.0](https://www.npmjs.com/package/@rivinia/modal) | ✅ | Headless modal manager: stack/queue, typed results, guards (`projects/modal`) |
 | `@rivinia/i18n` | [0.2.0](https://www.npmjs.com/package/@rivinia/i18n) | ✅ | Headless language manager: signals, RTL, ICU plurals, detection (`projects/i18n`) |
