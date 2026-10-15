@@ -26,7 +26,7 @@ import type { Translation } from './i18n-types';
 import type { TranslationLoader } from './loaders';
 import { jsonLoader } from './loaders';
 import { browserLanguages, detectBrowserLanguage, safeGetItem, safeSetItem } from './i18n-utils';
-import { parseCookie, serializeCookie } from './cookies';
+import { parseCookie, serializeCookie, shouldSecureCookie } from './cookies';
 import { formatIcu } from './icu';
 import { ViewTransitionService } from './view-transition.service';
 
@@ -402,7 +402,11 @@ export class RiviniaI18n<L extends string = string> {
     if (this._storageStrategy === 'cookie') {
       if (this._request) return;
       try {
-        this._doc.cookie = serializeCookie(this._storageKey, id);
+        const location = (this._doc as unknown as { location?: { protocol?: string; hostname?: string } })
+          ?.location;
+        this._doc.cookie = serializeCookie(this._storageKey, id, {
+          secure: shouldSecureCookie(location),
+        });
       } catch {
         // Best-effort persistence.
       }
