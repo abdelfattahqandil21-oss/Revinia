@@ -34,6 +34,7 @@ describe('ng-add', () => {
     expect(content).toContain(`defaultLanguage: 'ar',`);
     expect(content).toContain(`{ id: 'en', nativeName: 'English', dir: 'ltr' },`);
     expect(content).not.toContain('detectBrowser');
+    expect(content).toContain('public/i18n/{id}.json');
   });
 
   it('honours a language list and detectBrowser flag', async () => {

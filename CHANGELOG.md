@@ -5,6 +5,15 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ## Unreleased
 
+### @rivinia/i18n (proposed 0.3.0 — breaking default, NOT bumped yet)
+
+- **I-08 (breaking):** default loader path `assets/i18n` → `i18n` (files in
+  `public/i18n/`, served from the site root; matches the app template's
+  `{ "glob": "**/*", "input": "public" }`). Migration: move
+  `src/assets/i18n/*.json` → `public/i18n/*.json`, or pin the old layout with
+  `jsonLoader({ path: 'assets/i18n' })`. `ng-add` starter, schema descriptions,
+  README and JSDoc synced.
+
 ### @rivinia/env
 - **New package (0.1.0):** `BaseEnvironment` contract + `ng-add` scaffolding
   typed `environment.model/dev/staging/prod` files (version snapshotted from

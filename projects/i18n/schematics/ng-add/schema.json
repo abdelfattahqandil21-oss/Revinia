@@ -6,7 +6,7 @@
   "properties": {
     "languages": {
       "type": "string",
-      "description": "Comma-separated language ids — bare (ar, en), quoted ('ar', 'en') or bracketed ([ar, en]). First id becomes the default language.",
+      "description": "Comma-separated language ids — bare (ar, en), quoted ('ar', 'en') or bracketed ([ar, en]). First id becomes the default language. Dictionaries load from public/i18n/{id}.json by default.",
       "x-prompt": {
         "message": "Language ids for this project (ar, en — brackets and quotes also fine)?",
         "type": "input"

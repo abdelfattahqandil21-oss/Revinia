@@ -20,11 +20,13 @@ ng add @rivinia/i18n   # asks default language + browser detection, wires an ar/
 ## Dictionaries by convention (no config needed)
 
 Key-based `translate('booking.seats')` works out of the box with the conventional
-layout — the default loader fetches `assets/i18n/{language}.json`
-(`assets/i18n/ar.json`, `assets/i18n/en.json`, …). Override only when you differ:
+layout — the default loader fetches `i18n/{language}.json`
+(`public/i18n/ar.json`, `public/i18n/en.json`, … served from the site root;
+modern Angular templates map `public/` via `{ "glob": "**/*", "input": "public" }`).
+Override only when you differ:
 
 ```json
-// src/assets/i18n/ar.json
+// public/i18n/ar.json
 { "booking": { "seats": "{count, plural, zero {لا مقاعد} one {مقعد واحد} other {# مقاعد}}" } }
 ```
 
@@ -36,6 +38,12 @@ provideRiviniaI18n({ loader: httpLoader({ endpoint: 'https://api.example.com/i18
 ```
 
 Loaders code-split: fetch implementations load on first use only.
+
+> **Migration (unreleased, proposed 0.3.0 — breaking default):** the default
+> loader path changed from `assets/i18n` to `i18n`. Move
+> `src/assets/i18n/*.json` → `public/i18n/*.json` (served from the site root),
+> or keep the old layout explicitly with
+> `jsonLoader({ path: 'assets/i18n' })`.
 
 ## Startup loading (no raw keys on first paint)
 
@@ -90,7 +98,7 @@ export class Header {
 ```
 
 ```json
-// assets/i18n/en.json
+// public/i18n/en.json
 { "booking": { "seats": "{count, plural, one {# seat} other {# seats}}" } }
 ```
 
