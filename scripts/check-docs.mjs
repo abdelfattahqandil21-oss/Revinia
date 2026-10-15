@@ -67,6 +67,8 @@ const ALLOWLIST = new Set(
     'Type',
     'NgComponentOutlet',
     'Observable',
+    // Angular's own provider fns referenced in our docs:
+    'provideHttpClient',
     'Promise',
     'HttpRequest',
     // Generic type names used in prose (type params / TS builtins):
@@ -138,8 +140,16 @@ for (const pkg of PACKAGES) {
         }
         return;
       }
-      // Rule 2: CamelCase prose tokens.
+      // Rule 2: CamelCase prose tokens + provide/inject/define references.
+      // CamelCase warns by default (generic English overlap), fails strict.
+      // provide*/inject*/define* tokens can only reference package exports,
+      // so unknown ones ALWAYS fail.
       for (const id of identifiersIn(line)) {
+        if (/^(provide|inject|define)[A-Z]/.test(id) && !exports.has(id) && !ALLOWLIST.has(id)) {
+          console.error(`FAIL ${rel}:${idx + 1} prose mentions unexported \`${id}\``);
+          failures++;
+          continue;
+        }
         if (/^[A-Z][A-Za-z0-9]*$/.test(id) && !exports.has(id) && !ALLOWLIST.has(id)) {
           const msg = `${STRICT_PROSE ? 'FAIL' : 'WARN'} ${rel}:${idx + 1} prose mentions unexported \`${id}\``;
           if (STRICT_PROSE) {
