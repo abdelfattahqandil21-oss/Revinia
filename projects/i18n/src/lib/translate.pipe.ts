@@ -12,7 +12,6 @@ import type { Translation } from './i18n-types';
  */
 @Pipe({
   name: 'rTranslate',
-  standalone: true,
   pure: false,
 })
 export class RTranslatePipe<L extends string = string> {
