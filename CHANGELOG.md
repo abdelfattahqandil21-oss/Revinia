@@ -3,7 +3,17 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
-## Unreleased
+## 2026-10-15 — modal 0.4.0
+
+### @rivinia/modal
+
+- **M-07 (feature):** additive readonly `closing` (status `closing`) and
+  `visible` (active + closing) signals in strategy display order.
+  `active`/`queued`/`top` semantics unchanged.
+- **M-08 (fix):** public snapshots (`active`, `queued`, `closing`, `visible`,
+  `top`, `findByRef`) no longer expose `guards`, `closingTimer`,
+  `ownerCleanup`, `generation`, `openedSeq`; state updates consistently
+  immutable.
 
 ## 2026-10-15 — i18n 0.3.0
 
