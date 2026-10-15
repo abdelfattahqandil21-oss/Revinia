@@ -103,13 +103,15 @@ export class RiviniaModal {
   );
   /** Closing instances (exit animations), in strategy display order. */
   readonly closing = computed<readonly ModalInstance[]>(() =>
-    this._strategy.order(this._instances().filter((i) => i.status === 'closing')),
+    this._strategy
+      .order(this._instances().filter((i) => i.status === 'closing'))
+      .map(toPublicInstance),
   );
   /** Everything rendered (active + closing), in strategy display order. */
   readonly visible = computed<readonly ModalInstance[]>(() =>
-    this._strategy.order(
-      this._instances().filter((i) => i.status === 'active' || i.status === 'closing'),
-    ),
+    this._strategy
+      .order(this._instances().filter((i) => i.status === 'active' || i.status === 'closing'))
+      .map(toPublicInstance),
   );
   /** Topmost active instance (the only Escape-eligible one), if any. */
   readonly top = computed<ModalInstance | null>(() => {

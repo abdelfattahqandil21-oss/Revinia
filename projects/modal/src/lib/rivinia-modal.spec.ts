@@ -515,8 +515,19 @@ describe('RiviniaModal record isolation', () => {
 
   it('public snapshots expose only ModalInstance fields', () => {
     const modal = setup();
-    modal.openModal(componentContent(), { ref: 'iso', guards: [() => true] });
-    const snapshots = [...modal.active(), ...modal.queued(), ...modal.findByRef('iso')];
+    const keep = modal.openModal(componentContent(), { ref: 'keep' });
+    const shutting = modal.openModal(componentContent(), { ref: 'iso', guards: [() => true] });
+    expect(shutting.dismiss('bye')).toBe(true);
+    // `shutting` is now `closing` (auto-finalize pending on fake timers);
+    // `keep` stays active. Every surface must hide internals.
+    expect(modal.active().map((i) => i.id)).toEqual([keep.id]);
+    const snapshots = [
+      ...modal.active(),
+      ...modal.closing(),
+      ...modal.visible(),
+      ...modal.queued(),
+      ...modal.findByRef('iso'),
+    ];
     expect(snapshots.length).toBeGreaterThan(0);
     for (const snap of snapshots) {
       for (const key of INTERNAL_KEYS) {
@@ -525,6 +536,7 @@ describe('RiviniaModal record isolation', () => {
       expect(Object.keys(snap).sort()).toEqual([...PUBLIC_KEYS].sort());
     }
     expect(modal.top()).not.toHaveProperty('guards');
+    drain(modal);
   });
 
   it('returned snapshots are immutable copies, not live records', () => {
