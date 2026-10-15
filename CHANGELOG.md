@@ -14,12 +14,16 @@ A change is listed the moment it lands on `main`, not when npm is published.
   `jsonLoader({ path: 'assets/i18n' })`. `ng-add` starter, schema descriptions,
   README and JSDoc synced.
 
+## 2026-10-13 — env 0.2.0
+
 ### @rivinia/env
-- **New package (0.1.0):** `BaseEnvironment` contract + `ng-add` scaffolding
-  typed `environment.model/dev/staging/prod` files (version snapshotted from
-  the app's `package.json`) and wiring `production`/`staging` file replacements
-  (staging copied from production when present). Never overwrites, never
-  removes user config; `development` untouched by design.
+- **New package (0.2.0):** `BaseEnvironment` contract + `ng-add` scaffolding
+  with environment multi-select, short aliases (`dev`/`stag`/`prod`) and
+  per-environment output directories. Typed `environment.model/dev/staging/prod`
+  files (version snapshotted from the app's `package.json`) and wiring
+  `production`/`staging` file replacements (staging copied from production when
+  present). Never overwrites, never removes user config; `development`
+  untouched by design.
 
 ## 2026-10-13 — http 0.4.0, toast 0.3.0, modal 0.3.0, i18n 0.2.0
 
