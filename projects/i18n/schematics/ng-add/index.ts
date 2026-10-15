@@ -39,6 +39,7 @@ const STARTER = (ids: string[], detectBrowser: boolean): string => {
   const detect = detectBrowser ? ',\n    detectBrowser: true' : '';
   return (
     `provideRiviniaI18n({\n` +
+    `    // Dictionaries: public/i18n/{id}.json (default jsonLoader)\n` +
     `    defaultLanguage: '${ids[0]}',\n` +
     `    languages: [\n${languages}\n    ],${detect}\n` +
     `  })`

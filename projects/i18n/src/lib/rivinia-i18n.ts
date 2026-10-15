@@ -60,7 +60,8 @@ export class RiviniaI18n<L extends string = string> {
   private readonly _loadedTranslations = signal<Record<string, unknown>>({});
   /**
    * Explicit loader wins; otherwise the conventional JSON layout
-   * (`assets/i18n/{language}.json` unless the consumer overrides the path).
+   * (`i18n/{language}.json` — files in `public/i18n/`, served from the site
+   * root — unless the consumer overrides the path).
    * The descriptor still code-splits: the fetch implementation loads only on
    * first resolve.
    */
