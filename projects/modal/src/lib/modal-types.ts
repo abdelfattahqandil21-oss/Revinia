@@ -16,12 +16,7 @@ export type ModalResult<T> =
 export type ModalStatus = 'queued' | 'active' | 'closing' | 'closed';
 
 /** Origin of a dismissal intent. Guards see it; forced paths bypass guards. */
-export type ModalDismissOrigin =
-  | 'escape'
-  | 'backdrop'
-  | 'button'
-  | 'program'
-  | 'system';
+export type ModalDismissOrigin = 'escape' | 'backdrop' | 'button' | 'program' | 'system';
 
 /** Content a modal renders. Core stores the descriptor; UI interprets it. */
 export type ModalContent<TData> =

@@ -21,63 +21,61 @@ const STRICT_PROSE = process.argv.includes('--strict-prose');
 const PACKAGES = ['http', 'toast', 'modal', 'i18n', 'env'];
 
 // Generic terms + Angular/Test symbols that are never Rivinia exports.
-const ALLOWLIST = new Set(
-  [
-    'Angular',
-    'TypeScript',
-    'JavaScript',
-    'JSON',
-    'HTML',
-    'CSS',
-    'SSR',
-    'CSR',
-    'RTL',
-    'LTR',
-    'API',
-    'DOM',
-    'URL',
-    'ICU',
-    'WCAG',
-    'MIT',
-    'Zod',
-    'Valibot',
-    'TanStack',
-    'RxJS',
-    'Jasmine',
-    'Karma',
-    // Angular symbols commonly referenced in prose/recipes:
-    'ApplicationConfig',
-    'ApplicationRef',
-    'TemplateRef',
-    'ElementRef',
-    'EmbeddedViewRef',
-    'EnvironmentInjector',
-    'DestroyRef',
-    'DOCUMENT',
-    'REQUEST',
-    'TransferState',
-    'PendingTasks',
-    'StateKey',
-    'HttpClient',
-    'HttpContext',
-    'HttpParams',
-    'HttpResponse',
-    'HttpTestingController',
-    'TestBed',
-    'Type',
-    'NgComponentOutlet',
-    'Observable',
-    // Angular's own provider fns referenced in our docs:
-    'provideHttpClient',
-    'Promise',
-    'HttpRequest',
-    // Generic type names used in prose (type params / TS builtins):
-    'Record',
-    'T',
-    'TData',
-    'TResult',
-  ],
-);
+const ALLOWLIST = new Set([
+  'Angular',
+  'TypeScript',
+  'JavaScript',
+  'JSON',
+  'HTML',
+  'CSS',
+  'SSR',
+  'CSR',
+  'RTL',
+  'LTR',
+  'API',
+  'DOM',
+  'URL',
+  'ICU',
+  'WCAG',
+  'MIT',
+  'Zod',
+  'Valibot',
+  'TanStack',
+  'RxJS',
+  'Jasmine',
+  'Karma',
+  // Angular symbols commonly referenced in prose/recipes:
+  'ApplicationConfig',
+  'ApplicationRef',
+  'TemplateRef',
+  'ElementRef',
+  'EmbeddedViewRef',
+  'EnvironmentInjector',
+  'DestroyRef',
+  'DOCUMENT',
+  'REQUEST',
+  'TransferState',
+  'PendingTasks',
+  'StateKey',
+  'HttpClient',
+  'HttpContext',
+  'HttpParams',
+  'HttpResponse',
+  'HttpTestingController',
+  'TestBed',
+  'Type',
+  'NgComponentOutlet',
+  'Observable',
+  // Angular's own provider fns referenced in our docs:
+  'provideHttpClient',
+  'Promise',
+  'HttpRequest',
+  // Generic type names used in prose (type params / TS builtins):
+  'Record',
+  'T',
+  'TData',
+  'TResult',
+]);
 
 function collectExports(pkg) {
   const apiPath = join(ROOT, 'projects', pkg, 'src', 'public-api.ts');
@@ -86,11 +84,18 @@ function collectExports(pkg) {
   const src = readFileSync(apiPath, 'utf8');
   for (const m of src.matchAll(/export\s+(?:type\s+)?\{([^}]*)\}\s*(?:from\s*['"][^'"]+['"])?/g)) {
     for (const part of m[1].split(',')) {
-      const name = part.replace(/^\s*type\s+/, '').trim().split(/\s+as\s+/).pop().trim();
+      const name = part
+        .replace(/^\s*type\s+/, '')
+        .trim()
+        .split(/\s+as\s+/)
+        .pop()
+        .trim();
       if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) names.add(name);
     }
   }
-  for (const m of src.matchAll(/export\s+(?:declare\s+)?(?:type|interface|class|function|const|enum)\s+([A-Za-z_$][A-Za-z0-9_$]*)/g)) {
+  for (const m of src.matchAll(
+    /export\s+(?:declare\s+)?(?:type|interface|class|function|const|enum)\s+([A-Za-z_$][A-Za-z0-9_$]*)/g,
+  )) {
     names.add(m[1]);
   }
   for (const m of src.matchAll(/export\s+\*\s*(?:as\s+([A-Za-z_$][A-Za-z0-9_$]*))?\s*from/g)) {

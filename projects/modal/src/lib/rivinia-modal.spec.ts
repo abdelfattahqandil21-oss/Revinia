@@ -1,19 +1,25 @@
-import { DestroyRef, ElementRef, EmbeddedViewRef, EnvironmentInjector, TemplateRef, createEnvironmentInjector, type Type } from '@angular/core';
+import {
+  DestroyRef,
+  ElementRef,
+  EmbeddedViewRef,
+  EnvironmentInjector,
+  TemplateRef,
+  createEnvironmentInjector,
+  type Type,
+} from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RiviniaModalConfig } from './modal-config';
 import { QueueStrategy, StackStrategy } from './modal-strategy';
-import type {
-  ModalContent,
-  ModalResult,
-  ModalTemplateContext,
-} from './modal-types';
+import type { ModalContent, ModalResult, ModalTemplateContext } from './modal-types';
 import { provideRiviniaModal } from './provide-modal';
 import { RiviniaModal } from './rivinia-modal';
 
 class FakeDialog {}
 
-class FakeTemplateRef extends TemplateRef<import('./modal-types').ModalTemplateContext<{ title: string }>> {
+class FakeTemplateRef extends TemplateRef<
+  import('./modal-types').ModalTemplateContext<{ title: string }>
+> {
   declare readonly elementRef: ElementRef;
   override createEmbeddedView(): EmbeddedViewRef<
     import('./modal-types').ModalTemplateContext<{ title: string }>
@@ -379,7 +385,11 @@ describe('RiviniaModal ownership and nesting', () => {
     expect(await parent.result).toEqual({ status: 'confirmed', value: undefined });
     expect(await child.result).toEqual({ status: 'dismissed', reason: 'parent-closed' });
     expect(await grandchild.result).toEqual({ status: 'dismissed', reason: 'parent-closed' });
-    expect(modal.debugState()).toMatchObject({ active: [], queued: [], closing: [parent.id, child.id, grandchild.id] });
+    expect(modal.debugState()).toMatchObject({
+      active: [],
+      queued: [],
+      closing: [parent.id, child.id, grandchild.id],
+    });
     vi.advanceTimersByTime(1000);
     expect(modal.debugState()).toMatchObject({ active: [], queued: [], closing: [] });
   });

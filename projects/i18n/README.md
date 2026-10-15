@@ -53,9 +53,9 @@ language before first paint (SSR waits via `PendingTasks`):
 ```ts
 provideRiviniaI18n({
   // ...
-  preload: false,                       // opt out: load manually instead
+  preload: false, // opt out: load manually instead
   translations: { ar: { hello: 'مرحبا' } }, // inline seed: instant, zero network,
-});                                     // a successful loader response still wins
+}); // a successful loader response still wins
 ```
 
 Gate skeletons on the `ready` signal (true once initial content is available),
@@ -109,17 +109,17 @@ export class Header {
 
 ## API
 
-| Export | Kind | Purpose |
-|---|---|---|
-| `provideRiviniaI18n(config)` | provider | languages, default, storage (+`cookie`), loader, `detectBrowser?` (off), `switchStrategy?`, `preload?`, `translations?` (inline seed) |
-| `RiviniaI18n` | `@Service()` | signals (`locale`, `ready`) + `translate/setLanguage(toggle/next/previous)/loadTranslations/formatNumber/formatDate` |
-| `injectRiviniaI18n()` | function | shorthand, preserves the language union; `defineRiviniaI18n(config)` binds config + accessors with inference |
-| `jsonLoader/httpLoader/remoteLoader/customLoader` | loaders | lazy code-split dictionaries (fetch, no HttpClient) |
-| `formatIcu(template, params, locale)` | util | ICU subset: plural/select/`#`/nesting via native `Intl.PluralRules` |
-| `detectBrowserLanguage(ids, langs)` | util | in-order priority + base-tag fallback (`ar-EG` → `ar`), pure/testable |
-| `parseCookie/serializeCookie` | utils | cookie strategy primitives (server header / browser cookie) |
-| `RTranslatePipe` | pipe | `rTranslate` (impure by necessity — prefer `translate()` in code for lists) |
-| types | types | `RiviniaI18nConfig`, `Language` (+`locale?`), `Translation`, `LoaderDescriptor`, … |
+| Export                                            | Kind         | Purpose                                                                                                                               |
+| ------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `provideRiviniaI18n(config)`                      | provider     | languages, default, storage (+`cookie`), loader, `detectBrowser?` (off), `switchStrategy?`, `preload?`, `translations?` (inline seed) |
+| `RiviniaI18n`                                     | `@Service()` | signals (`locale`, `ready`) + `translate/setLanguage(toggle/next/previous)/loadTranslations/formatNumber/formatDate`                  |
+| `injectRiviniaI18n()`                             | function     | shorthand, preserves the language union; `defineRiviniaI18n(config)` binds config + accessors with inference                          |
+| `jsonLoader/httpLoader/remoteLoader/customLoader` | loaders      | lazy code-split dictionaries (fetch, no HttpClient)                                                                                   |
+| `formatIcu(template, params, locale)`             | util         | ICU subset: plural/select/`#`/nesting via native `Intl.PluralRules`                                                                   |
+| `detectBrowserLanguage(ids, langs)`               | util         | in-order priority + base-tag fallback (`ar-EG` → `ar`), pure/testable                                                                 |
+| `parseCookie/serializeCookie`                     | utils        | cookie strategy primitives (server header / browser cookie)                                                                           |
+| `RTranslatePipe`                                  | pipe         | `rTranslate` (impure by necessity — prefer `translate()` in code for lists)                                                           |
+| types                                             | types        | `RiviniaI18nConfig`, `Language` (+`locale?`), `Translation`, `LoaderDescriptor`, …                                                    |
 
 Dictionaries commit to visible signals only for the currently intended
 language — out-of-order responses stay cached. `setLanguageAsync` aborts on

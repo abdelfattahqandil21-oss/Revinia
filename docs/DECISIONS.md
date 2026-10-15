@@ -45,11 +45,12 @@ alternatives rejected, impact.
 ## 2026-10-12 — D05: Publish validation is architectural, not final
 
 - Decision: manual per-package flow first (`build → test → npm pack → inspect →
-  clean-consumer install → prod build → confirm name/access/version`), user confirms each
+clean-consumer install → prod build → confirm name/access/version`), user confirms each
   public publish. Automation only after the manual flow is proven and recorded.
 - Impact: blocks Phase 5 until Phase 3 experiment + Phase 4 first-package flow succeed.
 
 ## 2026-10-12 — D06: UI secondaries stay import-free from Core (proof finding)
+
 - Context: cross-entry relative imports (`primary → ../core/...`) fail ng-packagr with
   TS6059 (`rootDir` locked to the entry dir); TS6 deprecates `baseUrl`, so source-mapped
   `paths` need migration care. Proven in `proof-core` build attempts.
@@ -353,9 +354,8 @@ alternatives rejected, impact.
   but modern Angular app templates serve `public/` at the site root —
   evidence (installed `@schematics/angular@22.2.2`, checked 2026-10-15):
   `application/index.js:253`
-  `assets: [{ 'glob': '**/*', 'input': \`${projectRoot}public\` }]`
-  and template dir `application/files/common-files/public/` (favicon only).
-  Files in `public/i18n/{lang}.json` are served at `i18n/{lang}.json`, so the
+  `assets: [{ 'glob': '**/*', 'input': \`${projectRoot}public\` }]`and template dir`application/files/common-files/public/`(favicon only).
+Files in`public/i18n/{lang}.json`are served at`i18n/{lang}.json`, so the
   old default 404s in convention-following apps.
 - Decision: `DEFAULT_BASE_PATH = 'i18n'` (relative, site-root). Breaking
   default change → ships as **i18n 0.3.0** (pre-1.0 minor; PROPOSED, not

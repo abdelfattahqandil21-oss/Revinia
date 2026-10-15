@@ -228,7 +228,7 @@ describe('RiviniaToast overflow eviction', () => {
   });
 });
 describe('RiviniaToast capacity and queue', () => {
-  it("dismiss-oldest (default) evicts the head and ids stay unique", () => {
+  it('dismiss-oldest (default) evicts the head and ids stay unique', () => {
     const toast = setup({ maxVisible: 2, duration: 10_000 });
     const a = toast.show({ message: 'a' }) as number;
     toast.show({ message: 'b' });

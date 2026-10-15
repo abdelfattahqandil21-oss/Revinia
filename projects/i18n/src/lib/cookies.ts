@@ -5,10 +5,7 @@
  */
 
 /** Extracts a cookie value by name from a `Cookie` header or `document.cookie`. */
-export function parseCookie(
-  header: string | null | undefined,
-  name: string,
-): string | null {
+export function parseCookie(header: string | null | undefined, name: string): string | null {
   if (!header) return null;
   const prefix = `${name}=`;
   for (const part of header.split(';')) {

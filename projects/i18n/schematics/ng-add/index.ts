@@ -1,9 +1,4 @@
-import {
-  Rule,
-  SchematicContext,
-  SchematicsException,
-  Tree,
-} from '@angular-devkit/schematics';
+import { Rule, SchematicContext, SchematicsException, Tree } from '@angular-devkit/schematics';
 
 export interface NgAddOptions {
   languages?: string;

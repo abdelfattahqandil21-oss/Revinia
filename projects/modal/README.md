@@ -47,14 +47,14 @@ export class Users {
 
 ## API
 
-| Export | Kind | Purpose |
-|---|---|---|
-| `provideRiviniaModal(config?)` | provider | `{ strategy?, dismiss?, maxVisible?, maxQueue?, overflow?, descendants?, presets?, closingTimeout?, diagnostics? }` |
-| `RiviniaModal` | `@Service()` | `openModal/close/dismiss/cancel/requestDismiss/update/confirmClosed/dismissAll/findByRef/useStrategy/debugState` + `active/queued/closing/visible/top` signals |
-| `injectRiviniaModal()` | function | shorthand for `inject(RiviniaModal)` |
-| `RIVINIA_MODAL_CONTEXT` | token | per-instance context for dynamic components |
-| `StackStrategy` / `QueueStrategy` | classes | built-in ordering policies (`ModalStrategy` for custom) |
-| types | types | `ModalHandle`, `ModalResult`, `ModalContent`, `ModalOpenOptions`, `ModalDismissPolicy`, `ModalGuard`, … |
+| Export                            | Kind         | Purpose                                                                                                                                                        |
+| --------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `provideRiviniaModal(config?)`    | provider     | `{ strategy?, dismiss?, maxVisible?, maxQueue?, overflow?, descendants?, presets?, closingTimeout?, diagnostics? }`                                            |
+| `RiviniaModal`                    | `@Service()` | `openModal/close/dismiss/cancel/requestDismiss/update/confirmClosed/dismissAll/findByRef/useStrategy/debugState` + `active/queued/closing/visible/top` signals |
+| `injectRiviniaModal()`            | function     | shorthand for `inject(RiviniaModal)`                                                                                                                           |
+| `RIVINIA_MODAL_CONTEXT`           | token        | per-instance context for dynamic components                                                                                                                    |
+| `StackStrategy` / `QueueStrategy` | classes      | built-in ordering policies (`ModalStrategy` for custom)                                                                                                        |
+| types                             | types        | `ModalHandle`, `ModalResult`, `ModalContent`, `ModalOpenOptions`, `ModalDismissPolicy`, `ModalGuard`, …                                                        |
 
 Results settle exactly once, at dismissal initiation — exit animations never
 delay callers. `close/dismiss/cancel` are guard-free primitives (booleans);

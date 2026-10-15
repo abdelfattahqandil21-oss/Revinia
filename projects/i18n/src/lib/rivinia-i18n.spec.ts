@@ -358,10 +358,7 @@ describe('RiviniaI18n preload-first failure', () => {
 describe('RiviniaI18n locale formatting', () => {
   it('uses locale (not id) and caches Intl instances', () => {
     const i18n = setup({
-      languages: [
-        { id: 'ar', nativeName: 'العربية', dir: 'rtl', locale: 'ar-EG' },
-        EN,
-      ],
+      languages: [{ id: 'ar', nativeName: 'العربية', dir: 'rtl', locale: 'ar-EG' }, EN],
     });
     expect(i18n.locale()).toBe('ar-EG');
     const arabic = i18n.formatNumber(1234.5);

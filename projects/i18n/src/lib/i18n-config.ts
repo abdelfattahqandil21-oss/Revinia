@@ -1,10 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import type {
-  Language,
-  StorageStrategy,
-  SwitchStrategy,
-  ViewTransitionConfig,
-} from './i18n-types';
+import type { Language, StorageStrategy, SwitchStrategy, ViewTransitionConfig } from './i18n-types';
 import type { LoaderDescriptor } from './loaders';
 
 /**
@@ -52,9 +47,7 @@ export interface RiviniaI18nConfig<T extends string = string> {
  * Internal configuration token. Consumers must use `provideRiviniaI18n()`.
  * @internal
  */
-export const RIVINIA_I18N_CONFIG = new InjectionToken<RiviniaI18nConfig>(
-  'RIVINIA_I18N_CONFIG',
-);
+export const RIVINIA_I18N_CONFIG = new InjectionToken<RiviniaI18nConfig>('RIVINIA_I18N_CONFIG');
 
 export const DEFAULT_STORAGE_KEY = 'rivinia.i18n.language';
 export const DEFAULT_STORAGE_STRATEGY: StorageStrategy = 'local';
