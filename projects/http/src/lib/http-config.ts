@@ -5,23 +5,15 @@ import type { RiviniaEnvelopePolicy } from './http-envelope';
 /**
  * Global configuration for `@rivinia/http`.
  *
- * Every field is optional and can be overridden per request.
- * URLs are ALWAYS used as given — the library never joins, prefixes, or
- * rewrites them. Build them at the call site from wherever you want
- * (`environment.apiUrl`, a constant, a signal …) with the exported `joinUrl`.
+ * Unwrapping is strictly per request (`{ unwrap: true, unwrapKey }` on the
+ * call) — there is intentionally no global unwrap configuration. A global
+ * key would silently change what every call returns; an explicit key keeps
+ * each call honest. URLs are ALWAYS used as given — the library never joins,
+ * prefixes, or rewrites them. Build them at the call site from wherever you
+ * want (`environment.apiUrl`, a constant, a signal …) with the exported
+ * `joinUrl`.
  */
 export interface RiviniaHttpConfig {
-  /**
-   * Unwrap `{ [unwrapKey]: payload }` envelopes by default.
-   * @default false — the library assumes nothing about your backend;
-   * opt in globally here or per call with `{ unwrap: true }`.
-   */
-  unwrap?: boolean;
-  /**
-   * Envelope key unwrapped when `unwrap` is enabled.
-   * @default 'data'
-   */
-  unwrapKey?: string;
   /**
    * Optional `HttpClient` features (`withInterceptors(...)`, `withXhr()`, …),
    * applied via a single internal `provideHttpClient(...httpFeatures)` call.
@@ -45,9 +37,4 @@ export interface RiviniaHttpConfig {
  * Internal configuration token. Consumers must use `provideRiviniaHttp()`.
  * @internal
  */
-export const RIVINIA_HTTP_CONFIG = new InjectionToken<RiviniaHttpConfig>(
-  'RIVINIA_HTTP_CONFIG',
-);
-
-export const DEFAULT_UNWRAP = false;
-export const DEFAULT_UNWRAP_KEY = 'data';
+export const RIVINIA_HTTP_CONFIG = new InjectionToken<RiviniaHttpConfig>('RIVINIA_HTTP_CONFIG');

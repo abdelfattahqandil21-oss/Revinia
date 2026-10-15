@@ -9,26 +9,25 @@ import {
 } from '@angular/common/http';
 import { Service, computed, inject, isSignal, type Signal } from '@angular/core';
 import { map, type Observable } from 'rxjs';
-import {
-  DEFAULT_UNWRAP,
-  DEFAULT_UNWRAP_KEY,
-  RIVINIA_HTTP_CONFIG,
-  type RiviniaHttpConfig,
-} from './http-config';
-import {
-  type QueryParamsInput,
-  type ReactiveInput,
-  type RiviniaDeleteOptions,
-  type RiviniaRequestOptions,
+import { RIVINIA_HTTP_CONFIG, type RiviniaHttpConfig } from './http-config';
+import type {
+  QueryParamsInput,
+  ReactiveInput,
+  RiviniaDeleteRequestOptions,
+  RiviniaRawOptions,
+  RiviniaRequestBase,
+  RiviniaRequestOptions,
+  RiviniaUnwrapOff,
+  RiviniaUnwrapOn,
 } from './http-options';
-import { unwrapAs } from './http-utils';
+import { extractKey } from './http-utils';
 import { assertEnvelope, type RiviniaEnvelopePolicy } from './http-envelope';
 
-/** Options for `getResource` in addition to per-request options. */
-export interface RiviniaResourceOptions<T> extends Omit<
-  RiviniaRequestOptions,
-  'params' | 'headers' | 'context'
-> {
+/**
+ * Reactive per-request fields for `getResource` (re-evaluated on every
+ * request; everything else is read once per call site).
+ */
+export interface RiviniaResourceBase<T> {
   /**
    * Query params re-evaluated on every request: value, signal, or reactive
    * function. Anything else in these options is read once per call site —
@@ -37,6 +36,7 @@ export interface RiviniaResourceOptions<T> extends Omit<
   params?: ReactiveInput<QueryParamsInput>;
   headers?: ReactiveInput<HttpHeaders | Record<string, string | string[]>>;
   context?: ReactiveInput<HttpContext>;
+  withCredentials?: boolean;
   /** Value while idle/loading. Defaults to `undefined`. */
   defaultValue?: T;
   /**
@@ -50,7 +50,20 @@ export interface RiviniaResourceOptions<T> extends Omit<
    * plain Observable methods — use `HttpClient` events there directly.
    */
   reportProgress?: boolean;
+  /**
+   * Opt-in backend-envelope validation for this resource (replaces any
+   * global `envelope` policy wholesale). See `RiviniaEnvelopePolicy`.
+   */
+  envelope?: RiviniaEnvelopePolicy;
 }
+
+/**
+ * `getResource` options: reactive base + the same per-call unwrap contract
+ * as the plain methods (composed explicitly — `Omit` over a union would
+ * destroy the discrimination).
+ */
+export type RiviniaResourceOptions<T> = RiviniaResourceBase<T> &
+  (RiviniaUnwrapOn | RiviniaUnwrapOff);
 
 /**
  * Headless typed HTTP client.
@@ -58,10 +71,8 @@ export interface RiviniaResourceOptions<T> extends Omit<
  * Thin over `HttpClient` (so app interceptors, `HttpContext` escape hatches
  * and `provideHttpClient()` testing all keep working). Owns no backend:
  * URLs pass through untouched; the library adds opt-in envelope handling —
- * unwrapping (`unwrap`/`unwrapKey`) and failure validation (`envelope`).
- *
- * Unwrap resolution per call: `options.unwrap ?? config.unwrap ?? false`,
- * key: `options.unwrapKey ?? config.unwrapKey ?? 'data'`.
+ * per-request unwrapping (`{ unwrap: true, unwrapKey }`, mandatory key, no
+ * default) and failure validation (`envelope`).
  */
 @Service()
 export class RiviniaHttp {
@@ -73,38 +84,38 @@ export class RiviniaHttp {
   get<T>(endpoint: string, options?: RiviniaRequestOptions): Observable<T> {
     return this.http
       .get<unknown>(this.url(endpoint), this.httpOptions(options))
-      .pipe(map((body) => this.applyUnwrap<T>(body, options)));
+      .pipe(map((body) => this.applyUnwrap<T>(endpoint, body, options)));
   }
 
   post<T>(endpoint: string, body?: unknown, options?: RiviniaRequestOptions): Observable<T> {
     return this.http
       .post<unknown>(this.url(endpoint), body, this.httpOptions(options))
-      .pipe(map((res) => this.applyUnwrap<T>(res, options)));
+      .pipe(map((res) => this.applyUnwrap<T>(endpoint, res, options)));
   }
 
   put<T>(endpoint: string, body?: unknown, options?: RiviniaRequestOptions): Observable<T> {
     return this.http
       .put<unknown>(this.url(endpoint), body, this.httpOptions(options))
-      .pipe(map((res) => this.applyUnwrap<T>(res, options)));
+      .pipe(map((res) => this.applyUnwrap<T>(endpoint, res, options)));
   }
 
   patch<T>(endpoint: string, body?: unknown, options?: RiviniaRequestOptions): Observable<T> {
     return this.http
       .patch<unknown>(this.url(endpoint), body, this.httpOptions(options))
-      .pipe(map((res) => this.applyUnwrap<T>(res, options)));
+      .pipe(map((res) => this.applyUnwrap<T>(endpoint, res, options)));
   }
 
-  delete<T>(endpoint: string, options?: RiviniaDeleteOptions): Observable<T> {
+  delete<T>(endpoint: string, options?: RiviniaDeleteRequestOptions): Observable<T> {
     return this.http
       .delete<unknown>(this.url(endpoint), {
         ...this.httpOptions(options),
         body: options?.body,
       })
-      .pipe(map((res) => this.applyUnwrap<T>(res, options)));
+      .pipe(map((res) => this.applyUnwrap<T>(endpoint, res, options)));
   }
 
   /** Binary download. Never unwrapped — envelopes don't apply to blobs. */
-  getBlob(endpoint: string, options?: RiviniaRequestOptions): Observable<Blob> {
+  getBlob(endpoint: string, options?: RiviniaRawOptions): Observable<Blob> {
     return this.http.get(this.url(endpoint), {
       ...this.httpOptions(options),
       responseType: 'blob',
@@ -112,7 +123,7 @@ export class RiviniaHttp {
   }
 
   /** Plain-text download. Never unwrapped. */
-  getText(endpoint: string, options?: RiviniaRequestOptions): Observable<string> {
+  getText(endpoint: string, options?: RiviniaRawOptions): Observable<string> {
     return this.http.get(this.url(endpoint), {
       ...this.httpOptions(options),
       responseType: 'text',
@@ -125,7 +136,7 @@ export class RiviniaHttp {
    * `envelope` validation still applies to the body — a globally declared
    * failure policy must hold on every JSON path, not just the unwrapped ones.
    */
-  getResponse<T>(endpoint: string, options?: RiviniaRequestOptions): Observable<HttpResponse<T>> {
+  getResponse<T>(endpoint: string, options?: RiviniaRawOptions): Observable<HttpResponse<T>> {
     const envelope = this.resolveEnvelope(options);
     return this.http
       .get<T>(this.url(endpoint), {
@@ -147,7 +158,7 @@ export class RiviniaHttp {
   postResponse<T>(
     endpoint: string,
     body?: unknown,
-    options?: RiviniaRequestOptions,
+    options?: RiviniaRawOptions,
   ): Observable<HttpResponse<T>> {
     const envelope = this.resolveEnvelope(options);
     return this.http
@@ -191,15 +202,14 @@ export class RiviniaHttp {
         ...(reportProgress !== undefined ? { reportProgress } : {}),
       };
     };
-    const unwrapKey = this.resolveKey(requestOptions);
-    const unwrapEnabled = this.resolveUnwrap(requestOptions);
     const envelope = this.resolveEnvelope(requestOptions);
     const base = { defaultValue: defaultValue as T | undefined };
     // Pipeline order: envelope validation (raw) -> unwrap -> user parse.
-    // A throwing envelope surfaces as resource.error() automatically.
+    // A throwing envelope or a failed extraction surfaces as resource.error().
     const applyParse = (raw: unknown): T => {
       if (envelope) assertEnvelope(raw, envelope);
-      const unwrapped = unwrapEnabled ? unwrapAs<T>(raw, unwrapKey) : (raw as T);
+      if (requestOptions.unwrap !== true) return parse ? parse(raw as T) : (raw as T);
+      const unwrapped = extractKey(raw, requestOptions.unwrapKey) as T;
       return parse ? parse(unwrapped) : unwrapped;
     };
     return defaultValue === undefined
@@ -217,28 +227,20 @@ export class RiviniaHttp {
     return endpoint;
   }
 
-  private resolveUnwrap(options?: { unwrap?: boolean }): boolean {
-    return options?.unwrap ?? this.config?.unwrap ?? DEFAULT_UNWRAP;
-  }
-
-  private resolveKey(options?: { unwrapKey?: string }): string {
-    return options?.unwrapKey ?? this.config?.unwrapKey ?? DEFAULT_UNWRAP_KEY;
-  }
-
   private resolveEnvelope(options?: {
     envelope?: RiviniaEnvelopePolicy;
   }): RiviniaEnvelopePolicy | undefined {
     return options?.envelope ?? this.config?.envelope;
   }
 
-  private applyUnwrap<T>(body: unknown, options?: RiviniaRequestOptions): T {
+  private applyUnwrap<T>(endpoint: string, body: unknown, options?: RiviniaRequestOptions): T {
     const envelope = this.resolveEnvelope(options);
     if (envelope) assertEnvelope(body, envelope);
-    if (!this.resolveUnwrap(options)) return body as T;
-    return unwrapAs<T>(body, this.resolveKey(options));
+    if (options?.unwrap !== true) return body as T;
+    return extractKey(body, options.unwrapKey, endpoint) as T;
   }
 
-  private httpOptions(options?: RiviniaRequestOptions) {
+  private httpOptions(options?: RiviniaRequestBase) {
     return {
       params: this.toParams(options?.params),
       headers: options?.headers,

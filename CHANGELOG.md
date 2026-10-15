@@ -3,6 +3,23 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
+## 2026-10-15 — http 0.5.0
+
+### @rivinia/http
+
+- **H-05 (breaking):** global `unwrap`/`unwrapKey` configuration removed from
+  `provideRiviniaHttp()`. Unwrapping is strictly per request:
+  `{ unwrap: true, unwrapKey }` with a mandatory key (no default).
+  A missing key now throws `RiviniaHttpUnwrapError` instead of silently
+  passing the body through. Migrate each applicable call (see the README
+  migration note); `ng add` no longer asks about unwrapping.
+- **H-06 (feature):** `RiviniaHttpUnwrapError` (`key` + `endpoint` + raw
+  `body`; body never interpolated into the message) shared by plain methods
+  and `getResource` (surfaces as `resource.error()`).
+- **H-07 (breaking):** `getBlob`/`getText`/`getResponse`/`postResponse` take
+  `RiviniaRawOptions` — unwrap fields are rejected at compile time instead
+  of silently ignored.
+
 ## 2026-10-15 — toast 0.3.1
 
 ### @rivinia/toast

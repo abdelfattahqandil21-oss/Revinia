@@ -60,9 +60,9 @@ this.api.post('trips', dto).subscribe(() => this.tripsResource.reload());
 ## 5. Per-backend envelopes
 
 ```ts
-provideRiviniaHttp({ unwrap: true });                          // backend wraps { data }
+this.api.get<Main>('main', { unwrap: true, unwrapKey: 'data' }); // backend wraps { data }
 this.api.get<Legacy>('legacy', { unwrap: true, unwrapKey: 'result' }); // odd endpoint
-this.api.get<Raw>('raw');                                          // raw (default)
+this.api.get<Raw>('raw'); // raw (default)
 ```
 
 ## 6. Download progress
