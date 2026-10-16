@@ -34,6 +34,8 @@ export interface MenuPick {
     '[attr.tabindex]': 'tab()',
     '[attr.aria-disabled]': 'disabled()',
     '[attr.data-active]': 'active()',
+    '(click)': 'pick()',
+    '(pointerenter)': 'hover()',
   },
 })
 export class RiviniaMenuItem {
@@ -47,6 +49,16 @@ export class RiviniaMenuItem {
 
   protected tab(): string {
     return this.active() ? '0' : '-1';
+  }
+
+  /** Mouse pick: disabled items are ignored (controller refuses them). */
+  protected pick(): void {
+    this.menu?.pickItem(this.id());
+  }
+
+  /** Mouse hover follows keyboard focus so highlight tracks the pointer. */
+  protected hover(): void {
+    this.menu?.hoverItem(this.id());
   }
 
   ngOnInit(): void {
@@ -201,18 +213,44 @@ export class RiviniaMenuItem {
         opacity: 0.45;
         cursor: default;
       }
+      /* Optional icons: consumer projects any svg/icon content; the UI only
+         owns sizing, alignment and tone so rows stay consistent. */
+      .rv-menu-panel [rvmenuitem] svg,
+      .rv-menu-panel [rvmenuitem] [data-icon] {
+        width: 16px;
+        height: 16px;
+        flex: none;
+        color: var(--rv-menu-muted);
+      }
+      .rv-menu-panel [rvmenuitem][data-active='true'] svg,
+      .rv-menu-panel [rvmenuitem][data-active='true'] [data-icon] {
+        color: inherit;
+      }
+      /* Opening motion (researched: Radix/shadcn/HeadlessUI pattern):
+         fade + scale from the trigger edge + a small slide toward rest.
+         Origin follows the vertical side so the panel grows out of the
+         trigger; duration/easing stay overridable via vars. */
+      .rv-menu-panel {
+        --rv-menu-duration: 160ms;
+        --rv-menu-easing: cubic-bezier(0.16, 1, 0.3, 1);
+        --rv-menu-from-y: -6px;
+        transform-origin: top center;
+        animation: rv-menu-in var(--rv-menu-duration) var(--rv-menu-easing);
+      }
+      .rv-menu-panel[data-placement='top-start'],
+      .rv-menu-panel[data-placement='top-end'] {
+        --rv-menu-from-y: 6px;
+        transform-origin: bottom center;
+      }
       @media (prefers-reduced-motion: reduce) {
         .rv-menu-panel {
           animation: none;
         }
       }
-      .rv-menu-panel {
-        animation: rv-menu-in 120ms ease-out;
-      }
       @keyframes rv-menu-in {
         from {
           opacity: 0;
-          transform: translateY(-4px);
+          transform: translateY(var(--rv-menu-from-y)) scale(0.96);
         }
       }
     `,
@@ -349,6 +387,21 @@ export class RiviniaMenuComponent {
     if (id === null) return;
     this.doClose(false);
     this.picked.emit({ id });
+  }
+
+  /**
+   * Mouse pick of a concrete item. Called by {@link RiviniaMenuItem}.
+   * Disabled/unknown ids are ignored via `activate` (returns false).
+   */
+  pickItem(id: string): void {
+    if (!this.controller().activate(id)) return;
+    this.doClose(false);
+    this.picked.emit({ id });
+  }
+
+  /** Mouse hover tracks keyboard focus. Called by {@link RiviniaMenuItem}. */
+  hoverItem(id: string): void {
+    this.controller().activate(id);
   }
 
   private doClose(restoreFocus: boolean): void {

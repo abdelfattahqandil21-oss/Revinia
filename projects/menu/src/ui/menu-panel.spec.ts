@@ -111,4 +111,29 @@ describe('RiviniaMenuComponent', () => {
     fixture.destroy();
     expect(menu.items()).toEqual([]);
   });
+
+  it('picks items with mouse click and ignores disabled ones', async () => {
+    const fixture = TestBed.createComponent(MenuHarness);
+    fixture.detectChanges();
+    const menu = fixture.componentInstance.menu;
+    menu.openMenu();
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+    await Promise.resolve();
+    const items = fixture.nativeElement.querySelectorAll('[rvmenuitem]');
+    (items[2] as HTMLElement).click();
+    expect(fixture.componentInstance.picked).toEqual(['logout']);
+    expect(menu.open()).toBe(false);
+
+    menu.openMenu();
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+    await Promise.resolve();
+    const again = fixture.nativeElement.querySelectorAll('[rvmenuitem]');
+    (again[1] as HTMLElement).click();
+    expect(fixture.componentInstance.picked).toEqual(['logout']);
+    expect(menu.open()).toBe(true);
+  });
 });
