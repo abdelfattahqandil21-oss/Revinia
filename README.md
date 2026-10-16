@@ -17,6 +17,7 @@ consumer before any publish.
 | `@rivinia/i18n`  | [0.3.0](https://www.npmjs.com/package/@rivinia/i18n)  | ✅       | Headless language manager: signals, RTL, ICU plurals, detection (`projects/i18n`)               |
 | `@rivinia/env`   | [0.2.0](https://www.npmjs.com/package/@rivinia/env)   | ✅       | Typed app environments dev/staging/prod + setup schematic (`projects/env`)                      |
 | `@rivinia/menu`  | unpublished (0.1.0)                                   | 🆕       | Headless menu behavior + ready-made dropdown UI (`projects/menu`)                                  |
+| `@rivinia/select` | unpublished (0.1.0)                                 | 🆕       | Headless select (search + single/multi) + ready-made UI on rv-menu (`projects/select`)             |
 
 ```bash
 npm install @rivinia/http @rivinia/toast @rivinia/modal @rivinia/i18n @rivinia/env

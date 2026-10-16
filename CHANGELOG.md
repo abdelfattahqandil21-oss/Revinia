@@ -13,6 +13,15 @@ A change is listed the moment it lands on `main`, not when npm is published.
   (`rv-menu`, `rvMenuItem`, placements, roving focus, outside-click,
   focus return). Zero new runtime dependencies.
 
+### @rivinia/select
+
+- **New package (0.1.0):** headless select controller (`options/query/filtered`
+  signals, accent-insensitive search, single `value` / multi `values`,
+  `syncOptions` for input mirroring) + secondary `@rivinia/select/ui`
+  (`rv-select` on top of `rv-menu`: searchable filter box, single-pick-close,
+  multi-toggle-stays-open with checks, empty state, chevron). Peer-depends on
+  `@rivinia/menu`. Rich per-option custom content stays with raw `rv-menu`.
+
 ## 2026-10-16 — toast 0.4.0
 
 ### @rivinia/toast
