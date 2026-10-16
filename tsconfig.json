@@ -22,7 +22,8 @@
       "@rivinia/modal": ["./dist/modal"],
       "@rivinia/modal/ui": ["./dist/modal/ui"],
       "@rivinia/i18n": ["./dist/i18n"],
-      "@rivinia/env": ["./dist/env"]
+      "@rivinia/env": ["./dist/env"],
+      "@rivinia/menu": ["./dist/menu"]
     },
     "target": "ES2022",
     "module": "preserve"
@@ -75,6 +76,12 @@
     },
     {
       "path": "./projects/env/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/menu/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/menu/tsconfig.spec.json"
     }
   ]
 }

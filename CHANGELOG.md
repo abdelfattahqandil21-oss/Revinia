@@ -3,6 +3,16 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
+## Unreleased — menu 0.1.0 (new package, unpublished)
+
+### @rivinia/menu
+
+- **New package (0.1.0):** headless per-instance menu controller
+  (`open/activeId/items` signals, item registry, keyboard navigation model
+  skipping disabled items with wrap) + secondary `@rivinia/menu/ui`
+  (`rv-menu`, `rvMenuItem`, placements, roving focus, outside-click,
+  focus return). Zero new runtime dependencies.
+
 ## 2026-10-16 — toast 0.4.0
 
 ### @rivinia/toast

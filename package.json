@@ -17,6 +17,7 @@
     "build:i18n": "pnpm schematics:i18n && ng build i18n",
     "build:modal": "pnpm schematics:modal && ng build modal",
     "build:env": "pnpm schematics:env && ng build env",
+    "build:menu": "ng build menu",
     "test:schematics": "vitest run projects/http/schematics projects/toast/schematics projects/i18n/schematics projects/modal/schematics projects/env/schematics",
     "check:docs": "node scripts/check-docs.mjs"
   },

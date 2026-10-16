@@ -16,6 +16,7 @@ consumer before any publish.
 | `@rivinia/modal` | [0.5.0](https://www.npmjs.com/package/@rivinia/modal) | ✅       | Headless modal manager: stack/queue, typed results, guards (`projects/modal`)                   |
 | `@rivinia/i18n`  | [0.3.0](https://www.npmjs.com/package/@rivinia/i18n)  | ✅       | Headless language manager: signals, RTL, ICU plurals, detection (`projects/i18n`)               |
 | `@rivinia/env`   | [0.2.0](https://www.npmjs.com/package/@rivinia/env)   | ✅       | Typed app environments dev/staging/prod + setup schematic (`projects/env`)                      |
+| `@rivinia/menu`  | unpublished (0.1.0)                                   | 🆕       | Headless menu behavior + ready-made dropdown UI (`projects/menu`)                                  |
 
 ```bash
 npm install @rivinia/http @rivinia/toast @rivinia/modal @rivinia/i18n @rivinia/env
