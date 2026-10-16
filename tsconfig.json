@@ -20,6 +20,7 @@
       "@rivinia/toast": ["./dist/toast"],
       "@rivinia/toast/ui": ["./dist/toast/ui"],
       "@rivinia/modal": ["./dist/modal"],
+      "@rivinia/modal/ui": ["./dist/modal/ui"],
       "@rivinia/i18n": ["./dist/i18n"],
       "@rivinia/env": ["./dist/env"]
     },

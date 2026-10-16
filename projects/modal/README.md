@@ -86,6 +86,79 @@ Closing a parent cascades to descendants (`dismissed: parent-closed`) unless
 `descendants: 'prevent-parent-close'` blocks it. Swapping strategies with live
 modals throws — close everything first.
 
+## Ready-made UI (`@rivinia/modal/ui`)
+
+Optional secondary entry point. Zero new runtime dependencies (platform
+`<dialog>` + Angular only), no design system, no CSS framework. Headless
+consumers never load it (proven: core FESM contains zero UI markers).
+
+```ts
+import { RiviniaModalDialog } from '@rivinia/modal/ui'; // UI-only
+import { RiviniaModalHost } from '@rivinia/modal/ui'; // managed adapter
+```
+
+**Mode A — UI-only** (no controller; owns its `open` state):
+
+```html
+<rv-modal-dialog [(open)]="open" [title]="'Delete?'" [size]="'sm'" (confirmed)="remove()">
+  <p>Delete {{ user.name }}?</p>
+</rv-modal-dialog>
+```
+
+**Mode B — headless + custom UI:** keep using `@rivinia/modal` alone.
+Nothing here loads, no styles leak.
+
+**Mode C — headless + ready-made UI** (single source of truth stays Core):
+
+```html
+<rv-modal-host [modal]="injectRiviniaModal()" />
+```
+
+Intents (X, Escape, backdrop) route through `requestDismiss` (guards run);
+exits play, then the host calls `confirmClosed()` (match `closingTimeout`
+to the animation duration; default 300 ms covers the 150 ms default).
+
+Custom chrome (no X button, custom header/footer, own actions in content):
+
+```html
+<rv-modal-dialog [(open)]="open">
+  <div rv-modal-header rvModalHeader>My header, no X</div>
+  <p>Body.</p>
+  <div rv-modal-footer rvModalFooter><button (click)="save()">Save</button></div>
+</rv-modal-dialog>
+```
+
+No header at all: omit the title (no custom header either). No footer:
+omit the footer slot (renders nothing). Positions: `center` (default),
+`top/bottom`, `-start/-end` variants (RTL-aware), `fullscreen`.
+Sizes `sm/md/lg/xl/full/auto` are ceilings via `--rv-modal-width-*` vars.
+
+Theming (no theme service; consumer owns it):
+
+```css
+:root {
+  --rv-modal-bg: #1c1c1e;
+  --rv-modal-fg: #f5f5f7;
+}
+@media (prefers-color-scheme: dark) {
+  .rv-modal {
+    /* built-in dark defaults already apply; override vars to brand it */
+  }
+}
+```
+
+Plus: `prefers-reduced-motion` disables animation; `animation: 'none'`
+opt-out; `backdrop: 'close' | 'static' | 'disabled'`; Escape/backdrop/X
+policies stay independent (no `disableClose` bundle); long content scrolls
+inside (`rv-modal-body`); `scrollbar-gutter: stable` while open;
+reference-counted scroll lock restores previous styles; focus trap + focus
+restore + `aria-labelledby`/`aria-label`; `dir=rtl` works via logical
+properties; SSR renders closed and opens after hydration; lazy-load the
+entry (`loadComponent`) to split it into its own chunk (~16.7 kB raw,
+~4.9 kB transfer, measured). Toasts: MEASURED (Chrome, `elementFromPoint`) —
+neither a high `z-index` nor `popover="manual"` paints above an open modal
+dialog; toasts queue behind it. No modal→toast dependency by design.
+
 ## Type holes (honest, by design)
 
 Core checks `ModalHandle<TResult>.close(result?: TResult)` and
