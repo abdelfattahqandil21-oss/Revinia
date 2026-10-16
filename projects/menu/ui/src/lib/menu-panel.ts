@@ -2,6 +2,7 @@ import {
   Component,
   Directive,
   ElementRef,
+  ViewEncapsulation,
   computed,
   effect,
   inject,
@@ -79,6 +80,12 @@ export class RiviniaMenuItem {
 @Component({
   selector: 'rv-menu',
   standalone: true,
+  // Deliberately unencapsulated: projected item buttons belong to the
+  // consumer's template, and emulated descendant selectors never match
+  // projected content (measured in Chrome: `display` stayed `inline-block`).
+  // Every rule below is scoped under `.rv-menu-panel` / `.rv-menu-trigger`,
+  // so nothing leaks into application styles.
+  encapsulation: ViewEncapsulation.None,
   template: `
     <div class="rv-menu-trigger" (click)="onTriggerClick()" (keydown)="onTriggerKey($event)">
       <ng-content select="[rv-menu-trigger]"></ng-content>
@@ -111,7 +118,9 @@ export class RiviniaMenuItem {
         border-top: 1px solid var(--rv-menu-border);
         margin: 6px 4px;
       }
-      :host {
+      /* NOTE: the :host pseudo-class does not exist without encapsulation,
+         so the host element is styled directly (still rv-prefixed). */
+      rv-menu {
         position: relative;
         display: inline-block;
       }
@@ -124,12 +133,14 @@ export class RiviniaMenuItem {
         --rv-menu-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
         --rv-menu-pad: 6px;
         --rv-menu-width: 16rem;
+        --rv-menu-font: system-ui, -apple-system, 'Segoe UI', sans-serif;
         position: absolute;
         z-index: var(--rv-menu-z, 500);
         min-width: var(--rv-menu-width);
         max-width: calc(100dvw - 2rem);
         background: var(--rv-menu-bg);
         color: var(--rv-menu-fg);
+        font-family: var(--rv-menu-font);
         border: 1px solid var(--rv-menu-border);
         border-radius: var(--rv-menu-radius);
         box-shadow: var(--rv-menu-shadow);
@@ -159,7 +170,7 @@ export class RiviniaMenuItem {
         inset-block-end: calc(100% + 6px);
         inset-inline-end: 0;
       }
-      .rv-menu-panel [rvMenuItem] {
+      .rv-menu-panel [rvmenuitem] {
         display: flex;
         align-items: center;
         gap: 10px;
@@ -176,17 +187,17 @@ export class RiviniaMenuItem {
         padding: 8px 10px;
         cursor: pointer;
       }
-      .rv-menu-panel [rvMenuItem][data-active='true'] {
+      .rv-menu-panel [rvmenuitem][data-active='true'] {
         background: color-mix(in srgb, currentColor 10%, transparent);
       }
-      .rv-menu-panel [rvMenuItem]:hover {
+      .rv-menu-panel [rvmenuitem]:hover {
         background: color-mix(in srgb, currentColor 8%, transparent);
       }
-      .rv-menu-panel [rvMenuItem]:focus-visible {
+      .rv-menu-panel [rvmenuitem]:focus-visible {
         outline: 2px solid currentColor;
         outline-offset: -2px;
       }
-      .rv-menu-panel [rvMenuItem][aria-disabled='true'] {
+      .rv-menu-panel [rvmenuitem][aria-disabled='true'] {
         opacity: 0.45;
         cursor: default;
       }

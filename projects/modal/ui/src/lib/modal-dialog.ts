@@ -3,6 +3,7 @@ import {
   Directive,
   DOCUMENT,
   ElementRef,
+  ViewEncapsulation,
   computed,
   contentChild,
   effect,
@@ -59,6 +60,10 @@ export class RvModalFooter {}
 @Component({
   selector: 'rv-modal-dialog',
   standalone: true,
+  // Unencapsulated like rv-menu: custom projected headers/footers belong to
+  // the consumer's template, which emulated selectors cannot reach. Every
+  // rule is scoped under `.rv-modal`, so nothing leaks.
+  encapsulation: ViewEncapsulation.None,
   template: `
     <dialog
       #dialog
