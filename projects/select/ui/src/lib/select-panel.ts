@@ -83,7 +83,12 @@ export type SelectChange = string | readonly string[] | null;
           />
         }
         @for (o of controller().filtered(); track o.id) {
-          <button rvMenuItem [id]="o.id" [disabled]="o.disabled ?? false">
+          <button
+            rvMenuItem
+            [id]="o.id"
+            [disabled]="o.disabled ?? false"
+            [checked]="controller().mode === 'multi' ? controller().isSelected(o.id) : null"
+          >
             <span class="rv-select-label">{{ o.label }}</span>
             @if (controller().isSelected(o.id)) {
               <svg

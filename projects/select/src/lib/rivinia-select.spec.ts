@@ -37,6 +37,18 @@ describe('RiviniaSelect (single)', () => {
     expect(select.filtered().length).toBe(3);
   });
 
+  it('normalizes Arabic spelling (tashkeel, tatweel, alef forms)', () => {
+    select.registerOption({ id: 'a', label: 'فواتير مستحقة' });
+    select.registerOption({ id: 'b', label: 'أحمد' });
+    select.setQuery('فواتير');
+    expect(select.filtered().map((o) => o.id)).toContain('a');
+    select.setQuery('فَوَاتِير');
+    expect(select.filtered().map((o) => o.id)).toContain('a');
+    select.setQuery('احمد');
+    expect(select.filtered().map((o) => o.id)).toContain('b');
+    select.clearQuery();
+  });
+
   it('unregistering drops options and a dangling value', () => {
     select.select('paid');
     select.unregisterOption('paid');

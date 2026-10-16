@@ -128,5 +128,8 @@ function normalize(text: string): string {
   return text
     .toLocaleLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u064b-\u065f\u0670]/g, '')
+    .replace(/\u0640/g, '')
+    .replace(/[\u0623\u0625\u0622\u0671]/g, '\u0627');
 }

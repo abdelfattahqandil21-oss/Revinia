@@ -48,6 +48,27 @@ typeahead), opening autofocuses it, and closing resets the filter.
 Disabled options render but refuse picks. Rich per-option custom content
 (icons, badges, headers) stays the job of raw `rv-menu`.
 
+## Forms (manual wiring — no ControlValueAccessor yet)
+
+`rv-select` is deliberately form-agnostic in 0.1.0. Wiring to a reactive
+form is two lines — the controller is the source of truth either way:
+
+```ts
+readonly statusControl = new FormControl<string | null>(null);
+```
+
+```html
+<rv-select
+  [options]="invoices"
+  [searchable]="true"
+  (selectionChange)="statusControl.setValue($event)"
+/>
+```
+
+For `formControlName` inside a `formGroup`, wrap the same two lines in a
+thin adapter component. A first-class `ControlValueAccessor` (or signal-forms
+binding) is roadmap, not 0.1.0 scope.
+
 ## API
 
 | Export                   | Kind  | Purpose                                                                                                                                              |

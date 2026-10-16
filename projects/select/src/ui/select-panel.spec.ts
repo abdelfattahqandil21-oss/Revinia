@@ -80,6 +80,8 @@ describe('RiviniaSelectComponent (single, searchable)', () => {
     expect(fixture.componentInstance.changes).toEqual(['paid']);
     expect(fixture.componentInstance.select.value()).toBe('paid');
     expect(fixture.nativeElement.querySelector('.rv-menu-panel')).toBeNull();
+    expect(items[0].getAttribute('role')).toBe('menuitem');
+    expect(items[0].hasAttribute('aria-checked')).toBe(false);
     expect(fixture.nativeElement.querySelector('.rv-select-value').textContent).toContain('Paid');
   });
 
@@ -139,6 +141,11 @@ describe('RiviniaSelectComponent (multi)', () => {
     expect(fixture.componentInstance.select.values()).toEqual(['outstanding', 'paid']);
     expect(fixture.nativeElement.querySelector('.rv-menu-panel')).not.toBeNull();
     expect(fixture.nativeElement.querySelectorAll('.rv-select-check').length).toBe(2);
+    const rows = fixture.nativeElement.querySelectorAll('[rvmenuitem]');
+    expect(rows[0].getAttribute('role')).toBe('menuitemcheckbox');
+    expect(rows[0].getAttribute('aria-checked')).toBe('true');
+    expect(rows[1].getAttribute('role')).toBe('menuitemcheckbox');
+    expect(rows[1].getAttribute('aria-checked')).toBe('false');
     expect(fixture.nativeElement.querySelector('.rv-select-value').textContent).toContain(
       'Outstanding invoices, Paid',
     );
