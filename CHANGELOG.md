@@ -3,6 +3,18 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
+## 2026-10-16 — modal 0.5.0
+
+### @rivinia/modal
+
+- **M-09 (feature):** new secondary entry `@rivinia/modal/ui` — ready-made
+  `RiviniaModalDialog` (native `<dialog>`, header/content/footer slots,
+  sizes, positions incl. side panels, directional animations, CSS-var
+  theming) + `RiviniaModalHost` adapter + ref-counted scroll lock. Zero new
+  runtime dependencies. Headless entry unchanged and UI-free.
+- **M-10 (feature):** dialog `description` input (`aria-describedby`),
+  top-aligned header, focus-to-title rule, responsive bottom-sheet mapping.
+
 ## 2026-10-15 — http 0.5.0
 
 ### @rivinia/http

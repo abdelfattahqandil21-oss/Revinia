@@ -8,7 +8,7 @@ Headless modal manager for Angular 22+. Stack/Queue strategies, typed
 zero styles, zero router dependency. A future `@rivinia/modal/ui` entry point
 will render this state; Core never imports UI.
 
-- Version: **0.4.0**
+- Version: **0.5.0**
 - Requires: **Angular `^22.0.0`**, `tslib`
 
 ## Install
@@ -128,7 +128,11 @@ Custom chrome (no X button, custom header/footer, own actions in content):
 </rv-modal-dialog>
 ```
 
-No header at all: omit the title (no custom header either). No footer:
+No header at all: omit the title (no custom header either). Header rules:
+title + optional `description` (wired as `aria-describedby`), top-aligned
+with a shrink-proof X; an empty heading collapses (no dead space); a custom
+header renders inside the same padded row. Focus goes to the title when
+there is no close button, to the dialog otherwise. No footer:
 omit the footer slot (renders nothing). Positions: `center` (default),
 `top/bottom`, `-start/-end` variants (RTL-aware), `side-start/side-end`
 full-height panels, `fullscreen`. Under 640px viewports, center/top/bottom
