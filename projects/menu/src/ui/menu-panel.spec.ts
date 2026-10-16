@@ -109,6 +109,9 @@ describe('RiviniaMenuComponent', () => {
     await Promise.resolve();
     expect(trigger().getAttribute('aria-haspopup')).toBe('menu');
     expect(trigger().getAttribute('aria-expanded')).toBe('true');
+    const first = fixture.nativeElement.querySelector('[data-rv-id="profile"]');
+    expect(first.getAttribute('role')).toBe('menuitem');
+    expect(first.hasAttribute('aria-checked')).toBe(false);
 
     const panel: HTMLElement = fixture.nativeElement.querySelector('.rv-menu-panel');
     key(panel, 's');

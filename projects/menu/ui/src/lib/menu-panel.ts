@@ -9,10 +9,12 @@ import {
   inject,
   input,
   output,
+  signal,
 } from '@angular/core';
 import type { RiviniaMenuController } from '@rivinia/menu';
 import { RiviniaMenu } from '@rivinia/menu';
 import type { RiviniaMenuUiPlacement } from './ui-menu-types';
+import { computeMenuPosition } from './menu-position';
 
 /** Payload of {@link RiviniaMenuComponent.picked}. */
 export interface MenuPick {
@@ -30,11 +32,12 @@ export interface MenuPick {
   selector: '[rvMenuItem]',
   standalone: true,
   host: {
-    role: 'menuitem',
+    '[attr.role]': 'computedRole()',
     '[attr.data-rv-id]': 'id()',
     '[attr.tabindex]': 'tab()',
     '[attr.aria-disabled]': 'disabled()',
     '[attr.data-active]': 'active()',
+    '[attr.aria-checked]': 'checkedAttr()',
     '(click)': 'pick()',
     '(pointerenter)': 'hover()',
   },
@@ -44,12 +47,27 @@ export class RiviniaMenuItem {
   readonly disabled = input(false, {
     transform: (v: boolean | string) => v === '' || v === true,
   });
+  /**
+   * Tri-state selection (e.g. multi-select options). `null` (default) renders
+   * a plain `menuitem`; a boolean renders `menuitemcheckbox` + `aria-checked`
+   * so screen readers announce the state (the visual check alone is silent).
+   */
+  readonly checked = input<boolean | null>(null);
 
   private readonly menu = inject(RiviniaMenuComponent, { optional: true, skipSelf: true });
   private readonly active = computed(() => this.menu?.controller().activeId() === this.id());
 
   protected tab(): string {
     return this.active() ? '0' : '-1';
+  }
+
+  protected computedRole(): string {
+    return this.checked() === null ? 'menuitem' : 'menuitemcheckbox';
+  }
+
+  protected checkedAttr(): string | null {
+    const checked = this.checked();
+    return checked === null ? null : String(checked);
   }
 
   /** Mouse pick: disabled items are ignored (controller refuses them). */
@@ -108,7 +126,11 @@ export class RiviniaMenuItem {
         #panel
         class="rv-menu-panel"
         role="menu"
+        [attr.popover]="topLayerSupported ? 'manual' : null"
         [attr.data-placement]="placement()"
+        [attr.data-flipped]="flipped()"
+        [attr.data-positioned]="positioned()"
+        [attr.data-top-layer]="topLayerSupported"
         (keydown)="onPanelKey($event)"
       >
         <ng-content select="[rv-menu-panel]"></ng-content>
@@ -132,10 +154,30 @@ export class RiviniaMenuItem {
         margin: 6px 4px;
       }
       /* NOTE: the :host pseudo-class does not exist without encapsulation,
-         so the host element is styled directly (still rv-prefixed). */
+         so the host element is styled directly (still rv-prefixed).
+         Relative positioning anchors the no-popover fallback panel. */
       rv-menu {
         position: relative;
         display: inline-block;
+      }
+      /* Top-layer mode (popover-capable browsers): the panel escapes every
+         clipping ancestor and stacking context. Coordinates come from the
+         component (fixed + measured + flipped); the absolute placement
+         classes below stay as the no-popover fallback. */
+      .rv-menu-panel[data-top-layer='true'] {
+        position: fixed;
+        inset: auto;
+        margin: 0;
+      }
+      .rv-menu-panel[data-positioned='false'] {
+        animation: none;
+      }
+      /* Flipped panels grow out of the opposite edge (matches coordinates). */
+      .rv-menu-panel[data-top-layer='true'][data-placement^='bottom'][data-flipped='true'] {
+        transform-origin: bottom center;
+      }
+      .rv-menu-panel[data-top-layer='true'][data-placement^='top'][data-flipped='true'] {
+        transform-origin: top center;
       }
       .rv-menu-panel {
         --rv-menu-bg: #ffffff;
@@ -278,6 +320,16 @@ export class RiviniaMenuComponent {
   private readonly self = inject(ElementRef<HTMLElement>);
   /** Deferred initial focus: set on open paths, consumed after render. */
   private focusPending = false;
+  /**
+   * Manual popover support (top-layer). Feature-detected: modern browsers
+   * escape clipping ancestors; older ones keep the absolute fallback.
+   */
+  protected readonly topLayerSupported =
+    typeof HTMLElement !== 'undefined' && 'showPopover' in HTMLElement.prototype;
+  /** Coordinates applied (gates the enter animation until measured). */
+  protected readonly positioned = signal(false);
+  /** Whether the panel flipped to the opposite vertical side. */
+  protected readonly flipped = signal(false);
   /** Printable-character search buffer; reset by timer after 500ms quiet. */
   private typeBuffer = '';
   private typeTimer: ReturnType<typeof setTimeout> | null = null;
@@ -306,7 +358,21 @@ export class RiviniaMenuComponent {
         if (host && !host.contains(event.target as Node)) this.doClose(true);
       };
       document.addEventListener('pointerdown', onPointer);
-      onCleanup(() => document.removeEventListener('pointerdown', onPointer));
+      // Coordinates go stale on outside scroll/resize — close instead of
+      // drifting (native-select-like; scrolling inside the panel is exempt).
+      // Like Tab-close, this is APG-consistent non-modal behavior.
+      const onScroll = (event: Event) => {
+        const panel = this.self.nativeElement.querySelector('.rv-menu-panel');
+        if (panel && event.target instanceof Node && panel.contains(event.target)) return;
+        this.doClose(false);
+      };
+      window.addEventListener('scroll', onScroll, true);
+      window.addEventListener('resize', onScroll);
+      onCleanup(() => {
+        document.removeEventListener('pointerdown', onPointer);
+        window.removeEventListener('scroll', onScroll, true);
+        window.removeEventListener('resize', onScroll);
+      });
     });
     // APG menu-button: the trigger exposes haspopup + expanded. The trigger
     // element is consumer-owned, so the attributes sync onto its focusable
@@ -319,8 +385,70 @@ export class RiviniaMenuComponent {
       trigger?.setAttribute('aria-expanded', String(open));
     });
     afterRenderEffect(() => {
+      if (this.controller().open() && !this.positioned()) this.showAndPosition();
       this.consumePendingFocus();
     });
+  }
+
+  /**
+   * Top-layer presentation: show the manual popover, measure trigger +
+   * panel, and pin fixed coordinates (flipping when needed). Runs inside
+   * afterRender — before paint, so no flash. Falls back to the absolute CSS
+   * placement when popover is unsupported (jsdom included).
+   */
+  private showAndPosition(): void {
+    const root = this.self.nativeElement.querySelector('.rv-menu-panel') as HTMLElement | null;
+    if (!root) return;
+    if (typeof window === 'undefined' || !this.topLayerSupported) {
+      this.positioned.set(true);
+      return;
+    }
+    try {
+      const popover = root as HTMLElement & { showPopover?: () => void };
+      if (typeof popover.showPopover !== 'function') {
+        this.positioned.set(true);
+        return;
+      }
+      popover.showPopover();
+      const trigger = this.triggerEl()?.getBoundingClientRect();
+      if (!trigger) {
+        this.positioned.set(true);
+        return;
+      }
+      const at = computeMenuPosition(
+        { left: trigger.left, top: trigger.top, width: trigger.width, height: trigger.height },
+        { width: root.offsetWidth, height: root.offsetHeight },
+        this.placement(),
+        { width: window.innerWidth, height: window.innerHeight },
+        this.isRtl(),
+      );
+      root.style.left = `${at.left}px`;
+      root.style.top = `${at.top}px`;
+      this.flipped.set(at.flipped);
+      this.positioned.set(true);
+    } catch {
+      this.positioned.set(true);
+    }
+  }
+
+  private isRtl(): boolean {
+    try {
+      const doc = typeof document === 'undefined' ? null : document.documentElement;
+      if (doc?.dir === 'rtl') return true;
+      if (doc?.dir === 'ltr') return false;
+      return getComputedStyle(this.self.nativeElement).direction === 'rtl';
+    } catch {
+      return false;
+    }
+  }
+
+  /** Mark an opening pass: deferred focus + (top-layer) re-measurement. */
+  private markOpening(): void {
+    this.focusPending = true;
+    if (typeof window !== 'undefined' && this.topLayerSupported) {
+      this.flipped.set(false);
+      this.positioned.set(false);
+    }
   }
 
   protected onTriggerClick(): void {
@@ -328,7 +456,7 @@ export class RiviniaMenuComponent {
     c.toggle();
     if (c.open()) {
       this.opened.emit();
-      this.focusPending = true;
+      this.markOpening();
     } else {
       // Focus never left the trigger on toggle-close — restore is a no-op.
       this.closed.emit();
@@ -344,13 +472,13 @@ export class RiviniaMenuComponent {
         event.preventDefault();
         c.openMenu('first');
         this.opened.emit();
-        this.focusPending = true;
+        this.markOpening();
         break;
       case 'ArrowUp':
         event.preventDefault();
         c.openMenu('last');
         this.opened.emit();
-        this.focusPending = true;
+        this.markOpening();
         break;
       case 'Escape':
         if (c.open()) {

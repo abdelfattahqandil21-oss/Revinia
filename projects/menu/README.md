@@ -67,6 +67,13 @@ carries `aria-haspopup="menu"` + `aria-expanded` (synced onto the
 consumer's trigger element). Disabled
 items are skipped and reported via `aria-disabled`. SSR renders closed.
 
+Positioning: capable browsers render the panel in the top layer (manual
+`popover` + measured `fixed` coordinates) — it escapes clipping ancestors
+and flips to the fitting side near viewport edges (`data-flipped`
+re-aims the enter animation). Older browsers keep absolute placement with
+the same classes. Outside scroll/resize closes (scrolling inside the panel
+is exempt). Pure helper `computeMenuPosition` is exported for testing.
+
 ## License
 
 MIT.
