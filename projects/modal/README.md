@@ -130,7 +130,10 @@ Custom chrome (no X button, custom header/footer, own actions in content):
 
 No header at all: omit the title (no custom header either). No footer:
 omit the footer slot (renders nothing). Positions: `center` (default),
-`top/bottom`, `-start/-end` variants (RTL-aware), `fullscreen`.
+`top/bottom`, `-start/-end` variants (RTL-aware), `side-start/side-end`
+full-height panels, `fullscreen`. Under 640px viewports, center/top/bottom
+shapes become bottom sheets automatically (top-only radius, slide-up
+entrance); panels and fullscreen keep their shape.
 Sizes `sm/md/lg/xl/full/auto` are ceilings via `--rv-modal-width-*` vars.
 
 Theming (no theme service; consumer owns it):

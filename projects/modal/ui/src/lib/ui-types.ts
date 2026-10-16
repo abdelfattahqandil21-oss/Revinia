@@ -7,8 +7,14 @@ export type RiviniaModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full' | 'auto';
 
 /**
  * Placement in the viewport. `start`/`end` are logical (RTL-aware).
- * `fullscreen` covers the viewport (safe-area aware). Implemented with
+ * `fullscreen` covers the viewport (safe-area aware). `side-start` /
+ * `side-end` dock a full-height panel to the inline edge. Implemented with
  * plain CSS on the native `<dialog>` — no positioning engine.
+ *
+ * Responsive sheet mapping (built in, no input needed): viewports narrower
+ * than 640px render `center`, `top`, `bottom` and the bottom corners as a
+ * bottom sheet (anchored, top-only radius, slide-from-bottom entrance).
+ * `fullscreen` and the side panels keep their shape on small screens.
  */
 export type RiviniaModalPosition =
   | 'center'
@@ -20,6 +26,8 @@ export type RiviniaModalPosition =
   | 'bottom-end'
   | 'center-start'
   | 'center-end'
+  | 'side-start'
+  | 'side-end'
   | 'fullscreen';
 
 /** Entrance/exit animation preset. `none` disables motion entirely. */

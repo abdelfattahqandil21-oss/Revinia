@@ -133,6 +133,7 @@ export class RvModalFooter {}
         --rv-modal-easing-in: var(--rv-modal-easing);
         --rv-modal-easing-out: ease-in;
         --rv-modal-radius-sheet: 20px;
+        --rv-modal-width-panel: 24rem;
         padding: 0;
         border: 1px solid var(--rv-modal-border);
         border-radius: var(--rv-modal-radius);
@@ -203,6 +204,49 @@ export class RvModalFooter {}
         max-width: none;
         max-height: none;
         border-radius: 0;
+      }
+      .rv-modal[data-position='side-start'],
+      .rv-modal[data-position='side-end'] {
+        height: 100dvh;
+        max-height: none;
+        width: var(--rv-modal-width-panel);
+        margin-block: 0;
+      }
+      .rv-modal[data-position='side-start'] {
+        margin-inline-start: 0;
+        margin-inline-end: auto;
+        border-start-start-radius: 0;
+        border-end-start-radius: 0;
+      }
+      .rv-modal[data-position='side-end'] {
+        margin-inline-start: auto;
+        margin-inline-end: 0;
+        border-start-end-radius: 0;
+        border-end-end-radius: 0;
+      }
+      @media (max-width: 640px) {
+        .rv-modal[data-position='center'],
+        .rv-modal[data-position='top'],
+        .rv-modal[data-position='bottom'],
+        .rv-modal[data-position='bottom-start'],
+        .rv-modal[data-position='bottom-end'] {
+          margin-block-start: auto;
+          margin-block-end: 0;
+          margin-inline: 0;
+          width: 100dvw;
+          max-width: none;
+          border-end-end-radius: 0;
+          border-end-start-radius: 0;
+          border-start-start-radius: var(--rv-modal-radius-sheet);
+          border-start-end-radius: var(--rv-modal-radius-sheet);
+        }
+        .rv-modal[data-position='center'][data-state='open'],
+        .rv-modal[data-position='top'][data-state='open'],
+        .rv-modal[data-position='bottom'][data-state='open'],
+        .rv-modal[data-position='bottom-start'][data-state='open'],
+        .rv-modal[data-position='bottom-end'][data-state='open'] {
+          animation-name: rv-modal-in-bottom;
+        }
       }
       .rv-modal[data-animation]:not([data-animation='none'])[data-state='open'] {
         animation: var(--rv-modal-animation-in, rv-modal-in) var(--rv-modal-duration-in)

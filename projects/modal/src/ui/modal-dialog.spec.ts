@@ -116,4 +116,19 @@ describe('RiviniaModalDialog', () => {
     expect(plainDialog.querySelector('.rv-modal-description')).toBeNull();
     expect(plainDialog.getAttribute('aria-describedby')).toBe(null);
   });
+
+  it('passes position and size through as data attributes (CSS does the rest)', () => {
+    @Component({
+      standalone: true,
+      imports: [RiviniaModalDialog],
+      template: `<rv-modal-dialog [position]="'side-end'" [size]="'lg'" />`,
+    })
+    class PositionHarness {}
+
+    const fixture = TestBed.createComponent(PositionHarness);
+    fixture.detectChanges();
+    const dialog: HTMLDialogElement = fixture.nativeElement.querySelector('dialog');
+    expect(dialog.getAttribute('data-position')).toBe('side-end');
+    expect(dialog.getAttribute('data-size')).toBe('lg');
+  });
 });
