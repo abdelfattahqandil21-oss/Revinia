@@ -162,7 +162,29 @@ reference-counted scroll lock restores previous styles; focus trap + focus
 restore + `aria-labelledby`/`aria-label`; `dir=rtl` works via logical
 properties; SSR renders closed and opens after hydration; lazy-load the
 entry (`loadComponent`) to split it into its own chunk (~16.7 kB raw,
-~4.9 kB transfer, measured). Toasts: MEASURED (Chrome, `elementFromPoint`) —
+~4.9 kB transfer, measured).
+
+## Toasts above an open modal (measured pattern)
+
+A toast host outside the dialog can never paint above it — neither a high
+`z-index` nor `popover="manual"` escapes the modal top layer (verified in
+Chrome via `elementFromPoint`). When an error toast must appear over an open
+modal (e.g. a data error inside the form), host the list **inside** the
+dialog content instead: as a descendant of the top-layer element it paints
+above the dialog background with zero extra code and zero coupling:
+
+```html
+<rv-modal-dialog [(open)]="open" [title]="'Edit user'">
+  <!-- paints above this dialog; positions are still viewport-anchored -->
+  <rv-toast-list [manager]="injectRiviniaToast()" [position]="'top-end'" />
+  <form>…</form>
+</rv-modal-dialog>
+```
+
+Notes: positions stay viewport-anchored (`fixed`), so `top-end` means the
+viewport corner in both LTR and RTL (logical properties). Toasts fired
+while no dialog is open still need a page-level list — the two lists share
+the same manager, so nothing is lost or duplicated. Toasts: MEASURED (Chrome, `elementFromPoint`) —
 neither a high `z-index` nor `popover="manual"` paints above an open modal
 dialog; toasts queue behind it. No modal→toast dependency by design.
 
