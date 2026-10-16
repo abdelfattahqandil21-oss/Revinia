@@ -38,12 +38,14 @@ function ensureDialogApi(): void {
     [title]="'Hi'"
     [closeOnEscape]="esc"
     [description]="desc"
+    [showCloseButton]="x"
   />`,
 })
 class DialogHarness {
   open = false;
   esc = true;
   desc = '';
+  x = true;
 }
 
 beforeEach(() => {
@@ -130,5 +132,24 @@ describe('RiviniaModalDialog', () => {
     const dialog: HTMLDialogElement = fixture.nativeElement.querySelector('dialog');
     expect(dialog.getAttribute('data-position')).toBe('side-end');
     expect(dialog.getAttribute('data-size')).toBe('lg');
+  });
+
+  it('focuses the title when there is no close button, the dialog otherwise', () => {
+    const noX = TestBed.createComponent(DialogHarness);
+    noX.componentInstance.x = false;
+    noX.detectChanges();
+    const noXRef = noX.debugElement.query(By.directive(RiviniaModalDialog));
+    (noXRef.componentInstance as RiviniaModalDialog).open.set(true);
+    TestBed.flushEffects();
+    noX.detectChanges();
+    expect(noX.nativeElement.ownerDocument.activeElement?.className).toContain('rv-modal-title');
+
+    const withX = TestBed.createComponent(DialogHarness);
+    withX.detectChanges();
+    const withXRef = withX.debugElement.query(By.directive(RiviniaModalDialog));
+    (withXRef.componentInstance as RiviniaModalDialog).open.set(true);
+    TestBed.flushEffects();
+    withX.detectChanges();
+    expect(withX.nativeElement.ownerDocument.activeElement?.tagName).toBe('DIALOG');
   });
 });

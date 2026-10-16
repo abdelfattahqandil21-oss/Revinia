@@ -62,6 +62,7 @@ export class RvModalFooter {}
   template: `
     <dialog
       #dialog
+      tabindex="-1"
       class="rv-modal"
       [attr.data-size]="size()"
       [attr.data-position]="position()"
@@ -75,7 +76,9 @@ export class RvModalFooter {}
       (keydown)="onKeydown($event)"
     >
       @if (hasCustomHeader()) {
-        <ng-content select="[rv-modal-header]"></ng-content>
+        <div class="rv-modal-header rv-modal-header-custom">
+          <ng-content select="[rv-modal-header]"></ng-content>
+        </div>
       } @else if (title() || showCloseButton()) {
         <div class="rv-modal-header">
           <div class="rv-modal-heading">
@@ -324,9 +327,16 @@ export class RvModalFooter {}
       }
       .rv-modal-header {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: var(--rv-modal-gap);
         padding: var(--rv-modal-pad) var(--rv-modal-pad) 0;
+      }
+      .rv-modal-header-custom > :first-child {
+        flex: 1;
+        min-width: 0;
+      }
+      .rv-modal-heading:empty {
+        display: none;
       }
       .rv-modal-title {
         margin: 0;
@@ -346,6 +356,7 @@ export class RvModalFooter {}
       }
       .rv-modal-close {
         margin-inline-start: auto;
+        flex: none;
         border: 1px solid var(--rv-modal-border);
         border-radius: 8px;
         background: transparent;
@@ -561,7 +572,7 @@ export class RiviniaModalDialog {
         // Already open (e.g. double effect run): continue — state is ours.
       }
     }
-    focusFirst(el);
+    focusFirst(el, this.showCloseButton());
   }
 
   private hide(): void {
@@ -675,10 +686,24 @@ function focusables(root: HTMLElement): HTMLElement[] {
   return Array.from(root.querySelectorAll<HTMLElement>(selector));
 }
 
-function focusFirst(dialog: HTMLDialogElement): void {
+function focusFirst(dialog: HTMLDialogElement, closeVisible: boolean): void {
   try {
     const auto = dialog.querySelector<HTMLElement>('[autofocus]');
-    (auto ?? dialog).focus({ preventScroll: true });
+    if (auto) {
+      auto.focus({ preventScroll: true });
+      return;
+    }
+    // Atlassian rule: no close button → focus the title; otherwise the
+    // dialog itself (its tabindex="-1" makes it focusable).
+    if (!closeVisible) {
+      const title = dialog.querySelector<HTMLElement>('.rv-modal-title');
+      if (title) {
+        title.setAttribute('tabindex', '-1');
+        title.focus({ preventScroll: true });
+        return;
+      }
+    }
+    dialog.focus({ preventScroll: true });
   } catch {
     // Focus is best-effort (e.g. during teardown races).
   }
