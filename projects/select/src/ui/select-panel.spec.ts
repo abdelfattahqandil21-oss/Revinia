@@ -68,6 +68,9 @@ describe('RiviniaSelectComponent (single, searchable)', () => {
     const items = fixture.nativeElement.querySelectorAll('[rvmenuitem]');
     expect(items.length).toBe(1);
     expect(items[0].textContent).toContain('Paid');
+    expect(
+      fixture.nativeElement.querySelector('.rv-select-trigger').getAttribute('aria-expanded'),
+    ).toBe('true');
 
     (items[0] as HTMLElement).click();
     fixture.detectChanges();

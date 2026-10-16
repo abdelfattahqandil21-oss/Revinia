@@ -96,6 +96,50 @@ describe('RiviniaMenuComponent', () => {
     expect(menu.open()).toBe(false);
   });
 
+  it('exposes APG trigger states and moves focus with typeahead', async () => {
+    const fixture = TestBed.createComponent(MenuHarness);
+    fixture.detectChanges();
+    const menu = fixture.componentInstance.menu;
+    const trigger = (): HTMLElement => fixture.nativeElement.querySelector('[rv-menu-trigger]');
+
+    menu.openMenu();
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+    await Promise.resolve();
+    expect(trigger().getAttribute('aria-haspopup')).toBe('menu');
+    expect(trigger().getAttribute('aria-expanded')).toBe('true');
+
+    const panel: HTMLElement = fixture.nativeElement.querySelector('.rv-menu-panel');
+    key(panel, 's');
+    expect(menu.activeId()).toBe('logout');
+    key(panel, 'i');
+    expect(menu.activeId()).toBe('logout');
+    key(panel, 'x');
+    expect(menu.activeId()).toBe('logout');
+
+    menu.closeMenu();
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    expect(trigger().getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('skips disabled items in typeahead', async () => {
+    const fixture = TestBed.createComponent(MenuHarness);
+    fixture.detectChanges();
+    const menu = fixture.componentInstance.menu;
+    menu.openMenu();
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+    await Promise.resolve();
+    // 'team' is disabled, so 't' matches nothing and focus stays put.
+    expect(menu.activeId()).toBe('profile');
+    const panel: HTMLElement = fixture.nativeElement.querySelector('.rv-menu-panel');
+    key(panel, 't');
+    expect(menu.activeId()).toBe('profile');
+  });
+
   it('unregisters items on destroy and ignores Tab with a close', () => {
     const fixture = TestBed.createComponent(MenuHarness);
     fixture.detectChanges();

@@ -46,7 +46,14 @@ export type SelectChange = string | readonly string[] | null;
       (opened)="opened.emit()"
       (closed)="closed.emit()"
     >
-      <button rv-menu-trigger type="button" class="rv-select-trigger" [attr.data-open]="nav.open()">
+      <button
+        rv-menu-trigger
+        type="button"
+        class="rv-select-trigger"
+        aria-haspopup="menu"
+        [attr.aria-expanded]="nav.open()"
+        [attr.data-open]="nav.open()"
+      >
         <span class="rv-select-value">{{ display() }}</span>
         <svg
           class="rv-select-chevron"

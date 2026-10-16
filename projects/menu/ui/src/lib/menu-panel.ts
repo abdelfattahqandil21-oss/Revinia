@@ -3,6 +3,7 @@ import {
   Directive,
   ElementRef,
   ViewEncapsulation,
+  afterRenderEffect,
   computed,
   effect,
   inject,
@@ -272,6 +273,11 @@ export class RiviniaMenuComponent {
 
   private readonly owned = new RiviniaMenu();
   private readonly self = inject(ElementRef<HTMLElement>);
+  /** Deferred initial focus: set on open paths, consumed after render. */
+  private focusPending = false;
+  /** Printable-character search buffer; reset by timer after 500ms quiet. */
+  private typeBuffer = '';
+  private typeTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** Effective controller: external input or the owned fallback. */
   controller(): RiviniaMenuController {
@@ -299,6 +305,19 @@ export class RiviniaMenuComponent {
       document.addEventListener('pointerdown', onPointer);
       onCleanup(() => document.removeEventListener('pointerdown', onPointer));
     });
+    // APG menu-button: the trigger exposes haspopup + expanded. The trigger
+    // element is consumer-owned, so the attributes sync onto its focusable
+    // child (or the wrapper itself as a fallback).
+    effect(() => {
+      if (typeof document === 'undefined') return;
+      const open = this.controller().open();
+      const trigger = this.triggerEl();
+      trigger?.setAttribute('aria-haspopup', 'menu');
+      trigger?.setAttribute('aria-expanded', String(open));
+    });
+    afterRenderEffect(() => {
+      this.consumePendingFocus();
+    });
   }
 
   protected onTriggerClick(): void {
@@ -306,7 +325,7 @@ export class RiviniaMenuComponent {
     c.toggle();
     if (c.open()) {
       this.opened.emit();
-      this.focusSoon();
+      this.focusPending = true;
     } else {
       // Focus never left the trigger on toggle-close — restore is a no-op.
       this.closed.emit();
@@ -322,13 +341,13 @@ export class RiviniaMenuComponent {
         event.preventDefault();
         c.openMenu('first');
         this.opened.emit();
-        this.focusSoon();
+        this.focusPending = true;
         break;
       case 'ArrowUp':
         event.preventDefault();
         c.openMenu('last');
         this.opened.emit();
-        this.focusSoon();
+        this.focusPending = true;
         break;
       case 'Escape':
         if (c.open()) {
@@ -377,8 +396,56 @@ export class RiviniaMenuComponent {
         this.doClose(false);
         break;
       default:
+        this.onTypeahead(event);
         break;
     }
+  }
+
+  /**
+   * APG printable-character search: typing moves focus to the next enabled
+   * item whose visible text starts with the buffer. Repeating one character
+   * cycles through its matches; the buffer resets after 500ms of quiet.
+   * Labels are UI-owned (read from the DOM), so this lives in the component,
+   * not the headless controller.
+   */
+  private onTypeahead(event: KeyboardEvent): void {
+    if (event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) return;
+    const ch = event.key.toLocaleLowerCase();
+    // Repeating one character cycles its matches instead of growing the buffer.
+    const cycling = this.typeBuffer !== '' && [...this.typeBuffer].every((c) => c === ch);
+    if (!cycling) this.typeBuffer += ch;
+    if (this.typeTimer !== null) clearTimeout(this.typeTimer);
+    this.typeTimer = setTimeout(() => {
+      this.typeBuffer = '';
+      this.typeTimer = null;
+    }, 500);
+    const id = this.matchTypeahead(this.typeBuffer);
+    if (id !== null && this.controller().activate(id)) this.focusActive();
+  }
+
+  private matchTypeahead(buffer: string): string | null {
+    const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-menu-panel');
+    if (!root) return null;
+    const enabled = new Set(
+      this.controller()
+        .items()
+        .filter((i) => !i.disabled)
+        .map((i) => i.id),
+    );
+    const rows = [...root.querySelectorAll('[data-rv-id]')]
+      .map((el) => ({
+        id: el.getAttribute('data-rv-id') ?? '',
+        text: (el.textContent ?? '').trim().toLocaleLowerCase(),
+      }))
+      .filter((r) => enabled.has(r.id) && r.text.startsWith(buffer));
+    if (rows.length === 0) return null;
+    if (new Set(buffer).size === 1) {
+      // Repeated character: cycle from after the current item.
+      const ids = rows.map((r) => r.id);
+      const at = ids.indexOf(this.controller().activeId() ?? '');
+      return ids[(at + 1) % ids.length];
+    }
+    return rows[0].id;
   }
 
   private pickFocused(): void {
@@ -413,23 +480,19 @@ export class RiviniaMenuComponent {
 
   /**
    * Initial focus after open. The panel only exists in the DOM after the
-   * opening change-detection pass, so focusing synchronously races rendering
-   * (and always loses). A microtask runs right after the commit — in apps,
-   * in tests (via `await`), and harmlessly on the server (nothing found,
-   * focus guarded). Skips when focus already sits inside the panel, so
-   * later renders never steal it back.
+   * opening change-detection pass, so focusing synchronously races rendering.
+   * afterRenderEffect re-runs when `open` flips (reactive read) and executes
+   * after the commit — panel present, in apps and in tests. Never runs on the
+   * server (SSR-safe by construction). Skips when focus already sits inside
+   * the panel, so later renders never steal it back.
    */
-  private focusSoon(): void {
-    if (typeof queueMicrotask === 'undefined') {
-      this.focusActive();
-      return;
-    }
-    queueMicrotask(() => {
-      if (!this.controller().open()) return;
-      const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-menu-panel');
-      const active = this.activeDocumentElement();
-      if (root && (!active || !root.contains(active))) this.focusActive();
-    });
+  private consumePendingFocus(): void {
+    const open = this.controller().open();
+    if (!open || !this.focusPending) return;
+    this.focusPending = false;
+    const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-menu-panel');
+    const active = this.activeDocumentElement();
+    if (root && (!active || !root.contains(active))) this.focusActive();
   }
 
   private focusActive(): void {
@@ -454,13 +517,16 @@ export class RiviniaMenuComponent {
     }
   }
 
+  /** Focusable trigger child (APG target) or the wrapper as fallback. */
+  private triggerEl(): HTMLElement | null {
+    const wrap = this.self.nativeElement.querySelector('.rv-menu-trigger') as HTMLElement | null;
+    if (!wrap) return null;
+    return (wrap.querySelector('button, a, [tabindex]') as HTMLElement | null) ?? wrap;
+  }
+
   private focusTrigger(): void {
     try {
-      const trigger = this.self.nativeElement.querySelector(
-        '.rv-menu-trigger',
-      ) as HTMLElement | null;
-      const focusable = trigger?.querySelector('button, a, [tabindex]') as HTMLElement | null;
-      (focusable ?? trigger)?.focus({ preventScroll: true });
+      this.triggerEl()?.focus({ preventScroll: true });
     } catch {
       // Best-effort.
     }

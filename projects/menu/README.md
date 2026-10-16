@@ -30,14 +30,15 @@ menu.closeMenu();
 
 Keyboard mapping (UI-owned, behavior owned here): Enter/Space/ArrowDown
 opens, Escape closes (UI restores focus to the trigger), arrows/Home/End
-move through enabled items, Tab closes and moves on naturally.
+move through enabled items, printable characters typeahead to the next match
+(buffer resets after 500ms), Tab closes and moves on naturally.
 
 ## API
 
-| Export | Kind | Purpose |
-|---|---|---|
+| Export        | Kind  | Purpose                                                                                                                       |
+| ------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `RiviniaMenu` | class | per-instance controller: `open/activeId/items` signals + `register/unregister/openMenu/closeMenu/toggle/activate*/pickActive` |
-| types | types | `RiviniaMenuController` (structural UI contract), `RiviniaMenuItem`, `RiviniaMenuPlacement`, `RiviniaMenuFocus` |
+| types         | types | `RiviniaMenuController` (structural UI contract), `RiviniaMenuItem`, `RiviniaMenuPlacement`, `RiviniaMenuFocus`               |
 
 ## Ready-made UI (`@rivinia/menu/ui`)
 
@@ -59,8 +60,11 @@ menu = new RiviniaMenu();
 ```
 
 Keyboard (APG menu-button pattern): Enter/Space/↓ opens, Escape closes and
-refocuses the trigger, arrows/Home/End move through enabled items, Tab closes
-and moves on (non-modal by design), outside pointer-down closes. Disabled
+refocuses the trigger, arrows/Home/End move through enabled items, printable
+characters typeahead to the next match, Tab closes
+and moves on (non-modal by design), outside pointer-down closes. The trigger
+carries `aria-haspopup="menu"` + `aria-expanded` (synced onto the
+consumer's trigger element). Disabled
 items are skipped and reported via `aria-disabled`. SSR renders closed.
 
 ## License
