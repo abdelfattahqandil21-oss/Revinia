@@ -3,6 +3,16 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
+## 2026-10-16 — toast 0.4.0
+
+### @rivinia/toast
+
+- **T-06 (feature):** new secondary entry `@rivinia/toast/ui` — ready-made
+  `RiviniaToastList` (managed `[manager]` + presentational `[toasts]`, six
+  logical positions defaulting to `bottom-end`, kind rail vs `richColors`,
+  `role="status"`, hover/focus pause, 150 ms exit snapshots). Zero new
+  runtime dependencies. Headless entry unchanged and UI-free.
+
 ## 2026-10-16 — modal 0.5.0
 
 ### @rivinia/modal
