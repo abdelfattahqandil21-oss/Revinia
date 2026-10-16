@@ -33,11 +33,17 @@ function ensureDialogApi(): void {
 @Component({
   standalone: true,
   imports: [RiviniaModalDialog],
-  template: `<rv-modal-dialog [(open)]="open" [title]="'Hi'" [closeOnEscape]="esc" />`,
+  template: `<rv-modal-dialog
+    [(open)]="open"
+    [title]="'Hi'"
+    [closeOnEscape]="esc"
+    [description]="desc"
+  />`,
 })
 class DialogHarness {
   open = false;
   esc = true;
+  desc = '';
 }
 
 beforeEach(() => {
@@ -94,5 +100,20 @@ describe('RiviniaModalDialog', () => {
     expect(instance.dismiss()).toBe(false);
     expect(instance.confirm('x')).toBe(false);
     expect(instance.cancel()).toBe(false);
+  });
+
+  it('renders the description with aria-describedby only when provided', () => {
+    const fixture = TestBed.createComponent(DialogHarness);
+    fixture.componentInstance.desc = 'Why this appears';
+    fixture.detectChanges();
+    const dialog: HTMLDialogElement = fixture.nativeElement.querySelector('dialog');
+    expect(dialog.querySelector('.rv-modal-description')?.textContent).toBe('Why this appears');
+    expect(dialog.getAttribute('aria-describedby')).toBeTruthy();
+
+    const plain = TestBed.createComponent(DialogHarness);
+    plain.detectChanges();
+    const plainDialog: HTMLDialogElement = plain.nativeElement.querySelector('dialog');
+    expect(plainDialog.querySelector('.rv-modal-description')).toBeNull();
+    expect(plainDialog.getAttribute('aria-describedby')).toBe(null);
   });
 });

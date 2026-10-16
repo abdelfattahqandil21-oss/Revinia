@@ -69,6 +69,7 @@ export class RvModalFooter {}
       [attr.data-state]="state()"
       [attr.aria-label]="computedLabel()"
       [attr.aria-labelledby]="title() && !ariaLabel() ? titleId : null"
+      [attr.aria-describedby]="description() ? descriptionId : null"
       (cancel)="onCancel($event)"
       (click)="onBackdropClick($event)"
       (keydown)="onKeydown($event)"
@@ -77,9 +78,14 @@ export class RvModalFooter {}
         <ng-content select="[rv-modal-header]"></ng-content>
       } @else if (title() || showCloseButton()) {
         <div class="rv-modal-header">
-          @if (title()) {
-            <h2 class="rv-modal-title" [id]="titleId">{{ title() }}</h2>
-          }
+          <div class="rv-modal-heading">
+            @if (title()) {
+              <h2 class="rv-modal-title" [id]="titleId">{{ title() }}</h2>
+            }
+            @if (description()) {
+              <p class="rv-modal-description" [id]="descriptionId">{{ description() }}</p>
+            }
+          </div>
           @if (showCloseButton()) {
             <button
               type="button"
@@ -121,7 +127,12 @@ export class RvModalFooter {}
         --rv-modal-width-xl: 64rem;
         --rv-modal-max-height: min(86dvh, 100%);
         --rv-modal-duration: 150ms;
+        --rv-modal-duration-in: var(--rv-modal-duration);
+        --rv-modal-duration-out: 120ms;
         --rv-modal-easing: ease-out;
+        --rv-modal-easing-in: var(--rv-modal-easing);
+        --rv-modal-easing-out: ease-in;
+        --rv-modal-radius-sheet: 20px;
         padding: 0;
         border: 1px solid var(--rv-modal-border);
         border-radius: var(--rv-modal-radius);
@@ -194,15 +205,66 @@ export class RvModalFooter {}
         border-radius: 0;
       }
       .rv-modal[data-animation]:not([data-animation='none'])[data-state='open'] {
-        animation: rv-modal-in var(--rv-modal-duration) var(--rv-modal-easing);
+        animation: var(--rv-modal-animation-in, rv-modal-in) var(--rv-modal-duration-in)
+          var(--rv-modal-easing-in);
+      }
+      .rv-modal[data-animation='scale'][data-state='open'] {
+        --rv-modal-animation-in: rv-modal-in-scale;
+      }
+      .rv-modal[data-animation='slide-top'][data-state='open'] {
+        --rv-modal-animation-in: rv-modal-in-top;
+      }
+      .rv-modal[data-animation='slide-bottom'][data-state='open'] {
+        --rv-modal-animation-in: rv-modal-in-bottom;
+      }
+      .rv-modal[data-animation='slide-start'][data-state='open'] {
+        --rv-modal-animation-in: rv-modal-in-start;
+      }
+      .rv-modal[data-animation='slide-end'][data-state='open'] {
+        --rv-modal-animation-in: rv-modal-in-end;
+      }
+      [dir='rtl'] .rv-modal[data-animation='slide-start'][data-state='open'] {
+        --rv-modal-animation-in: rv-modal-in-end;
+      }
+      [dir='rtl'] .rv-modal[data-animation='slide-end'][data-state='open'] {
+        --rv-modal-animation-in: rv-modal-in-start;
       }
       .rv-modal[data-state='closing'] {
-        animation: rv-modal-out var(--rv-modal-duration) var(--rv-modal-easing) forwards;
+        animation: rv-modal-out var(--rv-modal-duration-out) var(--rv-modal-easing-out) forwards;
       }
       @keyframes rv-modal-in {
         from {
           opacity: 0;
+        }
+      }
+      @keyframes rv-modal-in-scale {
+        from {
+          opacity: 0;
           transform: translateY(8px) scale(0.98);
+        }
+      }
+      @keyframes rv-modal-in-top {
+        from {
+          opacity: 0;
+          transform: translateY(-24px);
+        }
+      }
+      @keyframes rv-modal-in-bottom {
+        from {
+          opacity: 0;
+          transform: translateY(24px);
+        }
+      }
+      @keyframes rv-modal-in-start {
+        from {
+          opacity: 0;
+          transform: translateX(-24px);
+        }
+      }
+      @keyframes rv-modal-in-end {
+        from {
+          opacity: 0;
+          transform: translateX(24px);
         }
       }
       @keyframes rv-modal-out {
@@ -226,6 +288,17 @@ export class RvModalFooter {}
         margin: 0;
         font-size: 1.125rem;
         flex: 1;
+      }
+      .rv-modal-heading {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .rv-modal-description {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--rv-modal-muted);
       }
       .rv-modal-close {
         margin-inline-start: auto;
@@ -264,6 +337,12 @@ export class RiviniaModalDialog {
   readonly open = model<boolean>(false);
 
   readonly title = input<string>('');
+  /**
+   * Supporting text under the title (shadcn-style description). Rendered in
+   * the default header only, and wired as the dialog's `aria-describedby`
+   * for free accessible naming. Empty = no description element at all.
+   */
+  readonly description = input<string>('');
   /** Explicit accessible name. When set, `aria-label` wins over the title reference. */
   readonly ariaLabel = input<string>('');
   readonly size = input<RiviniaModalSize>('md');
@@ -308,6 +387,7 @@ export class RiviniaModalDialog {
   private readonly doc = inject(DOCUMENT, { optional: true });
   private readonly scrollLock = inject(RiviniaModalScrollLock, { optional: true });
   private readonly titleId = `rv-modal-${++dialogSeq}`;
+  private readonly descriptionId = `rv-modal-desc-${dialogSeq}`;
   private readonly phase = signal<'closed' | 'open' | 'closing'>('closed');
   private readonly invoker: { current: Element | null } = { current: null };
   private exitTimer: ReturnType<typeof setTimeout> | null = null;
@@ -487,10 +567,26 @@ export class RiviniaModalDialog {
       done();
       return;
     }
+    // Honor consumer-overridden durations instead of a fixed fallback, so a
+    // longer `--rv-modal-duration-out` is never cut short.
     this.exitTimer = setTimeout(() => {
       this.finalize(el);
       done();
-    }, EXIT_FALLBACK_MS);
+    }, this.exitDurationMs(el));
+  }
+
+  private exitDurationMs(el: HTMLDialogElement | null): number {
+    try {
+      const raw = el ? getComputedStyle(el).animationDuration : '';
+      const seconds = raw
+        .split(',')
+        .map((part) => parseFloat(part))
+        .filter((n) => Number.isFinite(n));
+      if (seconds.length > 0) return Math.max(0, Math.max(...seconds) * 1000) + 50;
+    } catch {
+      // Non-CSS environments (tests): fall through to the fallback.
+    }
+    return EXIT_FALLBACK_MS;
   }
 
   private finalize(el: HTMLDialogElement | null): void {
