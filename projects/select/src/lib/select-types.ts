@@ -28,6 +28,7 @@ export interface RiviniaSelectController {
   readonly selectedLabels: Signal<readonly string[]>;
   syncOptions(list: readonly RiviniaSelectOption[]): void;
   setQuery(query: string): void;
+  clearQuery(): void;
   select(id: string): boolean;
   toggle(id: string): boolean;
   clear(): void;

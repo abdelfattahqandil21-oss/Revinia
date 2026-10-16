@@ -2,11 +2,13 @@ import {
   Component,
   ElementRef,
   ViewEncapsulation,
+  afterRenderEffect,
   computed,
   effect,
   inject,
   input,
   output,
+  signal,
 } from '@angular/core';
 import { RiviniaMenu } from '@rivinia/menu';
 import type { RiviniaMenuUiPlacement } from '@rivinia/menu/ui';
@@ -43,8 +45,8 @@ export type SelectChange = string | readonly string[] | null;
       [menu]="nav"
       [placement]="placement()"
       (picked)="onPick($event.id)"
-      (opened)="opened.emit()"
-      (closed)="closed.emit()"
+      (opened)="onOpened()"
+      (closed)="onClosed()"
     >
       <button
         rv-menu-trigger
@@ -219,6 +221,8 @@ export class RiviniaSelectComponent {
   /** Inner navigation controller driving the rv-menu panel. */
   protected readonly nav = new RiviniaMenu();
   private readonly self = inject(ElementRef<HTMLElement>);
+  /** Set on trigger-open; consumed after render to land focus in search. */
+  private readonly justOpened = signal(false);
 
   /** Effective controller: external input or the owned one matching mode. */
   protected controller(): RiviniaSelectController {
@@ -241,6 +245,36 @@ export class RiviniaSelectComponent {
       this.controller().query();
       this.nav.activateFirst();
     });
+    // Searchable open lands focus in the search box (combobox pattern). The
+    // inner menu already focused the first item in its own hook, so this runs
+    // in a microtask — deterministically after every render hook — and only
+    // on the opening transition, never while navigating or typing.
+    afterRenderEffect(() => {
+      if (!this.justOpened() || !this.nav.open() || !this.searchable()) return;
+      this.justOpened.set(false);
+      const search = this.self.nativeElement.querySelector(
+        '.rv-select-search',
+      ) as HTMLElement | null;
+      if (!search) return;
+      queueMicrotask(() => {
+        try {
+          search.focus({ preventScroll: true });
+        } catch {
+          // Focus is best-effort.
+        }
+      });
+    });
+  }
+
+  protected onOpened(): void {
+    this.justOpened.set(true);
+    this.opened.emit();
+  }
+
+  protected onClosed(): void {
+    // A stale filter on reopen hides options confusingly — reset it.
+    this.controller().clearQuery();
+    this.closed.emit();
   }
 
   protected onPick(id: string): void {
@@ -260,15 +294,27 @@ export class RiviniaSelectComponent {
   }
 
   /**
-   * Tab leaves the search box for the list instead of closing the panel
-   * (the inner menu closes on Tab by design). Arrows/Enter/Escape bubble to
-   * the panel handler, which already does the right thing.
+   * The search box owns its keystrokes (combobox pattern): typing, caret
+   * movement and space must never reach the panel handler — otherwise the
+   * menu typeahead would steal focus mid-word (measured: typed text lost).
+   * Only keys the panel must own bubble: Enter accepts the top match,
+   * Escape dismisses, arrows move focus into the list, Tab jumps in manually.
    */
   protected onSearchKey(event: KeyboardEvent): void {
-    if (event.key !== 'Tab') return;
-    event.preventDefault();
-    event.stopPropagation();
-    this.focusItem();
+    switch (event.key) {
+      case 'Tab':
+        event.preventDefault();
+        event.stopPropagation();
+        this.focusItem();
+        return;
+      case 'Enter':
+      case 'Escape':
+      case 'ArrowDown':
+      case 'ArrowUp':
+        return;
+      default:
+        event.stopPropagation();
+    }
   }
 
   private focusItem(): void {

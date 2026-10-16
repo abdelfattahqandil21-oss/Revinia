@@ -151,6 +151,9 @@ export class RiviniaMenuItem {
         z-index: var(--rv-menu-z, 500);
         min-width: var(--rv-menu-width);
         max-width: calc(100dvw - 2rem);
+        /* Long lists scroll inside the panel instead of leaving the viewport. */
+        max-height: min(20rem, calc(100dvh - 2rem));
+        overflow-y: auto;
         background: var(--rv-menu-bg);
         color: var(--rv-menu-fg);
         font-family: var(--rv-menu-font);

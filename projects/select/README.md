@@ -43,6 +43,8 @@ tags.toggle('b'); // values -> ['a', 'b']
 
 Single picks one value and closes; multi toggles with a check mark and stays
 open. Typing filters, Tab jumps into the list, Enter picks the top match.
+The search box owns its keystrokes (typing never leaks to the menu
+typeahead), opening autofocuses it, and closing resets the filter.
 Disabled options render but refuse picks. Rich per-option custom content
 (icons, badges, headers) stays the job of raw `rv-menu`.
 

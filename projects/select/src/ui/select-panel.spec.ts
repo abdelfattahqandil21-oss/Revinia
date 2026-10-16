@@ -144,3 +144,56 @@ describe('RiviniaSelectComponent (multi)', () => {
     );
   });
 });
+
+describe('RiviniaSelectComponent (search box)', () => {
+  it('autofocuses search on open and keeps keystrokes inside it', async () => {
+    const fixture = TestBed.createComponent(SelectHarness);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('.rv-select-trigger').click();
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+    await Promise.resolve();
+    await Promise.resolve();
+    const search: HTMLInputElement = fixture.nativeElement.querySelector('.rv-select-search');
+    expect(document.activeElement).toBe(search);
+
+    // Regression: keydown used to bubble to the panel typeahead, which stole
+    // focus to an item mid-word and the typed text never landed.
+    search.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', bubbles: true }));
+    expect(document.activeElement).toBe(search);
+
+    search.value = 'paid';
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+    await Promise.resolve();
+    expect(fixture.componentInstance.select.query()).toBe('paid');
+    expect(fixture.nativeElement.querySelectorAll('[rvmenuitem]').length).toBe(1);
+    expect(document.activeElement).toBe(search);
+  });
+
+  it('clears the query when the panel closes', async () => {
+    const fixture = TestBed.createComponent(SelectHarness);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('.rv-select-trigger').click();
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const search: HTMLInputElement = fixture.nativeElement.querySelector('.rv-select-search');
+    search.value = 'zzz';
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(fixture.componentInstance.select.query()).toBe('zzz');
+
+    const panel: HTMLElement = fixture.nativeElement.querySelector('.rv-menu-panel');
+    panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(fixture.componentInstance.select.query()).toBe('');
+    expect(fixture.nativeElement.querySelector('.rv-select-trigger').textContent).toContain(
+      'Status',
+    );
+  });
+});
