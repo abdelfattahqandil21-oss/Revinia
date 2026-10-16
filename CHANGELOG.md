@@ -3,7 +3,7 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
-## Unreleased — modal 0.5.1 (packaging fix, unpublished)
+## modal 0.5.1 (packaging fix, published 2026-10-16)
 
 ### @rivinia/modal
 
@@ -12,7 +12,7 @@ A change is listed the moment it lands on `main`, not when npm is published.
   was missing from `peerDependencies` (release-gate failure found by FESM
   grep). Declared `"@angular/common": "^22.0.0"`. No API change.
 
-## Unreleased — menu 0.1.0 (new package, unpublished)
+## menu 0.1.0 / select 0.1.0 (new packages, published 2026-10-16)
 
 ### @rivinia/menu
 
