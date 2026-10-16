@@ -47,20 +47,20 @@ export class Checkout {
 ```html
 <!-- your outlet (or the future @rivinia/toast/ui): -->
 @for (t of toast.active(); track t.id) {
-  <div [attr.data-kind]="t.kind">{{ resolveToastText(t.message) }}</div>
+<div [attr.data-kind]="t.kind">{{ resolveToastText(t.message) }}</div>
 }
 ```
 
 ## API
 
-| Export | Kind | Purpose |
-|---|---|---|
-| `provideRiviniaToast(config?)` | provider | `{ duration?=5000, durations?, maxVisible?=5, maxQueue?=∞, overflow?='dismiss-oldest' }` |
-| `RiviniaToast` | `@Service()` | `show/dismiss/dismissAll/update/pause/resume/runAction`, `active` + `queue` signals |
-| `injectRiviniaToast()` | function | shorthand for `inject(RiviniaToast)` |
-| `resolveToastText(msg)` | util | reads `string \| Signal<string>` (reactive re-translation without i18n coupling) |
-| `clampDuration(v, fallback)` | util | normalizes durations (`0`/negative/`NaN`/infinite = persistent) |
-| types | types | `Toast`, `ToastKind`, `ToastMessage`, `ToastAction`, `ToastOptions`, `ToastChanges`, `ToastOverflowPolicy`, `RiviniaToastConfig` |
+| Export                         | Kind         | Purpose                                                                                                                          |
+| ------------------------------ | ------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `provideRiviniaToast(config?)` | provider     | `{ duration?=5000, durations?, maxVisible?=5, maxQueue?=∞, overflow?='dismiss-oldest' }`                                         |
+| `RiviniaToast`                 | `@Service()` | `show/dismiss/dismissAll/update/pause/resume/runAction`, `active` + `queue` signals                                              |
+| `injectRiviniaToast()`         | function     | shorthand for `inject(RiviniaToast)`                                                                                             |
+| `resolveToastText(msg)`        | util         | reads `string \| Signal<string>` (reactive re-translation without i18n coupling)                                                 |
+| `clampDuration(v, fallback)`   | util         | normalizes durations (`0`/negative/`NaN`/infinite = persistent)                                                                  |
+| types                          | types        | `Toast`, `ToastKind`, `ToastMessage`, `ToastAction`, `ToastOptions`, `ToastChanges`, `ToastOverflowPolicy`, `RiviniaToastConfig` |
 
 `show()` returns the stable id, or `null` under `'reject'` (or a full finite
 queue). `dismiss/update/pause/resume/runAction` return `false` for unknown ids
@@ -80,18 +80,51 @@ import { filter } from 'rxjs';
 import { NavigationStart } from '@angular/router';
 
 // Clear timed toasts on navigation (BRT behavior, 3 lines, no library peer needed):
-router.events.pipe(filter((e) => e instanceof NavigationStart))
+router.events
+  .pipe(filter((e) => e instanceof NavigationStart))
   .subscribe(() => toast.active().forEach((t) => t.duration > 0 && toast.dismiss(t.id)));
 
 // Backend-shaped errors stay in your error mapper, then:
-toast.show({ message: 'Order failed', kind: 'error', action: {
-  label: 'Retry', onPress: () => retry(),
-} }); // dismisses after press unless dismissAfterPress: false
+toast.show({
+  message: 'Order failed',
+  kind: 'error',
+  action: {
+    label: 'Retry',
+    onPress: () => retry(),
+  },
+}); // dismisses after press unless dismissAfterPress: false
 ```
 
-Future UI must render inside `role="region" aria-live="polite"`, pause on
-hover **and** keyboard focus (WCAG 2.2.1 timing control), and offer a labelled
-dismiss button — the Core API (`pause/resume/dismiss`) already supports all of it.
+Future UI renders inside `role="region" aria-live="polite"`, pauses on
+hover **and** keyboard focus (WCAG 2.2.1 timing control), and offers a labelled
+dismiss button — and now it exists:
+
+## Ready-made UI (`@rivinia/toast/ui`)
+
+Optional secondary entry point. Zero new runtime dependencies, no design
+system. Headless consumers never load it (proven: core FESM has zero UI
+markers).
+
+```ts
+import { RiviniaToastList } from '@rivinia/toast/ui';
+```
+
+```html
+<!-- Managed: signals, hover-pause, actions, X button, exit animation -->
+<rv-toast-list [manager]="injectRiviniaToast()" [position]="'bottom-end'" />
+
+<!-- Presentational: you own the snapshots (no manager needed) -->
+<rv-toast-list [toasts]="items" (dismissed)="remove($event)" (actionPressed)="act($event)" />
+```
+
+Positions (user-picked, RTL-aware): `top/bottom × start/center/end`
+(default `bottom-end`, sonner-compatible). `richColors` swaps the kind rail
+for full-bleed kind colors. Items are `role="status"` (`assertive` for
+errors); stack order is `active()` order; hover/focus pauses via
+`pause()/resume()`; throwing actions propagate to your `ErrorHandler`
+(never swallowed). Dismissed rows play a 150 ms exit from their last
+snapshot on the browser (SSR drops them — renders never hang). When both
+`manager` and `toasts` are given, the manager wins: the UI never races Core.
 
 ## Testing your app code
 

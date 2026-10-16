@@ -64,6 +64,7 @@ const ALLOWLIST = new Set([
   'HttpTestingController',
   'TestBed',
   'Type',
+  'ErrorHandler',
   'NgComponentOutlet',
   'Observable',
   // Angular's own provider fns referenced in our docs:
