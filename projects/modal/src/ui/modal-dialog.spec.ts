@@ -53,6 +53,24 @@ beforeEach(() => {
   ensureDialogApi();
 });
 
+@Component({
+  standalone: true,
+  imports: [RiviniaModalDialog],
+  template: `<rv-modal-dialog
+    [(open)]="open"
+    [title]="'Hi'"
+    [managed]="true"
+    [closing]="closing"
+    [animation]="'none'"
+    (exitDone)="exited = exited + 1"
+  />`,
+})
+class ManagedHarness {
+  open = false;
+  closing = false;
+  exited = 0;
+}
+
 describe('RiviniaModalDialog', () => {
   it('starts closed and renders a closed dialog on the server-safe path', () => {
     const fixture = TestBed.createComponent(DialogHarness);
@@ -151,5 +169,27 @@ describe('RiviniaModalDialog', () => {
     TestBed.flushEffects();
     withX.detectChanges();
     expect(withX.nativeElement.ownerDocument.activeElement?.tagName).toBe('DIALOG');
+  });
+
+  it('dismisses through the exit machinery and settles closed', () => {
+    // NOTE: drives dismiss() directly. The managed `closing`-input flip is
+    // the same playExit path, but this harness cannot propagate template
+    // inputs after the first CD (see NOTE above) — managed teardown itself
+    // is proven by the CSR lab app, where the host drives `closing`.
+    const fixture = TestBed.createComponent(ManagedHarness);
+    fixture.componentInstance.open = true;
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+    const cmp = fixture.debugElement.query(By.directive(RiviniaModalDialog))
+      .componentInstance as RiviniaModalDialog;
+    expect(cmp.state()).toBe('open');
+    expect(cmp.dismiss('x')).toBe(true);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.exited).toBe(0);
+    expect(cmp.state()).toBe('closed');
+    const dialog: HTMLDialogElement = fixture.nativeElement.querySelector('dialog');
+    expect(dialog.hasAttribute('open')).toBe(false);
   });
 });

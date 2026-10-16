@@ -3,6 +3,15 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
+## Unreleased — modal 0.5.1 (packaging fix, unpublished)
+
+### @rivinia/modal
+
+- **Packaging fix:** `@rivinia/modal/ui` imports `NgComponentOutlet` /
+  `NgTemplateOutlet` from `@angular/common` at runtime, but `@angular/common`
+  was missing from `peerDependencies` (release-gate failure found by FESM
+  grep). Declared `"@angular/common": "^22.0.0"`. No API change.
+
 ## Unreleased — menu 0.1.0 (new package, unpublished)
 
 ### @rivinia/menu

@@ -201,6 +201,14 @@ Core checks `ModalHandle<TResult>.close(result?: TResult)` and
 - The internal deferred-promise cast to `Promise<ModalResult<TResult>>` —
   `close()` settles whatever it receives, never validated.
 
+## Browser back button (non-goal)
+
+Native `<dialog>.showModal()` does not integrate with history: the back
+button neither closes the dialog nor is blocked by it (platform behavior,
+not a Rivinia choice). If your app needs back-to-dismiss, wire it at the
+app layer (router guard / `popstate` → `dismiss()`); the manager's
+`dismissRequested` + guards flow stays the single teardown path.
+
 ## License
 
 MIT.
