@@ -14,7 +14,7 @@ pattern. Two entry points:
 Both share one implementation of the navigation algorithm — the UI does not
 reimplement it.
 
-- Version: **0.2.0** (0.1.0 published; see [Migration](#migration-notes))
+- Version: **0.3.0** (0.1.0 published; see [Migration](#migration-notes))
 - Requires: **Angular `^22.0.0`**, `tslib`
 
 ---
@@ -57,39 +57,70 @@ npm install @rivinia/menu
 Both entry points ship in the same package — install once, import the entry
 point you need.
 
-## 5. Quick start
+## 5. Quick start — data-driven
 
-The smallest complete example. **No controller, no registration** — the
-component owns its own state and items register themselves.
+The smallest complete example. **No controller, no registration, no item
+markup.** You pass data; the component renders, registers and manages the rows.
 
 ```ts
 import { Component } from '@angular/core';
-import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
+import type { RiviniaMenuItemData } from '@rivinia/menu';
+import { RiviniaMenuComponent } from '@rivinia/menu/ui';
 
 @Component({
-  imports: [RiviniaMenuComponent, RiviniaMenuItem],
+  imports: [RiviniaMenuComponent],
   template: `
-    <rv-menu label="Account actions" (picked)="open($event.id)">
-      <button rv-menu-trigger>Account</button>
-      <div rv-menu-panel>
-        <button rvMenuItem id="profile">Profile</button>
-        <button rvMenuItem id="billing">Billing</button>
-        <hr />
-        <button rvMenuItem id="logout">Sign out</button>
-      </div>
+    <rv-menu [items]="accountItems" menuLabel="Account actions" (picked)="open($event.id)">
+      <button rvMenuTrigger>Account</button>
     </rv-menu>
   `,
 })
 export class AccountMenu {
+  readonly accountItems: readonly RiviniaMenuItemData[] = [
+    { id: 'profile', label: 'Profile' },
+    { id: 'billing', label: 'Billing' },
+    { id: 'archived', label: 'Archived', disabled: true },
+  ];
+
   open(id: string) {
     // your routing / api call here
   }
 }
 ```
 
-`rv-menu-trigger` is the trigger (any focusable element). `rv-menu-panel` is
-the popup container — headers, dividers and badges can go inside it; they are
-automatically skipped by keyboard navigation because they are not items.
+Only the **trigger** is projected — it is the one piece of markup you always
+need, because the trigger is yours (label, avatar, styling). Everything inside
+the panel comes from `items`.
+
+Projection attributes accept both spellings: `rvMenuTrigger` /
+`rv-menu-trigger`, `rvMenuPanel` / `rv-menu-panel`.
+
+## 5b. Composable — custom markup
+
+When you need headers, dividers, icons or per-row markup, project your own
+rows instead. Items still register themselves.
+
+```html
+<rv-menu placement="bottom-start" menuLabel="Account actions" (picked)="go($event)">
+  <button rvMenuTrigger>
+    <img src="avatar.png" alt="" />
+    Account
+  </button>
+
+  <div rvMenuPanel>
+    <div class="account-header">Sophie</div>
+
+    <button rvMenuItem id="profile">Profile</button>
+    <button rvMenuItem id="logout" disabled>Sign out</button>
+  </div>
+</rv-menu>
+```
+
+Anything that is not an `rvMenuItem` (the header above) is skipped by keyboard
+navigation automatically.
+
+**`items` and projected `rvMenuItem` are mutually exclusive.** Supplying both
+throws — a silently-ignored list is a data-loss bug, not a convenience.
 
 ## 6. Imports
 
@@ -173,8 +204,17 @@ yourself from `picked`, or drive it with a controller.
 | `disabled` | `boolean`         | `false` | no       | Skipped by keyboard navigation, refused on click, `aria-disabled="true"`.              |
 | `checked`  | `boolean \| null` | `null`  | no       | `null` → `role="menuitem"`. `true/false` → `role="menuitemcheckbox"` + `aria-checked`. |
 
-Items register on init and unregister on destroy — no manual bookkeeping, and
-`@for`-driven collections work.
+Items register on init, **stay in sync when `id` or `disabled` change**, and
+unregister on destroy — no manual bookkeeping, and `@for`-driven collections
+work.
+
+### `RiviniaMenuItemData` (for `[items]`)
+
+| Field      | Type      | Default | Required | Purpose                                                               |
+| ---------- | --------- | ------- | -------- | --------------------------------------------------------------------- |
+| `id`       | `string`  | —       | **yes**  | Identity, emitted in `picked`.                                        |
+| `label`    | `string`  | —       | **yes**  | Visible text. Also the accessible name and the typeahead search text. |
+| `disabled` | `boolean` | `false` | no       | Rendered but not selectable.                                          |
 
 ## 9. Full public API reference
 
@@ -288,6 +328,12 @@ specificity war:
 | `--rv-menu-easing`   | `cubic-bezier(0.16,1,0.3,1)`  | Enter animation easing                                |
 | `--rv-menu-from-y`   | `-6px` / `6px` for `top-*`    | Enter animation offset                                |
 
+Every default is a **`var(--token, fallback)` value**, not a declaration on the
+element. A value you set on any ancestor (or on `rv-menu` / `.rv-menu-panel`
+itself) therefore always wins, and a consumer token set from an Angular
+component-scoped stylesheet works — unlike the selectors themselves, which
+cannot reach the panel (see [ViewEncapsulation](#16-viewencapsulation-behavior)).
+
 Set them on any ancestor of `rv-menu`, or on the `rv-menu` element itself:
 
 ```css
@@ -321,8 +367,19 @@ Set them on any ancestor of `rv-menu`, or on the `rv-menu` element itself:
 }
 ```
 
-Dark mode is **not forced**: the library ships a `prefers-color-scheme: dark`
-default so it looks right out of the box, and your variables override it.
+Dark mode is **opt-in**: the library ships light defaults only (as
+`var(--x, fallback)` values), so nothing overrides your theme. Opt in with:
+
+```css
+@media (prefers-color-scheme: dark) {
+  .my-menu {
+    --rv-menu-bg: #161616;
+    --rv-menu-fg: #f2f2f2;
+    --rv-menu-muted: #a8a8a8;
+    --rv-menu-border: #333333;
+  }
+}
+```
 
 ## 14. Tailwind integration
 
@@ -525,7 +582,28 @@ with auto-flip.
 Also note: `aria-controls` and the panel id only exist while the menu can be
 opened; do not hard-code the `rv-menu-panel-N` id.
 
-### 0.2.0 → 0.2.1 (planned)
+### 0.2.0 → 0.3.0
+
+Additions: `[items]` declarative API, `panelClass`, `itemClass`, camelCase
+projection attributes (`rvMenuTrigger`, `rvMenuPanel`).
+
+**Changes to be aware of:**
+
+- **`label` renamed to `menuLabel`.** It names the _menu_, while `label` on
+  `RiviniaMenuItemData` names a _row_; the old name was an ambiguity trap.
+  Update `[label]`/`label` → `[menuLabel]`/`menuLabel`.
+- **Dark mode is no longer forced.** The library shipped
+  `prefers-color-scheme: dark` defaults, which also overrode consumer tokens in
+  dark mode. Defaults are now plain `var(--token, fallback)` values, so your
+  theme always wins; opt into dark mode yourself (see
+  [Styling](#13-styling-and-css-variables).
+- Design tokens are read as fallbacks rather than declared, so a token set on
+  an ancestor now actually reaches the panel (previously the panel's own
+  default declaration out-ranked it).
+- A static `disabled` attribute on a native `<button rvMenuItem>` is now
+  honoured (it previously landed on the DOM property instead of the input).
+
+### 0.3.0 → next (planned)
 
 Nothing yet.
 

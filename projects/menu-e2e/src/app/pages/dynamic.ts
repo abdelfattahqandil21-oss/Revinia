@@ -22,7 +22,7 @@ interface Row {
       <button (click)="toggleMenu()">Toggle menu</button>
     </div>
     @if (showMenu()) {
-      <rv-menu [menu]="menu" (picked)="picked.set($event.id)" label="Dynamic menu">
+      <rv-menu [menu]="menu" (picked)="picked.set($event.id)" menuLabel="Dynamic menu">
         <button rv-menu-trigger>Dynamic</button>
         <div rv-menu-panel>
           @if (!empty()) {

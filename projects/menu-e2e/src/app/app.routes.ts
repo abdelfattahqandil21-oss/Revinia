@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { ApiPage } from './pages/api';
 import { BasicPage } from './pages/basic';
 import { DynamicPage } from './pages/dynamic';
 import { EdgePage } from './pages/edge';
@@ -9,6 +10,7 @@ import { TwoPage } from './pages/two';
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'basic' },
   { path: 'basic', component: BasicPage },
+  { path: 'api', component: ApiPage },
   { path: 'dynamic', component: DynamicPage },
   { path: 'two', component: TwoPage },
   { path: 'rtl', component: RtlPage },

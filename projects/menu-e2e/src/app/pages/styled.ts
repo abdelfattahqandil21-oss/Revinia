@@ -24,7 +24,7 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
   template: `
     <h1>Consumer styling</h1>
     <div class="peach">
-      <rv-menu [menu]="menu" (picked)="picked.set($event.id)" label="Styled menu">
+      <rv-menu [menu]="menu" (picked)="picked.set($event.id)" menuLabel="Styled menu">
         <button rv-menu-trigger>Styled</button>
         <div rv-menu-panel>
           <button rvMenuItem id="s1">Styled one</button>

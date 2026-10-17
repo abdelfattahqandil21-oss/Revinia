@@ -5,13 +5,14 @@ import {
   ViewEncapsulation,
   afterRenderEffect,
   computed,
+  contentChildren,
   effect,
   inject,
   input,
   output,
   signal,
 } from '@angular/core';
-import type { RiviniaMenuController } from '@rivinia/menu';
+import type { RiviniaMenuController, RiviniaMenuItemData } from '@rivinia/menu';
 import { RiviniaMenu } from '@rivinia/menu';
 import type { RiviniaMenuUiPlacement } from './ui-menu-types';
 import { computeMenuPosition } from './menu-position';
@@ -38,7 +39,7 @@ let nextPanelId = 0;
     '[attr.role]': 'computedRole()',
     '[attr.data-rv-id]': 'id()',
     '[attr.tabindex]': 'tab()',
-    '[attr.aria-disabled]': 'disabled()',
+    '[attr.aria-disabled]': 'isDisabled()',
     '[attr.data-active]': 'active()',
     '[attr.aria-checked]': 'checkedAttr()',
     '(click)': 'pick()',
@@ -57,6 +58,7 @@ export class RiviniaMenuItem {
    */
   readonly checked = input<boolean | null>(null);
 
+  private readonly host = inject(ElementRef<HTMLElement>, { optional: true });
   private readonly menu = inject(RiviniaMenuComponent, { optional: true, skipSelf: true });
   private readonly active = computed(() => this.menu?.controller().activeId() === this.id());
 
@@ -73,6 +75,17 @@ export class RiviniaMenuItem {
     return checked === null ? null : String(checked);
   }
 
+  /**
+   * `disabled` collides with the native `<button disabled>` property, so a
+   * static attribute on a native button element can land on the DOM instead
+   * of this input (measured: `<button rvMenuItem disabled>` reported
+   * `aria-disabled="false"`). Accept both so the two spellings agree.
+   */
+  private isDisabled(): boolean {
+    if (this.disabled()) return true;
+    return this.host?.nativeElement?.disabled === true;
+  }
+
   /** Mouse pick: disabled items are ignored (controller refuses them). */
   protected pick(): void {
     this.menu?.pickItem(this.id());
@@ -83,12 +96,39 @@ export class RiviniaMenuItem {
     this.menu?.hoverItem(this.id());
   }
 
+  /** Id currently present in the registry, so renames can be de-registered. */
+  private registeredId: string | null = null;
+
+  constructor() {
+    // `[disabled]` and `id` are ordinary bindings that change at runtime.
+    // Registering once in ngOnInit left the registry stale — measured:
+    // toggling `[disabled]` on a focused row still let Enter activate it.
+    //
+    // The initial registration stays in ngOnInit (synchronous) because an
+    // effect-based first pass lands after the opening change-detection tick,
+    // which raced the menu's own open and produced intermittently empty
+    // panels. The effect only handles SUBSEQUENT changes.
+    effect(() => {
+      const id = this.id();
+      const menu = this.menu;
+      if (this.registeredId === null) return;
+      if (this.registeredId !== id) menu?.unregisterItem(this.registeredId);
+      // Re-register unconditionally: covers a `disabled` flip as well as an
+      // id rename (register is idempotent by id).
+      menu?.registerItem({ id, disabled: this.isDisabled() });
+      this.registeredId = id;
+    });
+  }
+
   ngOnInit(): void {
-    this.menu?.registerItem({ id: this.id(), disabled: this.disabled() });
+    this.registeredId = this.id();
+    this.menu?.registerItem({ id: this.id(), disabled: this.isDisabled() });
   }
 
   ngOnDestroy(): void {
-    this.menu?.unregisterItem(this.id());
+    if (this.registeredId === null) return;
+    this.menu?.unregisterItem(this.registeredId);
+    this.registeredId = null;
   }
 }
 
@@ -120,17 +160,22 @@ export class RiviniaMenuItem {
   // Every rule below is scoped under `.rv-menu-panel` / `.rv-menu-trigger`,
   // so nothing leaks into application styles.
   encapsulation: ViewEncapsulation.None,
+  // The declarative `[items]` mode renders its own rows through the SAME
+  // directive consumers use, so registration, keyboard and click handling have
+  // exactly one implementation.
+  imports: [RiviniaMenuItem],
   template: `
     <div class="rv-menu-trigger" (click)="onTriggerClick()" (keydown)="onTriggerKey($event)">
-      <ng-content select="[rv-menu-trigger]"></ng-content>
+      <ng-content select="[rv-menu-trigger], [rvMenuTrigger]"></ng-content>
     </div>
     @if (controller().open()) {
       <div
         #panel
         class="rv-menu-panel"
+        [class]="panelClass()"
         role="menu"
         [attr.id]="panelId"
-        [attr.aria-label]="label()"
+        [attr.aria-label]="menuLabel()"
         [attr.popover]="topLayerSupported ? 'manual' : null"
         [attr.data-placement]="placement()"
         [attr.data-flipped]="flipped()"
@@ -138,7 +183,20 @@ export class RiviniaMenuItem {
         [attr.data-top-layer]="topLayerSupported"
         (keydown)="onPanelKey($event)"
       >
-        <ng-content select="[rv-menu-panel]"></ng-content>
+        @if (dataItems().length > 0) {
+          @for (item of dataItems(); track item.id) {
+            <button
+              rvMenuItem
+              [id]="item.id"
+              [disabled]="item.disabled ?? false"
+              [checked]="checkedFor(item.id)"
+              [class]="itemClass()"
+            >
+              {{ item.label }}
+            </button>
+          }
+        }
+        <ng-content select="[rv-menu-panel], [rvMenuPanel]"></ng-content>
       </div>
     }
   `,
@@ -155,7 +213,7 @@ export class RiviniaMenuItem {
       }
       .rv-menu-panel hr {
         border: 0;
-        border-top: 1px solid var(--rv-menu-border);
+        border-top: 1px solid var(--rv-menu-border, #e0e0e0);
         margin: 6px 4px;
       }
       /* NOTE: the :host pseudo-class does not exist without encapsulation,
@@ -185,37 +243,20 @@ export class RiviniaMenuItem {
         transform-origin: top center;
       }
       .rv-menu-panel {
-        --rv-menu-bg: #ffffff;
-        --rv-menu-fg: #111111;
-        --rv-menu-muted: #555555;
-        --rv-menu-border: #e0e0e0;
-        --rv-menu-radius: 12px;
-        --rv-menu-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
-        --rv-menu-pad: 6px;
-        --rv-menu-width: 16rem;
-        --rv-menu-font: system-ui, -apple-system, 'Segoe UI', sans-serif;
         position: absolute;
         z-index: var(--rv-menu-z, 500);
-        min-width: var(--rv-menu-width);
+        min-width: var(--rv-menu-width, 16rem);
         max-width: calc(100dvw - 2rem);
         /* Long lists scroll inside the panel instead of leaving the viewport. */
         max-height: min(20rem, calc(100dvh - 2rem));
         overflow-y: auto;
-        background: var(--rv-menu-bg);
-        color: var(--rv-menu-fg);
-        font-family: var(--rv-menu-font);
-        border: 1px solid var(--rv-menu-border);
-        border-radius: var(--rv-menu-radius);
-        box-shadow: var(--rv-menu-shadow);
-        padding: var(--rv-menu-pad);
-      }
-      @media (prefers-color-scheme: dark) {
-        .rv-menu-panel {
-          --rv-menu-bg: #161616;
-          --rv-menu-fg: #f2f2f2;
-          --rv-menu-muted: #a8a8a8;
-          --rv-menu-border: #333333;
-        }
+        background: var(--rv-menu-bg, #ffffff);
+        color: var(--rv-menu-fg, #111111);
+        font-family: var(--rv-menu-font, system-ui, -apple-system, 'Segoe UI', sans-serif);
+        border: 1px solid var(--rv-menu-border, #e0e0e0);
+        border-radius: var(--rv-menu-radius, 12px);
+        box-shadow: var(--rv-menu-shadow, 0 16px 48px rgba(0, 0, 0, 0.22));
+        padding: var(--rv-menu-pad, 6px);
       }
       .rv-menu-panel[data-placement='bottom-start'] {
         inset-block-start: calc(100% + 6px);
@@ -282,11 +323,9 @@ export class RiviniaMenuItem {
          Origin follows the vertical side so the panel grows out of the
          trigger; duration/easing stay overridable via vars. */
       .rv-menu-panel {
-        --rv-menu-duration: 160ms;
-        --rv-menu-easing: cubic-bezier(0.16, 1, 0.3, 1);
-        --rv-menu-from-y: -6px;
         transform-origin: top center;
-        animation: rv-menu-in var(--rv-menu-duration) var(--rv-menu-easing);
+        animation: rv-menu-in var(--rv-menu-duration, 160ms)
+          var(--rv-menu-easing, cubic-bezier(0.16, 1, 0.3, 1));
       }
       .rv-menu-panel[data-placement='top-start'],
       .rv-menu-panel[data-placement='top-end'] {
@@ -301,7 +340,7 @@ export class RiviniaMenuItem {
       @keyframes rv-menu-in {
         from {
           opacity: 0;
-          transform: translateY(var(--rv-menu-from-y)) scale(0.96);
+          transform: translateY(var(--rv-menu-from-y, -6px)) scale(0.96);
         }
       }
     `,
@@ -318,8 +357,21 @@ export class RiviniaMenuComponent {
   /**
    * Accessible name for the menu panel (`aria-label`). Menus should be named
    * so screen-reader users know what they chose from; omitted → no label.
+   *
+   * Named `menuLabel` (not `label`) so it cannot be confused with the
+   * per-item `label` in {@link RiviniaMenuItemData}.
    */
-  readonly label = input<string | null>(null);
+  readonly menuLabel = input<string | null>(null);
+  /**
+   * Declarative items. When provided, the panel renders these rows itself —
+   * no `rvMenuItem` markup and no controller needed. Mutually exclusive with
+   * projected `rvMenuItem` children (see `ambiguous`).
+   */
+  readonly items = input<readonly RiviniaMenuItemData[] | null>(null);
+  /** Extra class(es) on the panel, alongside `.rv-menu-panel`. */
+  readonly panelClass = input<string | null>(null);
+  /** Extra class(es) on data-driven rows only (projected rows use your markup). */
+  readonly itemClass = input<string | null>(null);
 
   /** Fired when the user picks an enabled item (id). Closes first. */
   readonly picked = output<MenuPick>();
@@ -328,6 +380,8 @@ export class RiviniaMenuComponent {
 
   private readonly owned = new RiviniaMenu();
   private readonly self = inject(ElementRef<HTMLElement>);
+  /** Item directives the consumer projected (not the ones we render). */
+  private readonly projectedItems = contentChildren(RiviniaMenuItem, { descendants: true });
   /**
    * Stable panel id for `aria-controls`. Instance-unique via module counter;
    * SSR-safe because the panel (and its id) only renders client-side on open.
@@ -335,6 +389,8 @@ export class RiviniaMenuComponent {
   protected readonly panelId = `rv-menu-panel-${++nextPanelId}`;
   /** Deferred initial focus: set on open paths, consumed after render. */
   private focusPending = false;
+  /** True between an open and the first row registered for it. */
+  private pendingActivation = false;
   /**
    * Manual popover support (top-layer). Feature-detected: modern browsers
    * escape clipping ancestors; older ones keep the absolute fallback.
@@ -354,9 +410,46 @@ export class RiviniaMenuComponent {
     return this.menu() ?? this.owned;
   }
 
+  /** Data-driven rows to render, or empty when the consumer projects markup. */
+  protected dataItems(): readonly RiviniaMenuItemData[] {
+    return this.ambiguous() ? [] : (this.items() ?? []);
+  }
+
+  /**
+   * Checkbox semantics only when a consumer supplied an external controller
+   * with `multi`-style values; a single-select menu keeps plain `menuitem`
+   * roles. Kept a method (not a computed) so it stays cheap and reactive via
+   * template reads.
+   */
+  protected checkedFor(id: string): boolean | null {
+    const c = this.controller() as RiviniaMenuController & {
+      isSelected?: (id: string) => boolean;
+    };
+    return typeof c.isSelected === 'function' ? c.isSelected(id) : null;
+  }
+
+  /**
+   * `[items]` and projected `rvMenuItem` children are two ways to populate the
+   * same panel. Supplying both is ambiguous: we throw instead of silently
+   * picking a winner, because a silently-ignored list is a data-loss bug.
+   */
+  protected ambiguous(): boolean {
+    return this.items() !== null && this.projectedItems().length > 0;
+  }
+
   /** Called by {@link RiviniaMenuItem} directives. */
   registerItem(item: { id: string; disabled: boolean }): void {
-    this.controller().register(item);
+    const c = this.controller();
+    c.register(item);
+    // Rows can register AFTER the panel opened — the declarative `[items]`
+    // path only renders them once `open()` is true, so at open time the
+    // registry was still empty and `openMenu('first')` had nothing to
+    // activate (measured: `activeId` stayed null, ArrowDown could not move,
+    // and the highlight never appeared).
+    if (this.pendingActivation && c.open() && c.activeId() === null && !item.disabled) {
+      c.activateFirst();
+      this.pendingActivation = false;
+    }
   }
 
   /** Called by {@link RiviniaMenuItem} directives. */
@@ -365,6 +458,13 @@ export class RiviniaMenuComponent {
   }
 
   constructor() {
+    effect(() => {
+      if (!this.ambiguous()) return;
+      throw new Error(
+        'rv-menu: `[items]` cannot be combined with projected `rvMenuItem` ' +
+          'children — pick one way to populate the panel.',
+      );
+    });
     effect((onCleanup) => {
       if (typeof window === 'undefined') return;
       if (!this.controller().open()) return;
@@ -472,6 +572,9 @@ export class RiviniaMenuComponent {
    */
   private markOpening(): void {
     this.focusPending = true;
+    // Set on every open so rows that register after the panel rendered can
+    // claim the initial activation exactly once.
+    this.pendingActivation = true;
     this.flipped.set(false);
     this.positioned.set(false);
   }

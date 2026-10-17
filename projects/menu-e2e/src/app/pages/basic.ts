@@ -8,7 +8,7 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
   imports: [RiviniaMenuComponent, RiviniaMenuItem],
   template: `
     <h1>Basic action menu</h1>
-    <rv-menu (picked)="picked.set($event.id)" label="Actions menu">
+    <rv-menu (picked)="picked.set($event.id)" menuLabel="Actions menu">
       <button rv-menu-trigger>Actions</button>
       <div rv-menu-panel>
         <button rvMenuItem id="new">

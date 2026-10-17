@@ -13,7 +13,7 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
         [menu]="menu"
         [placement]="'bottom-end'"
         (picked)="picked.set($event.id)"
-        label="قائمة الإجراءات"
+        menuLabel="قائمة الإجراءات"
       >
         <button rv-menu-trigger>الإجراءات</button>
         <div rv-menu-panel>

@@ -1,5 +1,6 @@
 export type {
   RiviniaMenuController,
+  RiviniaMenuItemData,
   RiviniaMenuFocus,
   RiviniaMenuItem,
   RiviniaMenuPlacement,

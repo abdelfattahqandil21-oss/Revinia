@@ -37,3 +37,16 @@ export interface RiviniaMenuController {
   activatePrevious(): void;
   activate(id: string): boolean;
 }
+
+/**
+ * Data-driven item, for the declarative `[items]` API of `@rivinia/menu/ui`.
+ * Headless consumers of the registry use {@link RiviniaMenuItem} instead.
+ */
+export interface RiviniaMenuItemData {
+  /** Identity, emitted in the `picked` payload. */
+  readonly id: string;
+  /** Visible text. Also the accessible name and the typeahead search text. */
+  readonly label: string;
+  /** Rendered but not selectable. @default false */
+  readonly disabled?: boolean;
+}

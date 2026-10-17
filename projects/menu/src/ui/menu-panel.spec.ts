@@ -9,7 +9,7 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '../../ui/src/lib/menu-pan
   standalone: true,
   imports: [RiviniaMenuComponent, RiviniaMenuItem],
   template: `
-    <rv-menu [menu]="menu" [label]="menuLabel" (picked)="picked.push($event.id)">
+    <rv-menu [menu]="menu" [menuLabel]="menuLabel" (picked)="picked.push($event.id)">
       <button rv-menu-trigger>Account</button>
       <div rv-menu-panel>
         <button rvMenuItem id="profile">Profile</button>

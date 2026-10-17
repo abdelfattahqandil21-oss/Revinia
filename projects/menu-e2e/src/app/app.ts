@@ -7,6 +7,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   template: `
     <nav>
       <a routerLink="/basic" routerLinkActive="on">Basic</a>
+      <a routerLink="/api" routerLinkActive="on">API</a>
       <a routerLink="/dynamic" routerLinkActive="on">Dynamic</a>
       <a routerLink="/two" routerLinkActive="on">Two</a>
       <a routerLink="/rtl" routerLinkActive="on">RTL</a>

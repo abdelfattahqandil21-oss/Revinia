@@ -3,6 +3,41 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
+## menu 0.3.0 (developer-experience API, unpublished)
+
+### @rivinia/menu
+
+- **New — declarative `[items]`.** `<rv-menu [items]="rows" (picked)="...">`
+  renders, registers and manages the rows itself; no controller, no
+  `register()`, no item markup. Rows use the **same** `rvMenuItem` directive
+  as the composable path, so keyboard/focus/click handling is not duplicated.
+  `[items]` plus projected `rvMenuItem` throws instead of silently ignoring
+  one of them.
+- **New — `panelClass` and `itemClass`** so consumers can style the generated
+  panel/rows without fighting the library's cascade.
+- **New — camelCase projection attributes** (`rvMenuTrigger`, `rvMenuPanel`)
+  alongside the existing dashed ones.
+- **New — `RiviniaMenuItemData`** type exported from both entry points.
+- **Fix — items registering after the panel opened could not be activated.**
+  With `[items]` the rows render only once `open()` is true, so `openMenu()`
+  ran against an empty registry: no highlight, and ArrowDown could not move
+  (measured: `activeId` stayed `null`). The first enabled row registered after
+  an open now claims the initial activation.
+- **Fix — `[disabled]` changes at runtime never reached the registry**
+  (registration happened once in `ngOnInit`). Renames are de-registered.
+- **Fix — a static `disabled` attribute on a native button landed on the DOM
+  property instead of the directive input**, so the row reported
+  `aria-disabled="false"`.
+- **Change — `label` → `menuLabel`** on `rv-menu` (name clash with the per-item
+  `label`). Unpublished, so no released break.
+- **Change — design tokens are `var(--token, fallback)` values and the forced
+  dark-mode defaults are gone.** The panel used to declare the defaults on
+  itself, which out-ranked any value a consumer set on an ancestor (measured:
+  a wrapper's `--rv-menu-radius` was ignored). Dark mode is now opt-in.
+- **Tests:** 32 unit tests (incl. a new consumer-level suite driving only the
+  public API) and 41 Playwright scenarios against a production consumer
+  fixture. Packed 0.3.0 tarball builds in a clean consumer app.
+
 ## menu 0.2.0 (accessibility audit, unpublished)
 
 ### @rivinia/menu

@@ -25,7 +25,7 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
   template: `
     <h1>Viewport edges</h1>
     <div class="pinned">
-      <rv-menu [menu]="edge" (picked)="picked.set('edge=' + $event.id)" label="Edge menu">
+      <rv-menu [menu]="edge" (picked)="picked.set('edge=' + $event.id)" menuLabel="Edge menu">
         <button rv-menu-trigger>Edge menu</button>
         <div rv-menu-panel>
           <button rvMenuItem id="e1">Edge one</button>
@@ -35,7 +35,7 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
       </rv-menu>
     </div>
     <div class="clip">
-      <rv-menu [menu]="clip" (picked)="picked.set('clip=' + $event.id)" label="Clipped menu">
+      <rv-menu [menu]="clip" (picked)="picked.set('clip=' + $event.id)" menuLabel="Clipped menu">
         <button rv-menu-trigger>Clipped ancestor</button>
         <div rv-menu-panel>
           <button rvMenuItem id="c1">Clip one</button>

@@ -8,14 +8,14 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
   imports: [RiviniaMenuComponent, RiviniaMenuItem],
   template: `
     <h1>Two menus</h1>
-    <rv-menu [menu]="first" (picked)="picked.set('first=' + $event.id)" label="First menu">
+    <rv-menu [menu]="first" (picked)="picked.set('first=' + $event.id)" menuLabel="First menu">
       <button rv-menu-trigger>First</button>
       <div rv-menu-panel>
         <button rvMenuItem id="a1">Alpha one</button>
         <button rvMenuItem id="a2">Alpha two</button>
       </div>
     </rv-menu>
-    <rv-menu [menu]="second" (picked)="picked.set('second=' + $event.id)" label="Second menu">
+    <rv-menu [menu]="second" (picked)="picked.set('second=' + $event.id)" menuLabel="Second menu">
       <button rv-menu-trigger>Second</button>
       <div rv-menu-panel>
         <button rvMenuItem id="b1">Beta one</button>
