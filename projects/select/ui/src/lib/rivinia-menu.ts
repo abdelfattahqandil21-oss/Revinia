@@ -35,12 +35,15 @@ export class RiviniaMenu implements RiviniaMenuController {
     if (this.activeId() === id) this.activeId.set(null);
   }
 
-  /** Open and optionally focus the first/last enabled item. */
+  /** Open and optionally focus the first/last enabled item, or preserve current. */
   openMenu(focus: RiviniaMenuFocus = 'first'): void {
     this.open.set(true);
     if (focus === 'first') this.activateFirst();
     else if (focus === 'last') this.activateLast();
-    else this.activeId.set(null);
+    else if (focus === 'current') {
+      // Preserve the current active item — used by multi-select so keyboard
+      // navigation continues from the picked item instead of resetting to first.
+    } else this.activeId.set(null);
   }
 
   /** Close and clear the active item. Focus restoration is UI-owned. */

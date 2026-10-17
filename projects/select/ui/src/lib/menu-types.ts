@@ -14,7 +14,7 @@ export interface RiviniaMenuItem {
 export type RiviniaMenuPlacement = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
 
 /** Which item takes focus when the menu opens. @default 'first' */
-export type RiviniaMenuFocus = 'first' | 'last' | 'none';
+export type RiviniaMenuFocus = 'first' | 'last' | 'none' | 'current';
 
 /**
  * Structural slice of {@link RiviniaMenu} a UI layer drives. The full

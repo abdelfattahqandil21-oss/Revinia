@@ -7,9 +7,11 @@ import {
   effect,
   inject,
   input,
+  model,
   output,
   signal,
 } from '@angular/core';
+import { FormValueControl } from '@angular/forms/signals';
 import { RiviniaMenu } from './rivinia-menu';
 import type { RiviniaMenuUiPlacement } from './ui-menu-types';
 import { RiviniaMenuComponent, RiviniaMenuItem } from './menu-panel';
@@ -50,7 +52,7 @@ export type SelectChange = string | readonly string[] | null;
     @if (label(); as text) {
       <span class="rv-select-caption" [id]="labelId">{{ text }}</span>
     }
-    <div class="rv-select">
+    <div class="rv-select" (focusout)="onFocusOut($event)">
       <rv-menu
         [menu]="nav"
         [placement]="placement()"
@@ -67,7 +69,10 @@ export type SelectChange = string | readonly string[] | null;
           [attr.aria-label]="ariaLabel()"
           [attr.aria-labelledby]="label() ? labelId : null"
           [attr.aria-expanded]="nav.open()"
+          [attr.aria-invalid]="invalid() || errors().length > 0 ? 'true' : null"
+          [attr.aria-disabled]="disabled() ? 'true' : null"
           [attr.data-open]="nav.open()"
+          [disabled]="disabled()"
         >
           <span class="rv-select-value">{{ display() }}</span>
           <svg
@@ -176,6 +181,13 @@ export type SelectChange = string | readonly string[] | null;
         font-size: 14px;
         cursor: pointer;
       }
+      .rv-select-trigger[disabled] {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      .rv-select-trigger[aria-invalid='true'] {
+        border-color: var(--rv-select-error, #dc2626);
+      }
       .rv-select-value {
         flex: 1;
         overflow: hidden;
@@ -240,7 +252,7 @@ export type SelectChange = string | readonly string[] | null;
     `,
   ],
 })
-export class RiviniaSelectComponent {
+export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
   /**
    * External controller (shared/test double). Omitted: the component owns one
    * matching `mode()` (simplest embedding).
@@ -288,6 +300,23 @@ export class RiviniaSelectComponent {
   readonly opened = output<void>();
   readonly closed = output<void>();
 
+  // ── FormValueControl contract (Angular 22 Signal Forms) ──
+  // The `value` model is the form-bound signal. Angular's Field directive
+  // (or formControlName via interop) keeps it in sync with the form model.
+  // All properties below are optional — implement only what we need.
+  /** Form-bound value. Single: id or null. Multi: ids in pick order. */
+  readonly value = model<SelectChange>(null);
+  /** Disabled state from the form system. Prevents opening and interaction. */
+  readonly disabled = input<boolean>(false);
+  /** Touched state from the form system (read-only, set by Angular). */
+  readonly touched = input<boolean>(false);
+  /** Emit when focus leaves the whole Select interaction (trigger + panel). */
+  readonly touch = output<void>();
+  /** Validation errors from the form system. */
+  readonly errors = input<readonly { kind: string; message?: string }[]>([]);
+  /** Whether the field is in an invalid state. */
+  readonly invalid = input<boolean>(false);
+
   private readonly ownedSingle = new RiviniaSelect('single');
   private readonly ownedMulti = new RiviniaSelect('multi');
   /** Inner navigation controller driving the rv-menu panel. */
@@ -314,6 +343,8 @@ export class RiviniaSelectComponent {
   clear(): void {
     const c = this.controller();
     c.clear();
+    // FormValueControl: update the model signal so the form sees the clear.
+    this.value.set(c.mode === 'multi' ? c.values() : c.value());
     this.selectionChange.emit(c.mode === 'multi' ? c.values() : c.value());
   }
 
@@ -337,6 +368,30 @@ export class RiviniaSelectComponent {
     effect(() => {
       this.controller().query();
       this.nav.activateFirst();
+    });
+
+    // ── FormValueControl sync: form value → controller ──
+    // When the form writes a value (external change or initial binding),
+    // sync it into the controller. Guard: only act when the value actually
+    // differs, to avoid feedback loops and redundant writes.
+    effect(() => {
+      const v = this.value();
+      const c = this.controller();
+      if (c.mode === 'single') {
+        if (typeof v === 'string' && v !== c.value()) {
+          c.select(v);
+        } else if (v === null && c.value() !== null) {
+          c.clear();
+        }
+      } else {
+        // Multi: sync the id array.
+        const current = c.values();
+        const incoming = Array.isArray(v) ? v : [];
+        if (incoming.length !== current.length || incoming.some((id, i) => id !== current[i])) {
+          c.clear();
+          for (const id of incoming) c.toggle(id);
+        }
+      }
     });
     // Searchable open lands focus in the filter box. The inner menu already
     // focused the first item in its own hook, so this runs in a microtask —
@@ -366,6 +421,11 @@ export class RiviniaSelectComponent {
   }
 
   protected onOpened(): void {
+    // FormValueControl: a disabled control must not open.
+    if (this.disabled()) {
+      this.nav.closeMenu();
+      return;
+    }
     this.justOpened.set(true);
     this.opened.emit();
   }
@@ -376,18 +436,36 @@ export class RiviniaSelectComponent {
     this.closed.emit();
   }
 
+  /**
+   * FormValueControl touched contract: emit `touch` when focus leaves the
+   * whole Select interaction (trigger + panel). Internal focus transitions
+   * (trigger → search → items) do NOT emit — only leaving the host element.
+   */
+  protected onFocusOut(event: FocusEvent): void {
+    const host = this.self.nativeElement;
+    const related = event.relatedTarget as Node | null;
+    if (!related || !host.contains(related)) {
+      this.touch.emit();
+    }
+  }
+
   protected onPick(id: string): void {
     const c = this.controller();
     if (c.mode === 'single') {
       if (!c.select(id)) return;
+      // FormValueControl: update the model signal so the form sees the pick.
+      this.value.set(c.value());
       this.selectionChange.emit(c.value());
       // The inner menu closed without restoring focus (its item vanished).
       this.focusTrigger();
     } else {
       if (!c.toggle(id)) return;
-      // The inner menu closed synchronously on click; reopen in the same
-      // pass so the panel never visually drops.
-      this.nav.openMenu();
+      // The inner menu closed synchronously; reopen in the same pass.
+      // doClose() cleared activeId, so restore it to the picked item —
+      // otherwise the next arrow-key navigation starts from the first item.
+      this.nav.openMenu('current');
+      this.nav.activate(id);
+      this.value.set(c.values());
       this.selectionChange.emit(c.values());
     }
   }

@@ -110,24 +110,60 @@ match. Disabled options render but refuse picks. Rich per-option custom content
 
 ## Forms
 
-`rv-select` is deliberately form-agnostic in `0.2.0`. There is **no**
-`ControlValueAccessor` yet (see Known verification gaps). Wiring to a reactive
-form is two lines — the controller is the source of truth either way:
+`rv-select` supports three form integrations (Angular 22):
+
+### Signal Forms (`[formField]`)
+
+```ts
+import { signal, form } from '@angular/forms/signals';
+
+const status = signal<string | null>(null);
+const myForm = form(status);
+```
+
+```html
+<rv-select [formField]="myForm" [options]="invoices" />
+```
+
+### Reactive Forms (`formControlName`)
 
 ```ts
 readonly statusControl = new FormControl<string | null>(null);
 ```
 
 ```html
-<rv-select
-  [options]="invoices"
-  [searchable]="true"
-  (selectionChange)="statusControl.setValue($event)"
-/>
+<form [formGroup]="form">
+  <rv-select formControlName="status" [options]="invoices" />
+</form>
 ```
 
-For `formControlName` inside a `formGroup`, wrap the same two lines in a thin
-adapter component.
+### Template-driven (`ngModel`)
+
+```html
+<rv-select [(ngModel)]="status" [options]="invoices" />
+```
+
+### Value types
+
+| Mode     | Value type          |
+| -------- | ------------------- |
+| `single` | `string \| null`    |
+| `multi`  | `readonly string[]` |
+
+### Manual wiring (still works)
+
+```html
+<rv-select [options]="invoices" (selectionChange)="onStatusChange($event)" />
+```
+
+### Form state
+
+- **Disabled:** the form system sets the `disabled` input; the trigger becomes
+  non-interactive and the panel cannot open.
+- **Touched:** emitted when focus leaves the whole interaction (trigger + panel),
+  matching the `FormValueControl` contract.
+- **Validation errors / invalid:** reflected as `aria-invalid="true"` on the
+  trigger.
 
 ## API
 

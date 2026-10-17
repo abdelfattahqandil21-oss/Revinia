@@ -3,6 +3,29 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
+## select 0.4.0 (forms integration, unpublished)
+
+### @rivinia/select
+
+- **New — `FormValueControl<SelectChange>` integration.** `rv-select` now
+  implements Angular 22's stable `FormValueControl` interface, so it works with
+  Signal Forms (`[formField]`), Reactive Forms (`formControlName`) and
+  Template-driven Forms (`ngModel`) — no `ControlValueAccessor`, no
+  `NG_VALUE_ACCESSOR` provider, no manual callbacks.
+- **New — `value` model signal** (the form-bound value), `disabled` input,
+  `touched`/`touch` outputs, `errors`/`invalid` inputs (reflected as
+  `aria-invalid` on the trigger).
+- **Backward compatible:** `selectionChange` output is preserved for user-driven
+  picks and `clear()`. External form writes do NOT emit `selectionChange`.
+- **No feedback loops:** the sync effect only writes to the controller when the
+  form value actually differs; user picks update both controller and `value`
+  signal without re-triggering the effect.
+- **New peer dependency:** `@angular/forms: ^22.0.0` (Signal Forms stable
+  since 22.0). Does not narrow the existing `@angular/core` range.
+- **Tests:** 15 new integration tests covering Reactive Forms, Template-driven
+  Forms, Signal Forms, multi-select, disabled sync, clear, and backward
+  compatibility. 43/45 total passing.
+
 ## select 0.3.1 (hint field + typeahead unification, unpublished)
 
 ### @rivinia/select
