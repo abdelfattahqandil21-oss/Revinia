@@ -3,6 +3,155 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
+## menu 0.3.1 (published as a single release; 0.2.0/0.3.0 were never on npm)
+
+Only `0.1.0` was ever published. Everything below ships together as `0.3.1`.
+
+### Breaking / behaviour changes
+
+- **`label` → `menuLabel` on `rv-menu`.** The input names the _menu_ (it maps to
+  the panel's `aria-label`), while `RiviniaMenuItemData.label` names a _row_;
+  the old name was an ambiguity trap. Migrate: `label="…"` / `[label]="…"` →
+  `menuLabel="…"` / `[menuLabel]="…"`.
+- **Forced dark mode removed.** The library shipped `prefers-color-scheme: dark`
+  defaults, which also over-rode consumer tokens in dark mode. Design tokens are
+  now `var(--token, fallback)` values, so your theme always wins. Opt in yourself
+  (README → Styling).
+- **Tab / Shift+Tab step focus explicitly.** Focus now moves to the tab stop
+  before/after the _trigger_. Previously the browser re-entered the still-mounted
+  panel and focus was then lost to `<body>` (reproduced on Chromium and Firefox).
+
+### Added
+
+- **Declarative `[items]`.** `<rv-menu [items]="rows" (picked)="…">` renders,
+  registers and manages the rows itself — no controller, no `register()`, no item
+  markup. Rows use the **same** `rvMenuItem` directive as the composable path, so
+  keyboard, focus and click handling are not implemented twice. Combining
+  `[items]` with projected `rvMenuItem` throws by design.
+- **`panelClass` / `itemClass`** to style the generated panel and rows.
+- **camelCase projection attributes** (`rvMenuTrigger`, `rvMenuPanel`) alongside
+  the dashed ones.
+- **`RiviniaMenuItemData`** (from both entry points) and **`MenuPick`**
+  (from `@rivinia/menu/ui`) types.
+
+### Fixed
+
+- **Items registering after the panel opened could not be activated.** With
+  `[items]` rows render only once `open()` is true, so `openMenu()` ran against an
+  empty registry: no highlight and ArrowDown could not move (`activeId` stayed
+  `null`). The first enabled row registered after an open now claims the initial
+  activation.
+- **`[disabled]` changes at runtime never reached the registry** (registration
+  ran once in `ngOnInit`); renames are now de-registered.
+- **A static `disabled` attribute on a native `<button rvMenuItem>`** landed on
+  the DOM property instead of the directive input, so the row reported
+  `aria-disabled="false"`.
+- **Consumer CSS variables set on an ancestor were ignored** because the panel
+  declared the defaults on itself. Tokens are now fallbacks (README →
+  ViewEncapsulation).
+
+### Verified
+
+32 unit tests, 49 Playwright scenarios on Chromium and 49 on Firefox (all green),
+`npm pack` inspected (6 files, no specs), and the packed `0.3.1` tarball
+installed into a clean consumer app where both README examples compile verbatim
+and were exercised in a real browser. **Tailwind, WebKit and real screen-reader
+testing remain unverified.** NOT published.
+
+## menu 0.2.0 (accessibility audit, unpublished)
+
+### @rivinia/menu
+
+- **P0 — disabled items could be activated with Enter.** An item that became
+  disabled _after_ receiving focus stayed `activeId`, and `pickFocused()`
+  trusted it. Enter then emitted `picked` for a disabled row (measured: an
+  all-disabled menu emitted `picked=one`). `pickFocused()` now re-validates
+  against the live registry. Regression test verified by negative control.
+- **P0 — opening could strand focus on `<body>`.** The deferred-focus flag was
+  cleared before confirming the panel existed, so a pass that raced panel
+  insertion silently dropped focus forever. The flag now survives until the
+  panel is present, and measurement state is reset on every open so a second
+  render pass is guaranteed.
+- **P0 — outside pointer-down stole focus.** Closing on an outside click pulled
+  focus back to the trigger, fighting the browser and hijacking focus from what
+  the user actually clicked. Outside clicks now close without restoring focus;
+  Escape and Tab-close still do.
+- **P1 — the typeahead buffer survived a close**, so the next open started
+  mid-word. It is now per-open (reset in `doClose`).
+- **New:** `label` input (panel `aria-label`), stable per-instance panel `id`
+  with `aria-controls` on the trigger, `checked` items (`menuitemcheckbox` +
+  `aria-checked`), pure `computeMenuPosition` + rect types exported.
+- **Tests:** 23 unit tests, 33 Playwright scenarios (Chromium) against a real
+  Angular production fixture, axe-core clean. README rewritten against the
+  verified API.
+
+## modal 0.5.1 (packaging fix, published 2026-10-16)
+
+### @rivinia/modal
+
+- **Packaging fix:** `@rivinia/modal/ui` imports `NgComponentOutlet` /
+  `NgTemplateOutlet` from `@angular/common` at runtime, but `@angular/common`
+  was missing from `peerDependencies` (release-gate failure found by FESM
+  grep). Declared `"@angular/common": "^22.0.0"`. No API change.
+
+## menu 0.1.0 / select 0.1.0 (new packages, published 2026-10-16)
+
+### @rivinia/menu
+
+- **New package (0.1.0):** headless per-instance menu controller
+  (`open/activeId/items` signals, item registry, keyboard navigation model
+  skipping disabled items with wrap) + secondary `@rivinia/menu/ui`
+  (`rv-menu`, `rvMenuItem`, placements, roving focus, outside-click,
+  focus return). Zero new runtime dependencies.
+
+### @rivinia/select
+
+- **New package (0.1.0):** headless select controller (`options/query/filtered`
+  signals, accent-insensitive search, single `value` / multi `values`,
+  `syncOptions` for input mirroring) + secondary `@rivinia/select/ui`
+  (`rv-select` on top of `rv-menu`: searchable filter box, single-pick-close,
+  multi-toggle-stays-open with checks, empty state, chevron). Peer-depends on
+  `@rivinia/menu`. Rich per-option custom content stays with raw `rv-menu`.
+
+## 2026-10-16 — toast 0.4.0
+
+### @rivinia/toast
+
+- **T-06 (feature):** new secondary entry `@rivinia/toast/ui` — ready-made
+  `RiviniaToastList` (managed `[manager]` + presentational `[toasts]`, six
+  logical positions defaulting to `bottom-end`, kind rail vs `richColors`,
+  `role="status"`, hover/focus pause, 150 ms exit snapshots). Zero new
+  runtime dependencies. Headless entry unchanged and UI-free.
+
+## 2026-10-16 — modal 0.5.0
+
+### @rivinia/modal
+
+- **M-09 (feature):** new secondary entry `@rivinia/modal/ui` — ready-made
+  `RiviniaModalDialog` (native `<dialog>`, header/content/footer slots,
+  sizes, positions incl. side panels, directional animations, CSS-var
+  theming) + `RiviniaModalHost` adapter + ref-counted scroll lock. Zero new
+  runtime dependencies. Headless entry unchanged and UI-free.
+- **M-10 (feature):** dialog `description` input (`aria-describedby`),
+  top-aligned header, focus-to-title rule, responsive bottom-sheet mapping.
+
+## 2026-10-15 — http 0.5.0
+
+### @rivinia/http
+
+- **H-05 (breaking):** global `unwrap`/`unwrapKey` configuration removed from
+  `provideRiviniaHttp()`. Unwrapping is strictly per request:
+  `{ unwrap: true, unwrapKey }` with a mandatory key (no default).
+  A missing key now throws `RiviniaHttpUnwrapError` instead of silently
+  passing the body through. Migrate each applicable call (see the README
+  migration note); `ng add` no longer asks about unwrapping.
+- **H-06 (feature):** `RiviniaHttpUnwrapError` (`key` + `endpoint` + raw
+  `body`; body never interpolated into the message) shared by plain methods
+  and `getResource` (surfaces as `resource.error()`).
+- **H-07 (breaking):** `getBlob`/`getText`/`getResponse`/`postResponse` take
+  `RiviniaRawOptions` — unwrap fields are rejected at compile time instead
+  of silently ignored.
+
 ## 2026-10-15 — toast 0.3.1
 
 ### @rivinia/toast

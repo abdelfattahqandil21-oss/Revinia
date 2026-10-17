@@ -7,7 +7,7 @@ Headless typed HTTP client for Angular 22+. Configurable envelope
 unwrapping, plain Observables **and** `httpResource` — URLs always used as
 given, zero styling, zero backend opinions, interceptors left to your app.
 
-- Version: **0.4.0**
+- Version: **0.5.0**
 - Requires: **Angular `^22.0.0`**, `rxjs` (same range Angular uses), `tslib`
 - Since Angular 21 `HttpClient` (fetch backend) is injectable with zero setup.
   Call `provideHttpClient()` / pass `httpFeatures` only when you configure
@@ -17,7 +17,7 @@ given, zero styling, zero backend opinions, interceptors left to your app.
 
 ```bash
 npm install @rivinia/http
-ng add @rivinia/http   # interactive: asks about unwrapping + key, then wires app.config.ts
+ng add @rivinia/http   # wires app.config.ts (no questions: unwrapping is per call)
 ```
 
 ## Quick start — pick ONE backend style
@@ -69,35 +69,46 @@ export class TripPage {
 }
 ```
 
-## Envelope unwrapping (opt-in, default off)
+## Envelope unwrapping (explicit, per call)
 
 The library assumes nothing about your backend: responses pass through raw
-unless unwrapping is enabled. Backends that wrap payloads
-(`{ data, error, isSuccess }`) opt in globally or per call:
+unless the call opts in. There is no global unwrap configuration and no
+default key — every unwrapping call states both facts:
 
 ```ts
-provideRiviniaHttp({ unwrap: true }); // whole app, 'data' key
-provideRiviniaHttp({ unwrap: true, unwrapKey: 'result' }); // whole app, custom key
-this.api.get<Legacy>(url, { unwrap: true, unwrapKey: 'result' }); // this call only
 this.api.get<Raw>(url); // raw body (default)
+this.api.get<Legacy>(url, { unwrap: true, unwrapKey: 'result' }); // explicit
 ```
 
-NOTE: a key alone never enables unwrapping — only `unwrap: true` does,
-at either level. Different shapes per API in the same app:
+The type system enforces the contract: `{ unwrap: true }` without a key,
+a key alone, and `{ unwrap: false, unwrapKey }` all fail compilation.
+Different shapes per API in the same app:
 
 ```ts
 export class MixedService {
   private api = injectRiviniaHttp();
 
-  // main backend: { data: … } (global unwrap: true applies, nothing to say)
-  trips = () => this.api.get<Trip[]>(fullUrl('trips'));
+  // main backend: { data: … } (explicit key per call)
+  trips = () => this.api.get<Trip[]>(fullUrl('trips'), { unwrap: true, unwrapKey: 'data' });
 
-  // legacy backend: { result: … } (per-call key, unwrapping already on globally)
-  legacy = () => this.api.get<Old[]>(fullUrl('old'), { unwrapKey: 'result' });
+  // legacy backend: { result: … }
+  legacy = () => this.api.get<Old[]>(fullUrl('old'), { unwrap: true, unwrapKey: 'result' });
 
-  // webhook endpoint: raw body despite the enabled global (per-call kill-switch)
-  ping = () => this.api.get<string>(fullUrl('ping'), { unwrap: false });
+  // webhook endpoint: raw body (default — nothing to say)
+  ping = () => this.api.get<string>(fullUrl('ping'));
 }
+```
+
+A missing key never passes the body through: it throws
+`RiviniaHttpUnwrapError` (with `key` + `endpoint`; the raw `body` is attached
+for diagnosis but never interpolated into the message). Catch it like any
+HTTP error — in `getResource` it surfaces as `resource.error()`:
+
+```ts
+this.api.get<Trip[]>(url, { unwrap: true, unwrapKey: 'data' }).subscribe({
+  next: (trips) => (this.list = trips),
+  error: (e) => this.fail(e), // RiviniaHttpUnwrapError | HttpErrorResponse
+});
 ```
 
 `getResource` applies the same rules through `parse` (your own `parse` runs
@@ -120,17 +131,19 @@ global one wholesale.
 
 ## API
 
-| Export                        | Kind         | Purpose                                                                                                                                                      |
-| ----------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `provideRiviniaHttp(config?)` | provider     | `{ unwrap?=false, unwrapKey?='data', envelope?, httpFeatures? }`                                                                                             |
-| `RiviniaHttp`                 | `@Service()` | `get/post/put/patch/delete`, `getBlob`, `getText`, `getResponse`, `postResponse`, `getResource`                                                              |
-| `injectRiviniaHttp()`         | function     | shorthand for `inject(RiviniaHttp)`                                                                                                                          |
-| `joinUrl(base, endpoint)`     | util         | slash-safe join; absolute URLs pass through                                                                                                                  |
-| `unwrapAs(body, key)`         | util         | single-level envelope extraction (nested keys preserved)                                                                                                     |
-| types                         | types        | `RiviniaHttpConfig`, `RiviniaRequestOptions`, `RiviniaDeleteOptions`, `RiviniaResourceOptions`, `RiviniaEnvelopePolicy`, `ReactiveInput`, `QueryParamsInput` |
+| Export                        | Kind         | Purpose                                                                                                                                                                           |
+| ----------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `provideRiviniaHttp(config?)` | provider     | `{ envelope?, httpFeatures? }` (no unwrap config — per call only)                                                                                                                 |
+| `RiviniaHttp`                 | `@Service()` | `get/post/put/patch/delete`, `getBlob`, `getText`, `getResponse`, `postResponse`, `getResource`                                                                                   |
+| `injectRiviniaHttp()`         | function     | shorthand for `inject(RiviniaHttp)`                                                                                                                                               |
+| `joinUrl(base, endpoint)`     | util         | slash-safe join; absolute URLs pass through                                                                                                                                       |
+| `unwrapAs(body, key)`         | util         | strict single-level extraction — throws `RiviniaHttpUnwrapError` on missing key (nested keys preserved)                                                                           |
+| `extractKey(body, key)`       | util         | `unwrapAs` without the generic cast (same strictness)                                                                                                                             |
+| types                         | types        | `RiviniaHttpConfig`, `RiviniaRequestOptions`, `RiviniaRawOptions`, `RiviniaDeleteOptions`, `RiviniaResourceOptions`, `RiviniaEnvelopePolicy`, `ReactiveInput`, `QueryParamsInput` |
 
 `getResponse`/`postResponse` return the raw `HttpResponse` (status + headers,
-body never unwrapped — compose `unwrapAs` yourself if needed). A configured
+body never unwrapped — and their options REJECT unwrap fields at compile
+time via `RiviniaRawOptions`; compose `unwrapAs` yourself if needed). A configured
 `envelope` policy still validates the body on these paths: a globally declared
 failure rule holds on every JSON path, never just the unwrapped ones. `getText`
 returns raw text; binary/text bodies cannot carry envelopes, so the policy does
@@ -144,10 +157,31 @@ polling, retry and TanStack Query interop see [RECIPES.md](./RECIPES.md).
 ## Type holes (honest, by design)
 
 `unwrapAs<T>` is an unchecked cast — a wrong `T` compiles and mistypes the
-payload at runtime. What IS checked is generic flow (see
-`http-type-safety.spec.ts` `@ts-expect-error` tests). For untyped backends,
-pair unwrapping with `envelope` validation or a `parse` hook (Zod/Valibot —
-see [RECIPES.md](./RECIPES.md)).
+payload at runtime. What IS checked is generic flow plus the unwrap contract
+itself (see `http-type-safety.spec.ts` `@ts-expect-error` tests). For untyped
+backends, pair unwrapping with `envelope` validation or a `parse` hook
+(Zod/Valibot — see [RECIPES.md](./RECIPES.md)).
+
+## Migration from global unwrapping (0.4.0 → 0.5.0, breaking)
+
+Global `unwrap`/`unwrapKey` configuration is removed. Previously:
+
+```ts
+provideRiviniaHttp({ unwrap: true, unwrapKey: 'data' });
+this.api.get<Trip[]>(url); // arrived unwrapped
+```
+
+Now every unwrapping call states its key explicitly:
+
+```ts
+provideRiviniaHttp();
+this.api.get<Trip[]>(url, { unwrap: true, unwrapKey: 'data' });
+```
+
+Migrate each applicable call, or the body arrives wrapped (raw). Missing
+keys now throw `RiviniaHttpUnwrapError` instead of passing the body through.
+`ng add` no longer asks about unwrapping and emits bare
+`provideRiviniaHttp()` — there is no automatic migration of call sites.
 
 ## Testing your app code
 

@@ -386,3 +386,205 @@ Files in`public/i18n/{lang}.json`are served at`i18n/{lang}.json`, so the
 - Numbering note: minted as D27 on its branch; renumbered to D28 on the
   `integration/audit-2026-10` branch where D27 was already taken by the i18n
   loader-path entry (merged first).
+
+## 2026-10-16 — D29: `@rivinia/modal/ui` on native `<dialog>`, no CDK
+
+- Context: the headless Core already owns ordering, lifecycle, guards and
+  typed results (the hard parts). The UI layer needed rendering + focus +
+  scroll-lock + animations only. Evaluated: (A) native `<dialog>`, (B) CDK
+  Dialog/Overlay, (C) custom overlay. Sources: MDN `showModal` (top layer,
+  `::backdrop`, inert background, widely available), Angular Package Format
+  (secondary-entrypoint `exports`), TS handbook (discriminated unions for
+  option contracts, overload guidance).
+- Decision: (A) native `<dialog>` + thin custom logic, ZERO new runtime
+  dependencies. CDK rejected: it would duplicate Core lifecycle state (two
+  sources of truth) and add bundle weight for positioning machinery we
+  replace with plain CSS. Proof: core FESM has zero UI markers, UI FESM has
+  zero store internals; UI imports are `@angular/common` + `@angular/core`
+  - `@rivinia/modal` only.
+- Consequences: exit animations ride the existing `closing` →
+  `confirmClosed` handshake (default 300 ms covers the 150 ms default);
+  toasts can neither `z-index` nor `popover` above a modal dialog (measured
+  in Chrome via `elementFromPoint`) — documented limitation, no
+  modal→toast dependency; host takes the manager via `[modal]` input typed
+  as the structural `RiviniaModalHostManager` (D06 input-composition, immune
+  to cross-realm singleton splits between source and `dist` typings).
+- Verified: 47/47 modal tests (37 headless + 10 UI), CSR + SSR production
+  integration with zero framework errors, lazy chunk 16.72 kB raw
+  (4.93 kB transfer). NOT published; proposed `modal 0.5.0` (feature,
+  pre-1.0 minor).
+
+## 2026-10-16 — D30: `@rivinia/toast/ui` list component, no new deps
+
+- Context: same shape as D29 — Core owns timers/ordering/dedupe, UI renders.
+  Race analysis ("who wins"): Core already settles every race
+  (per-toast generations, monotonic ids, update-in-place dedupe, dismiss
+  beating stale fires); the UI adds one rule — managed mode wins over
+  owned snapshots, so the view never races the manager either.
+- Decision: `RiviniaToastList` (managed `[manager]` + presentational
+  `[toasts]`), six logical positions defaulting to `bottom-end`, kind rail
+  vs `richColors`, `role="status"` (assertive on errors), hover/focus pause,
+  150 ms exit snapshots (browser only; SSR drops), reduced-motion support.
+  Zero new runtime dependencies; core FESM has zero UI markers.
+- Verified: 33/33 toast tests (28 headless + 5 UI), CSR + SSR production
+  integration (positions, rich, pause, actions) with zero framework errors.
+  NOT published; proposed `toast 0.4.0` (feature, pre-1.0 minor).
+
+## 2026-10-16 — D31: `@rivinia/menu` headless + dropdown UI, no new deps
+
+- Context: nav bar and select/multi designs need a dropdown primitive first.
+  APG menu-button + HeadlessUI patterns researched (roving tabindex, Escape,
+  arrows/Home/End, Tab closes non-modally, outside pointer closes).
+- Decision: per-instance `RiviniaMenu` controller (open/active/registry,
+  disabled-skip with wrap) + `@rivinia/menu/ui` (`rv-menu`, `rvMenuItem`;
+  trigger/panel projection, placement classes, roving focus, focus return).
+  Non-modal Tab behavior is deliberate. Structural `RiviniaMenuController`
+  interface (same dual-realm lesson as modal's host manager). SSR renders
+  closed. Zero new runtime dependencies.
+- Verified: 9/9 menu tests, CSR headed run (profile + select styles,
+  keyboard, pick) with zero errors. NOT published (new package 0.1.0).
+
+## 2026-10-16 — D32: `@rivinia/select` searchable single/multi on rv-menu
+
+- Context: invoice-filter (searchable single) and tag-picker (multi) designs
+  need one select primitive, not two components.
+- Decision: headless `RiviniaSelect` (option registry, accent-insensitive
+  label filter, single value / multi values, `syncOptions` mirroring) plus
+  `rv-select` composed on the inner `rv-menu` (owns a private `RiviniaMenu`
+  for nav; reopen-in-same-pass for multi so the panel never drops; Tab in the
+  search box jumps into the list instead of closing; structural
+  `RiviniaSelectController` per the dual-realm rule). Options come from an
+  `options` input; rich custom rows stay with raw `rv-menu`. Peer-depends on
+  `@rivinia/menu` (declared; FESM grep gate applies).
+- Verified: 10/10 select tests, CSR headed run with zero errors.
+  NOT published (new package 0.1.0).
+
+## 2026-10-16 — D33: dropdown APG gaps closed (trigger aria + typeahead)
+
+- Context: APG menu-button/combobox audit of `rv-menu`/`rv-select` found the
+  trigger exposing no `aria-haspopup`/`aria-expanded` (screen readers could
+  not tell a menu exists) and no printable-character typeahead.
+- Decision: `rv-menu` syncs both attributes onto the consumer's trigger
+  element via effect; `rv-select` binds them on its own button. Typeahead
+  lives in the menu component (labels are UI-owned DOM text, not headless
+  state): prefix buffer, same-character cycling, 500ms reset, disabled-skip.
+- Open (not started): selected-state semantics for select (visual check only;
+  needs a menuitemcheckbox/menuitemradio vs listbox/option role decision),
+  viewport-edge auto-flip, form binding, option groups.
+- Verified: menu 12/12, select 10/10 tests. NOT published.
+
+## 2026-10-16 — D34: select search-box owns its keystrokes + autofocus
+
+- Context: lab report — typing in `rv-select` search typed nothing (panel
+  menu-typeahead stole focus mid-word), no autofocus on open, stale filter on
+  reopen. Measured in headed Chrome: search value `''`, 5 unfiltered rows.
+- Decision: search keydown stops propagation except Enter (accept top match),
+  Escape (dismiss), arrows (move into list per APG), Tab (jump in manually).
+  Opening autofocuses search via select-owned afterRenderEffect + `justOpened`
+  signal + microtask (deterministic over the inner menu's item focus); closing
+  clears the query. Long panels capped (`min(20rem, 100dvh-2rem)`, scroll).
+- Verified: headed run — autofocus lands in search (single + multi), `pai`
+  filters to 1 row, Enter/multi picks clean, zero errors. Menu 12/12,
+  select 12/12 tests. NOT published.
+
+## 2026-10-16 — D35: top-layer menu positioning (popover + flip), no new deps
+
+- Context: absolute panels overflowed near viewport edges and clipped under
+  `overflow:hidden` ancestors; long lists had no height cap.
+- Decision: manual `popover` (declared only when `showPopover` exists — an
+  unshown popover is unfocusable, which broke jsdom focus until conditional)
+  - measured `fixed` coordinates via pure `computeMenuPosition` (RTL-aware,
+    flips the fitting side, clamps; unit-tested with fake rects) + outside
+    scroll/resize closes (panel scroll exempt). Enter animation gated on
+    `data-positioned`. Absolute classes stay as the no-popover fallback.
+- Also closed: Arabic search normalization (tashkeel/tatweel/alef forms,
+  tested), `menuitemcheckbox`+`aria-checked` for multi options (single stays
+  `menuitem`), modal managed-exit UI test + back-button non-goal doc,
+  select form-wiring recipe. Toast timers verified timestamp-based (no fix
+  needed); toast-in-modal pattern re-verified live (`onTop:true`).
+- Deferred (explicit): full ControlValueAccessor, option groups, huge-list
+  virtualization — roadmap, not publish blockers.
+- Verified: menu 19/19, select 13/13, modal 51/51 tests; headed flip/clip/
+  no-stuck-layer/toast-in-modal runs, zero errors. NOT published.
+
+## 2026-10-16 — D36: `@rivinia/menu` production audit (P0 fixes + Playwright suite)
+
+- Context: APG audit of rv-menu. Verified gaps: outside click stole focus to trigger; trigger had no aria-controls (menu lacked stable id); empty/all-disabled menus never exercised (tested); RTL/flip aliases; scroll-close reflow path fixed; panel now names itself.
+- Decisions:
+  - outside pointer clicks do NOT restore focus (browser keeps natural target). Escape and Tab-close still restore.
+  - panel gets a stable unique `rv-menu-panel-N` id; trigger gets `aria-controls`. `label` input maps to panel `aria-label`. Tested cross-instance uniqueness.
+  - CSS is layered-flat (no `@layer`) by choice: reported-but-unverified layer-vs-consumer specificity caused a concrete regression risk. Override API is CSS vars (`--rv-menu-*`) plus documented classes and `data-*` hooks (active, flipped, disabled, placement).
+  - forced-colors left to host; `prefers-reduced-motion` zeroes the enter animation.
+- Playwright 1.64 Chromium + fixture (basic/dynamic/two/rtl/edge/styled). Headed verification landed during audit; suite runs on Chromium only (WebKit/firefox browsers cached — reported, not claimed). Axe-core audit lands the day after (browser 1248 tools); dependency declared.
+- Tests: 21 Vitest unit (menu) + 20-ish Playwright scenarios + position pure helper 8.
+
+## 2026-10-17 — D37: menu audit — real defects vs bad test expectations
+
+- Context: full APG/ARIA audit of `rv-menu` with a new Playwright suite
+  (Chromium fixture built from a real production Angular app).
+- Method note (kept, because it wasted a full cycle): most "failures" were
+  **my own test expectations**, not product bugs. The documented contract is
+  "opening focuses the first enabled item", and several tests wrongly assumed
+  an extra ArrowDown was needed to get there. Two infrastructure traps also
+  masqueraded as defects: `reuseExistingServer` served a stale bundle, and
+  key presses sent before the panel opened landed on the trigger.
+- Real defects found and fixed (each with a regression test):
+  1. `pickFocused()` trusted a stale `activeId`, so Enter activated an item
+     that had been disabled after receiving focus (negative control confirmed
+     the test catches it).
+  2. Deferred focus cleared its flag before the panel existed, stranding focus
+     on `<body>`; measurement state was only reset on the popover path.
+  3. Outside pointer-down restored focus to the trigger.
+  4. The typeahead buffer persisted across close/reopen.
+- Decisions: `label` is opt-in (no forced naming); panel id is a module
+  counter, stable per instance and safe for SSR because the panel only renders
+  client-side; `checked` renders `menuitemcheckbox` while plain rows stay
+  `menuitem` (single-select semantics unchanged); no `@layer` (cascade-layer
+  vs consumer-utility ordering is not something we could verify here).
+- Verified: 23 unit tests; 33/33 Playwright on Chromium; packed 0.2.0 tarball
+  inspected (exports/types/peers/files/FESM imports) and built in a clean
+  consumer app. Firefox 31/33 with two failures whose cause was not isolated
+  (manual Firefox run shows correct focus/active/top-layer); WebKit cannot
+  launch in this environment. NOT published.
+
+## 2026-10-17 — D38: two usage levels, one implementation
+
+- Context: DX task — verify whether `[items]` + `(picked)` and composable
+  `rvMenuItem` markup both exist, and remove manual setup from normal usage.
+- Verified first: manual `new RiviniaMenu()` / `register()` were already
+  optional (the component owns a controller, directives self-register), so the
+  gap was the declarative API and the styling hooks, not DI.
+- Decision: support both levels because they serve different needs, but route
+  the declarative path through the **same** `rvMenuItem` directive, so
+  keyboard, focus, registration and click handling exist once. `[items]` +
+  projected items throws: a silently dropped list is a data-loss bug.
+  `label` renamed to `menuLabel` because the item data also has a `label`.
+  Projection accepts both `rvMenuTrigger` and `rv-menu-trigger`.
+- Design-tokens: switched to `var(--token, fallback)` and dropped the forced
+  dark-mode defaults, because a declaration on the panel out-ranked consumer
+  values set on an ancestor. Dark mode is opt-in (also what the brief asks for).
+- Defects found by the new consumer-level tests (not by the internal ones):
+  late registration could not claim initial activation; `[disabled]` changes
+  never synced; static `disabled` attribute collided with the native property.
+- Verified: 32 unit tests, 41/41 Playwright on Chromium, packed 0.3.0 tarball
+  installed and built in a clean consumer app using both levels. NOT published.
+
+## 2026-10-17 — D39: explicit Tab stepping (focus contract)
+
+- Context: release gate. Adding a Shift+Tab regression test exposed that focus
+  ended up on `<body>`: the panel is still mounted when the keydown is handled,
+  so the browser's own tab step re-entered the panel, and focus was dropped
+  when Angular unmounted it.
+- Decision: on Tab/Shift+Tab, prevent default, close, and step focus
+  explicitly to the tab stop before/after the trigger (skipping rows inside any
+  panel). Deterministic in both directions and on both engines, and it matches
+  where the user would have landed anyway. End-of-document behaviour stays
+  whatever the browser does — documented, not second-guessed.
+- Also corrected two of my own weak assertions while adding coverage: the
+  theming spec accepted either the override or the default value (now asserts
+  the exact tokens), and a "repeated Tab" test asserted an end-of-document
+  behaviour that Firefox legitimately does not implement.
+- Verified: 32 unit, 98/98 Playwright (Chromium + Firefox), packed 0.3.0
+  rebuilt and installed into a clean consumer build. WebKit cannot launch here
+  (missing libWPEWebKit-2.0, libbacktrace, libjxl.so.0.8, libavif.so.16) and
+  is NOT claimed. NOT published.

@@ -9,17 +9,19 @@ consumer before any publish.
 
 ## Packages
 
-| Package          | Version                                               | `ng add` | Description                                                                                     |
-| ---------------- | ----------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------- |
-| `@rivinia/http`  | [0.4.0](https://www.npmjs.com/package/@rivinia/http)  | ✅       | Headless typed HTTP client: envelope unwrapping, Observables + `httpResource` (`projects/http`) |
-| `@rivinia/toast` | [0.3.1](https://www.npmjs.com/package/@rivinia/toast) | ✅       | Headless toast queue: signals, timers, actions, dedupe (`projects/toast`)                       |
-| `@rivinia/modal` | [0.4.0](https://www.npmjs.com/package/@rivinia/modal) | ✅       | Headless modal manager: stack/queue, typed results, guards (`projects/modal`)                   |
-| `@rivinia/i18n`  | [0.3.0](https://www.npmjs.com/package/@rivinia/i18n)  | ✅       | Headless language manager: signals, RTL, ICU plurals, detection (`projects/i18n`)               |
-| `@rivinia/env`   | [0.2.0](https://www.npmjs.com/package/@rivinia/env)   | ✅       | Typed app environments dev/staging/prod + setup schematic (`projects/env`)                      |
+| Package           | Version                                                | `ng add` | Description                                                                                     |
+| ----------------- | ------------------------------------------------------ | -------- | ----------------------------------------------------------------------------------------------- |
+| `@rivinia/http`   | [0.5.0](https://www.npmjs.com/package/@rivinia/http)   | ✅       | Headless typed HTTP client: envelope unwrapping, Observables + `httpResource` (`projects/http`) |
+| `@rivinia/toast`  | [0.4.0](https://www.npmjs.com/package/@rivinia/toast)  | ✅       | Headless toast queue: signals, timers, actions, dedupe (`projects/toast`)                       |
+| `@rivinia/modal`  | [0.5.0](https://www.npmjs.com/package/@rivinia/modal)  | ✅       | Headless modal manager: stack/queue, typed results, guards (`projects/modal`)                   |
+| `@rivinia/i18n`   | [0.3.0](https://www.npmjs.com/package/@rivinia/i18n)   | ✅       | Headless language manager: signals, RTL, ICU plurals, detection (`projects/i18n`)               |
+| `@rivinia/env`    | [0.2.0](https://www.npmjs.com/package/@rivinia/env)    | ✅       | Typed app environments dev/staging/prod + setup schematic (`projects/env`)                      |
+| `@rivinia/menu`   | [0.1.0](https://www.npmjs.com/package/@rivinia/menu)   | 🆕       | Headless menu behavior + ready-made dropdown UI (`projects/menu`)                               |
+| `@rivinia/select` | [0.1.0](https://www.npmjs.com/package/@rivinia/select) | 🆕       | Headless select (search + single/multi) + ready-made UI on rv-menu (`projects/select`)          |
 
 ```bash
 npm install @rivinia/http @rivinia/toast @rivinia/modal @rivinia/i18n @rivinia/env
-ng add @rivinia/http   # prompts: unwrapping + envelope key
+ng add @rivinia/http   # wires provideHttpClient() + provideRiviniaHttp()
 ng add @rivinia/toast  # wires provideRiviniaToast()
 ng add @rivinia/modal  # optional: --strategy queue
 ng add @rivinia/i18n   # prompts: default language + browser detection

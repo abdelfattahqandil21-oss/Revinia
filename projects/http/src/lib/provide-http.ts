@@ -19,7 +19,7 @@ import { RiviniaHttp } from './rivinia-http';
  *
  * @example
  * ```ts
- * provideRiviniaHttp({ unwrapKey: 'data' })
+ * provideRiviniaHttp()
  * ```
  */
 export function provideRiviniaHttp(config: RiviniaHttpConfig = {}): EnvironmentProviders {

@@ -1,13 +1,11 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { signal, computed } from '@angular/core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { RiviniaHttpConfig } from './http-config';
 import { RiviniaHttpEnvelopeError } from './http-envelope';
+import { RiviniaHttpUnwrapError } from './http-utils';
 import { provideRiviniaHttp } from './provide-http';
 import { RiviniaHttp } from './rivinia-http';
 
@@ -34,17 +32,19 @@ describe('RiviniaHttp (plain Observables)', () => {
     ctrl.verify();
   });
 
-  it('unwraps { data } when enabled globally', () => {
-    const { http, ctrl } = setup({ unwrap: true });
+  it('unwraps { data } with an explicit per-call key', () => {
+    const { http, ctrl } = setup();
     let received: unknown;
-    http.get<unknown>('https://api.test/users').subscribe((v) => (received = v));
+    http
+      .get<unknown>('https://api.test/users', { unwrap: true, unwrapKey: 'data' })
+      .subscribe((v) => (received = v));
     ctrl.expectOne('https://api.test/users').flush({ data: [1, 2], isSuccess: true });
     expect(received).toEqual([1, 2]);
     ctrl.verify();
   });
 
-  it('honours unwrap:false per call against an enabled global', () => {
-    const { http, ctrl } = setup({ unwrap: true });
+  it('honours explicit unwrap:false per call (raw passthrough)', () => {
+    const { http, ctrl } = setup();
     let received: unknown;
     http.get<unknown>('https://api.test/users', { unwrap: false }).subscribe((v) => (received = v));
     const envelope = { data: [1] };
@@ -53,18 +53,20 @@ describe('RiviniaHttp (plain Observables)', () => {
     ctrl.verify();
   });
 
-  it('composes global and per-call levels in one injector', () => {
-    // Global: unwrap + unwrapKey 'payload'. One call overrides to 'result',
-    // another disables unwrapping entirely — all three coexist.
-    // NOTE: a key alone never enables unwrapping — only the boolean does.
-    const { http, ctrl } = setup({ unwrap: true, unwrapKey: 'payload' });
+  it('keeps per-call keys independent across calls in one injector', () => {
+    // Each call carries its own key; one call stays raw — no globals involved.
+    const { http, ctrl } = setup();
     let a: unknown;
     let b: unknown;
     let c: unknown;
-    http.get<unknown>('https://api.test/a').subscribe((v) => (a = v));
-    http.get<unknown>('https://api.test/b', { unwrapKey: 'result' }).subscribe((v) => (b = v));
-    http.get<unknown>('https://api.test/c', { unwrap: false }).subscribe((v) => (c = v));
-    ctrl.expectOne('https://api.test/a').flush({ payload: 1 });
+    http
+      .get<unknown>('https://api.test/a', { unwrap: true, unwrapKey: 'data' })
+      .subscribe((v) => (a = v));
+    http
+      .get<unknown>('https://api.test/b', { unwrap: true, unwrapKey: 'result' })
+      .subscribe((v) => (b = v));
+    http.get<unknown>('https://api.test/c').subscribe((v) => (c = v));
+    ctrl.expectOne('https://api.test/a').flush({ data: 1 });
     ctrl.expectOne('https://api.test/b').flush({ result: 2 });
     ctrl.expectOne('https://api.test/c').flush({ payload: 3 });
     expect(a).toBe(1);
@@ -73,52 +75,57 @@ describe('RiviniaHttp (plain Observables)', () => {
     ctrl.verify();
   });
 
-  it('honours a per-call unwrapKey when unwrapping is enabled', () => {
-    const { http, ctrl } = setup({ unwrap: true });
+  it('honours a per-call unwrapKey', () => {
+    const { http, ctrl } = setup();
     let received: unknown;
-    http.get<unknown>('https://api.test/users', { unwrapKey: 'result' }).subscribe((v) => (received = v));
+    http
+      .get<unknown>('https://api.test/users', { unwrap: true, unwrapKey: 'result' })
+      .subscribe((v) => (received = v));
     ctrl.expectOne('https://api.test/users').flush({ result: 'ok' });
     expect(received).toBe('ok');
     ctrl.verify();
   });
 
-  it('ignores a per-call unwrapKey when unwrapping is not enabled', () => {
+  it('returns the raw body by default even for key-shaped bodies', () => {
     const { http, ctrl } = setup();
     let received: unknown;
-    http.get<unknown>('https://api.test/users', { unwrapKey: 'result' }).subscribe((v) => (received = v));
+    http.get<unknown>('https://api.test/users').subscribe((v) => (received = v));
     const body = { result: 'ok' };
     ctrl.expectOne('https://api.test/users').flush(body);
     expect(received).toEqual(body);
     ctrl.verify();
   });
 
-  it('honours a global unwrapKey and can be disabled globally', () => {
-    const { http, ctrl } = setup({ unwrap: true, unwrapKey: 'payload' });
+  it('supports custom keys per call without any global', () => {
+    const { http, ctrl } = setup();
     let received: unknown;
-    http.get<unknown>('https://api.test/a').subscribe((v) => (received = v));
+    http
+      .get<unknown>('https://api.test/a', { unwrap: true, unwrapKey: 'payload' })
+      .subscribe((v) => (received = v));
     ctrl.expectOne('https://api.test/a').flush({ payload: 7 });
     expect(received).toBe(7);
 
-    TestBed.resetTestingModule();
-    const off = setup({ unwrap: false });
     let raw: unknown;
-    off.http.get<unknown>('https://api.test/a').subscribe((v) => (raw = v));
-    off.ctrl.expectOne('https://api.test/a').flush({ data: 1 });
+    http.get<unknown>('https://api.test/a').subscribe((v) => (raw = v));
+    ctrl.expectOne('https://api.test/a').flush({ data: 1 });
     expect(raw).toEqual({ data: 1 });
-    off.ctrl.verify();
     ctrl.verify();
   });
 
   it('unwraps post/put/patch/delete and maps query params', () => {
-    const { http, ctrl } = setup({ unwrap: true });
+    const { http, ctrl } = setup();
     let received: unknown;
-    http.post<unknown>('https://api.test/login', { u: 'a' }).subscribe((v) => (received = v));
+    http
+      .post<unknown>('https://api.test/login', { u: 'a' }, { unwrap: true, unwrapKey: 'data' })
+      .subscribe((v) => (received = v));
     const post = ctrl.expectOne('https://api.test/login');
     expect(post.request.method).toBe('POST');
     post.flush({ data: { token: 't' } });
     expect(received).toEqual({ token: 't' });
 
-    http.get<unknown>('https://api.test/users', { params: { q: 'x', page: 2, skip: null } }).subscribe();
+    http
+      .get<unknown>('https://api.test/users', { params: { q: 'x', page: 2, skip: null } })
+      .subscribe();
     const get = ctrl.expectOne((r) => r.url === 'https://api.test/users');
     expect(get.request.params.get('q')).toBe('x');
     expect(get.request.params.get('page')).toBe('2');
@@ -128,7 +135,7 @@ describe('RiviniaHttp (plain Observables)', () => {
   });
 
   it('never touches outgoing request bodies, even shaped like envelopes', () => {
-    const { http, ctrl } = setup({ unwrap: true });
+    const { http, ctrl } = setup();
     const payload = { data: {}, messegaAr: 'dasds' };
     http.post<unknown>('https://api.test/save', payload).subscribe();
     const req = ctrl.expectOne('https://api.test/save');
@@ -138,9 +145,11 @@ describe('RiviniaHttp (plain Observables)', () => {
   });
 
   it('keeps sibling fields next to nested data (token survives)', () => {
-    const { http, ctrl } = setup({ unwrap: true });
+    const { http, ctrl } = setup();
     let received: unknown;
-    http.get<unknown>('https://api.test/me').subscribe((v) => (received = v));
+    http
+      .get<unknown>('https://api.test/me', { unwrap: true, unwrapKey: 'data' })
+      .subscribe((v) => (received = v));
     ctrl.expectOne('https://api.test/me').flush({
       data: { data: { name: 'abdo' }, token: 'eyx-signature' },
     });
@@ -220,6 +229,115 @@ describe('RiviniaHttp (plain Observables)', () => {
   });
 });
 
+describe('RiviniaHttp strict extraction', () => {
+  function capture<T>(
+    subscribe: (sink: { next: (v: T) => void; error: (e: unknown) => void }) => void,
+  ) {
+    let value: T | undefined;
+    let next = false;
+    let error: unknown;
+    subscribe({
+      next: (v) => {
+        next = true;
+        value = v;
+      },
+      error: (e) => (error = e),
+    });
+    return { value: () => value, next: () => next, error: () => error };
+  }
+
+  it('throws RiviniaHttpUnwrapError on a missing key (never passes through)', () => {
+    const { http, ctrl } = setup();
+    const sink = capture<unknown>((s) =>
+      http.get<unknown>('https://api.test/a', { unwrap: true, unwrapKey: 'data' }).subscribe(s),
+    );
+    ctrl.expectOne('https://api.test/a').flush({ other: 1 });
+    expect(sink.next()).toBe(false);
+    const err = sink.error() as RiviniaHttpUnwrapError;
+    expect(err).toBeInstanceOf(RiviniaHttpUnwrapError);
+    expect(err.key).toBe('data');
+    expect(err.message).toContain('data');
+    expect(err.message).toContain('https://api.test/a');
+    expect(err.message).not.toContain('other');
+    ctrl.verify();
+  });
+
+  it('throws for null, primitive, and array bodies', () => {
+    const { http, ctrl } = setup();
+    for (const body of [null, 42, 'x', [1, 2]]) {
+      const sink = capture<unknown>((s) =>
+        http.get<unknown>('https://api.test/a', { unwrap: true, unwrapKey: 'data' }).subscribe(s),
+      );
+      ctrl.expectOne('https://api.test/a').flush(body);
+      expect(sink.error()).toBeInstanceOf(RiviniaHttpUnwrapError);
+    }
+    ctrl.verify();
+  });
+
+  it('throws for an empty key and for inherited-only properties', () => {
+    const { http, ctrl } = setup();
+    const emptyKey = '';
+    const sink = capture<unknown>((s) =>
+      http.get<unknown>('https://api.test/a', { unwrap: true, unwrapKey: emptyKey }).subscribe(s),
+    );
+    ctrl.expectOne('https://api.test/a').flush({ data: 1 });
+    expect(sink.error()).toBeInstanceOf(RiviniaHttpUnwrapError);
+
+    const sink2 = capture<unknown>((s) =>
+      http.get<unknown>('https://api.test/a', { unwrap: true, unwrapKey: 'toString' }).subscribe(s),
+    );
+    ctrl.expectOne('https://api.test/a').flush({});
+    expect(sink2.error()).toBeInstanceOf(RiviniaHttpUnwrapError);
+    ctrl.verify();
+  });
+
+  it('preserves present-but-falsy values without truthiness checks', () => {
+    const { http, ctrl } = setup();
+    for (const [key, value] of [
+      ['n', null],
+      ['f', false],
+      ['z', 0],
+      ['e', ''],
+    ] as const) {
+      let received: unknown = 'unset';
+      http
+        .get<unknown>('https://api.test/a', { unwrap: true, unwrapKey: key })
+        .subscribe((v) => (received = v));
+      ctrl.expectOne('https://api.test/a').flush({ [key]: value });
+      expect(received).toBe(value);
+    }
+    ctrl.verify();
+  });
+
+  it('unwraps delete with a body and surfaces extraction failure in getResource', async () => {
+    const { http, ctrl } = setup();
+    let received: unknown;
+    http
+      .delete<unknown>('https://api.test/a', {
+        body: { reason: 'x' },
+        unwrap: true,
+        unwrapKey: 'data',
+      })
+      .subscribe((v) => (received = v));
+    const req = ctrl.expectOne('https://api.test/a');
+    expect(req.request.body).toEqual({ reason: 'x' });
+    req.flush({ data: 'gone' });
+    expect(received).toBe('gone');
+
+    const res = TestBed.runInInjectionContext(() =>
+      http.getResource('https://api.test/b', { unwrap: true, unwrapKey: 'data' }),
+    );
+    TestBed.flushEffects();
+    ctrl.expectOne('https://api.test/b').flush({ other: 1 });
+    await Promise.resolve();
+    await new Promise((r) => setTimeout(r, 0));
+    TestBed.flushEffects();
+    expect(res.error()).toBeInstanceOf(RiviniaHttpUnwrapError);
+    expect(res.hasValue()).toBe(false);
+    ctrl.verify();
+  });
+});
+
 describe('provideRiviniaHttp httpFeatures', () => {
   it('configures the backend from a single call (interceptor applied)', () => {
     TestBed.configureTestingModule({
@@ -228,9 +346,7 @@ describe('provideRiviniaHttp httpFeatures', () => {
         // over the one provideRiviniaHttp() registers internally (standard rule).
         provideRiviniaHttp({
           httpFeatures: [
-            withInterceptors([
-              (req, next) => next(req.clone({ setHeaders: { 'X-Proof': '1' } })),
-            ]),
+            withInterceptors([(req, next) => next(req.clone({ setHeaders: { 'X-Proof': '1' } }))]),
           ],
         }),
         provideHttpClientTesting(),
@@ -252,7 +368,7 @@ describe('RiviniaHttp envelope failures', () => {
     const { http, ctrl } = setup();
     let error: unknown;
     http
-      .get<unknown>('https://api.test/pay', { unwrap: true, envelope: {} })
+      .get<unknown>('https://api.test/pay', { unwrap: true, unwrapKey: 'data', envelope: {} })
       .subscribe({ next: () => {}, error: (e) => (error = e) });
     ctrl.expectOne('https://api.test/pay').flush(failed);
     expect(error).toBeInstanceOf(RiviniaHttpEnvelopeError);
@@ -265,7 +381,7 @@ describe('RiviniaHttp envelope failures', () => {
     const { http, ctrl } = setup();
     let received: unknown;
     http
-      .get<unknown>('https://api.test/pay', { unwrap: true, envelope: {} })
+      .get<unknown>('https://api.test/pay', { unwrap: true, unwrapKey: 'data', envelope: {} })
       .subscribe((v) => (received = v));
     ctrl.expectOne('https://api.test/pay').flush({ data: { id: 1 }, isSuccess: true });
     expect(received).toEqual({ id: 1 });
@@ -277,7 +393,9 @@ describe('RiviniaHttp envelope failures', () => {
       envelope: { successKey: 'ok', errorKey: 'message' },
     });
     let error: unknown;
-    http.get<unknown>('https://api.test/x').subscribe({ next: () => {}, error: (e) => (error = e) });
+    http
+      .get<unknown>('https://api.test/x')
+      .subscribe({ next: () => {}, error: (e) => (error = e) });
     ctrl.expectOne('https://api.test/x').flush({ ok: false, message: 'NOPE' });
     expect((error as RiviniaHttpEnvelopeError).code).toBe('NOPE');
     ctrl.verify();
@@ -286,7 +404,11 @@ describe('RiviniaHttp envelope failures', () => {
   it('surfaces envelope failure as resource.error() in getResource', async () => {
     const { http, ctrl } = setup();
     const res = TestBed.runInInjectionContext(() =>
-      http.getResource('https://api.test/pay', { unwrap: true, envelope: {} }),
+      http.getResource('https://api.test/pay', {
+        unwrap: true,
+        unwrapKey: 'data',
+        envelope: {},
+      }),
     );
     TestBed.flushEffects();
     ctrl.expectOne('https://api.test/pay').flush(failed);
@@ -303,7 +425,10 @@ describe('RiviniaHttp.getResource', () => {
   it('exposes unwrapped JSON as a resource value', async () => {
     const { http, ctrl } = setup();
     const res = TestBed.runInInjectionContext(() =>
-      http.getResource<{ name: string }>('https://api.test/users/1', { unwrap: true }),
+      http.getResource<{ name: string }>('https://api.test/users/1', {
+        unwrap: true,
+        unwrapKey: 'data',
+      }),
     );
     TestBed.flushEffects();
     ctrl.expectOne('https://api.test/users/1').flush({ data: { name: 'A' } });

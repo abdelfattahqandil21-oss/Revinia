@@ -17,6 +17,8 @@
     "build:i18n": "pnpm schematics:i18n && ng build i18n",
     "build:modal": "pnpm schematics:modal && ng build modal",
     "build:env": "pnpm schematics:env && ng build env",
+    "build:menu": "ng build menu",
+    "build:select": "ng build select",
     "test:schematics": "vitest run projects/http/schematics projects/toast/schematics projects/i18n/schematics projects/modal/schematics projects/env/schematics",
     "check:docs": "node scripts/check-docs.mjs"
   },
@@ -38,6 +40,8 @@
     "@angular/build": "^22.2.2",
     "@angular/cli": "^22.2.2",
     "@angular/compiler-cli": "^22.2.0",
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^24.19.2",
     "jsdom": "^30.0.0",
     "ng-packagr": "^22.2.0",

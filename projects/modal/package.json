@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/modal",
-  "version": "0.4.0",
+  "version": "0.5.1",
   "description": "Headless modal manager for Angular: stack/queue strategies, typed results, guards, ownership.",
   "keywords": [
     "angular",
@@ -11,6 +11,7 @@
   ],
   "license": "MIT",
   "peerDependencies": {
+    "@angular/common": "^22.0.0",
     "@angular/core": "^22.0.0"
   },
   "sideEffects": false,

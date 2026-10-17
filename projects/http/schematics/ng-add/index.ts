@@ -1,13 +1,6 @@
-import {
-  Rule,
-  SchematicContext,
-  SchematicsException,
-  Tree,
-} from '@angular-devkit/schematics';
+import { Rule, SchematicContext, SchematicsException, Tree } from '@angular-devkit/schematics';
 
 export interface NgAddOptions {
-  unwrap?: boolean;
-  unwrapKey?: string;
   project?: string;
 }
 
@@ -20,7 +13,9 @@ const PROVIDE_HTTP_IMPORT = `import { provideRiviniaHttp } from '@rivinia/http';
  * - Never overwrites user files; only inserts two imports + two providers.
  * - Idempotent: safe to run twice (existing entries are detected and skipped).
  * - Never provides the backend beyond `provideHttpClient()`; interceptors,
- *   URLs and unwrap options stay app-owned (see schema options).
+ *   URLs and per-request unwrap options stay app-owned. Unwrapping is
+ *   strictly per call (`{ unwrap: true, unwrapKey }`) — the schematic emits
+ *   no unwrap configuration.
  */
 export function ngAdd(options: NgAddOptions): Rule {
   return (tree: Tree, context: SchematicContext) => {
@@ -47,27 +42,9 @@ export function ngAdd(options: NgAddOptions): Rule {
       throw new SchematicsException(`[rivinia/http] ${configPath} is empty.`);
     }
 
-    // Deterministic mapping, no ambiguity (library default: disabled):
-    // - unwrap !== true   → emit nothing about unwrapping (raw passthrough).
-    //   A custom key given alongside is ignored, said plainly in logs.
-    // - unwrap === true   → emit `unwrap: true`, plus the key only when custom
-    //   (anything but ''/'data', which both mean the library default key).
-    // URLs are never touched: the caller owns them (environment, joinUrl, …).
-    const parts: string[] = [];
-    const unwrapEnabled = options.unwrap === true;
-    if (!unwrapEnabled) {
-      if (options.unwrapKey && options.unwrapKey !== 'data') {
-        context.logger.info(
-          `[rivinia/http] unwrapping not enabled — custom unwrapKey '${options.unwrapKey}' ignored.`,
-        );
-      }
-    } else {
-      parts.push('unwrap: true');
-      if (options.unwrapKey && options.unwrapKey.length > 0 && options.unwrapKey !== 'data') {
-        parts.push(`unwrapKey: '${options.unwrapKey}'`);
-      }
-    }
-    const provideArg = parts.length > 0 ? `{ ${parts.join(', ')} }` : '';
+    // Unwrapping is strictly per request (`{ unwrap: true, unwrapKey }`) —
+    // the schematic emits no unwrap configuration. URLs are never touched:
+    // the caller owns them (environment, joinUrl, …).
 
     let changed = false;
     if (!content.includes(HTTP_CLIENT_IMPORT)) {
@@ -84,7 +61,7 @@ export function ngAdd(options: NgAddOptions): Rule {
     } else {
       context.logger.info('[rivinia/http] provideHttpClient() already present — skipped.');
     }
-    const provideCall = `provideRiviniaHttp(${provideArg})`;
+    const provideCall = `provideRiviniaHttp()`;
     if (!content.includes('provideRiviniaHttp(')) {
       content = insertProvider(content, provideCall);
       changed = true;

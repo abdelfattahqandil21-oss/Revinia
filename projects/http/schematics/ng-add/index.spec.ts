@@ -27,43 +27,27 @@ async function run(options: object, base?: UnitTestTree) {
 }
 
 describe('ng-add', () => {
-  it('inserts imports and both providers', async () => {
-    const tree = await run({ unwrap: true, unwrapKey: 'result' });
+  it('inserts imports and both providers (bare, no unwrap config)', async () => {
+    const tree = await run({});
     const content = tree.readContent('/src/app/app.config.ts');
     expect(content).toContain(`import { provideHttpClient } from '@angular/common/http';`);
     expect(content).toContain(`import { provideRiviniaHttp } from '@rivinia/http';`);
     expect(content).toContain('provideHttpClient(),');
-    expect(content).toContain(`provideRiviniaHttp({ unwrap: true, unwrapKey: 'result' }),`);
+    expect(content).toContain('provideRiviniaHttp(),');
+    expect(content).not.toContain('unwrap');
   });
 
-  it('emits bare provideRiviniaHttp() without options', async () => {
-    const tree = await run({});
-    expect(tree.readContent('/src/app/app.config.ts')).toContain('provideRiviniaHttp(),');
-  });
-
-  it('emits unwrap: true without a default key', async () => {
-    const tree = await run({ unwrap: true });
-    expect(tree.readContent('/src/app/app.config.ts')).toContain(
-      'provideRiviniaHttp({ unwrap: true }),',
-    );
-  });
-
-  it('emits nothing about unwrapping when disabled, key ignored', async () => {
-    const tree = await run({ unwrap: false, unwrapKey: 'result' });
+  it('ignores legacy unwrap flags (removed in 0.5.0)', async () => {
+    const tree = await run({ unwrap: true, unwrapKey: 'result' });
     const content = tree.readContent('/src/app/app.config.ts');
     expect(content).toContain('provideRiviniaHttp(),');
-    expect(content).not.toContain('unwrapKey');
-  });
-
-  it('omits the key when it equals the library default', async () => {
-    const tree = await run({ unwrapKey: 'data' });
-    expect(tree.readContent('/src/app/app.config.ts')).toContain('provideRiviniaHttp(),');
+    expect(content).not.toContain('unwrap');
   });
 
   it('is idempotent (second run changes nothing)', async () => {
-    const once = await run({ unwrap: true, unwrapKey: 'result' });
+    const once = await run({});
     const before = once.readContent('/src/app/app.config.ts');
-    const twice = await run({ unwrap: true, unwrapKey: 'result' }, once);
+    const twice = await run({}, once);
     expect(twice.readContent('/src/app/app.config.ts')).toBe(before);
   });
 

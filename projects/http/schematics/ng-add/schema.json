@@ -6,24 +6,8 @@
   "properties": {
     "project": {
       "type": "string",
-      "description": "Angular CLI project name — only for multi-app workspaces. Defaults to the workspace default project. Unrelated to unwrap scope.",
+      "description": "Angular CLI project name — only for multi-app workspaces. Defaults to the workspace default project.",
       "default": ""
-    },
-    "unwrapKey": {
-      "type": "string",
-      "description": "Envelope key passed as provideRiviniaHttp({ unwrapKey }). Asked only in effect when unwrapping is enabled; omit to keep the 'data' default.",
-      "x-prompt": {
-        "message": "Backend envelope key (Enter for the 'data' default)?",
-        "type": "input"
-      }
-    },
-    "unwrap": {
-      "type": "boolean",
-      "description": "Enable envelope unwrapping project-wide. When false, provideRiviniaHttp({ unwrap: false }) is emitted and unwrapKey is ignored.",
-      "x-prompt": {
-        "message": "Enable backend envelope unwrapping for this project?",
-        "type": "confirmation"
-      }
     }
   },
   "required": []
