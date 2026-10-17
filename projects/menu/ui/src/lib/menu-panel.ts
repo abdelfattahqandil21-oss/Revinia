@@ -651,9 +651,18 @@ export class RiviniaMenuComponent {
         event.preventDefault();
         this.pickFocused();
         break;
-      case 'Tab':
+      case 'Tab': {
+        // Non-modal Tab must not trap focus. The panel is still in the DOM
+        // when this event is handled (Angular removes it on the next CD), so
+        // the browser's own Tab step would re-enter the panel and then lose
+        // focus to <body> when it unmounted (measured on both Chromium and
+        // Firefox). So we close, and step focus explicitly from the trigger.
+        event.preventDefault();
+        const backwards = event.shiftKey;
         this.doClose(false);
+        this.focusAdjacentToTrigger(backwards);
         break;
+      }
       default:
         this.onTypeahead(event);
         break;
@@ -808,6 +817,39 @@ export class RiviniaMenuComponent {
     const wrap = this.self.nativeElement.querySelector('.rv-menu-trigger') as HTMLElement | null;
     if (!wrap) return null;
     return (wrap.querySelector('button, a, [tabindex]') as HTMLElement | null) ?? wrap;
+  }
+
+  /**
+   * Move focus to the element before/after the trigger in document tab order.
+   *
+   * Explicit rather than delegating to the browser: the panel is still
+   * mounted when Tab is handled, so the browser's own step re-enters the panel
+   * and focus is then lost to <body> when it unmounts (measured on Chromium
+   * and Firefox). Leaves focus on the document when nothing is left in that
+   * direction.
+   */
+  private focusAdjacentToTrigger(backwards: boolean): void {
+    try {
+      const trigger = this.triggerEl();
+      const doc = trigger?.ownerDocument;
+      if (!trigger || !doc) return;
+      const selector =
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+      const stops = [...doc.querySelectorAll<HTMLElement>(selector)].filter((el) => {
+        if (el.hasAttribute('disabled') || el.getAttribute('aria-hidden') === 'true') return false;
+        // Rows inside any open panel are part of that menu, not this page flow.
+        if (el.closest('.rv-menu-panel')) return false;
+        return el.getClientRects().length > 0;
+      });
+      stops.sort((a, b) =>
+        a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1,
+      );
+      const at = stops.indexOf(trigger);
+      if (at === -1) return;
+      stops[backwards ? at - 1 : at + 1]?.focus({ preventScroll: true });
+    } catch {
+      // Focus stepping is best-effort; never break the close path.
+    }
   }
 
   private focusTrigger(): void {

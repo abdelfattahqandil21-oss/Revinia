@@ -603,7 +603,17 @@ projection attributes (`rvMenuTrigger`, `rvMenuPanel`).
 - A static `disabled` attribute on a native `<button rvMenuItem>` is now
   honoured (it previously landed on the DOM property instead of the input).
 
-### 0.3.0 → next (planned)
+### 0.3.0 → 0.3.1 (unpublished, on this branch)
+
+- **Tab / Shift+Tab now step focus explicitly** instead of relying on the
+  browser's own tab step. Previously the browser re-entered the still-mounted
+  panel and focus was then lost to `<body>` when it unmounted (reproduced on
+  Chromium and Firefox). Behaviour you should notice: focus lands on the stop
+  before/after the **trigger**, which is the element a user would reach anyway
+  — but if you relied on focus landing exactly where the browser put it before,
+  verify it. No API change.
+
+### 0.3.1 → next (planned)
 
 Nothing yet.
 

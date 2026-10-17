@@ -3,6 +3,21 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
+## menu 0.3.1 (focus-contract fixes, unpublished)
+
+### @rivinia/menu
+
+- **Fix — Tab / Shift+Tab lost focus to `<body>`.** The panel is still mounted
+  while the key is handled, so the browser's own tab step re-entered the panel
+  and focus was dropped when it unmounted (reproduced on Chromium and Firefox;
+  Shift+Tab landed nowhere). Focus now steps explicitly to the stop
+  before/after the trigger. Documented in the focus contract.
+- **Tests:** new `focus-contract` Playwright suite (Tab, Shift+Tab, no-trap,
+  live disabled activation, re-enabling, outside-pointer focus preservation on
+  both focusable and non-focusable targets); the theming spec now asserts exact
+  token values instead of accepting either the override or the default.
+  98/98 across Chromium and Firefox. NOT published.
+
 ## menu 0.3.0 (developer-experience API, unpublished)
 
 ### @rivinia/menu

@@ -1,38 +1,55 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('consumer styling via CSS variables', () => {
-  test('consumer --vars win over default token values', async ({ page }) => {
+  test('consumer --vars on an ancestor win over the library fallbacks', async ({ page }) => {
     await page.goto('/styled');
     await page.getByRole('button', { name: 'Styled' }).click();
     const panel = page.getByRole('menu');
     await expect(panel).toBeVisible();
-    // CSS variables consume their own computed value on the element tree.
-    const bg = await panel.evaluate((el) => getComputedStyle(el).backgroundColor);
-    // The default menu background becomes the overridden value because the
-    // consumer class sets --rv-menu-bg on a wrapper with higher specificity
-    // proximity (documented override path documented below).
-    const radius = await panel.evaluate((el) => getComputedStyle(el).borderRadius);
-    expect(['4px', '12px']).toContain(radius);
-    // state hooks remain visible.
-    // Anchor on focus first: the active row is whichever row owns focus.
-    // Firefox can settle hover state a tick later, so the attribute is
-    // asserted on the focused row, not on a hard-coded id.
-    const item = page.getByRole('menuitem', { name: 'Styled one' });
-    await expect(item).toBeFocused();
-    await expect(item).toHaveAttribute('data-active', 'true');
-    await expect(page.getByRole('menuitem', { name: 'Styled two' })).toHaveAttribute(
-      'data-active',
-      'false',
-    );
+
+    // The fixture sets these on a WRAPPER (.peach). They must inherit down
+    // to the panel, which only works because the library declares its
+    // defaults as var(--token, fallback) values rather than on the panel.
+    const styles = await panel.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return {
+        bg: cs.backgroundColor,
+        fg: cs.color,
+        radius: cs.borderRadius,
+      };
+    });
+    expect(styles.bg).toBe('rgb(255, 237, 213)'); // #ffedd5
+    expect(styles.fg).toBe('rgb(124, 45, 18)'); // #7c2d12
+    expect(styles.radius).toBe('4px');
   });
 
-  test('state hooks render correctly', async ({ page }) => {
+  test('state hooks follow keyboard focus', async ({ page }) => {
     await page.goto('/styled');
     await page.getByRole('button', { name: 'Styled' }).click();
+
+    // Opening focuses the first enabled item, which is the active one.
+    const one = page.getByRole('menuitem', { name: 'Styled one' });
+    const two = page.getByRole('menuitem', { name: 'Styled two' });
+    await expect(one).toBeFocused();
+    await expect(one).toHaveAttribute('data-active', 'true');
+    await expect(one).toHaveAttribute('tabindex', '0');
+    await expect(two).toHaveAttribute('data-active', 'false');
+    await expect(two).toHaveAttribute('tabindex', '-1');
+
+    // ArrowDown moves the active item (and focus) to the next one.
     await page.keyboard.press('ArrowDown');
-    await expect(page.getByRole('menuitem', { name: 'Styled one' })).toHaveAttribute(
-      'data-active',
-      'true',
-    );
+    await expect(two).toBeFocused();
+    await expect(two).toHaveAttribute('data-active', 'true');
+    await expect(one).toHaveAttribute('data-active', 'false');
+  });
+
+  test('a consumer outline on the active hook is applied', async ({ page }) => {
+    await page.goto('/styled');
+    await page.getByRole('button', { name: 'Styled' }).click();
+    const one = page.getByRole('menuitem', { name: 'Styled one' });
+    await expect(one).toBeFocused();
+    // The fixture styles `.peach [rvmenuitem][data-active='true']`.
+    const outline = await one.evaluate((el) => getComputedStyle(el).outlineStyle);
+    expect(outline).toBe('dashed');
   });
 });
