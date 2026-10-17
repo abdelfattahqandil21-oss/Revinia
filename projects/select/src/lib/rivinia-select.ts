@@ -84,10 +84,13 @@ export class RiviniaSelect implements RiviniaSelectController {
   }
 
   /**
-   * Multi-mode toggle. Returns false for unknown/disabled ids;
-   * otherwise adds (or removes) the id and returns true.
+   * Multi-mode toggle. Returns false for unknown/disabled ids **and for any
+   * single-mode controller** — toggling has no meaning there, and letting it
+   * through would write to `values` while `isSelected` reads `value`, leaving
+   * the two signals disagreeing. Single mode uses {@link select} instead.
    */
   toggle(id: string): boolean {
+    if (this.mode !== 'multi') return false;
     if (!pickable(this._options(), id)) return false;
     this.values.update((list) =>
       list.includes(id) ? list.filter((v) => v !== id) : [...list, id],
@@ -95,7 +98,14 @@ export class RiviniaSelect implements RiviniaSelectController {
     return true;
   }
 
-  /** Clear the value (single) or all values (multi). */
+  /**
+   * Clear the value (single) or all values (multi).
+   *
+   * Headless and therefore silent: there is no callback, because this is not a
+   * component. `rv-select` wraps it in a `clear()` method that also emits
+   * `selectionChange`. If you drive the controller yourself, watch `value()` /
+   * `values()` to react to a clear you initiate.
+   */
   clear(): void {
     this.value.set(null);
     this.values.set([]);

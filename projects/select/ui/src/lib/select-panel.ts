@@ -30,8 +30,14 @@ export type SelectChange = string | readonly string[] | null;
  * <rv-select [select]="tags" [options]="tagOptions" />
  * ```
  *
- * Search: typing filters (accent-insensitive), Tab jumps into the list,
- * Enter picks the top match. SSR renders the closed trigger.
+ * Search: typing filters (accent- and case-insensitive), Tab moves focus into
+ * the list, Enter picks the top match. SSR renders the closed trigger.
+ *
+ * Semantics: the panel is exposed as `role="menu"` with `menuitem` options,
+ * because focus physically moves into the option list. It is therefore a
+ * filterable menu, NOT an ARIA combobox and not a native `<select>` — see
+ * README -> Accessibility for the measured behaviour and the limitations a
+ * future combobox mode would have to remove.
  */
 @Component({
   selector: 'rv-select',
@@ -41,78 +47,116 @@ export type SelectChange = string | readonly string[] | null;
   // every rule below stays under .rv-select-* / rv-select.
   encapsulation: ViewEncapsulation.None,
   template: `
-    <rv-menu
-      [menu]="nav"
-      [placement]="placement()"
-      (picked)="onPick($event.id)"
-      (opened)="onOpened()"
-      (closed)="onClosed()"
-    >
-      <button
-        rv-menu-trigger
-        type="button"
-        class="rv-select-trigger"
-        aria-haspopup="menu"
-        [attr.aria-expanded]="nav.open()"
-        [attr.data-open]="nav.open()"
+    @if (label(); as text) {
+      <span class="rv-select-caption" [id]="labelId">{{ text }}</span>
+    }
+    <div class="rv-select">
+      <rv-menu
+        [menu]="nav"
+        [placement]="placement()"
+        [menuLabel]="panelLabel()"
+        (picked)="onPick($event.id)"
+        (opened)="onOpened()"
+        (closed)="onClosed()"
       >
-        <span class="rv-select-value">{{ display() }}</span>
-        <svg
-          class="rv-select-chevron"
-          viewBox="0 0 16 16"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-          aria-hidden="true"
+        <button
+          rv-menu-trigger
+          type="button"
+          class="rv-select-trigger"
+          aria-haspopup="menu"
+          [attr.aria-label]="ariaLabel()"
+          [attr.aria-labelledby]="label() ? labelId : null"
+          [attr.aria-expanded]="nav.open()"
+          [attr.data-open]="nav.open()"
         >
-          <path d="M4 6.5 8 10.5 12 6.5" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-      </button>
-      <div rv-menu-panel class="rv-select-panel">
-        @if (searchable()) {
-          <input
-            class="rv-select-search"
-            type="text"
-            role="searchbox"
-            aria-label="Search options"
-            autocomplete="off"
-            [value]="controller().query()"
-            [placeholder]="searchPlaceholder()"
-            (input)="controller().setQuery($any($event.target).value)"
-            (keydown)="onSearchKey($event)"
-          />
-        }
-        @for (o of controller().filtered(); track o.id) {
-          <button
-            rvMenuItem
-            [id]="o.id"
-            [disabled]="o.disabled ?? false"
-            [checked]="controller().mode === 'multi' ? controller().isSelected(o.id) : null"
+          <span class="rv-select-value">{{ display() }}</span>
+          <svg
+            class="rv-select-chevron"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            aria-hidden="true"
           >
-            <span class="rv-select-label">{{ o.label }}</span>
-            @if (controller().isSelected(o.id)) {
-              <svg
-                class="rv-select-check"
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                aria-hidden="true"
-              >
-                <path d="M3 8.5 6.5 12 13 4.5" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            }
-          </button>
-        } @empty {
-          <div class="rv-select-empty">{{ emptyLabel() }}</div>
-        }
-      </div>
-    </rv-menu>
+            <path d="M4 6.5 8 10.5 12 6.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+        <div rv-menu-panel class="rv-select-panel">
+          @if (searchable()) {
+            <input
+              class="rv-select-search"
+              type="text"
+              role="searchbox"
+              [attr.aria-label]="searchLabel()"
+              autocomplete="off"
+              [value]="controller().query()"
+              [placeholder]="searchPlaceholder()"
+              (input)="controller().setQuery($any($event.target).value)"
+              (keydown)="onSearchKey($event)"
+            />
+          }
+          @for (o of controller().filtered(); track o.id) {
+            <button
+              rvMenuItem
+              [id]="o.id"
+              [disabled]="o.disabled ?? false"
+              [checked]="controller().mode === 'multi' ? controller().isSelected(o.id) : null"
+            >
+              <span class="rv-select-label">{{ o.label }}</span>
+              @if (controller().isSelected(o.id)) {
+                <svg
+                  class="rv-select-check"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <path d="M3 8.5 6.5 12 13 4.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              }
+            </button>
+          } @empty {
+            <div class="rv-select-empty">{{ emptyLabel() }}</div>
+          }
+        </div>
+      </rv-menu>
+    </div>
   `,
   styles: [
     `
       rv-select {
         display: inline-block;
+      }
+      /*
+       * Theming boundary.
+       *
+       * The opened panel is rendered by @rivinia/menu, whose surface paints
+       * itself from the --rv-menu-* tokens. Mapping select's own namespace
+       * onto those tokens HERE, on the panel element only, is what keeps the
+       * two components themeable independently: a --rv-select-* value
+       * inherited from an ancestor reaches this panel, and a consumer's
+       * --rv-menu-* value can no longer bleed into a select. Nothing outside
+       * .rv-select-panel sees these declarations.
+       *
+       * Every value is var(--rv-select-*, fallback), never a literal, so an
+       * ancestor theme always wins. No forced dark mode: opting in is the
+       * consumer's decision (see README -> Theming).
+       */
+      .rv-select .rv-menu-panel {
+        --rv-menu-bg: var(--rv-select-bg, #ffffff);
+        --rv-menu-fg: var(--rv-select-fg, #111111);
+        --rv-menu-border: var(--rv-select-border, #e0e0e0);
+        --rv-menu-muted: var(--rv-select-muted, #555555);
+        --rv-menu-radius: var(--rv-select-radius, 12px);
+        --rv-menu-shadow: var(--rv-select-shadow, 0 16px 48px rgba(0, 0, 0, 0.22));
+        --rv-menu-width: var(--rv-select-width, 16rem);
+      }
+      .rv-select-caption {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 13px;
+        color: var(--rv-select-muted, #555555);
       }
       .rv-select-trigger {
         display: inline-flex;
@@ -121,10 +165,10 @@ export type SelectChange = string | readonly string[] | null;
         min-width: var(--rv-select-width, 14rem);
         max-width: 100%;
         padding: 8px 12px;
-        border-radius: 10px;
-        border: 1px solid var(--rv-menu-border, #e0e0e0);
-        background: var(--rv-menu-bg, #ffffff);
-        color: var(--rv-menu-fg, #111111);
+        border-radius: var(--rv-select-radius, 10px);
+        border: 1px solid var(--rv-select-border, #e0e0e0);
+        background: var(--rv-select-bg, #ffffff);
+        color: var(--rv-select-fg, #111111);
         font: inherit;
         font-size: 14px;
         cursor: pointer;
@@ -140,7 +184,7 @@ export type SelectChange = string | readonly string[] | null;
         width: 16px;
         height: 16px;
         flex: none;
-        color: var(--rv-menu-muted, #555555);
+        color: var(--rv-select-muted, #555555);
         transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
       }
       .rv-select-trigger[data-open='true'] .rv-select-chevron {
@@ -152,7 +196,7 @@ export type SelectChange = string | readonly string[] | null;
         margin-bottom: 4px;
         padding: 8px 10px;
         border-radius: 8px;
-        border: 1px solid var(--rv-menu-border, #e0e0e0);
+        border: 1px solid var(--rv-select-border, #e0e0e0);
         background: transparent;
         color: inherit;
         font: inherit;
@@ -163,7 +207,7 @@ export type SelectChange = string | readonly string[] | null;
         outline-offset: -1px;
       }
       .rv-select-search::placeholder {
-        color: var(--rv-menu-muted, #555555);
+        color: var(--rv-select-muted, #555555);
       }
       .rv-select-check {
         width: 16px;
@@ -175,15 +219,7 @@ export type SelectChange = string | readonly string[] | null;
         padding: 12px 10px;
         text-align: center;
         font-size: 13px;
-        color: var(--rv-menu-muted, #555555);
-      }
-      @media (prefers-color-scheme: dark) {
-        .rv-select-trigger {
-          --rv-menu-bg: #161616;
-          --rv-menu-fg: #f2f2f2;
-          --rv-menu-muted: #a8a8a8;
-          --rv-menu-border: #333333;
-        }
+        color: var(--rv-select-muted, #555555);
       }
       @media (prefers-reduced-motion: reduce) {
         .rv-select-chevron {
@@ -209,6 +245,26 @@ export class RiviniaSelectComponent {
   });
   /** Trigger text with no selection. @default 'Select…' */
   readonly placeholder = input('Select…');
+  /**
+   * Visible caption rendered above the trigger, and the trigger's accessible
+   * name via `aria-labelledby`. Use it to tell users what the field IS — the
+   * trigger's own text is the selected value, which changes as they pick.
+   */
+  readonly label = input<string | null>(null);
+  /**
+   * Explicit accessible name for the trigger, used when there is no visible
+   * caption. Ignored when `label` is set (a visible caption is the better
+   * name). Named `ariaLabel`, mirroring `@rivinia/menu`'s `menuLabel`, so it
+   * cannot be confused with an option's `label`.
+   */
+  readonly ariaLabel = input<string | null>(null);
+  /**
+   * Accessible name for the opened panel (`aria-label` on the listbox-shaped
+   * menu). Defaults to the visible caption when one is set.
+   */
+  readonly menuLabel = input<string | null>(null);
+  /** Accessible name for the filter box. @default 'Search options' */
+  readonly searchLabel = input('Search options');
   /** Filter box hint. @default 'Search…' */
   readonly searchPlaceholder = input('Search…');
   /** Shown when the filter matches nothing. @default 'No results' */
@@ -228,6 +284,27 @@ export class RiviniaSelectComponent {
   private readonly self = inject(ElementRef<HTMLElement>);
   /** Set on trigger-open; consumed after render to land focus in search. */
   private readonly justOpened = signal(false);
+  /** Id of the rendered caption element, referenced by the trigger. */
+  protected readonly labelId = 'rv-select-label';
+
+  /**
+   * Accessible name for the opened panel: an explicit `menuLabel`, else the
+   * visible caption, else none. Without any of these the panel is unnamed.
+   */
+  protected panelLabel(): string | null {
+    return this.menuLabel() ?? this.label();
+  }
+
+  /**
+   * Clear the current selection and announce it through `selectionChange`
+   * (`null` in single mode, `[]` in multi) — the same payload shape `picked`
+   * emits, so one consumer handler covers picking and clearing.
+   */
+  clear(): void {
+    const c = this.controller();
+    c.clear();
+    this.selectionChange.emit(c.mode === 'multi' ? c.values() : c.value());
+  }
 
   /** Effective controller: external input or the owned one matching mode. */
   protected controller(): RiviniaSelectController {
@@ -250,10 +327,16 @@ export class RiviniaSelectComponent {
       this.controller().query();
       this.nav.activateFirst();
     });
-    // Searchable open lands focus in the search box (combobox pattern). The
-    // inner menu already focused the first item in its own hook, so this runs
-    // in a microtask — deterministically after every render hook — and only
-    // on the opening transition, never while navigating or typing.
+    // Searchable open lands focus in the filter box. The inner menu already
+    // focused the first item in its own hook, so this runs in a microtask —
+    // deterministically after every render hook — and only on the opening
+    // transition, never while navigating or typing.
+    //
+    // NOTE: this is deliberately NOT the ARIA combobox pattern, where focus
+    // stays in the text input and the active option is pointed at with
+    // aria-activedescendant. Here focus physically moves into the option
+    // list (see onSearchKey -> Tab -> focusItem), so the exposed semantics are
+    // menu/menuitem. See README -> Accessibility for the full rationale.
     afterRenderEffect(() => {
       if (!this.justOpened() || !this.nav.open() || !this.searchable()) return;
       this.justOpened.set(false);
@@ -299,11 +382,11 @@ export class RiviniaSelectComponent {
   }
 
   /**
-   * The search box owns its keystrokes (combobox pattern): typing, caret
-   * movement and space must never reach the panel handler — otherwise the
-   * menu typeahead would steal focus mid-word (measured: typed text lost).
-   * Only keys the panel must own bubble: Enter accepts the top match,
-   * Escape dismisses, arrows move focus into the list, Tab jumps in manually.
+   * The filter box owns its keystrokes: typing, caret movement and space must
+   * never reach the panel handler — otherwise the menu typeahead would steal
+   * focus mid-word (measured: typed text lost). Only keys the panel must own
+   * bubble: Enter accepts the top match, Escape dismisses, arrows move focus
+   * within the list, Tab moves focus from the box into the list.
    */
   protected onSearchKey(event: KeyboardEvent): void {
     switch (event.key) {
