@@ -6,23 +6,35 @@
   "properties": {
     "environments": {
       "type": ["array", "string"],
-      "description": "Which environments to scaffold and wire: array, or comma-separated string on the CLI (--environments staging,production). Model + base file always. Omit for all three.",
-      "default": ["development", "staging", "production"],
-      "items": { "type": "string", "enum": ["development", "staging", "production", "dev", "prod", "stag", "stage"] },
+      "description": "Which environments to scaffold and wire: array, or comma-separated string on the CLI (--environments stage,prod). Model + base file always. Omit for all three.",
+      "default": ["dev", "stage", "prod"],
+      "items": {
+        "type": "string",
+        "enum": ["dev", "stage", "prod", "stag"]
+      },
       "x-prompt": {
         "message": "Which environments should ng-add scaffold and wire?",
         "type": "list",
         "multiselect": true,
         "items": [
-          { "value": "development", "label": "development — base file, no replacement" },
-          { "value": "staging", "label": "staging — staging file + configuration" },
-          { "value": "production", "label": "production — prod file + replacement" }
+          {
+            "value": "dev",
+            "label": "dev \u2014 base file, no replacement"
+          },
+          {
+            "value": "stage",
+            "label": "stage \u2014 staging file + configuration"
+          },
+          {
+            "value": "prod",
+            "label": "prod \u2014 prod file + replacement"
+          }
         ]
       }
     },
     "project": {
       "type": "string",
-      "description": "Angular CLI project name — only for multi-app workspaces. Defaults to the workspace default project.",
+      "description": "Angular CLI project name \u2014 only for multi-app workspaces. Defaults to the workspace default project.",
       "default": ""
     }
   },

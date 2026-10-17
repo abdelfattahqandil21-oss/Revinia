@@ -1,12 +1,7 @@
-import {
-  Rule,
-  SchematicContext,
-  SchematicsException,
-  Tree,
-} from '@angular-devkit/schematics';
+import { Rule, SchematicContext, SchematicsException, Tree } from '@angular-devkit/schematics';
 
 export interface NgAddOptions {
-  environments?: Array<'development' | 'staging' | 'production'> | string;
+  environments?: Array<'dev' | 'stage' | 'prod'> | string;
   project?: string;
 }
 
@@ -28,22 +23,29 @@ export interface AppEnvironment extends BaseEnvironment {
 }
 `;
 
-const ALL_ENVIRONMENTS = ['development', 'staging', 'production'] as const;
+const ALL_ENVIRONMENTS = ['dev', 'stage', 'prod'] as const;
 type EnvironmentName = (typeof ALL_ENVIRONMENTS)[number];
 
 /** Short aliases users actually type (`prod`, `dev`, `stag`). */
 const ENVIRONMENT_ALIASES: Record<string, EnvironmentName> = {
-  dev: 'development',
-  prod: 'production',
-  stag: 'staging',
-  stage: 'staging',
+  dev: 'dev',
+  prod: 'prod',
+  stag: 'stage',
+  stage: 'stage',
 };
 
 /** Output directory short names: builds/dev, builds/prod, builds/stag. */
 const OUTPUT_DIR: Record<EnvironmentName, string> = {
-  development: 'builds/dev',
-  staging: 'builds/stag',
-  production: 'builds/prod',
+  dev: 'builds/dev',
+  stage: 'builds/stag',
+  prod: 'builds/prod',
+};
+
+/** Maps an environment name to its Angular CLI configuration name. */
+const CONFIG_NAME: Record<EnvironmentName, string> = {
+  dev: 'development',
+  stage: 'staging',
+  prod: 'production',
 };
 
 const fileDefs = (sourceRoot: string, selected: readonly EnvironmentName[]): FileDef[] => {
@@ -63,7 +65,7 @@ const fileDefs = (sourceRoot: string, selected: readonly EnvironmentName[]): Fil
         `};\n`,
     },
   ];
-  if (selected.includes('staging')) {
+  if (selected.includes('stage')) {
     files.push({
       name: `${sourceRoot}/environments/environment.staging.ts`,
       content: (version: string) =>
@@ -76,7 +78,7 @@ const fileDefs = (sourceRoot: string, selected: readonly EnvironmentName[]): Fil
         `};\n`,
     });
   }
-  if (selected.includes('production')) {
+  if (selected.includes('prod')) {
     files.push({
       name: `${sourceRoot}/environments/environment.prod.ts`,
       content: (version: string) =>
@@ -130,13 +132,11 @@ export function ngAdd(options: NgAddOptions): Rule {
     if (unknown.length > 0) {
       throw new SchematicsException(
         `[rivinia/env] unknown environment(s): ${unknown.join(', ')}. ` +
-          `Choose from development (dev), staging (stag), production (prod).`,
+          `Choose from dev, stage (stag), prod.`,
       );
     }
     const selected: EnvironmentName[] =
-      cleaned.length > 0
-        ? ([...new Set(cleaned)] as EnvironmentName[])
-        : [...ALL_ENVIRONMENTS];
+      cleaned.length > 0 ? ([...new Set(cleaned)] as EnvironmentName[]) : [...ALL_ENVIRONMENTS];
     const configsSnapshot = (): string =>
       JSON.stringify(project.architect?.build?.configurations ?? null);
     const configsBefore = configsSnapshot();
@@ -152,13 +152,13 @@ export function ngAdd(options: NgAddOptions): Rule {
       created++;
     }
 
-    if (selected.includes('production')) {
+    if (selected.includes('prod')) {
       ensureReplacement(tree, angular, name, 'production', {
         replace: `${sourceRoot}/environments/environment.ts`,
         with: `${sourceRoot}/environments/environment.prod.ts`,
       });
     }
-    if (selected.includes('staging')) {
+    if (selected.includes('stage')) {
       ensureStaging(tree, angular, name, sourceRoot, context);
     }
     ensureOutputPaths(tree, angular, name, selected, context);
@@ -187,10 +187,14 @@ function readWorkspace(
   tree: Tree,
   context: SchematicContext,
   requested?: string,
-): { name: string; project: ProjectDef; angular: {
-  projects?: Record<string, ProjectDef>;
-  defaultProject?: string;
-} } | null {
+): {
+  name: string;
+  project: ProjectDef;
+  angular: {
+    projects?: Record<string, ProjectDef>;
+    defaultProject?: string;
+  };
+} | null {
   let angular: {
     projects?: Record<string, ProjectDef>;
     defaultProject?: string;
@@ -250,7 +254,9 @@ function getConfigurations(
   if (!project) throw new SchematicsException(`[rivinia/env] project '${name}' not found.`);
   project.architect ??= {};
   project.architect.build ??= {};
-  const build = project.architect.build as { configurations?: Record<string, Record<string, unknown>> };
+  const build = project.architect.build as {
+    configurations?: Record<string, Record<string, unknown>>;
+  };
   build.configurations ??= {};
   return build.configurations;
 }
@@ -297,7 +303,8 @@ function ensureOutputPaths(
   const configurations = getConfigurations(angular, name);
   let touched = false;
   for (const env of selected) {
-    const target = configurations[env];
+    const configName = CONFIG_NAME[env];
+    const target = configurations[configName];
     if (!target || 'outputPath' in target) continue;
     target['outputPath'] = OUTPUT_DIR[env];
     touched = true;

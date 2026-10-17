@@ -8,14 +8,14 @@ Typed application environments for Angular: dev/staging/prod file layout, a
 files and wires the build configurations. Zero runtime code — environments are
 build-time constants; this package ships types plus setup tooling only.
 
-- Version: **0.2.0**
+- Version: **0.3.0**
 - Requires: nothing at runtime (types only). Schematic runs under Angular CLI 22+.
 
 ## Install
 
 ```bash
 npm install @rivinia/env
-ng add @rivinia/env   # multi-select: development / staging / production
+ng add @rivinia/env   # multi-select: dev / stage / prod
 ```
 
 Interactive runs ask which environments to scaffold (checkbox, all checked by
@@ -23,7 +23,7 @@ default); non-interactive runs take all. From flags, comma-separate (short
 aliases work: `dev`, `prod`, `stag`):
 
 ```bash
-ng add @rivinia/env --environments staging,production
+ng add @rivinia/env --environments stage,prod
 ```
 
 Only the selection is scaffolded and wired (model + base file always — the
@@ -36,9 +36,9 @@ overwrite files or duplicate configuration.
 
 ```
 environment.model.ts   # AppEnvironment extends BaseEnvironment — extend it
-environment.ts         # development defaults (used as-is by `development`)
-environment.staging.ts # staging values (production: true)
-environment.prod.ts    # production values
+environment.ts         # dev defaults (used as-is by `dev`)
+environment.staging.ts # stage values (production: true)
+environment.prod.ts    # prod values
 ```
 
 and wires `angular.json`: `production` gains its replacement if missing, and a

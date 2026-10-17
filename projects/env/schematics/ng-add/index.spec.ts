@@ -40,10 +40,7 @@ function appTree(overrides?: {
     JSON.stringify(overrides?.packageJson ?? { name: 'demo', version: '1.2.3' }),
   );
   t.create('/.gitignore', '/dist\n');
-  t.create(
-    '/src/app/app.config.ts',
-    `export const appConfig = { providers: [] };\n`,
-  );
+  t.create('/src/app/app.config.ts', `export const appConfig = { providers: [] };\n`);
   for (const [path, content] of Object.entries(overrides?.existingFiles ?? {})) {
     t.create(path, content);
   }
@@ -57,7 +54,10 @@ async function run(options: object, base?: UnitTestTree) {
 
 function configurations(tree: UnitTestTree): Record<string, Record<string, unknown>> {
   const angular = JSON.parse(tree.readContent('/angular.json')) as {
-    projects: Record<string, { architect: { build: { configurations: Record<string, Record<string, unknown>> } } }>;
+    projects: Record<
+      string,
+      { architect: { build: { configurations: Record<string, Record<string, unknown>> } } }
+    >;
   };
   return angular.projects['demo'].architect.build.configurations;
 }
@@ -65,9 +65,7 @@ function configurations(tree: UnitTestTree): Record<string, Record<string, unkno
 describe('ng-add', () => {
   it('creates the four files with the app version inlined', async () => {
     const tree = await run({});
-    expect(tree.readContent('/src/environments/environment.model.ts')).toContain(
-      'AppEnvironment',
-    );
+    expect(tree.readContent('/src/environments/environment.model.ts')).toContain('AppEnvironment');
     expect(tree.readContent('/src/environments/environment.ts')).toContain(`version: '1.2.3'`);
     expect(tree.readContent('/src/environments/environment.staging.ts')).toContain(
       'production: true',
@@ -99,14 +97,17 @@ describe('ng-add', () => {
 
   it('never overwrites existing files but still wires missing config', async () => {
     const custom = `export const environment = { production: false, version: '9.9.9', apiUrl: 'x' };\n`;
-    const tree = await run({}, appTree({ existingFiles: { '/src/environments/environment.ts': custom } }));
+    const tree = await run(
+      {},
+      appTree({ existingFiles: { '/src/environments/environment.ts': custom } }),
+    );
     expect(tree.readContent('/src/environments/environment.ts')).toBe(custom);
     expect(tree.readContent('/src/environments/environment.prod.ts')).toContain(`version: '1.2.3'`);
     expect(configurations(tree)['production']['fileReplacements']).toHaveLength(1);
   });
 
   it('scaffolds only the selected environments (prod only)', async () => {
-    const tree = await run({ environments: ['production'] });
+    const tree = await run({ environments: ['prod'] });
     expect(tree.exists('/src/environments/environment.model.ts')).toBe(true);
     expect(tree.exists('/src/environments/environment.ts')).toBe(true);
     expect(tree.exists('/src/environments/environment.prod.ts')).toBe(true);
@@ -117,7 +118,7 @@ describe('ng-add', () => {
   });
 
   it('dev only: files without any wiring', async () => {
-    const tree = await run({ environments: ['development'] });
+    const tree = await run({ environments: ['dev'] });
     expect(tree.exists('/src/environments/environment.ts')).toBe(true);
     expect(tree.exists('/src/environments/environment.prod.ts')).toBe(false);
     const configs = configurations(tree);
@@ -146,12 +147,12 @@ describe('ng-add', () => {
     base.overwrite('/angular.json', JSON.stringify(angular, null, 2));
     const first = await run({}, base);
     const afterFirst = JSON.parse(first.readContent('/angular.json'));
-    expect(afterFirst.projects['demo'].architect.build.configurations['production']['outputPath']).toBe(
-      'dist/custom',
-    );
-    expect(afterFirst.projects['demo'].architect.build.configurations['staging']['outputPath']).toBe(
-      'builds/stag',
-    );
+    expect(
+      afterFirst.projects['demo'].architect.build.configurations['production']['outputPath'],
+    ).toBe('dist/custom');
+    expect(
+      afterFirst.projects['demo'].architect.build.configurations['staging']['outputPath'],
+    ).toBe('builds/stag');
     expect(first.readContent('/.gitignore')).toContain('/builds');
     const second = await run({}, first);
     const gitignore = second.readContent('/.gitignore');
@@ -159,7 +160,7 @@ describe('ng-add', () => {
   });
 
   it('accepts comma-separated strings (CLI flag form)', async () => {
-    const tree = await run({ environments: 'staging,production' });
+    const tree = await run({ environments: 'stage,prod' });
     expect(tree.exists('/src/environments/environment.staging.ts')).toBe(true);
     expect(tree.exists('/src/environments/environment.prod.ts')).toBe(true);
     expect(Object.keys(configurations(tree))).toContain('staging');

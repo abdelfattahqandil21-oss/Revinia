@@ -2,7 +2,7 @@
   "$schema": "../../../node_modules/@angular-devkit/schematics/collection-schema.json",
   "schematics": {
     "ng-add": {
-      "description": "Scaffold typed environment files and wire dev/staging/production configurations.",
+      "description": "Scaffold typed environment files and wire dev/stage/prod configurations.",
       "factory": "./ng-add/index.cjs#ngAdd",
       "schema": "./ng-add/schema.json"
     }

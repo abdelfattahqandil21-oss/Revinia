@@ -85,6 +85,34 @@ Packaging only — no source, API, styling or behavior change.
 and the documented `npm install @rivinia/select @rivinia/menu`. `tsc --noEmit
 --strict` against the packed artifact + registry Menu. NOT published.
 
+## env 0.3.0 (breaking: short environment names, unpublished)
+
+### @rivinia/env
+
+- **Breaking — environment names shortened.** `development`/`staging`/`production`
+  are no longer accepted; use `dev`/`stage`/`prod` (aliases `stag`/`stage` still
+  work). Migration: replace `--environments=development,staging,production` with
+  `--environments=dev,stage,prod`. The Angular CLI configuration names
+  (`development`, `staging`, `production`) are unchanged — only the schematic's
+  option values changed.
+- **Files unchanged:** `environment.staging.ts` / `environment.prod.ts` filenames
+  are kept for compatibility with existing projects.
+- **Tests:** updated to use short names; all pass.
+
+## env 0.3.0 (breaking: short environment names, unpublished)
+
+### @rivinia/env
+
+- **Breaking — environment names shortened.** `development`/`staging`/`production`
+  are no longer accepted as schematic option values; use `dev`/`stage`/`prod`
+  (aliases `stag`/`stage` still work). Migration: replace
+  `--environments=development,staging,production` with `--environments=dev,stage,prod`.
+  The Angular CLI configuration names (`development`, `staging`, `production`)
+  are unchanged — only the schematic's option values changed.
+- **Files unchanged:** `environment.staging.ts` / `environment.prod.ts` filenames
+  are kept for compatibility with existing projects.
+- **Tests:** 14 passing (updated to use short names).
+
 ## menu 0.3.1 (published as a single release; 0.2.0/0.3.0 were never on npm)
 
 Only `0.1.0` was ever published. Everything below ships together as `0.3.1`.
