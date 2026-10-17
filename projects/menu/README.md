@@ -250,11 +250,12 @@ yourself from `picked`, or drive it with a controller.
 
 ### `rvMenuItem` (directive)
 
-| Input      | Type              | Default | Required | Purpose                                                                                |
-| ---------- | ----------------- | ------- | -------- | -------------------------------------------------------------------------------------- |
-| `id`       | `string`          | —       | **yes**  | Identity. Also emitted in `picked`, and used for `data-rv-id`.                         |
-| `disabled` | `boolean`         | `false` | no       | Skipped by keyboard navigation, refused on click, `aria-disabled="true"`.              |
-| `checked`  | `boolean \| null` | `null`  | no       | `null` → `role="menuitem"`. `true/false` → `role="menuitemcheckbox"` + `aria-checked`. |
+| Input      | Type              | Default | Required | Purpose                                                                                                                                             |
+| ---------- | ----------------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`       | `string`          | —       | **yes**  | Identity. Also emitted in `picked`, and used for `data-rv-id`.                                                                                      |
+| `disabled` | `boolean`         | `false` | no       | Skipped by keyboard navigation, refused on click, `aria-disabled="true"`.                                                                           |
+| `checked`  | `boolean \| null` | `null`  | no       | `null` → `role="menuitem"`. `true/false` → `role="menuitemcheckbox"` + `aria-checked`.                                                              |
+| `label`    | `string \| null`  | `null`  | no       | Explicit typeahead label. When set, typeahead matches on this instead of the row's `textContent`. Defaults to `null` → falls back to `textContent`. |
 
 Items register on init, **stay in sync when `id` or `disabled` change**, and
 unregister on destroy — no manual bookkeeping, and `@for`-driven collections
@@ -570,8 +571,8 @@ Other limitations:
 - Outside scroll closes the menu rather than re-positioning it.
 - No `ControlValueAccessor` — wire forms yourself (e.g. `[value]` + a
   `(selectionChange)`-style handler on your own component).
-- Typeahead matches `textContent`, so an item's accessible name should match
-  its visible text.
+- Typeahead matches the item's `label` input when set, otherwise its
+  `textContent`. Keep an item's accessible name aligned with its visible text.
 - Very large lists (hundreds of items) are not virtualized.
 
 ## 20. SSR / hydration

@@ -38,6 +38,7 @@ let nextPanelId = 0;
   host: {
     '[attr.role]': 'computedRole()',
     '[attr.data-rv-id]': 'id()',
+    '[attr.data-rv-label]': 'label()',
     '[attr.tabindex]': 'tab()',
     '[attr.aria-disabled]': 'isDisabled()',
     '[attr.data-active]': 'active()',
@@ -57,6 +58,14 @@ export class RiviniaMenuItem {
    * so screen readers announce the state (the visual check alone is silent).
    */
   readonly checked = input<boolean | null>(null);
+  /**
+   * Optional explicit typeahead label. When set, typeahead matches on this
+   * instead of the row's `textContent` (which can include icons, badges or
+   * hints). Defaults to `null` → falls back to `textContent`. Mirrors
+   * `@rivinia/select`'s documented rule that an item's accessible name should
+   * match its visible text.
+   */
+  readonly label = input<string | null>(null);
 
   private readonly host = inject(ElementRef<HTMLElement>, { optional: true });
   private readonly menu = inject(RiviniaMenuComponent, { optional: true, skipSelf: true });
@@ -711,7 +720,7 @@ export class RiviniaMenuComponent {
     const rows = [...root.querySelectorAll('[data-rv-id]')]
       .map((el) => ({
         id: el.getAttribute('data-rv-id') ?? '',
-        text: (el.textContent ?? '').trim().toLocaleLowerCase(),
+        text: (el.getAttribute('data-rv-label') ?? el.textContent ?? '').trim().toLocaleLowerCase(),
       }))
       .filter((r) => enabled.has(r.id) && r.text.startsWith(buffer));
     if (rows.length === 0) return null;
