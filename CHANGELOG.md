@@ -3,6 +3,20 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
+## select 0.3.1 (hint field + typeahead unification, unpublished)
+
+### @rivinia/select
+
+- **New — `hint?: string` on `RiviniaSelectOption`.** Rendered right-aligned in
+  muted monospace (e.g. a keyboard shortcut). Typeahead matches on `label`
+  only, never on the hint.
+- **Typeahead unification:** Select already matched on `label`; Menu now matches
+  on `label` (with `textContent` fallback) via the new `label` input on
+  `rvMenuItem`. Both libraries now use the same rule: typeahead matches the
+  accessible label, not hint/icon text.
+- **Documented:** input naming difference (`select` vs `menu` controller inputs)
+  is intentional, not a rename.
+
 ## select 0.3.0 (independence from @rivinia/menu, unpublished)
 
 ### Breaking / behaviour changes
@@ -181,6 +195,17 @@ and the documented `npm install @rivinia/select @rivinia/menu`. `tsc --noEmit
 - **Files unchanged:** `environment.staging.ts` / `environment.prod.ts` filenames
   are kept for compatibility with existing projects.
 - **Tests:** 14 passing (updated to use short names).
+
+## menu 0.3.2 (typeahead label support, unpublished)
+
+### @rivinia/menu
+
+- **New — `label` input on `rvMenuItem`.** When set, typeahead matches on this
+  instead of the row's `textContent`. Defaults to `null` → falls back to
+  `textContent`. Fixes the inconsistency where typeahead matched hints/icons
+  text. Additive, non-breaking.
+- **Typeahead** now reads `data-rv-label` (set from the `label` input) with
+  `textContent` fallback.
 
 ## menu 0.3.1 (published as a single release; 0.2.0/0.3.0 were never on npm)
 
