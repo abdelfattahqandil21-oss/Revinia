@@ -1,8 +1,14 @@
 {
   "name": "@rivinia/menu",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Headless menu behavior for Angular: open state, keyboard navigation, item registry.",
-  "keywords": ["angular", "menu", "dropdown", "signals", "typescript"],
+  "keywords": [
+    "angular",
+    "menu",
+    "dropdown",
+    "signals",
+    "typescript"
+  ],
   "license": "MIT",
   "peerDependencies": {
     "@angular/core": "^22.0.0"

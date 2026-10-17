@@ -3,6 +3,33 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
+## menu 0.2.0 (accessibility audit, unpublished)
+
+### @rivinia/menu
+
+- **P0 — disabled items could be activated with Enter.** An item that became
+  disabled _after_ receiving focus stayed `activeId`, and `pickFocused()`
+  trusted it. Enter then emitted `picked` for a disabled row (measured: an
+  all-disabled menu emitted `picked=one`). `pickFocused()` now re-validates
+  against the live registry. Regression test verified by negative control.
+- **P0 — opening could strand focus on `<body>`.** The deferred-focus flag was
+  cleared before confirming the panel existed, so a pass that raced panel
+  insertion silently dropped focus forever. The flag now survives until the
+  panel is present, and measurement state is reset on every open so a second
+  render pass is guaranteed.
+- **P0 — outside pointer-down stole focus.** Closing on an outside click pulled
+  focus back to the trigger, fighting the browser and hijacking focus from what
+  the user actually clicked. Outside clicks now close without restoring focus;
+  Escape and Tab-close still do.
+- **P1 — the typeahead buffer survived a close**, so the next open started
+  mid-word. It is now per-open (reset in `doClose`).
+- **New:** `label` input (panel `aria-label`), stable per-instance panel `id`
+  with `aria-controls` on the trigger, `checked` items (`menuitemcheckbox` +
+  `aria-checked`), pure `computeMenuPosition` + rect types exported.
+- **Tests:** 23 unit tests, 33 Playwright scenarios (Chromium) against a real
+  Angular production fixture, axe-core clean. README rewritten against the
+  verified API.
+
 ## modal 0.5.1 (packaging fix, published 2026-10-16)
 
 ### @rivinia/modal

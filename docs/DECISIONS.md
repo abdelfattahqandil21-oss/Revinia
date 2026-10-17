@@ -506,3 +506,43 @@ Files in`public/i18n/{lang}.json`are served at`i18n/{lang}.json`, so the
   virtualization — roadmap, not publish blockers.
 - Verified: menu 19/19, select 13/13, modal 51/51 tests; headed flip/clip/
   no-stuck-layer/toast-in-modal runs, zero errors. NOT published.
+
+## 2026-10-16 — D36: `@rivinia/menu` production audit (P0 fixes + Playwright suite)
+
+- Context: APG audit of rv-menu. Verified gaps: outside click stole focus to trigger; trigger had no aria-controls (menu lacked stable id); empty/all-disabled menus never exercised (tested); RTL/flip aliases; scroll-close reflow path fixed; panel now names itself.
+- Decisions:
+  - outside pointer clicks do NOT restore focus (browser keeps natural target). Escape and Tab-close still restore.
+  - panel gets a stable unique `rv-menu-panel-N` id; trigger gets `aria-controls`. `label` input maps to panel `aria-label`. Tested cross-instance uniqueness.
+  - CSS is layered-flat (no `@layer`) by choice: reported-but-unverified layer-vs-consumer specificity caused a concrete regression risk. Override API is CSS vars (`--rv-menu-*`) plus documented classes and `data-*` hooks (active, flipped, disabled, placement).
+  - forced-colors left to host; `prefers-reduced-motion` zeroes the enter animation.
+- Playwright 1.64 Chromium + fixture (basic/dynamic/two/rtl/edge/styled). Headed verification landed during audit; suite runs on Chromium only (WebKit/firefox browsers cached — reported, not claimed). Axe-core audit lands the day after (browser 1248 tools); dependency declared.
+- Tests: 21 Vitest unit (menu) + 20-ish Playwright scenarios + position pure helper 8.
+
+## 2026-10-17 — D37: menu audit — real defects vs bad test expectations
+
+- Context: full APG/ARIA audit of `rv-menu` with a new Playwright suite
+  (Chromium fixture built from a real production Angular app).
+- Method note (kept, because it wasted a full cycle): most "failures" were
+  **my own test expectations**, not product bugs. The documented contract is
+  "opening focuses the first enabled item", and several tests wrongly assumed
+  an extra ArrowDown was needed to get there. Two infrastructure traps also
+  masqueraded as defects: `reuseExistingServer` served a stale bundle, and
+  key presses sent before the panel opened landed on the trigger.
+- Real defects found and fixed (each with a regression test):
+  1. `pickFocused()` trusted a stale `activeId`, so Enter activated an item
+     that had been disabled after receiving focus (negative control confirmed
+     the test catches it).
+  2. Deferred focus cleared its flag before the panel existed, stranding focus
+     on `<body>`; measurement state was only reset on the popover path.
+  3. Outside pointer-down restored focus to the trigger.
+  4. The typeahead buffer persisted across close/reopen.
+- Decisions: `label` is opt-in (no forced naming); panel id is a module
+  counter, stable per instance and safe for SSR because the panel only renders
+  client-side; `checked` renders `menuitemcheckbox` while plain rows stay
+  `menuitem` (single-select semantics unchanged); no `@layer` (cascade-layer
+  vs consumer-utility ordering is not something we could verify here).
+- Verified: 23 unit tests; 33/33 Playwright on Chromium; packed 0.2.0 tarball
+  inspected (exports/types/peers/files/FESM imports) and built in a clean
+  consumer app. Firefox 31/33 with two failures whose cause was not isolated
+  (manual Firefox run shows correct focus/active/top-layer); WebKit cannot
+  launch in this environment. NOT published.

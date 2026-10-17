@@ -91,6 +91,9 @@
     },
     {
       "path": "./projects/select/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/menu-e2e/tsconfig.app.json"
     }
   ]
 }

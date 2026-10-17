@@ -21,6 +21,9 @@ export interface MenuPick {
   readonly id: string;
 }
 
+/** Per-instance panel id counter (client-side; SSR renders closed). */
+let nextPanelId = 0;
+
 /**
  * Marker + behavior for one navigable row. Registers itself with the
  * enclosing menu on init (unregisters on destroy), exposes `data-rv-id`
@@ -126,6 +129,8 @@ export class RiviniaMenuItem {
         #panel
         class="rv-menu-panel"
         role="menu"
+        [attr.id]="panelId"
+        [attr.aria-label]="label()"
         [attr.popover]="topLayerSupported ? 'manual' : null"
         [attr.data-placement]="placement()"
         [attr.data-flipped]="flipped()"
@@ -310,6 +315,11 @@ export class RiviniaMenuComponent {
   readonly menu = input<RiviniaMenuController | null>(null);
   /** Panel placement relative to the trigger. @default 'bottom-start' */
   readonly placement = input<RiviniaMenuUiPlacement>('bottom-start');
+  /**
+   * Accessible name for the menu panel (`aria-label`). Menus should be named
+   * so screen-reader users know what they chose from; omitted → no label.
+   */
+  readonly label = input<string | null>(null);
 
   /** Fired when the user picks an enabled item (id). Closes first. */
   readonly picked = output<MenuPick>();
@@ -318,6 +328,11 @@ export class RiviniaMenuComponent {
 
   private readonly owned = new RiviniaMenu();
   private readonly self = inject(ElementRef<HTMLElement>);
+  /**
+   * Stable panel id for `aria-controls`. Instance-unique via module counter;
+   * SSR-safe because the panel (and its id) only renders client-side on open.
+   */
+  protected readonly panelId = `rv-menu-panel-${++nextPanelId}`;
   /** Deferred initial focus: set on open paths, consumed after render. */
   private focusPending = false;
   /**
@@ -355,7 +370,10 @@ export class RiviniaMenuComponent {
       if (!this.controller().open()) return;
       const onPointer = (event: PointerEvent) => {
         const host = this.self.nativeElement;
-        if (host && !host.contains(event.target as Node)) this.doClose(true);
+        // Close WITHOUT restoring focus: the pointer is heading somewhere the
+        // browser will focus naturally (or nowhere focusable). Stealing it
+        // back to the trigger would break that (APG + WCAG focus-visible).
+        if (host && !host.contains(event.target as Node)) this.doClose(false);
       };
       document.addEventListener('pointerdown', onPointer);
       // Coordinates go stale on outside scroll/resize — close instead of
@@ -376,13 +394,15 @@ export class RiviniaMenuComponent {
     });
     // APG menu-button: the trigger exposes haspopup + expanded. The trigger
     // element is consumer-owned, so the attributes sync onto its focusable
-    // child (or the wrapper itself as a fallback).
+    // child (or the wrapper itself as a fallback). aria-controls references
+    // the stable panel id (valid while hidden per ARIA).
     effect(() => {
       if (typeof document === 'undefined') return;
       const open = this.controller().open();
       const trigger = this.triggerEl();
       trigger?.setAttribute('aria-haspopup', 'menu');
       trigger?.setAttribute('aria-expanded', String(open));
+      trigger?.setAttribute('aria-controls', this.panelId);
     });
     afterRenderEffect(() => {
       if (this.controller().open() && !this.positioned()) this.showAndPosition();
@@ -442,13 +462,18 @@ export class RiviniaMenuComponent {
     }
   }
 
-  /** Mark an opening pass: deferred focus + (top-layer) re-measurement. */
+  /**
+   * Mark an opening pass: deferred focus + re-measurement.
+   *
+   * `positioned` is reset unconditionally (not only in top-layer mode) so the
+   * afterRenderEffect always gets a second pass: once with the panel measured,
+   * then again after `positioned` flips back to true — that second pass is what
+   * guarantees focus lands even if the first one raced the panel's insertion.
+   */
   private markOpening(): void {
     this.focusPending = true;
-    if (typeof window !== 'undefined' && this.topLayerSupported) {
-      this.flipped.set(false);
-      this.positioned.set(false);
-    }
+    this.flipped.set(false);
+    this.positioned.set(false);
   }
 
   protected onTriggerClick(): void {
@@ -539,6 +564,14 @@ export class RiviniaMenuComponent {
    * Labels are UI-owned (read from the DOM), so this lives in the component,
    * not the headless controller.
    */
+  private resetTypeahead(): void {
+    this.typeBuffer = '';
+    if (this.typeTimer !== null) {
+      clearTimeout(this.typeTimer);
+      this.typeTimer = null;
+    }
+  }
+
   private onTypeahead(event: KeyboardEvent): void {
     if (event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) return;
     const ch = event.key.toLocaleLowerCase();
@@ -583,6 +616,11 @@ export class RiviniaMenuComponent {
     const c = this.controller();
     const id = c.pickActive();
     if (id === null) return;
+    // Re-validate before emitting: the active item may have been disabled
+    // after it received focus (dynamic `[disabled]`), and Enter must never
+    // activate a disabled row (measured: all-disabled menu emitted `picked=one`).
+    const item = c.items().find((i) => i.id === id);
+    if (!item || item.disabled) return;
     this.doClose(false);
     this.picked.emit({ id });
   }
@@ -604,6 +642,9 @@ export class RiviniaMenuComponent {
 
   private doClose(restoreFocus: boolean): void {
     const was = this.controller().open();
+    // APG: the typeahead buffer is per-open. Keeping it across a close made
+    // the next open start mid-word (measured: `due` + `d` matched nothing).
+    this.resetTypeahead();
     this.controller().closeMenu();
     if (was) this.closed.emit();
     if (restoreFocus) this.focusTrigger();
@@ -618,12 +659,23 @@ export class RiviniaMenuComponent {
    * the panel, so later renders never steal it back.
    */
   private consumePendingFocus(): void {
-    const open = this.controller().open();
-    if (!open || !this.focusPending) return;
-    this.focusPending = false;
+    // `positioned` is read so the effect re-runs after measurement even when
+    // `open` never changes again — the second pass is the retry.
+    const ready = this.positioned();
+    if (!ready || !this.controller().open() || !this.focusPending) return;
     const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-menu-panel');
+    // Panel not committed yet: keep the flag so the next pass retries. Clearing
+    // it here is what used to strand focus on <body> (measured: Playwright
+    // "received: inactive" on every arrow assertion).
+    if (!root) return;
     const active = this.activeDocumentElement();
-    if (root && (!active || !root.contains(active))) this.focusActive();
+    if (active && root.contains(active)) {
+      this.focusPending = false;
+      return;
+    }
+    // No enabled item to focus (empty/all-disabled menu): done, nothing to retry.
+    this.focusPending = false;
+    this.focusActive();
   }
 
   private focusActive(): void {

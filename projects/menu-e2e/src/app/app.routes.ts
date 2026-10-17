@@ -1,0 +1,17 @@
+import { Routes } from '@angular/router';
+import { BasicPage } from './pages/basic';
+import { DynamicPage } from './pages/dynamic';
+import { EdgePage } from './pages/edge';
+import { RtlPage } from './pages/rtl';
+import { StyledPage } from './pages/styled';
+import { TwoPage } from './pages/two';
+
+export const routes: Routes = [
+  { path: '', pathMatch: 'full', redirectTo: 'basic' },
+  { path: 'basic', component: BasicPage },
+  { path: 'dynamic', component: DynamicPage },
+  { path: 'two', component: TwoPage },
+  { path: 'rtl', component: RtlPage },
+  { path: 'edge', component: EdgePage },
+  { path: 'styled', component: StyledPage },
+];

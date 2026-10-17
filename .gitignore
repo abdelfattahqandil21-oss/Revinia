@@ -48,3 +48,7 @@ Thumbs.db
 
 # Per-environment build outputs (see @rivinia/env)
 /builds
+
+# Playwright
+playwright-report/
+test-results/
