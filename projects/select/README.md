@@ -7,8 +7,8 @@ Headless select behavior for Angular 22+. Option registry, accent-insensitive
 search filter, and single/multi value — no DOM, no styling. Rendering lives in
 `@rivinia/select/ui` (built on `@rivinia/menu/ui`) or your own UI.
 
-- Version: **0.1.0**
-- Requires: **Angular `^22.0.0`**, `@rivinia/menu` (UI entry only), `tslib`
+- Version: **0.1.1**
+- Requires: **Angular `^22.0.0`**, `@rivinia/menu` `^0.1.0 || ^0.2.0 || ^0.3.0` (UI entry only), `tslib`
 
 ## Install
 

@@ -3,6 +3,32 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
+## select 0.1.1 (install-blocker patch, unpublished)
+
+Packaging only — no source, API, styling or behavior change.
+
+### @rivinia/select
+
+- **Fix — `npm install` failed against any Menu newer than 0.1.x.** The peer
+  range was `@rivinia/menu: ^0.1.0`, and in `0.x` semver `^0.1.0` means
+  `>=0.1.0 <0.2.0`. With `@rivinia/menu@0.3.1` published, a plain
+  `npm install @rivinia/select @rivinia/menu` terminated with `ERESOLVE`:
+  `Could not resolve dependency: peer @rivinia/menu@"^0.1.0" from
+@rivinia/select@0.1.0`. The range is now
+  `"^0.1.0 || ^0.2.0 || ^0.3.0"`.
+- **The range is widened, not loosened.** Every Menu version it accepts was
+  type-checked against the published Select 0.1.0 types: `0.1.0` and `0.3.1`
+  both compile clean. `^0.4.0` is deliberately excluded — no Menu 0.4.x exists
+  or has been tested. This is **not** a breaking change for consumers: it only
+  accepts versions that already worked.
+
+### Verified
+
+`npm pack` inspected (8 files, no specs). Clean consumer installs without
+`--legacy-peer-deps` for Select 0.1.1 + Menu 0.1.0, Select 0.1.1 + Menu 0.3.1,
+and the documented `npm install @rivinia/select @rivinia/menu`. `tsc --noEmit
+--strict` against the packed artifact + registry Menu. NOT published.
+
 ## menu 0.3.1 (published as a single release; 0.2.0/0.3.0 were never on npm)
 
 Only `0.1.0` was ever published. Everything below ships together as `0.3.1`.
