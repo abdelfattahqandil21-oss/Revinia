@@ -4,6 +4,7 @@ import { BasicPage } from './pages/basic';
 import { DynamicPage } from './pages/dynamic';
 import { EdgePage } from './pages/edge';
 import { RtlPage } from './pages/rtl';
+import { SelectPage } from './pages/select';
 import { StyledPage } from './pages/styled';
 import { TwoPage } from './pages/two';
 
@@ -15,5 +16,6 @@ export const routes: Routes = [
   { path: 'two', component: TwoPage },
   { path: 'rtl', component: RtlPage },
   { path: 'edge', component: EdgePage },
+  { path: 'select', component: SelectPage },
   { path: 'styled', component: StyledPage },
 ];

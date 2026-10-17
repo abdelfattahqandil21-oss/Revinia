@@ -3,6 +3,88 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
+## select 0.2.0 (independent audit & hardening, unpublished)
+
+### Breaking / behaviour changes
+
+- **Theming tokens renamed and isolated.** Select no longer reads
+  `--rv-menu-*`. It now consumes its own `--rv-select-*` namespace
+  (`--rv-select-bg`, `-fg`, `-border`, `-muted`, `-radius`, `-shadow`,
+  `-width`). Existing selectors that themed Select through `--rv-menu-*`
+  must move to `--rv-select-*` — see README -> Migration.
+- **Forced dark mode removed.** The `@media (prefers-color-scheme: dark)`
+  block that overrode consumer values on the trigger is gone. Tokens are now
+  `var(--rv-select-*, fallback)` values, so an ancestor theme always wins.
+- **Select no longer changes Menu appearance.** Tokens are bridged onto the
+  panel element only, scoped under `.rv-select-panel`, so a `--rv-select-*`
+  value never reaches a neighbouring `rv-menu` and vice versa.
+
+### Added
+
+- **Accessible-name inputs on `rv-select`:** `label` (visible caption + the
+  trigger's `aria-labelledby`), `ariaLabel` (explicit fallback name),
+  `menuLabel` (the opened panel's `aria-label`, falling back to the caption),
+  `searchLabel` (filter box name, default 'Search options').
+- **`clear()` on `rv-select`** — clears the selection and emits
+  `selectionChange` with the same payload shape as a pick (`null` single,
+  `[]` multi).
+- **Honest semantics.** Comments and docs no longer claim a "combobox
+  pattern": the component is a filterable menu (`role="menu"` with
+  `menuitem` options) because focus physically moves into the option list.
+  See README -> Accessibility.
+
+### Fixed
+
+- `toggle()` on a single-mode controller is now a documented no-op that
+  returns `false` instead of writing to `values` while `isSelected` reads
+  `value` (the two signals could disagree).
+- `clear()` at the headless level is documented as silent; the component
+  layer is what announces it.
+- `--rv-select-width` is the only token Select owned before; it is now
+  joined by bg/fg/border/muted/radius/shadow.
+
+### Tests
+
+- 13 (existing) + 15 (new) = **28 passing** unit tests in Chromium/jsdom:
+  keyboard (ArrowDown/Up skip disabled, Enter, Escape, Tab into the list,
+  typing isolation), accessible names, `clear()`, single-mode `toggle()`
+  rejection.
+- Playwright: new `e2e/select/select.spec.ts` covering single, multi, search,
+  outside click, theme isolation (measured CSS values) and accessible names.
+- Menu regression: 32/32 still green.
+
+### Verified
+
+Unit 28/28, menu 32/32, builds 2 entry points, `check:docs` 0 failures,
+Prettier clean. NOT published. WebKit, Tailwind, real screen readers and
+forced-colors remain unverified.
+
+## select 0.1.1 (install-blocker patch, unpublished)
+
+Packaging only — no source, API, styling or behavior change.
+
+### @rivinia/select
+
+- **Fix — `npm install` failed against any Menu newer than 0.1.x.** The peer
+  range was `@rivinia/menu: ^0.1.0`, and in `0.x` semver `^0.1.0` means
+  `>=0.1.0 <0.2.0`. With `@rivinia/menu@0.3.1` published, a plain
+  `npm install @rivinia/select @rivinia/menu` terminated with `ERESOLVE`:
+  `Could not resolve dependency: peer @rivinia/menu@"^0.1.0" from
+@rivinia/select@0.1.0`. The range is now
+  `"^0.1.0 || ^0.2.0 || ^0.3.0"`.
+- **The range is widened, not loosened.** Every Menu version it accepts was
+  type-checked against the published Select 0.1.0 types: `0.1.0` and `0.3.1`
+  both compile clean. `^0.4.0` is deliberately excluded — no Menu 0.4.x exists
+  or has been tested. This is **not** a breaking change for consumers: it only
+  accepts versions that already worked.
+
+### Verified
+
+`npm pack` inspected (8 files, no specs). Clean consumer installs without
+`--legacy-peer-deps` for Select 0.1.1 + Menu 0.1.0, Select 0.1.1 + Menu 0.3.1,
+and the documented `npm install @rivinia/select @rivinia/menu`. `tsc --noEmit
+--strict` against the packed artifact + registry Menu. NOT published.
+
 ## menu 0.3.1 (published as a single release; 0.2.0/0.3.0 were never on npm)
 
 Only `0.1.0` was ever published. Everything below ships together as `0.3.1`.

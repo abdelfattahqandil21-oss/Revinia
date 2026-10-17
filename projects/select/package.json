@@ -1,12 +1,19 @@
 {
   "name": "@rivinia/select",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Headless select behavior for Angular: options, search filter, single/multi value.",
-  "keywords": ["angular", "select", "combobox", "multiselect", "signals", "typescript"],
+  "keywords": [
+    "angular",
+    "select",
+    "combobox",
+    "multiselect",
+    "signals",
+    "typescript"
+  ],
   "license": "MIT",
   "peerDependencies": {
     "@angular/core": "^22.0.0",
-    "@rivinia/menu": "^0.1.0"
+    "@rivinia/menu": "^0.1.0 || ^0.2.0 || ^0.3.0"
   },
   "sideEffects": false
 }
