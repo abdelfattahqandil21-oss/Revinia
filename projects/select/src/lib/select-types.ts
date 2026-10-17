@@ -7,6 +7,13 @@ export interface RiviniaSelectOption {
   readonly label: string;
   /** Shown but not selectable. @default false */
   readonly disabled?: boolean;
+  /**
+   * Optional hint rendered right-aligned in muted monospace (e.g. a keyboard
+   * shortcut). Typeahead matches on `label` only, never on the hint —
+   * consistent with `@rivinia/menu`'s documented rule that an item's
+   * accessible name should match its visible text.
+   */
+  readonly hint?: string;
 }
 
 /** `'single'` picks one value and closes; `'multi'` toggles and stays open. */

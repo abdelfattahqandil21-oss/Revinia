@@ -103,6 +103,9 @@ export type SelectChange = string | readonly string[] | null;
               [checked]="controller().mode === 'multi' ? controller().isSelected(o.id) : null"
             >
               <span class="rv-select-label">{{ o.label }}</span>
+              @if (o.hint) {
+                <span class="rv-select-hint">{{ o.hint }}</span>
+              }
               @if (controller().isSelected(o.id)) {
                 <svg
                   class="rv-select-check"
@@ -214,6 +217,14 @@ export type SelectChange = string | readonly string[] | null;
         height: 16px;
         flex: none;
         margin-inline-start: auto;
+      }
+      .rv-select-hint {
+        flex: none;
+        margin-inline-start: 8px;
+        font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+        font-size: 11px;
+        color: var(--rv-select-muted, #555555);
+        opacity: 0.85;
       }
       .rv-select-empty {
         padding: 12px 10px;

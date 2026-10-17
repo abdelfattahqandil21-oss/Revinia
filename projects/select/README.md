@@ -131,28 +131,34 @@ adapter component.
 
 ## API
 
-| Export                   | Kind  | Purpose                                                                                                                                                                              |
-| ------------------------ | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `RiviniaSelect`          | class | `options/query/filtered/value/values/selectedLabels` signals + `registerOption/unregisterOption/syncOptions/setQuery/select/toggle/clear/isSelected`                                 |
-| types                    | types | `RiviniaSelectController` (structural UI contract), `RiviniaSelectOption`, `RiviniaSelectMode`                                                                                       |
-| `RiviniaSelectComponent` | ui    | `rv-select`: `select/mode/options/searchable/placeholder/searchPlaceholder/emptyLabel/placement/label/ariaLabel/menuLabel/searchLabel` + `selectionChange/opened/closed` + `clear()` |
+> **Naming note:** the headless controller input is named `select` on
+> `rv-select` (mirroring `menu` on `rv-menu`). Both are controller inputs —
+> the names differ only because each component's noun differs. This is
+> intentional; renaming would be a breaking change for no functional gain.
+
+| Export                   | Kind      | Purpose                                                                                                                                                                              |
+| ------------------------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `RiviniaSelect`          | class     | `options/query/filtered/value/values/selectedLabels` signals + `registerOption/unregisterOption/syncOptions/setQuery/select/toggle/clear/isSelected`                                 |
+| `RiviniaSelectOption`    | interface | `{ id, label, disabled?, hint? }`. `hint` renders right-aligned in muted monospace (e.g. a keyboard shortcut). Typeahead matches on `label` only.                                    |
+| types                    | types     | `RiviniaSelectController` (structural UI contract), `RiviniaSelectOption`, `RiviniaSelectMode`                                                                                       |
+| `RiviniaSelectComponent` | ui        | `rv-select`: `select/mode/options/searchable/placeholder/searchPlaceholder/emptyLabel/placement/label/ariaLabel/menuLabel/searchLabel` + `selectionChange/opened/closed` + `clear()` |
 
 ### Inputs
 
-| Input               | Type                              | Default            | Notes                                                                       |
-| ------------------- | --------------------------------- | ------------------ | --------------------------------------------------------------------------- |
-| `options`           | `readonly RiviniaSelectOption[]`  | `[]`               | Re-synced into the controller on change.                                    |
-| `select`            | `RiviniaSelectController \| null` | `null`             | External controller. Omitted: the component owns one matching `mode()`.     |
-| `mode`              | `'single' \| 'multi'`             | `'single'`         | Fixed at construction when the component owns the controller.               |
-| `searchable`        | `boolean`                         | `false`            | Shows the filter box.                                                       |
-| `placeholder`       | `string`                          | `'Select…'`        | Trigger text with no selection.                                             |
-| `searchPlaceholder` | `string`                          | `'Search…'`        | Filter box hint.                                                            |
-| `emptyLabel`        | `string`                          | `'No results'`     | Shown when the filter matches nothing.                                      |
-| `placement`         | `RiviniaMenuUiPlacement`          | `'bottom-start'`   | Panel placement relative to the trigger.                                    |
-| `label`             | `string \| null`                  | `null`             | Visible caption; becomes the trigger's accessible name (`aria-labelledby`). |
-| `ariaLabel`         | `string \| null`                  | `null`             | Explicit accessible name for the trigger; used when there is no caption.    |
-| `menuLabel`         | `string \| null`                  | `null`             | Accessible name for the opened panel (`aria-label`); falls back to `label`. |
-| `searchLabel`       | `string`                          | `'Search options'` | Accessible name for the filter box.                                         |
+| Input               | Type                              | Default            | Notes                                                                                     |
+| ------------------- | --------------------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
+| `options`           | `readonly RiviniaSelectOption[]`  | `[]`               | Re-synced into the controller on change. Each option may carry an optional `hint` string. |
+| `select`            | `RiviniaSelectController \| null` | `null`             | External controller. Omitted: the component owns one matching `mode()`.                   |
+| `mode`              | `'single' \| 'multi'`             | `'single'`         | Fixed at construction when the component owns the controller.                             |
+| `searchable`        | `boolean`                         | `false`            | Shows the filter box.                                                                     |
+| `placeholder`       | `string`                          | `'Select…'`        | Trigger text with no selection.                                                           |
+| `searchPlaceholder` | `string`                          | `'Search…'`        | Filter box hint.                                                                          |
+| `emptyLabel`        | `string`                          | `'No results'`     | Shown when the filter matches nothing.                                                    |
+| `placement`         | `RiviniaMenuUiPlacement`          | `'bottom-start'`   | Panel placement relative to the trigger.                                                  |
+| `label`             | `string \| null`                  | `null`             | Visible caption; becomes the trigger's accessible name (`aria-labelledby`).               |
+| `ariaLabel`         | `string \| null`                  | `null`             | Explicit accessible name for the trigger; used when there is no caption.                  |
+| `menuLabel`         | `string \| null`                  | `null`             | Accessible name for the opened panel (`aria-label`); falls back to `label`.               |
+| `searchLabel`       | `string`                          | `'Search options'` | Accessible name for the filter box.                                                       |
 
 ### Outputs
 
