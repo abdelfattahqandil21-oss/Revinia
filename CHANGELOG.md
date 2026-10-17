@@ -3,6 +3,75 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
+## select 0.3.0 (independence from @rivinia/menu, unpublished)
+
+### Breaking / behaviour changes
+
+- **`@rivinia/select` no longer depends on `@rivinia/menu`.** The UI entry
+  point previously imported `RiviniaMenu`, `RiviniaMenuComponent` and
+  `RiviniaMenuItem` from `@rivinia/menu`. These are now vendored into Select's
+  own package (same source, compiled into Select's FESM). Consumers no longer
+  need to install `@rivinia/menu` to use `rv-select`. The headless
+  `RiviniaSelect` controller never depended on Menu.
+- **`@rivinia/menu` removed from `peerDependencies`.** Only `@angular/core`
+  remains.
+- **Version bump to 0.3.0** (breaking architecture change).
+
+### Added
+
+- Vendored menu primitives: `RiviniaMenu` controller, `RiviniaMenuItem`
+  directive, `RiviniaMenuComponent`, `computeMenuPosition`, and the placement
+  types — all compiled into `@rivinia/select/ui`'s own FESM. No runtime
+  import of `@rivinia/menu` remains (verified by FESM grep).
+
+### Verified
+
+- Build succeeds **without** `@rivinia/menu` installed or built.
+- FESM imports: only `@angular/core` (core) and `@angular/core` + `@rivinia/select`
+  (ui). Zero `@rivinia/menu` references.
+- Unit tests: 28/28 passing. Menu regression: 32/32 passing.
+- Consumer install + strict TS compile without `@rivinia/menu`: exit 0.
+- Playwright: 6/6 select specs in Chromium and Firefox.
+
+### Known limitations (unchanged)
+
+WebKit, Tailwind, real screen readers, forced-colors remain unverified.
+CVA and combobox deferred.
+
+## select 0.3.0 (independence from @rivinia/menu, unpublished)
+
+### Breaking / behaviour changes
+
+- **`@rivinia/select` no longer depends on `@rivinia/menu`.** The UI entry
+  point previously imported `RiviniaMenu`, `RiviniaMenuComponent` and
+  `RiviniaMenuItem` from `@rivinia/menu`. These are now vendored into Select's
+  own package (same source, compiled into Select's FESM). Consumers no longer
+  need to install `@rivinia/menu` to use `rv-select`. The headless
+  `RiviniaSelect` controller never depended on Menu.
+- **`@rivinia/menu` removed from `peerDependencies`.** Only `@angular/core`
+  remains.
+
+### Added
+
+- Vendored menu primitives: `RiviniaMenu` controller, `RiviniaMenuItem`
+  directive, `RiviniaMenuComponent`, `computeMenuPosition`, and the placement
+  types — all compiled into `@rivinia/select/ui`'s own FESM. No runtime
+  import of `@rivinia/menu` remains (verified by FESM grep).
+
+### Verified
+
+- Build succeeds **without** `@rivinia/menu` installed or built.
+- FESM imports: only `@angular/core` (core) and `@angular/core` + `@rivinia/select`
+  (ui). Zero `@rivinia/menu` references in FESM and `.d.ts`.
+- Unit tests: 28/28 passing. Menu regression: 32/32 passing.
+- Consumer install + strict TS compile without `@rivinia/menu`: exit 0.
+- Playwright: 6/6 select specs in Chromium and Firefox.
+
+### Known limitations (unchanged)
+
+WebKit, Tailwind, real screen readers, forced-colors remain unverified.
+CVA and combobox deferred.
+
 ## select 0.2.0 (independent audit & hardening, unpublished)
 
 ### Breaking / behaviour changes

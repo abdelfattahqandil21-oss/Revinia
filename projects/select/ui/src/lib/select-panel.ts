@@ -10,9 +10,9 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { RiviniaMenu } from '@rivinia/menu';
-import type { RiviniaMenuUiPlacement } from '@rivinia/menu/ui';
-import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
+import { RiviniaMenu } from './rivinia-menu';
+import type { RiviniaMenuUiPlacement } from './ui-menu-types';
+import { RiviniaMenuComponent, RiviniaMenuItem } from './menu-panel';
 import { RiviniaSelect } from '@rivinia/select';
 import type { RiviniaSelectController, RiviniaSelectOption } from '@rivinia/select';
 
@@ -131,7 +131,7 @@ export type SelectChange = string | readonly string[] | null;
       /*
        * Theming boundary.
        *
-       * The opened panel is rendered by @rivinia/menu, whose surface paints
+       * The opened panel is rendered by the vendored menu primitives, whose surface paints
        * itself from the --rv-menu-* tokens. Mapping select's own namespace
        * onto those tokens HERE, on the panel element only, is what keeps the
        * two components themeable independently: a --rv-select-* value
@@ -254,7 +254,7 @@ export class RiviniaSelectComponent {
   /**
    * Explicit accessible name for the trigger, used when there is no visible
    * caption. Ignored when `label` is set (a visible caption is the better
-   * name). Named `ariaLabel`, mirroring `@rivinia/menu`'s `menuLabel`, so it
+   * name). Named `ariaLabel`, mirroring the vendored menu's `menuLabel`, so it
    * cannot be confused with an option's `label`.
    */
   readonly ariaLabel = input<string | null>(null);

@@ -17,7 +17,7 @@ import type { Signal } from '@angular/core';
 /**
  * Structural slice of RiviniaSelect a UI layer drives. The full controller
  * satisfies it from any module realm (same input-composition rule as
- * `@rivinia/menu`'s controller interface).
+ * the vendored menu controller interface).
  */
 export interface RiviniaSelectController {
   readonly mode: RiviniaSelectMode;

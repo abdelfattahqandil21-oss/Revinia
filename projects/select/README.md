@@ -4,17 +4,17 @@
 [![license](https://img.shields.io/npm/l/@rivinia/select.svg)](https://www.npmjs.com/package/@rivinia/select)
 
 Headless select behavior for Angular 22+: option registry, accent-insensitive
-search filter, and single/multi value — no DOM, no styling. Rendering lives in
-`@rivinia/select/ui` (built on `@rivinia/menu/ui`) or your own UI.
+search filter, and single/multi value — no DOM, no styling. Rendering lives in `@rivinia/select/ui` or your own UI. Select is **independently
+installable** — it does not require `@rivinia/menu`.
 
-- Version: **0.2.0** (0.1.0/0.1.1 published on npm)
-- Requires: **Angular `^22.0.0`**, `@rivinia/menu` `^0.1.0 || ^0.2.0 || ^0.3.0` (UI entry only), `tslib`
+- Version: **0.3.0** (0.1.0/0.1.1 published on npm)
+- Requires: **Angular `^22.0.0`**, `tslib`. No dependency on `@rivinia/menu`.
 - Side effects: **none** (`sideEffects: false`).
 
 ## Install
 
 ```bash
-npm install @rivinia/select @rivinia/menu
+npm install @rivinia/select
 ```
 
 This works without `--legacy-peer-deps` once Select is `0.1.1` or newer.
@@ -164,8 +164,8 @@ adapter component.
 
 ## Theming and CSS tokens
 
-`rv-select` owns its own `--rv-select-*` namespace. The opened panel is rendered
-by `@rivinia/menu`, so Select bridges its tokens onto the panel element
+`rv-select` owns its own `--rv-select-*` namespace. The opened panel reuses Select's own vendored menu primitives, so Select
+bridges its tokens onto the panel element
 **only** — a consumer's `--rv-menu-*` theme for a real `rv-menu` can no longer
 bleed into a `rv-select`, and vice versa.
 
