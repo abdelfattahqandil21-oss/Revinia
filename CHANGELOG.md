@@ -3,55 +3,60 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
-## menu 0.3.1 (focus-contract fixes, unpublished)
+## menu 0.3.1 (published as a single release; 0.2.0/0.3.0 were never on npm)
 
-### @rivinia/menu
+Only `0.1.0` was ever published. Everything below ships together as `0.3.1`.
 
-- **Fix — Tab / Shift+Tab lost focus to `<body>`.** The panel is still mounted
-  while the key is handled, so the browser's own tab step re-entered the panel
-  and focus was dropped when it unmounted (reproduced on Chromium and Firefox;
-  Shift+Tab landed nowhere). Focus now steps explicitly to the stop
-  before/after the trigger. Documented in the focus contract.
-- **Tests:** new `focus-contract` Playwright suite (Tab, Shift+Tab, no-trap,
-  live disabled activation, re-enabling, outside-pointer focus preservation on
-  both focusable and non-focusable targets); the theming spec now asserts exact
-  token values instead of accepting either the override or the default.
-  98/98 across Chromium and Firefox. NOT published.
+### Breaking / behaviour changes
 
-## menu 0.3.0 (developer-experience API, unpublished)
+- **`label` → `menuLabel` on `rv-menu`.** The input names the _menu_ (it maps to
+  the panel's `aria-label`), while `RiviniaMenuItemData.label` names a _row_;
+  the old name was an ambiguity trap. Migrate: `label="…"` / `[label]="…"` →
+  `menuLabel="…"` / `[menuLabel]="…"`.
+- **Forced dark mode removed.** The library shipped `prefers-color-scheme: dark`
+  defaults, which also over-rode consumer tokens in dark mode. Design tokens are
+  now `var(--token, fallback)` values, so your theme always wins. Opt in yourself
+  (README → Styling).
+- **Tab / Shift+Tab step focus explicitly.** Focus now moves to the tab stop
+  before/after the _trigger_. Previously the browser re-entered the still-mounted
+  panel and focus was then lost to `<body>` (reproduced on Chromium and Firefox).
 
-### @rivinia/menu
+### Added
 
-- **New — declarative `[items]`.** `<rv-menu [items]="rows" (picked)="...">`
-  renders, registers and manages the rows itself; no controller, no
-  `register()`, no item markup. Rows use the **same** `rvMenuItem` directive
-  as the composable path, so keyboard/focus/click handling is not duplicated.
-  `[items]` plus projected `rvMenuItem` throws instead of silently ignoring
-  one of them.
-- **New — `panelClass` and `itemClass`** so consumers can style the generated
-  panel/rows without fighting the library's cascade.
-- **New — camelCase projection attributes** (`rvMenuTrigger`, `rvMenuPanel`)
-  alongside the existing dashed ones.
-- **New — `RiviniaMenuItemData`** type exported from both entry points.
-- **Fix — items registering after the panel opened could not be activated.**
-  With `[items]` the rows render only once `open()` is true, so `openMenu()`
-  ran against an empty registry: no highlight, and ArrowDown could not move
-  (measured: `activeId` stayed `null`). The first enabled row registered after
-  an open now claims the initial activation.
-- **Fix — `[disabled]` changes at runtime never reached the registry**
-  (registration happened once in `ngOnInit`). Renames are de-registered.
-- **Fix — a static `disabled` attribute on a native button landed on the DOM
-  property instead of the directive input**, so the row reported
+- **Declarative `[items]`.** `<rv-menu [items]="rows" (picked)="…">` renders,
+  registers and manages the rows itself — no controller, no `register()`, no item
+  markup. Rows use the **same** `rvMenuItem` directive as the composable path, so
+  keyboard, focus and click handling are not implemented twice. Combining
+  `[items]` with projected `rvMenuItem` throws by design.
+- **`panelClass` / `itemClass`** to style the generated panel and rows.
+- **camelCase projection attributes** (`rvMenuTrigger`, `rvMenuPanel`) alongside
+  the dashed ones.
+- **`RiviniaMenuItemData`** (from both entry points) and **`MenuPick`**
+  (from `@rivinia/menu/ui`) types.
+
+### Fixed
+
+- **Items registering after the panel opened could not be activated.** With
+  `[items]` rows render only once `open()` is true, so `openMenu()` ran against an
+  empty registry: no highlight and ArrowDown could not move (`activeId` stayed
+  `null`). The first enabled row registered after an open now claims the initial
+  activation.
+- **`[disabled]` changes at runtime never reached the registry** (registration
+  ran once in `ngOnInit`); renames are now de-registered.
+- **A static `disabled` attribute on a native `<button rvMenuItem>`** landed on
+  the DOM property instead of the directive input, so the row reported
   `aria-disabled="false"`.
-- **Change — `label` → `menuLabel`** on `rv-menu` (name clash with the per-item
-  `label`). Unpublished, so no released break.
-- **Change — design tokens are `var(--token, fallback)` values and the forced
-  dark-mode defaults are gone.** The panel used to declare the defaults on
-  itself, which out-ranked any value a consumer set on an ancestor (measured:
-  a wrapper's `--rv-menu-radius` was ignored). Dark mode is now opt-in.
-- **Tests:** 32 unit tests (incl. a new consumer-level suite driving only the
-  public API) and 41 Playwright scenarios against a production consumer
-  fixture. Packed 0.3.0 tarball builds in a clean consumer app.
+- **Consumer CSS variables set on an ancestor were ignored** because the panel
+  declared the defaults on itself. Tokens are now fallbacks (README →
+  ViewEncapsulation).
+
+### Verified
+
+32 unit tests, 49 Playwright scenarios on Chromium and 49 on Firefox (all green),
+`npm pack` inspected (6 files, no specs), and the packed `0.3.1` tarball
+installed into a clean consumer app where both README examples compile verbatim
+and were exercised in a real browser. **Tailwind, WebKit and real screen-reader
+testing remain unverified.** NOT published.
 
 ## menu 0.2.0 (accessibility audit, unpublished)
 

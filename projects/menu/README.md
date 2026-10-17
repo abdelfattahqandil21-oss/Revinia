@@ -14,7 +14,7 @@ pattern. Two entry points:
 Both share one implementation of the navigation algorithm — the UI does not
 reimplement it.
 
-- Version: **0.3.0** (0.1.0 published; see [Migration](#migration-notes))
+- Version: **0.3.1** (0.1.0 is the only published version; see [Migration](#23-migration-notes))
 - Requires: **Angular `^22.0.0`**, `tslib`
 
 ---
@@ -46,7 +46,7 @@ disabled items, full ARIA wiring, SSR (renders closed).
 
 **Not supported:** submenus, nested menus, menubar/menitem roles, radio
 groups (use `checked` + `menuitemcheckbox`), option groups, virtualization of
-very large lists, form binding (no `ControlValueAccessor` in 0.2.0).
+very large lists, form binding (no `ControlValueAccessor` as of 0.3.1).
 
 ## 4. Installation
 
@@ -59,31 +59,32 @@ point you need.
 
 ## 5. Quick start — data-driven
 
-The smallest complete example. **No controller, no registration, no item
-markup.** You pass data; the component renders, registers and manages the rows.
+The smallest complete example: pass data, the component renders, registers and
+manages the rows. **No controller, no `register()`, no item markup.**
 
 ```ts
 import { Component } from '@angular/core';
-import type { RiviniaMenuItemData } from '@rivinia/menu';
 import { RiviniaMenuComponent } from '@rivinia/menu/ui';
+import type { MenuPick, RiviniaMenuItemData } from '@rivinia/menu/ui';
 
 @Component({
   imports: [RiviniaMenuComponent],
   template: `
-    <rv-menu [items]="accountItems" menuLabel="Account actions" (picked)="open($event.id)">
+    <rv-menu [items]="accountItems" menuLabel="Account actions" (picked)="onAction($event)">
       <button rvMenuTrigger>Account</button>
     </rv-menu>
   `,
 })
 export class AccountMenu {
-  readonly accountItems: readonly RiviniaMenuItemData[] = [
+  readonly accountItems: RiviniaMenuItemData[] = [
     { id: 'profile', label: 'Profile' },
-    { id: 'billing', label: 'Billing' },
-    { id: 'archived', label: 'Archived', disabled: true },
+    { id: 'settings', label: 'Settings' },
+    { id: 'logout', label: 'Sign out', disabled: true },
   ];
 
-  open(id: string) {
-    // your routing / api call here
+  // `picked` emits MenuPick — an object, NOT a bare string.
+  onAction(pick: MenuPick) {
+    console.log(pick.id); // 'profile'
   }
 }
 ```
@@ -95,54 +96,105 @@ the panel comes from `items`.
 Projection attributes accept both spellings: `rvMenuTrigger` /
 `rv-menu-trigger`, `rvMenuPanel` / `rv-menu-panel`.
 
+### The `picked` payload
+
+`(picked)` emits `MenuPick`, which is `{ readonly id: string }` — it is **not** a
+bare string. Read `pick.id`:
+
+```ts
+onAction(pick: MenuPick) {
+  this.navigate(pick.id);
+}
+```
+
+`opened` and `closed` emit `void` and tell you when the panel opened/closed for
+any reason (selection, Escape, outside click, Tab).
+
 ## 5b. Composable — custom markup
 
 When you need headers, dividers, icons or per-row markup, project your own
-rows instead. Items still register themselves.
+rows. Items still register themselves.
 
-```html
-<rv-menu placement="bottom-start" menuLabel="Account actions" (picked)="go($event)">
-  <button rvMenuTrigger>
-    <img src="avatar.png" alt="" />
-    Account
-  </button>
+```ts
+import { Component } from '@angular/core';
+import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
+import type { MenuPick } from '@rivinia/menu/ui';
 
-  <div rvMenuPanel>
-    <div class="account-header">Sophie</div>
+@Component({
+  imports: [RiviniaMenuComponent, RiviniaMenuItem],
+  template: `
+    <rv-menu
+      [placement]="'bottom-start'"
+      menuLabel="Account actions"
+      panelClass="account-menu"
+      (picked)="onAction($event)"
+    >
+      <button rvMenuTrigger class="account-trigger">
+        <img src="avatar.png" alt="" />
+        Account
+      </button>
 
-    <button rvMenuItem id="profile">Profile</button>
-    <button rvMenuItem id="logout" disabled>Sign out</button>
-  </div>
-</rv-menu>
+      <div rvMenuPanel>
+        <div class="account-header">Sophie</div>
+
+        <button rvMenuItem id="profile">Profile</button>
+        <button rvMenuItem id="logout" disabled>Sign out</button>
+      </div>
+    </rv-menu>
+  `,
+})
+export class AccountMenu {
+  onAction(pick: MenuPick) {
+    console.log(pick.id); // 'profile' | 'logout'
+  }
+}
 ```
 
-Anything that is not an `rvMenuItem` (the header above) is skipped by keyboard
-navigation automatically.
+Anything that is not an `rvMenuItem` (the header above) renders but is skipped
+by keyboard navigation automatically. `panelClass`/`itemClass` apply to the
+generated panel and rows — in the composable pattern your rows are your markup,
+so style them there.
 
-**`items` and projected `rvMenuItem` are mutually exclusive.** Supplying both
-throws — a silently-ignored list is a data-loss bug, not a convenience.
+> **`[items]` and projected `rvMenuItem` cannot be combined.** Supplying both
+> throws at runtime (`rv-menu: [items] cannot be combined with projected
+rvMenuItem children`). This is deliberate: silently ignoring one of them is a
+> data-loss bug. Pick one of the two patterns per menu.
 
 ## 6. Imports
 
-```ts
-// Ready-made UI (what most apps need)
-import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
+The package has exactly two entry points. Which one you import from is not a
+style choice — some symbols exist in only one of them.
 
-// Headless controller (own UI, own state)
+| Symbol                                                              | `@rivinia/menu` | `@rivinia/menu/ui` |
+| ------------------------------------------------------------------- | :-------------: | :----------------: |
+| `RiviniaMenuComponent` (`<rv-menu>`)                                |        —        |         ✅         |
+| `RiviniaMenuItem` directive (`[rvMenuItem]`)                        |        —        |         ✅         |
+| `MenuPick` (`picked` payload)                                       |        —        |         ✅         |
+| `computeMenuPosition`, `MENU_GAP`, rect types                       |        —        |         ✅         |
+| `RiviniaMenuItemData` (`[items]` row shape)                         |       ✅        |   ✅ (re-export)   |
+| `RiviniaMenu` (headless controller)                                 |       ✅        |         —          |
+| `RiviniaMenuController`, `RiviniaMenuFocus`, `RiviniaMenuPlacement` |       ✅        |         —          |
+| `RiviniaMenuItem` (headless registry item)                          |       ✅        |         —          |
+
+```ts
+// Ready-made UI — the only place components, directives and MenuPick live.
+import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
+import type { MenuPick } from '@rivinia/menu/ui';
+
+// Headless controller + its types (advanced / custom UI).
 import { RiviniaMenu } from '@rivinia/menu';
 import type {
   RiviniaMenuController,
   RiviniaMenuFocus,
-  RiviniaMenuItem as RiviniaMenuItemData,
+  RiviniaMenuItemData,
   RiviniaMenuPlacement,
 } from '@rivinia/menu';
-
-// Positioning helper (pure, testable)
-import { computeMenuPosition, MENU_GAP } from '@rivinia/menu/ui';
 ```
 
-Headless consumers who never import `@rivinia/menu/ui` load **zero** UI code
-or CSS (core FESM contains no component markup).
+Importing `RiviniaMenuComponent` or `MenuPick` from `@rivinia/menu` is a
+compile error, not a fallback — the headless entry point deliberately ships no
+components. Headless consumers who never import `@rivinia/menu/ui` load **zero**
+UI code or CSS (the core FESM contains no component markup).
 
 ## 7. Basic example with a controlled controller
 
@@ -427,6 +479,25 @@ Implications:
 - Shadow DOM is **not** used: it would make consumer styling, inherited theme
   variables, Tailwind utilities and top-layer overlays harder, for no gain.
 
+### What this means for YOUR component styles
+
+Angular's default `Emulated` encapsulation rewrites your selectors to require an
+attribute that only elements in _your_ template carry. The panel and the rows
+the library renders are **not** in your template, so:
+
+| You write                                                       | Does it reach the panel?                           |
+| --------------------------------------------------------------- | -------------------------------------------------- |
+| `.my-scope { --rv-menu-radius: 5px; }` in your component styles | ✅ **Yes** — custom properties inherit             |
+| `.my-panel { background: red; }` in your component styles       | ❌ No — selector needs your content attribute      |
+| `.rv-menu-panel { … }` in a **global** stylesheet               | ✅ Yes — that is the escape hatch                  |
+| `panelClass="my-panel"`                                         | ✅ Yes — the class is applied to the panel element |
+
+So the supported paths for reaching the panel are **CSS custom properties**,
+`panelClass`, or a global stylesheet. Component-scoped _selectors_ cannot reach
+it; component-scoped _variables_ do. This was verified in Chromium and Firefox
+(a wrapper with `--rv-menu-radius` and `--rv-menu-bg` in component styles was
+measured on the rendered panel).
+
 ## 17. RTL and positioning
 
 `placement` values are **logical** (`start`/`end`), never physical:
@@ -442,9 +513,10 @@ Direction is read from `document.dir` first, then the computed style.
 
 - The panel renders in the **top layer** (native `popover="manual"` +
   measured `fixed` coordinates) when the browser supports it, so it escapes
-  `overflow: hidden` ancestors and stacking contexts. Verified in Chromium
-  (Playwright); Firefox/WebKit are wired in `playwright.config.ts` but their
-  runs are not part of the recorded evidence yet.
+  `overflow: hidden` ancestors and stacking contexts. Verified in Chromium and
+  Firefox (Playwright). **WebKit is not verified** — it could not be launched in
+  the test environment (missing system libraries), so treat WebKit positioning
+  as untested.
 - If the preferred vertical side overflows and the other side fits, the panel
   **flips** and sets `data-flipped="true"`.
 - It is then **clamped** so it always stays inside the viewport, keeping an
@@ -564,60 +636,74 @@ The default theme uses backgrounds and shadows. Supply your own
 
 ## 23. Migration notes
 
-### 0.1.0 → 0.2.0
+### 0.1.0 → 0.3.1
 
-No API was removed. Additions: `label` input, panel `id` + trigger
-`aria-controls`, `check`ed items (`menuitemcheckbox`), top-layer positioning
-with auto-flip.
+`0.2.0` and `0.3.0` were never published — `0.1.0` is the only released
+version, so migrate straight from it.
 
-**One behavior change worth knowing:**
+**Additions:** `[items]` declarative API, `panelClass`, `itemClass`, camelCase
+projection attributes (`rvMenuTrigger`, `rvMenuPanel`), `menuLabel`, panel
+`id` + trigger `aria-controls`, `checked` items (`menuitemcheckbox`),
+top-layer positioning with auto-flip.
 
+**Breaking / behaviour changes:**
+
+- **`label` → `menuLabel`** on `rv-menu`. It names the _menu_ (it maps to the
+  panel's `aria-label`), while `label` on `RiviniaMenuItemData` names a _row_.
+  ```diff
+  -<rv-menu label="Account actions">
+  +<rv-menu menuLabel="Account actions">
+  ```
+- **Dark mode is no longer forced.** The shipped `prefers-color-scheme: dark`
+  defaults also over-rode consumer tokens in dark mode. Tokens are now
+  `var(--token, fallback)` values, so your theme always wins; opt into dark mode
+  yourself (see [Styling](#13-styling-and-css-variables)).
+  ```css
+  @media (prefers-color-scheme: dark) {
+    .my-menu {
+      --rv-menu-bg: #161616;
+      --rv-menu-fg: #f2f2f2;
+    }
+  }
+  ```
 - **Outside pointer-down no longer restores focus to the trigger.** In 0.1.0
-  clicking anywhere outside pulled focus back to the trigger, which fought the
-  browser's natural behavior and could steal focus from what the user actually
-  clicked. Now focus stays where the browser puts it. If your app relied on the
-  old behavior (e.g. you expected focus on the trigger after a stray click),
-  restore it explicitly in your own outside handler.
+  clicking outside pulled focus back, which fought the browser and could steal
+  focus from what the user actually clicked. If your app relied on that, restore
+  it explicitly in your own outside handler.
+- **Tab / Shift+Tab step focus explicitly** to the stop before/after the
+  _trigger_. Previously the browser re-entered the still-mounted panel and focus
+  was then lost to `<body>` (reproduced on Chromium and Firefox).
 
-Also note: `aria-controls` and the panel id only exist while the menu can be
-opened; do not hard-code the `rv-menu-panel-N` id.
+**Bug fixes that may change observed behaviour:**
 
-### 0.2.0 → 0.3.0
-
-Additions: `[items]` declarative API, `panelClass`, `itemClass`, camelCase
-projection attributes (`rvMenuTrigger`, `rvMenuPanel`).
-
-**Changes to be aware of:**
-
-- **`label` renamed to `menuLabel`.** It names the _menu_, while `label` on
-  `RiviniaMenuItemData` names a _row_; the old name was an ambiguity trap.
-  Update `[label]`/`label` → `[menuLabel]`/`menuLabel`.
-- **Dark mode is no longer forced.** The library shipped
-  `prefers-color-scheme: dark` defaults, which also overrode consumer tokens in
-  dark mode. Defaults are now plain `var(--token, fallback)` values, so your
-  theme always wins; opt into dark mode yourself (see
-  [Styling](#13-styling-and-css-variables).
-- Design tokens are read as fallbacks rather than declared, so a token set on
-  an ancestor now actually reaches the panel (previously the panel's own
-  default declaration out-ranked it).
-- A static `disabled` attribute on a native `<button rvMenuItem>` is now
-  honoured (it previously landed on the DOM property instead of the input).
-
-### 0.3.0 → 0.3.1 (unpublished, on this branch)
-
-- **Tab / Shift+Tab now step focus explicitly** instead of relying on the
-  browser's own tab step. Previously the browser re-entered the still-mounted
-  panel and focus was then lost to `<body>` when it unmounted (reproduced on
-  Chromium and Firefox). Behaviour you should notice: focus lands on the stop
-  before/after the **trigger**, which is the element a user would reach anyway
-  — but if you relied on focus landing exactly where the browser put it before,
-  verify it. No API change.
+- A disabled item can no longer be activated with Enter, including when it was
+  disabled _after_ receiving focus.
+- Opening can no longer strand focus on `<body>`.
+- The typeahead buffer resets per open instead of surviving a close/reopen.
+- A static `disabled` attribute on `<button rvMenuItem>` is now honoured.
+- CSS variables set on an ancestor now reach the panel.
 
 ### 0.3.1 → next (planned)
 
 Nothing yet.
 
-## 24. Links
+## 24. Known verification gaps
+
+State plainly what has **not** been proven:
+
+- **Tailwind** — no Tailwind project exists in the test suite. Utility-class
+  behavior is a reasoned expectation, not a measured result.
+- **WebKit** — the suite cannot launch WebKit here (missing
+  `libWPEWebKit-2.0`, `libbacktrace`, `libjxl.so.0.8`, `libavif.so.16`).
+  Fix with `npx playwright install-deps webkit`. Chromium and Firefox are green.
+- **Screen readers** — only automated axe-core checks were run. Manual testing
+  with NVDA/JAWS/VoiceOver is still required; automated checks are necessary,
+  not sufficient.
+- **Forced colors / high contrast** — the default theme uses backgrounds and
+  shadows, so supply your own `--rv-menu-*` values or a `@media
+(forced-colors: active)` block.
+
+## 25. Links
 
 - Package: https://www.npmjs.com/package/@rivinia/menu
 - Repository: https://github.com/abdelfattahqandil21-oss/Revinia
