@@ -1,64 +1,72 @@
-# ProofCore
+# `@rivinia/proof-core`
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.0.
+Internal architecture proof for a headless Angular store and an independent
+optional UI entry point. This package is not a published consumer library;
+use its examples to understand the workspace experiment, not as a release
+support promise.
 
-## Code scaffolding
+## Public API
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+The primary entry point exports:
 
-```bash
-ng generate component component-name
+- `ProofStore`: root-scoped signal store with `count()`, `increment(by?)`,
+  `decrement(by?)`, and `reset()`.
+- `provideProofCore(config?)`: optionally sets the initial count. The default
+  is `0`.
+- `injectProofStore()`: shorthand for `inject(ProofStore)`.
+- `ProofConfig`: `{ initialCount?: number }`.
+
+The secondary entry point `@rivinia/proof-core/ui` exports `ProofBadge`. It is
+presentational and takes a required numeric `count` input; it does not inject
+or import the store.
+
+## Use the store in an Angular app
+
+Register the optional initial value at bootstrap:
+
+```ts
+// app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideProofCore } from '@rivinia/proof-core';
+
+export const appConfig: ApplicationConfig = {
+  providers: [provideProofCore({ initialCount: 3 })],
+};
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Inject the store where it is needed. The public count signal is readonly;
+change it through the store methods:
 
-```bash
-ng generate --help
+```ts
+import { Component, inject } from '@angular/core';
+import { ProofStore } from '@rivinia/proof-core';
+import { ProofBadge } from '@rivinia/proof-core/ui';
+
+@Component({
+  standalone: true,
+  imports: [ProofBadge],
+  template: `
+    <button type="button" (click)="store.increment()">Add one</button>
+    <button type="button" (click)="store.reset()">Reset</button>
+    <rv-proof-badge [count]="store.count()">Items</rv-proof-badge>
+  `,
+})
+export class CounterComponent {
+  readonly store = inject(ProofStore);
+}
 ```
 
-## Building
+`ProofBadge` is optional: a consumer can display `store.count()` directly, or
+provide any other numeric value to `[count]`.
 
-To build the library, run:
+## Develop in this workspace
 
-```bash
-ng build proof-core
-```
-
-This command will compile your project, and the build artifacts will be placed in the `dist/` directory.
-
-### Publishing the Library
-
-Once the project is built, you can publish your library by following these steps:
-
-1. Navigate to the `dist` directory:
-
-   ```bash
-   cd dist/proof-core
-   ```
-
-2. Run the `npm publish` command to publish your library to the npm registry:
-   ```bash
-   npm publish
-   ```
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+From the repository root:
 
 ```bash
-ng test
+pnpm exec ng build proof-core
+pnpm exec ng test proof-core --watch=false
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+`ng build proof-core` builds the primary and UI entry points. This is an
+architecture experiment, not a publish or `npm publish` workflow.
