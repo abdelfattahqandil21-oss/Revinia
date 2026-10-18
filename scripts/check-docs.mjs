@@ -2,7 +2,7 @@
  * pnpm check:docs — plain node, zero dependencies.
  *
  * Fails when a package README (or RECIPES) mentions an export that is absent
- * from that package's public API (`src/public-api.ts`):
+ * from that package's public entry points (`src/public-api.ts`):
  *  1. API-table first-column identifiers must be exported.
  *  2. CamelCase `code` tokens in prose must be exported or allowlisted
  *     (generic terms + Angular symbols live in ALLOWLIST below).
@@ -11,14 +11,22 @@
  * Without --strict-prose, rule 2 reports warnings only (exit 0);
  * API-table mismatches always fail.
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const STRICT_PROSE = process.argv.includes('--strict-prose');
 
-const PACKAGES = ['http', 'toast', 'modal', 'i18n', 'env'];
+const PROJECTS = join(ROOT, 'projects');
+const PACKAGES = readdirSync(PROJECTS, { withFileTypes: true })
+  .filter(
+    (entry) =>
+      entry.isDirectory() &&
+      existsSync(join(PROJECTS, entry.name, 'README.md')) &&
+      existsSync(join(PROJECTS, entry.name, 'src', 'public-api.ts')),
+  )
+  .map((entry) => entry.name);
 
 // Generic terms + Angular/Test symbols that are never Rivinia exports.
 const ALLOWLIST = new Set([
@@ -44,10 +52,14 @@ const ALLOWLIST = new Set([
   'RxJS',
   'Jasmine',
   'Karma',
+  'Search',
+  'Status',
   // Angular symbols commonly referenced in prose/recipes:
   'ApplicationConfig',
   'ApplicationRef',
   'TemplateRef',
+  'ViewChild',
+  'Injector',
   'ElementRef',
   'EmbeddedViewRef',
   'EnvironmentInjector',
@@ -67,8 +79,13 @@ const ALLOWLIST = new Set([
   'ErrorHandler',
   'NgComponentOutlet',
   'Observable',
+  'ControlValueAccessor',
+  'FormValueControl',
   // Angular's own provider fns referenced in our docs:
   'provideHttpClient',
+  // Cross-package UI/provider references in integration guides:
+  'RiviniaToastList',
+  'provideRiviniaToast',
   'Promise',
   'HttpRequest',
   // Generic type names used in prose (type params / TS builtins):
@@ -79,28 +96,39 @@ const ALLOWLIST = new Set([
 ]);
 
 function collectExports(pkg) {
-  const apiPath = join(ROOT, 'projects', pkg, 'src', 'public-api.ts');
-  const names = new Set();
-  if (!existsSync(apiPath)) return names;
-  const src = readFileSync(apiPath, 'utf8');
-  for (const m of src.matchAll(/export\s+(?:type\s+)?\{([^}]*)\}\s*(?:from\s*['"][^'"]+['"])?/g)) {
-    for (const part of m[1].split(',')) {
-      const name = part
-        .replace(/^\s*type\s+/, '')
-        .trim()
-        .split(/\s+as\s+/)
-        .pop()
-        .trim();
-      if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) names.add(name);
+  const projectPath = join(PROJECTS, pkg);
+  const apiPaths = [join(projectPath, 'src', 'public-api.ts')];
+  for (const entry of readdirSync(projectPath, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      apiPaths.push(join(projectPath, entry.name, 'src', 'public-api.ts'));
     }
   }
-  for (const m of src.matchAll(
-    /export\s+(?:declare\s+)?(?:type|interface|class|function|const|enum)\s+([A-Za-z_$][A-Za-z0-9_$]*)/g,
-  )) {
-    names.add(m[1]);
-  }
-  for (const m of src.matchAll(/export\s+\*\s*(?:as\s+([A-Za-z_$][A-Za-z0-9_$]*))?\s*from/g)) {
-    if (m[1]) names.add(m[1]);
+
+  const names = new Set();
+  for (const apiPath of apiPaths) {
+    if (!existsSync(apiPath)) continue;
+    const src = readFileSync(apiPath, 'utf8');
+    for (const m of src.matchAll(
+      /export\s+(?:type\s+)?\{([^}]*)\}\s*(?:from\s*['"][^'"]+['"])?/g,
+    )) {
+      for (const part of m[1].split(',')) {
+        const name = part
+          .replace(/^\s*type\s+/, '')
+          .trim()
+          .split(/\s+as\s+/)
+          .pop()
+          .trim();
+        if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) names.add(name);
+      }
+    }
+    for (const m of src.matchAll(
+      /export\s+(?:declare\s+)?(?:type|interface|class|function|const|enum)\s+([A-Za-z_$][A-Za-z0-9_$]*)/g,
+    )) {
+      names.add(m[1]);
+    }
+    for (const m of src.matchAll(/export\s+\*\s*(?:as\s+([A-Za-z_$][A-Za-z0-9_$]*))?\s*from/g)) {
+      if (m[1]) names.add(m[1]);
+    }
   }
   return names;
 }

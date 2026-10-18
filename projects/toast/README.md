@@ -3,136 +3,262 @@
 [![npm version](https://img.shields.io/npm/v/@rivinia/toast.svg)](https://www.npmjs.com/package/@rivinia/toast)
 [![license](https://img.shields.io/npm/l/@rivinia/toast.svg)](https://www.npmjs.com/package/@rivinia/toast)
 
-Headless toast queue for Angular 22+. Signals, pause-on-hover timers, actions,
-dedupe, overflow policies — zero DOM, zero styles, zero router dependency.
-A future `@rivinia/toast/ui` entry point will render this state; Core never
-imports UI.
+An Angular signal-based toast queue with timers, actions, deduplication, and
+overflow handling. Core is headless; an optional standalone UI is available at
+`@rivinia/toast/ui`.
 
-- Version: **0.4.0**
-- Requires: **Angular `^22.0.0`**, `tslib`
+- Package version: **0.4.2**
+- Peer dependency: **`@angular/core` `^22.0.0`**
+- No `tslib`, router, or HTTP peer dependency.
 
-## Install
+## Install and configure
 
 ```bash
 npm install @rivinia/toast
-ng add @rivinia/toast   # wires provideRiviniaToast() into app.config.ts
+ng add @rivinia/toast
 ```
 
+`ng add` adds `provideRiviniaToast()` to a standalone app's `app.config.ts`; it
+does not add the optional UI component. You can also configure the service
+manually:
+
 ```ts
-// app.config.ts
+// src/app/app.config.ts
+import type { ApplicationConfig } from '@angular/core';
 import { provideRiviniaToast } from '@rivinia/toast';
 
-providers: [provideRiviniaToast({ duration: 5000, maxVisible: 5 })];
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRiviniaToast({
+      duration: 5000,
+      durations: { error: 8000 },
+      maxVisible: 5,
+      overflow: 'dismiss-oldest',
+    }),
+  ],
+};
 ```
 
-## Quick start
+All provider fields are optional. Defaults are 5000 ms, five active toasts,
+an unbounded queue, and `dismiss-oldest` overflow. `ng add` also accepts
+`--duration` and `--max-visible`.
+
+## Use with the optional UI
+
+The UI is a separate secondary entry point; import its component explicitly.
+This standalone example keeps the injected manager in a class field (injection
+must not be called from the template):
 
 ```ts
-export class Checkout {
-  private toast = injectRiviniaToast();
-
-  pay() {
-    const id = this.toast.show({ message: 'Payment sent', kind: 'success' });
-    // id: number | null (null = rejected by the 'reject' overflow policy)
-  }
-
-  saving() {
-    // Same key updates in place instead of stacking duplicates:
-    this.toast.show({ message: 'Saving…', dedupeKey: 'save' });
-    this.toast.show({ message: 'Saved', kind: 'success', dedupeKey: 'save' });
-  }
-}
-```
-
-```html
-<!-- your outlet (or the future @rivinia/toast/ui): -->
-@for (t of toast.active(); track t.id) {
-<div [attr.data-kind]="t.kind">{{ resolveToastText(t.message) }}</div>
-}
-```
-
-## API
-
-| Export                         | Kind         | Purpose                                                                                                                          |
-| ------------------------------ | ------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| `provideRiviniaToast(config?)` | provider     | `{ duration?=5000, durations?, maxVisible?=5, maxQueue?=∞, overflow?='dismiss-oldest' }`                                         |
-| `RiviniaToast`                 | `@Service()` | `show/dismiss/dismissAll/update/pause/resume/runAction`, `active` + `queue` signals                                              |
-| `injectRiviniaToast()`         | function     | shorthand for `inject(RiviniaToast)`                                                                                             |
-| `resolveToastText(msg)`        | util         | reads `string \| Signal<string>` (reactive re-translation without i18n coupling)                                                 |
-| `clampDuration(v, fallback)`   | util         | normalizes durations (`0`/negative/`NaN`/infinite = persistent)                                                                  |
-| types                          | types        | `Toast`, `ToastKind`, `ToastMessage`, `ToastAction`, `ToastOptions`, `ToastChanges`, `ToastOverflowPolicy`, `RiviniaToastConfig` |
-
-`show()` returns the stable id, or `null` under `'reject'` (or a full finite
-queue). `dismiss/update/pause/resume/runAction` return `false` for unknown ids
-(and repeated dismissal) instead of throwing. `duration: 0` = persistent.
-`pause()` suspends only running timers (persistent toasts can never pause, so
-hover-leave cannot dismiss them); `resume()` on anything unpaused is a no-op;
-each toast exposes its `paused` flag for progress UI.
-Timers start at queue **promotion**, never while queued. Per-toast options
-always beat globals; a kind change re-resolves the per-kind default unless the
-toast carries an explicit duration. Overflow eviction prefers timed,
-actionless toasts — persistent errors with actions are last resort.
-
-## Recipes (app-owned, deliberately not in the library)
-
-```ts
-import { filter } from 'rxjs';
-import { NavigationStart } from '@angular/router';
-
-// Clear timed toasts on navigation (BRT behavior, 3 lines, no library peer needed):
-router.events
-  .pipe(filter((e) => e instanceof NavigationStart))
-  .subscribe(() => toast.active().forEach((t) => t.duration > 0 && toast.dismiss(t.id)));
-
-// Backend-shaped errors stay in your error mapper, then:
-toast.show({
-  message: 'Order failed',
-  kind: 'error',
-  action: {
-    label: 'Retry',
-    onPress: () => retry(),
-  },
-}); // dismisses after press unless dismissAfterPress: false
-```
-
-Future UI renders inside `role="region" aria-live="polite"`, pauses on
-hover **and** keyboard focus (WCAG 2.2.1 timing control), and offers a labelled
-dismiss button — and now it exists:
-
-## Ready-made UI (`@rivinia/toast/ui`)
-
-Optional secondary entry point. Zero new runtime dependencies, no design
-system. Headless consumers never load it (proven: core FESM has zero UI
-markers).
-
-```ts
+// src/app/notifications.component.ts
+import { Component } from '@angular/core';
+import { injectRiviniaToast } from '@rivinia/toast';
 import { RiviniaToastList } from '@rivinia/toast/ui';
+
+@Component({
+  selector: 'app-notifications',
+  standalone: true,
+  imports: [RiviniaToastList],
+  templateUrl: './notifications.component.html',
+})
+export class NotificationsComponent {
+  readonly toast = injectRiviniaToast();
+
+  save(): void {
+    this.toast.show({
+      message: 'Changes saved',
+      kind: 'success',
+      dedupeKey: 'save',
+    });
+  }
+
+  saveWithRetry(retry: () => void): void {
+    this.toast.show({
+      message: 'Could not save',
+      kind: 'error',
+      duration: 0,
+      action: { label: 'Retry', onPress: retry },
+    });
+  }
+}
 ```
 
 ```html
-<!-- Managed: signals, hover-pause, actions, X button, exit animation -->
-<rv-toast-list [manager]="injectRiviniaToast()" [position]="'bottom-end'" />
-
-<!-- Presentational: you own the snapshots (no manager needed) -->
-<rv-toast-list [toasts]="items" (dismissed)="remove($event)" (actionPressed)="act($event)" />
+<!-- src/app/notifications.component.html -->
+<button type="button" (click)="save()">Save</button>
+<rv-toast-list [manager]="toast" position="bottom-end" />
 ```
 
-Positions (user-picked, RTL-aware): `top/bottom × start/center/end`
-(default `bottom-end`, sonner-compatible). `richColors` swaps the kind rail
-for full-bleed kind colors. Items are `role="status"` (`assertive` for
-errors); stack order is `active()` order; hover/focus pauses via
-`pause()/resume()`; throwing actions propagate to your `ErrorHandler`
-(never swallowed). Dismissed rows play a 150 ms exit from their last
-snapshot on the browser (SSR drops them — renders never hang). When both
-`manager` and `toasts` are given, the manager wins: the UI never races Core.
+The standalone list renders the manager's `active()` signal, pauses timed
+notifications on hover and keyboard focus, runs actions, and provides a
+dismiss button by default. Its defaults are `position="bottom-end"`,
+`animation="slide"`, `richColors=false`, and `showCloseButton=true`.
+`position` supports `top`/`bottom` × `start`/`center`/`end` (logical start/end
+work in RTL); `animation` supports `slide`, `fade`, and `none`. Errors use an
+assertive live region; other kinds use polite announcements.
 
-## Testing your app code
+For snapshot-driven UIs, provide the snapshots and handle the emitted IDs
+yourself:
 
 ```ts
-vi.useFakeTimers();
-toast.show({ message: 'x' });
-vi.advanceTimersByTime(5000);
-expect(toast.active()).toEqual([]);
+// src/app/toast-snapshots.component.ts
+import { Component } from '@angular/core';
+import type { Toast } from '@rivinia/toast';
+import { RiviniaToastList } from '@rivinia/toast/ui';
+
+@Component({
+  selector: 'app-toast-snapshots',
+  standalone: true,
+  imports: [RiviniaToastList],
+  templateUrl: './toast-snapshots.component.html',
+})
+export class ToastSnapshotsComponent {
+  items: readonly Toast[] = [
+    {
+      id: 1,
+      kind: 'info',
+      message: 'A background task is ready',
+      duration: 0,
+      remaining: 0,
+      paused: false,
+      action: { label: 'Open', onPress: () => console.log('Open task') },
+    },
+  ];
+
+  remove(id: number): void {
+    this.items = this.items.filter((item) => item.id !== id);
+  }
+
+  run(id: number): void {
+    const item = this.items.find((candidate) => candidate.id === id);
+    if (!item?.action) return;
+    item.action.onPress();
+    if (item.action.dismissAfterPress ?? true) this.remove(id);
+  }
+}
+```
+
+```html
+<!-- src/app/toast-snapshots.component.html -->
+<rv-toast-list [toasts]="items" (dismissed)="remove($event)" (actionPressed)="run($event)" />
+```
+
+In this presentational mode your app owns timers, pause behavior, and action
+handling. If both `manager` and `toasts` are supplied, the manager takes
+precedence.
+
+## Use the headless service
+
+Core can be used without the UI. `active()` and `queue()` are readonly signals;
+the active list is oldest-first. Timers begin only when a toast becomes active.
+
+```ts
+// src/app/save-status.component.ts
+import { Component, inject } from '@angular/core';
+import { resolveToastText, RiviniaToast } from '@rivinia/toast';
+
+@Component({
+  selector: 'app-save-status',
+  standalone: true,
+  templateUrl: './save-status.component.html',
+})
+export class SaveStatusComponent {
+  readonly toast = inject(RiviniaToast);
+  readonly resolveText = resolveToastText;
+
+  save(): void {
+    const id: number | null = this.toast.show({ message: 'Saving…' });
+    if (id === null) return; // possible with overflow: 'reject'
+
+    // A matching key updates the existing active or queued item.
+    this.toast.show({
+      message: 'Saved',
+      kind: 'success',
+      dedupeKey: 'save',
+    });
+  }
+}
+```
+
+```html
+<!-- src/app/save-status.component.html -->
+<button type="button" (click)="save()">Save</button>
+@for (item of toast.active(); track item.id) {
+<p [attr.data-kind]="item.kind">{{ resolveText(item.message) }}</p>
+}
+```
+
+`message` and action `label` accept either a string or a reactive string
+signal, so they can reflect language changes. For a custom outlet, use the exported
+`resolveToastText(message)` utility to read either shape.
+
+## API and behavior
+
+| Export                                                                                                                           | Kind                | Purpose                                                                                                  |
+| -------------------------------------------------------------------------------------------------------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------- |
+| `provideRiviniaToast(config?)`                                                                                                   | Provider            | Configure defaults; see `RiviniaToastConfig`.                                                            |
+| `RiviniaToast`                                                                                                                   | Service             | `show`, `dismiss`, `dismissAll`, `update`, `pause`, `resume`, `runAction`; `active` and `queue` signals. |
+| `injectRiviniaToast()`                                                                                                           | Function            | Shorthand for `inject(RiviniaToast)`.                                                                    |
+| UI secondary entry point                                                                                                         | `@rivinia/toast/ui` | Optional managed or presentational standalone list and its UI types.                                     |
+| `Toast`, `ToastKind`, `ToastMessage`, `ToastAction`, `ToastOptions`, `ToastChanges`, `ToastOverflowPolicy`, `RiviniaToastConfig` | Types               | Public service, configuration, and UI input types.                                                       |
+| `resolveToastText`, `clampDuration`                                                                                              | Utilities           | Resolve signal/string text; normalize a duration.                                                        |
+
+Important details:
+
+- `show()` returns a stable `number` ID, or `null` when rejected by the
+  `reject` policy or when a finite queue is full. `dismiss()` and `update()`
+  return `false` for unknown or dismissed IDs; `pause()`/`resume()` also return
+  `false` when the timer cannot be changed.
+- A repeated `dedupeKey` reuses the active or queued toast ID and updates it
+  rather than stacking another toast. A matching `show()` without an `action`
+  clears the previous action; include it again if it should remain.
+- A toast-specific `duration` overrides per-kind and global defaults.
+  `duration: 0`, negative values, not-a-number, and infinities mean persistent (no
+  timer). Per-kind defaults are set with `durations`, for example
+  `{ error: 8000 }`.
+- `pause()` preserves the remaining time on an active timed toast. Persistent
+  or queued toasts cannot be paused. `resume()` restarts the saved time; if it
+  has already elapsed, the toast is dismissed.
+- With `overflow: 'queue'`, new toasts wait without timers and are promoted
+  when a visible slot opens. Set `maxQueue` to bound that queue. With
+  `overflow: 'reject'`, `show()` returns `null`. `dismiss-oldest` replaces an
+  active toast, preferring timed, actionless toasts for eviction.
+- `update(id, changes)` restarts an active timer; a queued item's timer starts
+  only on promotion. Changing `kind` re-applies that kind's default duration
+  unless the toast was given an explicit duration. `action: null` removes an
+  action.
+- `runAction(id)` runs the callback, then dismisses by default.
+  `dismissAfterPress: false` keeps the toast visible. Callback errors propagate
+  to the caller (and, in managed UI use, Angular's `ErrorHandler`).
+- No routing policy is built in. To clear timed notifications on navigation,
+  subscribe to your router in app code and call `dismiss(id)` as appropriate.
+
+## Testing app code
+
+Use fake timers to make timer-dependent tests deterministic:
+
+```ts
+import { TestBed } from '@angular/core/testing';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { provideRiviniaToast, RiviniaToast } from '@rivinia/toast';
+
+beforeEach(() => {
+  TestBed.configureTestingModule({ providers: [provideRiviniaToast()] });
+  vi.useFakeTimers();
+});
+
+afterEach(() => {
+  TestBed.resetTestingModule();
+  vi.useRealTimers();
+});
+
+it('auto-dismisses after the configured duration', () => {
+  const toast = TestBed.inject(RiviniaToast);
+  const id = toast.show({ message: 'Saved', duration: 1000 });
+
+  vi.advanceTimersByTime(1000);
+  expect(toast.active().some((item) => item.id === id)).toBe(false);
+});
 ```
 
 ## License
