@@ -7,8 +7,8 @@ Headless select behavior for Angular 22+: option registry, accent-insensitive
 search filter, and single/multi value — no DOM, no styling. Rendering lives in `@rivinia/select/ui` or your own UI. Select is **independently
 installable** — it does not require `@rivinia/menu`.
 
-- Version: **0.3.0** (0.1.0/0.1.1 published on npm)
-- Requires: **Angular `^22.0.0`**, `tslib`. No dependency on `@rivinia/menu`.
+- Package version: **0.4.2**
+- Requires: **Angular `^22.0.0`** (`@angular/core` and `@angular/forms`). No dependency on `@rivinia/menu`.
 - Side effects: **none** (`sideEffects: false`).
 
 ## Install
@@ -17,11 +17,11 @@ installable** — it does not require `@rivinia/menu`.
 npm install @rivinia/select
 ```
 
-This works without `--legacy-peer-deps` once Select is `0.1.1` or newer.
+The `0.4.2` package requires Angular 22.
 
 ## Imports
 
-Two entry points. Components, directives and the `SelectChange` type live only
+Two entry points. `RiviniaSelectComponent` and the `SelectChange` type live only
 in the UI entry point; the controller and its types live in the headless one.
 
 | Symbol                                     | `@rivinia/select` | `@rivinia/select/ui` |
@@ -34,15 +34,14 @@ in the UI entry point; the controller and its types live in the headless one.
 
 ```ts
 // Ready-made UI
-import { RiviniaSelectComponent } from '@rivinia/select/ui';
-import type { SelectChange } from '@rivinia/select/ui';
+import { RiviniaSelectComponent, type SelectChange } from '@rivinia/select/ui';
 
 // Headless controller + types
-import { RiviniaSelect } from '@rivinia/select';
-import type {
-  RiviniaSelectController,
-  RiviniaSelectMode,
-  RiviniaSelectOption,
+import {
+  RiviniaSelect,
+  type RiviniaSelectController,
+  type RiviniaSelectMode,
+  type RiviniaSelectOption,
 } from '@rivinia/select';
 ```
 
@@ -51,56 +50,69 @@ Importing `RiviniaSelectComponent` from `@rivinia/select` is a compile error.
 ## Quick start
 
 ```ts
+// src/app/invoice-filter.component.ts
 import { Component } from '@angular/core';
 import { RiviniaSelectComponent } from '@rivinia/select/ui';
 import type { SelectChange } from '@rivinia/select/ui';
 
 @Component({
+  selector: 'app-invoice-filter',
   standalone: true,
   imports: [RiviniaSelectComponent],
-  template: `
-    <rv-select
-      [options]="invoices"
-      [searchable]="true"
-      placeholder="Status…"
-      (selectionChange)="apply($event)"
-    />
-  `,
+  templateUrl: './invoice-filter.component.html',
 })
-export class InvoiceFilter {
+export class InvoiceFilterComponent {
   readonly invoices = [
     { id: 'paid', label: 'Paid' },
     { id: 'void', label: 'Void', disabled: true },
   ];
 
-  apply(value: SelectChange) {
-    console.log(value); // 'paid' | null in single mode
+  apply(value: SelectChange): void {
+    console.log(value); // string | null in single mode
   }
 }
 ```
 
+```html
+<!-- src/app/invoice-filter.component.html -->
+<rv-select
+  [options]="invoices"
+  [searchable]="true"
+  label="Status"
+  placeholder="Status…"
+  (selectionChange)="apply($event)"
+/>
+```
+
 ```ts
+// src/app/tag-picker.component.ts
 import { Component } from '@angular/core';
 import { RiviniaSelect } from '@rivinia/select';
 import { RiviniaSelectComponent } from '@rivinia/select/ui';
 import type { SelectChange } from '@rivinia/select/ui';
 
 @Component({
+  selector: 'app-tag-picker',
   standalone: true,
   imports: [RiviniaSelectComponent],
-  template: `<rv-select [select]="tags" [options]="tagOptions" (selectionChange)="on($event)" />`,
+  templateUrl: './tag-picker.component.html',
 })
-export class TagPicker {
+export class TagPickerComponent {
   readonly tags = new RiviniaSelect('multi');
   readonly tagOptions = [
     { id: 'a', label: 'Alpha' },
     { id: 'b', label: 'Beta' },
   ];
 
-  on(value: SelectChange) {
-    console.log(value); // ['a', 'b']
+  on(value: SelectChange): void {
+    console.log(value);
   }
 }
+```
+
+```html
+<!-- src/app/tag-picker.component.html -->
+<rv-select [select]="tags" [options]="tagOptions" (selectionChange)="on($event)" />
 ```
 
 Single mode picks one value and closes; multi mode toggles with a check mark and
@@ -110,38 +122,112 @@ match. Disabled options render but refuse picks. Rich per-option custom content
 
 ## Forms
 
-`rv-select` supports three form integrations (Angular 22):
+`rv-select` supports Signal Forms, Reactive Forms, and template-driven forms
+with Angular 22. The examples are standalone components; import
+`RiviniaSelectComponent` and the forms API used by your chosen approach into
+that component.
 
 ### Signal Forms (`[formField]`)
 
 ```ts
-import { signal, form } from '@angular/forms/signals';
+// src/app/signal-invoice-filter.component.ts
+import { Component, signal } from '@angular/core';
+import { FormField, form } from '@angular/forms/signals';
+import { RiviniaSelectComponent } from '@rivinia/select/ui';
 
-const status = signal<string | null>(null);
-const myForm = form(status);
+@Component({
+  selector: 'app-signal-invoice-filter',
+  standalone: true,
+  imports: [FormField, RiviniaSelectComponent],
+  templateUrl: './signal-invoice-filter.component.html',
+})
+export class SignalInvoiceFilterComponent {
+  readonly invoices = [
+    { id: 'paid', label: 'Paid' },
+    { id: 'void', label: 'Void', disabled: true },
+  ];
+
+  readonly model = signal<{ status: string | null }>({ status: null });
+  readonly myForm = form(this.model);
+}
 ```
 
 ```html
-<rv-select [formField]="myForm" [options]="invoices" />
+<!-- src/app/signal-invoice-filter.component.html -->
+<rv-select [formField]="myForm.status" [options]="invoices" label="Status" />
 ```
 
 ### Reactive Forms (`formControlName`)
 
 ```ts
-readonly statusControl = new FormControl<string | null>(null);
+// src/app/edit-invoice-status.component.ts
+import { Component, inject } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { RiviniaSelectComponent } from '@rivinia/select/ui';
+
+@Component({
+  selector: 'app-edit-invoice-status',
+  standalone: true,
+  imports: [ReactiveFormsModule, RiviniaSelectComponent],
+  templateUrl: './edit-invoice-status.component.html',
+})
+export class EditInvoiceStatusComponent {
+  readonly invoices = [
+    { id: 'draft', label: 'Draft' },
+    { id: 'sent', label: 'Sent' },
+    { id: 'paid', label: 'Paid' },
+    { id: 'void', label: 'Voided' },
+  ];
+
+  private readonly _fb = inject(FormBuilder);
+
+  readonly form = this._fb.group({
+    status: this._fb.control<string | null>('sent'),
+  });
+}
 ```
 
 ```html
+<!-- src/app/edit-invoice-status.component.html -->
 <form [formGroup]="form">
-  <rv-select formControlName="status" [options]="invoices" />
+  <rv-select formControlName="status" [options]="invoices" label="Status" />
 </form>
 ```
 
+Here the existing invoice starts as `sent`; use `null` instead when the form is
+for creating a new invoice with no status selected yet.
+
 ### Template-driven (`ngModel`)
 
-```html
-<rv-select [(ngModel)]="status" [options]="invoices" />
+```ts
+// src/app/template-invoice-filter.component.ts
+import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RiviniaSelectComponent } from '@rivinia/select/ui';
+
+@Component({
+  selector: 'app-template-invoice-filter',
+  standalone: true,
+  imports: [FormsModule, RiviniaSelectComponent],
+  templateUrl: './template-invoice-filter.component.html',
+})
+export class TemplateInvoiceFilterComponent {
+  readonly invoices = [
+    { id: 'paid', label: 'Paid' },
+    { id: 'void', label: 'Void', disabled: true },
+  ];
+
+  status: string | null = null;
+}
 ```
+
+```html
+<!-- src/app/template-invoice-filter.component.html -->
+<rv-select [(ngModel)]="status" name="status" [options]="invoices" label="Status" />
+```
+
+Each example uses single mode, whose value is `string | null`. For multi
+selection, set `mode="multi"` and use a `readonly string[]` model/control value.
 
 ### Value types
 
@@ -294,8 +380,10 @@ Consequences to be aware of:
 - **No Tailwind project** in the test suite.
 - **No forced-colors / high-contrast** handling — supply your own
   `--rv-select-*` values under `@media (forced-colors: active)`.
-- **No `ControlValueAccessor`** — forms wiring is manual (see Forms).
-  This is a deliberate scope boundary, not an oversight.
+- **No explicit `ControlValueAccessor` implementation.** In Angular 22,
+  `rv-select` implements `FormValueControl`; Signal Forms use `[formField]`,
+  and Reactive Forms and template-driven forms are covered by the package's
+  integration tests (see Forms).
 
 ## Migration notes
 
