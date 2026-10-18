@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/select",
-  "version": "0.4.0",
+  "version": "0.4.2",
   "description": "Headless select behavior for Angular: options, search filter, single/multi value.",
   "keywords": [
     "angular",
