@@ -3,197 +3,402 @@
 [![npm version](https://img.shields.io/npm/v/@rivinia/http.svg)](https://www.npmjs.com/package/@rivinia/http)
 [![license](https://img.shields.io/npm/l/@rivinia/http.svg)](https://www.npmjs.com/package/@rivinia/http)
 
-Headless typed HTTP client for Angular 22+. Configurable envelope
-unwrapping, plain Observables **and** `httpResource` — URLs always used as
-given, zero styling, zero backend opinions, interceptors left to your app.
+`@rivinia/http` is a thin, typed Angular HTTP client for plain `Observable`
+requests and reactive `httpResource` requests. It leaves URLs, backend
+contracts, and interceptors under app control. Response bodies pass through
+unchanged unless a request explicitly asks to unwrap one.
 
-- Version: **0.5.0**
-- Requires: **Angular `^22.0.0`**, `rxjs` (same range Angular uses), `tslib`
-- Since Angular 21 `HttpClient` (fetch backend) is injectable with zero setup.
-  Call `provideHttpClient()` / pass `httpFeatures` only when you configure
-  interceptors or other backend features.
+- Package version: **0.5.2**
+- Requires Angular `^22.0.0` and RxJS `^6.5.3 || ^7.4.0`; `tslib` is installed
+  as a dependency.
 
-## Install
+## Install and configure
 
 ```bash
 npm install @rivinia/http
-ng add @rivinia/http   # wires app.config.ts (no questions: unwrapping is per call)
+ng add @rivinia/http
 ```
 
-## Quick start — pick ONE backend style
+For a standalone app, `ng add` adds `provideHttpClient()` and
+`provideRiviniaHttp()` to the selected project's `src/app/app.config.ts`.
+It has no prompts and does not set a base URL or an envelope policy. It is
+idempotent and only edits an existing app config containing a `providers: []`
+array; if no config is found it warns and skips, so add the providers
+manually. In a multi-project workspace it targets `defaultProject` or the
+first project; use `--project <name>` to select a project.
+
+The equivalent minimal standalone setup is:
 
 ```ts
-// app.config.ts — style A: nothing to configure (Angular ≥21 default)
-providers: [provideRiviniaHttp()];
+// src/app/app.config.ts
+import { provideHttpClient } from '@angular/common/http';
+import { ApplicationConfig } from '@angular/core';
+import { provideRiviniaHttp } from '@rivinia/http';
 
-// style B: single call with interceptors (do NOT also call provideHttpClient)
-providers: [provideRiviniaHttp({ httpFeatures: [withInterceptors([authInterceptor])] })];
-
-// style C: explicit backend config, like the official setup guide
-providers: [provideHttpClient(withInterceptors([authInterceptor])), provideRiviniaHttp()];
+export const appConfig: ApplicationConfig = {
+  providers: [provideHttpClient(), provideRiviniaHttp()],
+};
 ```
 
-## URLs: yours, always
-
-The library never joins, prefixes, or rewrites URLs. Compose them at the
-call site from wherever you want — typically your environment files
-(the BRT pattern):
+Use the same `provideHttpClient` setup to add app-owned interceptors:
 
 ```ts
-// src/environments/environment.ts / environment.prod.ts
-export const environment = { apiUrl: 'https://api.example.com' };
+import { ApplicationConfig } from '@angular/core';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideRiviniaHttp } from '@rivinia/http';
+import { authInterceptor } from './auth.interceptor';
 
-// feature service
-import { joinUrl } from '@rivinia/http';
+export const appConfig: ApplicationConfig = {
+  providers: [provideHttpClient(withInterceptors([authInterceptor])), provideRiviniaHttp()],
+};
+```
 
-export class TripService {
-  private api = injectRiviniaHttp();
-  private url = (path: string) => joinUrl(environment.apiUrl, path);
+Alternatively, pass features through `provideRiviniaHttp`:
 
-  list = () => this.api.get<Trip[]>(this.url('trips'));
-  create = (dto: CreateTrip) => this.api.post<Trip>(this.url('trips'), dto);
+```ts
+import { ApplicationConfig } from '@angular/core';
+import { withInterceptors } from '@angular/common/http';
+import { provideRiviniaHttp } from '@rivinia/http';
+import { authInterceptor } from './auth.interceptor';
+
+export const appConfig: ApplicationConfig = {
+  providers: [provideRiviniaHttp({ httpFeatures: [withInterceptors([authInterceptor])] })],
+};
+```
+
+Choose one backend setup: when using `httpFeatures`, do not also call
+`provideHttpClient()`; otherwise the HTTP backend and its default XSRF
+interceptor can be registered twice. If the app already configures
+`provideHttpClient(...)`, keep that and call `provideRiviniaHttp()` without
+`httpFeatures`.
+
+## URLs and typed service calls
+
+The client sends the endpoint string exactly as given. It never prepends a
+base URL or rewrites a path. Compose URLs yourself, for example with
+`joinUrl` and the app's environment:
+
+```ts
+// src/environments/environment.ts
+export const environment = {
+  apiUrl: 'https://api.example.com',
+} as const;
+```
+
+```ts
+// src/app/trip.service.ts
+import { Service } from '@angular/core';
+import type { HttpResponse } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { injectRiviniaHttp, joinUrl } from '@rivinia/http';
+import { environment } from '../environments/environment';
+
+export interface Trip {
+  id: string;
+  title: string;
+  departureDate: string;
+  status: 'planned' | 'booked' | 'cancelled';
 }
 
-// Reactive resource (auto refetch, loading/error signals)
-export class TripPage {
-  page = signal(1);
-  trips = this.api.getResource<Trip[]>(() => this.url(`trips?page=${this.page()}`));
+export interface TripDraft {
+  title: string;
+  departureDate: string;
+}
+
+interface ApiEnvelope<T> {
+  data: T;
+}
+
+@Service()
+export class TripApi {
+  private readonly http = injectRiviniaHttp();
+  private readonly tripsUrl = joinUrl(environment.apiUrl, 'trips');
+
+  list(): Observable<Trip[]> {
+    return this.http.get<Trip[]>(this.tripsUrl, {
+      params: { page: 1, search: 'coast' },
+      unwrap: true,
+      unwrapKey: 'data',
+    });
+  }
+
+  get(id: string): Observable<Trip> {
+    return this.http.get<Trip>(joinUrl(this.tripsUrl, id), {
+      unwrap: true,
+      unwrapKey: 'data',
+    });
+  }
+
+  create(input: TripDraft): Observable<Trip> {
+    return this.http.post<Trip>(this.tripsUrl, input, {
+      unwrap: true,
+      unwrapKey: 'data',
+    });
+  }
+
+  replace(id: string, input: TripDraft): Observable<Trip> {
+    return this.http.put<Trip>(joinUrl(this.tripsUrl, id), input, {
+      unwrap: true,
+      unwrapKey: 'data',
+    });
+  }
+
+  updateStatus(id: string, status: Trip['status']): Observable<Trip> {
+    return this.http.patch<Trip>(
+      joinUrl(this.tripsUrl, id),
+      { status },
+      { unwrap: true, unwrapKey: 'data' },
+    );
+  }
+
+  cancel(id: string, reason: string): Observable<void> {
+    return this.http.delete<void>(joinUrl(this.tripsUrl, id), {
+      body: { reason },
+      unwrap: true,
+      unwrapKey: 'data',
+    });
+  }
+
+  downloadItinerary(id: string): Observable<Blob> {
+    return this.http.getBlob(joinUrl(this.tripsUrl, `${id}/itinerary`));
+  }
+
+  getOperatorNotes(id: string): Observable<string> {
+    return this.http.getText(joinUrl(this.tripsUrl, `${id}/operator-notes`));
+  }
+
+  listWithHeaders(): Observable<HttpResponse<ApiEnvelope<Trip[]>>> {
+    return this.http.getResponse<ApiEnvelope<Trip[]>>(this.tripsUrl, {
+      params: { page: 1 },
+    });
+  }
+
+  createAndReadLocation(input: TripDraft): Observable<HttpResponse<ApiEnvelope<Trip>>> {
+    return this.http.postResponse<ApiEnvelope<Trip>>(this.tripsUrl, input);
+  }
+}
+```
+
+The JSON endpoints in this example return an object with a `data` field; the first five
+methods opt in to extracting that field. `getBlob()` downloads a binary file,
+and `getText()` reads plain text; neither method unwraps or checks JSON
+envelopes. `getResponse()` and `postResponse()` return the complete
+`HttpResponse` so the caller can inspect the status and headers; their body
+stays raw and is not unwrapped.
+
+| `RiviniaHttp` method | Used above for                                                     |
+| -------------------- | ------------------------------------------------------------------ |
+| `get`                | `list()` and `get(id)`                                             |
+| `post`               | `create(input)`                                                    |
+| `put`                | `replace(id, input)`                                               |
+| `patch`              | `updateStatus(id, status)`                                         |
+| `delete`             | `cancel(id, reason)`; its optional request body is passed through. |
+| `getBlob`            | `downloadItinerary(id)`                                            |
+| `getText`            | `getOperatorNotes(id)`                                             |
+| `getResponse`        | `listWithHeaders()`                                                |
+| `postResponse`       | `createAndReadLocation(input)`                                     |
+| `getResource`        | Reactive paginated list in `TripListComponent`.                    |
+
+```ts
+// Example use where the API returns pagination metadata in a header.
+this.api.listWithHeaders().subscribe((response) => {
+  const total = Number(response.headers.get('X-Total-Count') ?? 0);
+  console.log(response.status, total, response.body?.data);
+});
+
+// A create endpoint may return 201 plus a Location header.
+this.api.createAndReadLocation(input).subscribe((response) => {
+  const location = response.headers.get('Location');
+  console.log(response.status, location, response.body?.data);
+});
+```
+
+`Observable<T>` is the compile-time type of the result; it does not validate
+the server payload. `joinUrl` removes one boundary slash and passes absolute
+`http://` or `https://` endpoints through unchanged. Use `params` for query
+values: `null` and `undefined` entries are omitted, while strings, numbers,
+and booleans are stringified. The standard request options also pass
+`headers`, `HttpContext`, and `withCredentials` through to Angular's
+`HttpClient`. Use `HttpContext` with your own interceptors for app-specific
+controls such as opting out of auth.
+
+## Reactive resources
+
+`getResource` uses Angular's `httpResource`. The endpoint can be a string, a
+signal, or a reactive function; `undefined` disables the request. URL,
+`params`, `headers`, and `context` can be reactive inputs and trigger a new
+request when their signal values change. Other options are read once when
+the resource is created.
+
+```ts
+import { Component, signal } from '@angular/core';
+import { injectRiviniaHttp, joinUrl } from '@rivinia/http';
+import { environment } from '../environments/environment';
+
+import type { Trip } from './trip.service';
+
+@Component({
+  selector: 'app-trip-list',
+  standalone: true,
+  templateUrl: './trip-list.component.html',
+})
+export class TripListComponent {
+  private readonly http = injectRiviniaHttp();
+  readonly page = signal(1);
+  readonly trips = this.http.getResource<Trip[]>(joinUrl(environment.apiUrl, 'trips'), {
+    params: () => ({ page: this.page() }),
+    unwrap: true,
+    unwrapKey: 'data',
+  });
+
+  nextPage(): void {
+    this.page.update((value) => value + 1);
+  }
 }
 ```
 
 ```html
-@if (trips.hasValue()) { @for (t of trips.value(); track t.id) {
-<p>{{ t.title }}</p>
-} } @else if (trips.isLoading()) {
-<p>Loading…</p>
+<!-- src/app/trip-list.component.html -->
+@if (trips.isLoading()) {
+<p>Loading trips…</p>
+} @else if (trips.hasValue()) {
+<ul>
+  @for (trip of trips.value(); track trip.id) {
+  <li>{{ trip.title }} — {{ trip.departureDate }} ({{ trip.status }})</li>
+  }
+</ul>
+} @else if (trips.error()) {
+<p role="alert">Could not load trips. Try again.</p>
 }
+<button type="button" (click)="nextPage()">Next page</button>
 ```
 
-## Envelope unwrapping (explicit, per call)
+In a real app, share the Trip model through a model module. `parse` is optional;
+when provided it runs after envelope validation and unwrapping, and can perform
+runtime validation (for example with Zod or Valibot). A parse error, HTTP
+error, or library envelope error is exposed through `trips.error()`.
+`defaultValue` supplies a value while idle/loading. `reportProgress` is
+forwarded to the resource request; for progress events on an `Observable`,
+use Angular `HttpClient` directly.
 
-The library assumes nothing about your backend: responses pass through raw
-unless the call opts in. There is no global unwrap configuration and no
-default key — every unwrapping call states both facts:
+## Response envelopes and errors
+
+By default, all JSON response bodies are returned raw, even when they contain
+a field named `data`. To extract a payload, opt in on that call and provide a
+key:
 
 ```ts
-this.api.get<Raw>(url); // raw body (default)
-this.api.get<Legacy>(url, { unwrap: true, unwrapKey: 'result' }); // explicit
+this.http.get<Trip[]>(url); // raw response body
+this.http.get<Trip[]>(url, { unwrap: true, unwrapKey: 'data' });
 ```
 
-The type system enforces the contract: `{ unwrap: true }` without a key,
-a key alone, and `{ unwrap: false, unwrapKey }` all fail compilation.
-Different shapes per API in the same app:
+The type contract requires `unwrapKey` when `unwrap: true`, and rejects a key
+when unwrapping is off. Extraction is strict and single-level: the response
+must be a non-null, non-array object with that own property. A missing key,
+primitive/array/null body, or empty key throws `RiviniaHttpUnwrapError`;
+it does not silently return the original body. Present values such as `null`,
+`false`, `0`, and `''` are returned as-is. Nested data and sibling fields are
+not modified. `unwrapAs<T>` performs the same one-level extraction outside a
+request; its generic type is an unchecked cast, not runtime validation.
+
+An optional envelope policy checks backend-declared failures before
+unwrapping. The default keys are `isSuccess` and `error`; only an object whose
+`isSuccess` value is exactly `false` is considered failed:
 
 ```ts
-export class MixedService {
-  private api = injectRiviniaHttp();
+// Apply to JSON request paths made by this configured client.
+provideRiviniaHttp({ envelope: {} });
 
-  // main backend: { data: … } (explicit key per call)
-  trips = () => this.api.get<Trip[]>(fullUrl('trips'), { unwrap: true, unwrapKey: 'data' });
-
-  // legacy backend: { result: … }
-  legacy = () => this.api.get<Old[]>(fullUrl('old'), { unwrap: true, unwrapKey: 'result' });
-
-  // webhook endpoint: raw body (default — nothing to say)
-  ping = () => this.api.get<string>(fullUrl('ping'));
-}
-```
-
-A missing key never passes the body through: it throws
-`RiviniaHttpUnwrapError` (with `key` + `endpoint`; the raw `body` is attached
-for diagnosis but never interpolated into the message). Catch it like any
-HTTP error — in `getResource` it surfaces as `resource.error()`:
-
-```ts
-this.api.get<Trip[]>(url, { unwrap: true, unwrapKey: 'data' }).subscribe({
-  next: (trips) => (this.list = trips),
-  error: (e) => this.fail(e), // RiviniaHttpUnwrapError | HttpErrorResponse
+// Or specify a per-request policy; it replaces the global policy.
+this.http.get<Trip[]>(url, {
+  envelope: { successKey: 'ok', errorKey: 'message' },
 });
 ```
 
-`getResource` applies the same rules through `parse` (your own `parse` runs
-after unwrapping — ideal for Zod/Valibot validation).
+When a failure is detected, `RiviniaHttpEnvelopeError` is sent through the
+Observable error channel or appears as the resource error. It carries the raw
+`body` and failure `code`. Set `throwOnFailure: false` for a passive policy.
+Policy validation runs before unwrapping, including on `getResponse` and
+`postResponse`. Those full-response methods return raw `HttpResponse<T>`
+(status, headers, and unwrapped body is not applied). `getBlob` and `getText`
+also return raw bodies and do not run envelope validation.
 
-## Envelope failure validation (opt-in)
+The generic type does not validate the server response. For untrusted or
+loosely typed APIs, validate the extracted value with `getResource`'s `parse`
+hook, or validate in the Observable pipeline in app code. Do not log
+`RiviniaHttpUnwrapError.body` or `RiviniaHttpEnvelopeError.body` without
+considering that they may contain sensitive data.
 
-Backends that report failure inside HTTP 200 (`{ data: null, isSuccess: false }`)
-must never flow into `next()` as success — critical in payment flows:
+## Public API
 
-```ts
-provideRiviniaHttp({ envelope: {} }); // whole app (isSuccess/error keys)
-this.api.get(url, { envelope: { successKey: 'ok', errorKey: 'message' } });
-```
+| Export                        | Kind     | Purpose                                                                                                          |
+| ----------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| `provideRiviniaHttp(config?)` | provider | Sets `envelope` and optional `httpFeatures`; no global unwrap option.                                            |
+| `RiviniaHttp`                 | class    | `get`, `post`, `put`, `patch`, `delete`, `getBlob`, `getText`, `getResponse`, `postResponse`, and `getResource`. |
+| `injectRiviniaHttp()`         | function | Injection-context shorthand for `inject(RiviniaHttp)`.                                                           |
+| `joinUrl(base, endpoint)`     | utility  | Removes one boundary slash when joining; absolute HTTP(S) endpoints pass through.                                |
+| `unwrapAs(body, key)`         | utility  | Strict, single-level typed extraction.                                                                           |
+| `extractKey(body, key)`       | utility  | Strict extraction without a generic cast.                                                                        |
+| `RiviniaHttpUnwrapError`      | class    | Error for invalid or missing unwrap properties.                                                                  |
+| `RiviniaHttpEnvelopeError`    | class    | Error for a failed configured response envelope.                                                                 |
+| `RiviniaHttpConfig`           | type     | `envelope` and `httpFeatures` provider configuration.                                                            |
+| `RiviniaEnvelopePolicy`       | type     | Success key, error key, and failure policy settings.                                                             |
+| `RiviniaRequestOptions`       | type     | Options for requests that may unwrap.                                                                            |
+| `RiviniaRawOptions`           | type     | Options for methods that never unwrap.                                                                           |
+| `RiviniaDeleteOptions`        | type     | Delete options including an optional request body.                                                               |
+| `RiviniaDeleteRequestOptions` | type     | Delete options including the unwrap contract.                                                                    |
+| `RiviniaRequestBase`          | type     | Shared transport and envelope options.                                                                           |
+| `RiviniaResourceOptions`      | type     | Reactive resource options and unwrap contract.                                                                   |
+| `RiviniaResourceBase`         | type     | Shared resource-specific options.                                                                                |
+| `ReactiveInput`               | type     | Static value, signal, or reactive function input.                                                                |
+| `QueryParamsInput`            | type     | `HttpParams` or a primitive-valued query object.                                                                 |
+| `RiviniaUnwrapOn`             | type     | Required key form for `{ unwrap: true }`.                                                                        |
+| `RiviniaUnwrapOff`            | type     | Form where an unwrap key is disallowed.                                                                          |
 
-A failed envelope throws `RiviniaHttpEnvelopeError` (`body` + `code` attached;
-in `getResource` it surfaces as `resource.error()`). Validation runs on the raw
-body before unwrapping, independent of `unwrap`. Per-call policy replaces any
-global one wholesale.
+## Testing
 
-## API
-
-| Export                        | Kind         | Purpose                                                                                                                                                                           |
-| ----------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `provideRiviniaHttp(config?)` | provider     | `{ envelope?, httpFeatures? }` (no unwrap config — per call only)                                                                                                                 |
-| `RiviniaHttp`                 | `@Service()` | `get/post/put/patch/delete`, `getBlob`, `getText`, `getResponse`, `postResponse`, `getResource`                                                                                   |
-| `injectRiviniaHttp()`         | function     | shorthand for `inject(RiviniaHttp)`                                                                                                                                               |
-| `joinUrl(base, endpoint)`     | util         | slash-safe join; absolute URLs pass through                                                                                                                                       |
-| `unwrapAs(body, key)`         | util         | strict single-level extraction — throws `RiviniaHttpUnwrapError` on missing key (nested keys preserved)                                                                           |
-| `extractKey(body, key)`       | util         | `unwrapAs` without the generic cast (same strictness)                                                                                                                             |
-| types                         | types        | `RiviniaHttpConfig`, `RiviniaRequestOptions`, `RiviniaRawOptions`, `RiviniaDeleteOptions`, `RiviniaResourceOptions`, `RiviniaEnvelopePolicy`, `ReactiveInput`, `QueryParamsInput` |
-
-`getResponse`/`postResponse` return the raw `HttpResponse` (status + headers,
-body never unwrapped — and their options REJECT unwrap fields at compile
-time via `RiviniaRawOptions`; compose `unwrapAs` yourself if needed). A configured
-`envelope` policy still validates the body on these paths: a globally declared
-failure rule holds on every JSON path, never just the unwrapped ones. `getText`
-returns raw text; binary/text bodies cannot carry envelopes, so the policy does
-not apply there. In `getResource`, the URL, `params`, `headers` and `context`
-accept values, signals or reactive functions (everything else is static).
-
-`getBlob` is never unwrapped. `HttpContext` passes through untouched, so
-app interceptors (auth opt-out, error toasts) keep working. For caching,
-polling, retry and TanStack Query interop see [RECIPES.md](./RECIPES.md).
-
-## Type holes (honest, by design)
-
-`unwrapAs<T>` is an unchecked cast — a wrong `T` compiles and mistypes the
-payload at runtime. What IS checked is generic flow plus the unwrap contract
-itself (see `http-type-safety.spec.ts` `@ts-expect-error` tests). For untyped
-backends, pair unwrapping with `envelope` validation or a `parse` hook
-(Zod/Valibot — see [RECIPES.md](./RECIPES.md)).
-
-## Migration from global unwrapping (0.4.0 → 0.5.0, breaking)
-
-Global `unwrap`/`unwrapKey` configuration is removed. Previously:
+Use Angular's HTTP testing providers. The testing provider follows
+`provideHttpClient()` so the test backend replaces the real backend:
 
 ```ts
-provideRiviniaHttp({ unwrap: true, unwrapKey: 'data' });
-this.api.get<Trip[]>(url); // arrived unwrapped
-```
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { provideRiviniaHttp, RiviniaHttp } from '@rivinia/http';
 
-Now every unwrapping call states its key explicitly:
-
-```ts
-provideRiviniaHttp();
-this.api.get<Trip[]>(url, { unwrap: true, unwrapKey: 'data' });
-```
-
-Migrate each applicable call, or the body arrives wrapped (raw). Missing
-keys now throw `RiviniaHttpUnwrapError` instead of passing the body through.
-`ng add` no longer asks about unwrapping and emits bare
-`provideRiviniaHttp()` — there is no automatic migration of call sites.
-
-## Testing your app code
-
-Standard Angular tooling — nothing custom to learn:
-
-```ts
 TestBed.configureTestingModule({
   providers: [provideHttpClient(), provideHttpClientTesting(), provideRiviniaHttp()],
 });
-api.get('https://api.test/users').subscribe();
-TestBed.inject(HttpTestingController).expectOne('https://api.test/users').flush({ data: [] });
+
+const api = TestBed.inject(RiviniaHttp);
+const requests = TestBed.inject(HttpTestingController);
+api
+  .get<unknown[]>('https://api.test/trips', {
+    unwrap: true,
+    unwrapKey: 'data',
+  })
+  .subscribe();
+requests.expectOne('https://api.test/trips').flush({ data: [] });
+requests.verify();
 ```
+
+## Migration from 0.4.x
+
+Global `unwrap` and `unwrapKey` settings were removed in 0.5.0. Move the
+unwrap decision and key to each applicable request:
+
+```ts
+// Before
+provideRiviniaHttp({ unwrap: true, unwrapKey: 'data' });
+this.http.get<Trip[]>(url);
+
+// After
+provideRiviniaHttp();
+this.http.get<Trip[]>(url, { unwrap: true, unwrapKey: 'data' });
+```
+
+The `ng add` schematic now emits bare providers and does not migrate request
+call sites. Without the per-request options, the response remains raw.
 
 ## License
 
