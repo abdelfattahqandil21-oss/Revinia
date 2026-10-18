@@ -1,44 +1,65 @@
 # Rivinia
 
-Production-ready ecosystem of reusable Angular libraries (Angular 22+).
-Headless-first like TanStack Table: packages sell complex logic, never pixels —
-every Core is fully usable without any UI, and Core releases never wait for UI.
-Each package is independently versioned, built with `ng-packagr` (APF),
-ships an `ng-add` schematic, and is validated by tarball install into a clean
-consumer before any publish.
+Rivinia is a workspace of independently versioned Angular libraries for
+application infrastructure and reusable UI behavior. Install and configure
+only the package your application needs; each package README is the detailed
+consumer reference for its public API.
+
+Published packages target Angular 22. The versions below are the latest
+published to npm as checked on 2026-10-17; workspace source and published
+versions can differ. The authoritative version for a release is the package's
+published npm metadata.
 
 ## Packages
 
-| Package           | Version                                                | `ng add` | Description                                                                                     |
-| ----------------- | ------------------------------------------------------ | -------- | ----------------------------------------------------------------------------------------------- |
-| `@rivinia/http`   | [0.5.0](https://www.npmjs.com/package/@rivinia/http)   | ✅       | Headless typed HTTP client: envelope unwrapping, Observables + `httpResource` (`projects/http`) |
-| `@rivinia/toast`  | [0.4.0](https://www.npmjs.com/package/@rivinia/toast)  | ✅       | Headless toast queue: signals, timers, actions, dedupe (`projects/toast`)                       |
-| `@rivinia/modal`  | [0.5.0](https://www.npmjs.com/package/@rivinia/modal)  | ✅       | Headless modal manager: stack/queue, typed results, guards (`projects/modal`)                   |
-| `@rivinia/i18n`   | [0.3.0](https://www.npmjs.com/package/@rivinia/i18n)   | ✅       | Headless language manager: signals, RTL, ICU plurals, detection (`projects/i18n`)               |
-| `@rivinia/env`    | [0.2.0](https://www.npmjs.com/package/@rivinia/env)    | ✅       | Typed app environments dev/staging/prod + setup schematic (`projects/env`)                      |
-| `@rivinia/menu`   | [0.1.0](https://www.npmjs.com/package/@rivinia/menu)   | 🆕       | Headless menu behavior + ready-made dropdown UI (`projects/menu`)                               |
-| `@rivinia/select` | [0.1.0](https://www.npmjs.com/package/@rivinia/select) | 🆕       | Headless select (search + single/multi) + ready-made UI on rv-menu (`projects/select`)          |
+| Package                                          | Latest on npm                                          | Prepared patch | `ng add` | Use it for                                                                                |
+| ------------------------------------------------ | ------------------------------------------------------ | -------------- | -------- | ----------------------------------------------------------------------------------------- |
+| [`@rivinia/http`](./projects/http/README.md)     | [0.5.1](https://www.npmjs.com/package/@rivinia/http)   | 0.5.2          | Yes      | Typed `HttpClient` methods, response-envelope unwrapping, and `httpResource` integration. |
+| [`@rivinia/toast`](./projects/toast/README.md)   | [0.4.1](https://www.npmjs.com/package/@rivinia/toast)  | 0.4.2          | Yes      | A headless signal-based notification queue with timers and actions.                       |
+| [`@rivinia/modal`](./projects/modal/README.md)   | [0.5.2](https://www.npmjs.com/package/@rivinia/modal)  | 0.5.3          | Yes      | Headless modal coordination, stacking/queuing, and typed results.                         |
+| [`@rivinia/i18n`](./projects/i18n/README.md)     | [0.3.1](https://www.npmjs.com/package/@rivinia/i18n)   | 0.3.2          | Yes      | Language state, direction, and translation utilities.                                     |
+| [`@rivinia/env`](./projects/env/README.md)       | [0.3.1](https://www.npmjs.com/package/@rivinia/env)    | 0.3.2          | Yes      | Typed application environment configuration.                                              |
+| [`@rivinia/menu`](./projects/menu/README.md)     | [0.3.3](https://www.npmjs.com/package/@rivinia/menu)   | 0.3.4          | No       | Headless menu behavior and its optional ready-made UI.                                    |
+| [`@rivinia/select`](./projects/select/README.md) | [0.4.1](https://www.npmjs.com/package/@rivinia/select) | 0.4.2          | No       | Headless single/multi selection and optional UI at `@rivinia/select/ui`.                  |
+
+The proof projects [`@rivinia/proof-core`](./projects/proof-core/README.md)
+and [`@rivinia/proof-second`](./projects/proof-second/README.md) are internal
+architecture experiments, not published consumer packages.
+
+## Install and configure
+
+Install only the package(s) you plan to use. For example:
 
 ```bash
-npm install @rivinia/http @rivinia/toast @rivinia/modal @rivinia/i18n @rivinia/env
-ng add @rivinia/http   # wires provideHttpClient() + provideRiviniaHttp()
-ng add @rivinia/toast  # wires provideRiviniaToast()
-ng add @rivinia/modal  # optional: --strategy queue
-ng add @rivinia/i18n   # prompts: default language + browser detection
+npm install @rivinia/http
+ng add @rivinia/http
 ```
 
-Proof-of-architecture packages (not for publish, no schematics):
-`@rivinia/proof-core`, `@rivinia/proof-second` (`projects/proof-*`).
+`ng add` applies that package's documented project setup. For packages without
+an `ng add` schematic, follow the manual setup in that package's README.
+Package-specific guides cover imports, providers, options, value types, and
+common behavior.
 
-## Workspace commands (pnpm)
+## Work in this repository
 
-- `pnpm build:http` — compile schematics, then `ng build http`
-- `ng test http` — library unit tests (vitest)
-- `pnpm test:schematics` — `ng-add` schematic tests (virtual FS)
-- `npm pack ./dist/http` — tarball for clean-consumer validation
+This monorepo uses pnpm. From its root:
 
-## Rules
+```bash
+pnpm install
+pnpm build:http
+pnpm exec ng test http --watch=false
+pnpm check:docs
+```
 
-`AGENTS.md` (build/test/publish gates) and `docs/DECISIONS.md` (append-only
-decision log) are normative. No public publish without explicit confirmation
-of name, version, access, and inspected tarball contents.
+The `build:<package>` scripts build the library; HTTP, toast, modal, i18n, and
+environment builds also compile their schematics. Menu and select can be built
+with `pnpm build:menu` and `pnpm build:select`. Run a package's unit tests with
+`pnpm exec ng test <project-name> --watch=false`, for example
+`pnpm exec ng test select --watch=false`.
+
+## Release safety
+
+Building a workspace package is not the same as publishing it. Do not publish
+without confirming the package name, version, access, and inspected tarball;
+follow the release gates in [`AGENTS.md`](./AGENTS.md) and the decisions in
+[`docs/DECISIONS.md`](./docs/DECISIONS.md).
