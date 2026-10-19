@@ -134,7 +134,6 @@ import { i18nConfig } from './i18n.config';
 
 @Component({
   selector: 'app-header',
-  standalone: true,
   imports: [RTranslatePipe],
   templateUrl: './header.component.html',
 })
