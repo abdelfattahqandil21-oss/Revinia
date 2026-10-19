@@ -1,0 +1,38 @@
+/*
+ * Bootstrap 5.3 adapter.
+ *
+ *   @import 'bootstrap/dist/css/bootstrap.css';
+ *   @import '@rivinia/theme/bootstrap.css';
+ *
+ * Bootstrap themes itself with `--bs-*` variables and a `data-bs-theme`
+ * attribute. This maps the Rivinia semantic layer onto Bootstrap's palette,
+ * so a Bootstrap theme switch re-themes the Rivinia components with no extra
+ * wiring — and the components inherit Bootstrap's contrast and rhythm rather
+ * than imposing their own.
+ *
+ * The direction matters: Rivinia's tokens point AT Bootstrap's, never the
+ * other way round. If they pointed the other way, a theme switch would have to
+ * update two sets of variables and they could drift.
+ */
+
+@import './theme.css';
+
+:root,
+[data-bs-theme='light'] {
+  --rv-bg: var(--bs-body-bg, #ffffff);
+  --rv-fg: var(--bs-body-color, #111111);
+  --rv-muted: var(--bs-secondary-color, #555555);
+  --rv-border: var(--bs-border-color, #e0e0e0);
+  --rv-accent: var(--bs-primary, #5b5bd6);
+  --rv-danger: var(--bs-danger, #dc2626);
+  --rv-ok: var(--bs-success, #16a34a);
+  --rv-info: var(--bs-info, #2563eb);
+  --rv-warning: var(--bs-warning, #d97706);
+}
+
+[data-bs-theme='dark'] {
+  --rv-bg: var(--bs-body-bg, #161616);
+  --rv-fg: var(--bs-body-color, #f2f2f2);
+  --rv-muted: var(--bs-secondary-color, #a8a8a8);
+  --rv-border: var(--bs-border-color, #333333);
+}

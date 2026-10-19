@@ -1,0 +1,31 @@
+{
+  "name": "@rivinia/theme",
+  "version": "0.1.0",
+  "description": "The shared Rivinia design-token layer: one import, one place to set the whole component ecosystem's colours, shapes and type.",
+  "keywords": [
+    "angular",
+    "design-tokens",
+    "theming",
+    "css",
+    "tailwind",
+    "bootstrap"
+  ],
+  "license": "MIT",
+  "sideEffects": [
+    "**/*.css",
+    "**/*.scss"
+  ],
+  "exports": {
+    "./package.json": {
+      "default": "./package.json"
+    },
+    ".": {
+      "style": "./styles/theme.css",
+      "default": "./styles/theme.css"
+    },
+    "./theme.css": "./styles/theme.css",
+    "./tailwind.css": "./styles/tailwind.css",
+    "./bootstrap.css": "./styles/bootstrap.css",
+    "./scss": "./styles/_index.scss"
+  }
+}
