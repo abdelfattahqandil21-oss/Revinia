@@ -75,14 +75,24 @@ describe('ng-add', () => {
     );
   });
 
-  it('creates staging config (from production) and both replacements', async () => {
+  it('creates short CLI configs and keeps legacy configuration names wired', async () => {
     const tree = await run({});
     const configs = configurations(tree);
+    expect(Object.keys(configs)).toContain('dev');
+    expect(Object.keys(configs)).toContain('stag');
+    expect(Object.keys(configs)).toContain('prod');
     expect(Object.keys(configs)).toContain('staging');
-    expect(configs['staging']['fileReplacements']).toEqual([
+    expect(configs['stag']['fileReplacements']).toEqual([
       {
         replace: 'src/environments/environment.ts',
         with: 'src/environments/environment.staging.ts',
+      },
+    ]);
+    expect(configs['staging']['fileReplacements']).toEqual(configs['stag']['fileReplacements']);
+    expect(configs['prod']['fileReplacements']).toEqual([
+      {
+        replace: 'src/environments/environment.ts',
+        with: 'src/environments/environment.prod.ts',
       },
     ]);
     expect(configs['production']['fileReplacements']).toEqual([
@@ -91,8 +101,9 @@ describe('ng-add', () => {
         with: 'src/environments/environment.prod.ts',
       },
     ]);
+    expect(configs['dev']['outputPath']).toBe('builds/dev');
     expect(configs['development']['outputPath']).toBe('builds/dev');
-    expect(configs['development']['fileReplacements']).toBeUndefined();
+    expect(configs['dev']['fileReplacements']).toBeUndefined();
   });
 
   it('never overwrites existing files but still wires missing config', async () => {
@@ -114,7 +125,9 @@ describe('ng-add', () => {
     expect(tree.exists('/src/environments/environment.staging.ts')).toBe(false);
     const configs = configurations(tree);
     expect(Object.keys(configs)).not.toContain('staging');
+    expect(Object.keys(configs)).not.toContain('stag');
     expect(configs['production']['fileReplacements']).toHaveLength(1);
+    expect(configs['prod']['fileReplacements']).toHaveLength(1);
   });
 
   it('dev only: files without any wiring', async () => {
@@ -122,20 +135,22 @@ describe('ng-add', () => {
     expect(tree.exists('/src/environments/environment.ts')).toBe(true);
     expect(tree.exists('/src/environments/environment.prod.ts')).toBe(false);
     const configs = configurations(tree);
-    expect('fileReplacements' in (configs['production'] ?? {})).toBe(false);
+    expect('fileReplacements' in (configs['prod'] ?? {})).toBe(false);
+    expect(configs['dev']['outputPath']).toBe('builds/dev');
   });
 
   it('rejects unknown environment names via schema validation', async () => {
     await expect(run({ environments: ['preprod'] })).rejects.toThrow();
   });
 
-  it('accepts short aliases (dev/prod/stag) and sets output dirs', async () => {
+  it('accepts selected short aliases (dev/prod) and sets output dirs', async () => {
     const tree = await run({ environments: ['prod', 'dev'] });
     expect(tree.exists('/src/environments/environment.prod.ts')).toBe(true);
     expect(tree.exists('/src/environments/environment.staging.ts')).toBe(false);
     const configs = configurations(tree);
-    expect(configs['production']['outputPath']).toBe('builds/prod');
-    expect(configs['development']['outputPath']).toBe('builds/dev');
+    expect(configs['prod']['outputPath']).toBe('builds/prod');
+    expect(configs['dev']['outputPath']).toBe('builds/dev');
+    expect(configs['stag']).toBeUndefined();
     expect(Object.keys(configs)).not.toContain('staging');
   });
 
@@ -151,7 +166,7 @@ describe('ng-add', () => {
       afterFirst.projects['demo'].architect.build.configurations['production']['outputPath'],
     ).toBe('dist/custom');
     expect(
-      afterFirst.projects['demo'].architect.build.configurations['staging']['outputPath'],
+      afterFirst.projects['demo'].architect.build.configurations['stag']['outputPath'],
     ).toBe('builds/stag');
     expect(first.readContent('/.gitignore')).toContain('/builds');
     const second = await run({}, first);
@@ -163,7 +178,8 @@ describe('ng-add', () => {
     const tree = await run({ environments: 'stage,prod' });
     expect(tree.exists('/src/environments/environment.staging.ts')).toBe(true);
     expect(tree.exists('/src/environments/environment.prod.ts')).toBe(true);
-    expect(Object.keys(configurations(tree))).toContain('staging');
+    expect(Object.keys(configurations(tree))).toContain('stag');
+    expect(Object.keys(configurations(tree))).toContain('prod');
   });
 
   it('throws a clear error on unknown names in string form', async () => {
