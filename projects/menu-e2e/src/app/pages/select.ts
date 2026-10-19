@@ -54,6 +54,25 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
       (selectionChange)="multiValue.set($any($event))"
     />
     <p data-testid="multi-value">values={{ (multiValue() || []).join(',') }}</p>
+
+    <!--
+      RTL placement fixture. dir="rtl" sits on a WRAPPER, not on <html>, so the
+      panel has to resolve direction from its ancestors. The wrapper is pinned
+      to the RIGHT viewport edge, which is exactly where the old implementation
+      used to fling the panel.
+    -->
+    <h2>RTL</h2>
+    <div style="display: flex; justify-content: flex-end;">
+      <div dir="rtl">
+        <rv-select
+          id="rtl-select"
+          label="الدور"
+          [options]="rtlOptions"
+          (selectionChange)="rtlValue.set($any($event))"
+        />
+      </div>
+    </div>
+    <p data-testid="rtl-value">value={{ rtlValue() }}</p>
   `,
 })
 export class SelectPage {
@@ -68,5 +87,11 @@ export class SelectPage {
   ];
   readonly singleValue = signal<string | null>(null);
   readonly multiValue = signal<readonly string[] | null>(null);
+  readonly rtlOptions = [
+    { id: 'owner', label: 'Owner' },
+    { id: 'admin', label: 'Admin' },
+    { id: 'member', label: 'Member' },
+  ];
+  readonly rtlValue = signal<string | null>(null);
   readonly unusedController = new RiviniaSelect('single');
 }

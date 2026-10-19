@@ -5,7 +5,7 @@ test.describe('select: single mode', () => {
     await page.goto('/select');
     const trigger = page.locator('#single-select .rv-select-trigger');
     await trigger.click();
-    const panel = page.locator('#single-select .rv-menu-panel');
+    const panel = page.locator('#single-select .rv-select-panel');
     await expect(panel).toBeVisible();
 
     // accessible name from menuLabel
@@ -14,10 +14,10 @@ test.describe('select: single mode', () => {
     // searchable: filter
     const search = page.locator('#single-select .rv-select-search');
     await search.fill('paid');
-    await expect(page.locator('#single-select [rvmenuitem]')).toHaveCount(1);
+    await expect(page.locator('#single-select .rv-select-item')).toHaveCount(1);
 
     await page.keyboard.press('Enter');
-    await expect(page.locator('#single-select .rv-menu-panel')).toBeHidden();
+    await expect(page.locator('#single-select .rv-select-panel')).toBeHidden();
     await expect(page.getByTestId('single-value')).toContainText('value=paid');
     await expect(page.locator('#single-select .rv-select-value')).toContainText('Paid');
   });
@@ -25,7 +25,7 @@ test.describe('select: single mode', () => {
   test('disabled option is never picked', async ({ page }) => {
     await page.goto('/select');
     await page.locator('#single-select .rv-select-trigger').click();
-    const rows = page.locator('#single-select [rvmenuitem]');
+    const rows = page.locator('#single-select .rv-select-item');
     await expect(rows).toHaveCount(3);
     await expect(rows.nth(1)).toHaveAttribute('aria-disabled', 'true');
     await rows
@@ -41,9 +41,9 @@ test.describe('select: single mode', () => {
     await page.goto('/select');
     const trigger = page.locator('#single-select .rv-select-trigger');
     await trigger.click();
-    await expect(page.locator('#single-select .rv-menu-panel')).toBeVisible();
+    await expect(page.locator('#single-select .rv-select-panel')).toBeVisible();
     await page.locator('h1').click();
-    await expect(page.locator('#single-select .rv-menu-panel')).toBeHidden();
+    await expect(page.locator('#single-select .rv-select-panel')).toBeHidden();
   });
 });
 
@@ -52,10 +52,10 @@ test.describe('select: multi mode', () => {
     await page.goto('/select');
     const trigger = page.locator('#multi-select .rv-select-trigger');
     await trigger.click();
-    const rows = page.locator('#multi-select [rvmenuitem]');
+    const rows = page.locator('#multi-select .rv-select-item');
     await rows.nth(0).click();
     await rows.nth(1).click();
-    await expect(page.locator('#multi-select .rv-menu-panel')).toBeVisible();
+    await expect(page.locator('#multi-select .rv-select-panel')).toBeVisible();
     await expect(page.getByTestId('multi-value')).toContainText('values=a,b');
     await expect(page.locator('#multi-select .rv-select-check')).toHaveCount(2);
   });
@@ -65,7 +65,7 @@ test.describe('select: theme isolation', () => {
   test('menu theme does not leak into select, and vice versa', async ({ page }) => {
     await page.goto('/select');
     await page.locator('#single-select .rv-select-trigger').click();
-    const panel = page.locator('#single-select .rv-menu-panel');
+    const panel = page.locator('#single-select .rv-select-panel');
     await expect(panel).toBeVisible();
 
     const styles = await panel.evaluate((el) => {
@@ -93,7 +93,52 @@ test.describe('select: accessibility names', () => {
     const trigger = page.locator('#single-select .rv-select-trigger');
     await expect(trigger).toHaveAttribute('aria-labelledby', /.+/);
     await trigger.click();
-    const panel = page.locator('#single-select .rv-menu-panel');
+    const panel = page.locator('#single-select .rv-select-panel');
     await expect(panel).toHaveAttribute('aria-label', 'Invoice status options');
+  });
+});
+
+test.describe('select: RTL placement', () => {
+  test('aligns the panel to the trigger\'s leading (right) edge', async ({ page }) => {
+    await page.goto('/select');
+    const trigger = page.locator('#rtl-select .rv-select-trigger');
+    await trigger.click();
+    const panel = page.locator('#rtl-select .rv-select-panel');
+    await expect(panel).toBeVisible();
+
+    const t = await trigger.boundingBox();
+    const p = await panel.boundingBox();
+    expect(t).not.toBeNull();
+    expect(p).not.toBeNull();
+
+    // `dir="rtl"` is on a wrapper, not <html>: the panel must still resolve
+    // RTL and align its RIGHT edge with the trigger's RIGHT edge.
+    expect(Math.abs(p!.x + p!.width - (t!.x + t!.width))).toBeLessThanOrEqual(1);
+
+    // And it must stay glued to the trigger horizontally — the old code
+    // re-anchored an overflowing RTL panel to the trigger's LEFT edge, which
+    // threw it across the viewport.
+    expect(Math.abs(p!.x - t!.x)).toBeLessThanOrEqual(1);
+  });
+
+  test('keeps the panel inside the viewport when the trigger hugs the edge', async ({ page }) => {
+    await page.setViewportSize({ width: 420, height: 720 });
+    await page.goto('/select');
+    await page.locator('#rtl-select .rv-select-trigger').click();
+    const panel = page.locator('#rtl-select .rv-select-panel');
+    await expect(panel).toBeVisible();
+
+    const p = await panel.boundingBox();
+    const vw = page.viewportSize()!.width;
+    expect(p!.x).toBeGreaterThanOrEqual(-1);
+    expect(p!.x + p!.width).toBeLessThanOrEqual(vw + 1);
+  });
+
+  test('picks work in RTL and the trigger shows the label', async ({ page }) => {
+    await page.goto('/select');
+    await page.locator('#rtl-select .rv-select-trigger').click();
+    await page.locator('#rtl-select .rv-select-item').nth(2).click();
+    await expect(page.getByTestId('rtl-value')).toContainText('value=member');
+    await expect(page.locator('#rtl-select .rv-select-value')).toContainText('Member');
   });
 });
