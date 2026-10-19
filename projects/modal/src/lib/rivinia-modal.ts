@@ -185,7 +185,12 @@ export class RiviniaModal {
     const record: ModalRecord = {
       id,
       ref: options.ref ?? null,
-      caller: options.caller ?? null,
+      // A component type is stored by its name, so the UI can render it and
+      // the DevTools inspector can show it.
+      caller:
+        typeof options.caller === 'string'
+          ? options.caller
+          : (options.caller?.name ?? null),
       parentId: this.knownParent(options.parentId) ? (options.parentId as string) : null,
       data: options.data as unknown,
       content: this.normalizeContent(content, options),
@@ -193,7 +198,17 @@ export class RiviniaModal {
       // Precedence: built-in defaults < global config < named preset < per-call.
       // Layers merge field-by-field so an absent key never clobbers a default.
       dismiss: this.resolveDismiss(options.dismiss, options.preset),
-      metadata: { ...(options.metadata ?? {}) },
+      /*
+       * `size` and `coversOthers` are options, but the UI reads them from the
+       * instance — so they are recorded in the metadata, next to the title.
+       * A caller who set the same key in `metadata` wins: an explicit
+       * `metadata` entry is more specific than the option.
+       */
+      metadata: {
+        ...(options.size !== undefined ? { size: options.size } : {}),
+        ...(options.coversOthers !== undefined ? { coversOthers: options.coversOthers } : {}),
+        ...(options.metadata ?? {}),
+      },
       openedSeq: this._seq,
       generation: 0,
       guards: [...(options.guards ?? [])],

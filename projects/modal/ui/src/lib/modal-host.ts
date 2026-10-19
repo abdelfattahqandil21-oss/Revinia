@@ -1,4 +1,4 @@
-import { Component, Injector, computed, input } from '@angular/core';
+import { Component, Injector, computed, effect, input, output, signal } from '@angular/core';
 import type { Signal } from '@angular/core';
 import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import { RIVINIA_MODAL_CONTEXT } from '@rivinia/modal';
@@ -10,6 +10,7 @@ import type {
 } from '@rivinia/modal';
 import { RiviniaModalDialog } from './modal-dialog';
 import type { RiviniaModalSize } from './ui-types';
+import { covers } from './modal-covers';
 
 /**
  * Managed adapter: renders every `visible()` instance of the headless
@@ -49,23 +50,39 @@ export interface RiviniaModalHostManager {
 
 @Component({
   selector: 'rv-modal-host',
-  standalone: true,
   imports: [RiviniaModalDialog, NgComponentOutlet, NgTemplateOutlet],
   template: `
     @for (instance of visible(); track instance.id) {
+      @if (isCovered(instance)) {
+        <!--
+          Hidden by a dialog above it that asked to cover the others. It stays
+          in the manager — only the rendering is skipped, so it comes back when
+          the cover closes.
+        -->
+      } @else {
       <rv-modal-dialog
         [open]="true"
         [managed]="true"
         [closing]="instance.status === 'closing'"
         [title]="titleOfInstance(instance)"
-        [size]="size()"
+        [size]="sizeOf(instance)"
+        [attr.data-caller]="callerName(instance)"
         [showCloseButton]="showCloseButton()"
         [closeOnEscape]="instance.dismiss.closeOnEscape ?? true"
         [backdrop]="instance.dismiss.backdrop ?? 'close'"
         (dismissRequested)="onIntent(instance.id, $event)"
         (exitDone)="onExitDone(instance.id)"
       >
-        @if (instance.content.kind === 'template') {
+        @if (isLoading(instance)) {
+          <!--
+            The data has not arrived yet. A loader says so; an empty dialog
+            looks broken.
+          -->
+          <div class="rv-modal-loading" role="status" aria-live="polite">
+            <span class="rv-modal-spinner" aria-hidden="true"></span>
+            <span>{{ loadingLabel() }}</span>
+          </div>
+        } @else if (instance.content.kind === 'template') {
           <ng-container
             *ngTemplateOutlet="instance.content.template; context: templateContext(instance)"
           ></ng-container>
@@ -79,6 +96,7 @@ export interface RiviniaModalHostManager {
           ></ng-container>
         }
       </rv-modal-dialog>
+      }
     }
   `,
 })
@@ -96,7 +114,144 @@ export class RiviniaModalHost {
   /** Resolve a title per instance. Default: `metadata.title` → `ref` → `''`. */
   readonly titleOf = input<(instance: ModalInstance<unknown>) => string | undefined>();
 
-  protected readonly visible = computed(() => this.modal().visible());
+  /**
+   * Whether an instance is still loading.
+   *
+   * A dialog that opens before its data arrives has nothing to show yet, and
+   * an empty box reads as a broken dialog. While this returns true for an
+   * instance, the host renders a loader INSTEAD of the instance's content.
+   *
+   * It is per instance, because a host can have several dialogs open and
+   * they load independently.
+   *
+   * ```html
+   * <rv-modal-host
+   *   [modal]="modal"
+   *   [loadingOf]="(instance) => instance.data?.loading === true"
+   * />
+   * ```
+   */
+  readonly loadingOf = input<(instance: ModalInstance<unknown>) => boolean>();
+
+  /** Text of the loader. @default 'Loading…' */
+  readonly loadingLabel = input('Loading…');
+
+  /**
+   * The rendered stack.
+   *
+   * It is a signal the host owns rather than a computed over the manager, so
+   * the update can be wrapped in a view transition: the browser then paints
+   * the old stack and the new one as one continuous move instead of
+   * flickering between them.
+   */
+  protected readonly visible = signal<readonly ModalInstance[]>([]);
+
+  /** Push the manager's current stack into the rendered one. */
+  private readonly syncStack = effect(() => {
+    const next = this.modal().visible();
+    this.withTransition(() => this.visible.set(next));
+  });
+
+  /**
+   * Smooth the stack change with a view transition.
+   *
+   * Opening a dialog on top of another one used to FLICKER: the top layer
+   * re-promotes the lower dialog, and the browser paints the change in
+   * separate frames. A view transition makes it one continuous move.
+   *
+   * It is optional by design: where the API is missing, the change simply
+   * happens without it — a missing nicety must not break the dialog.
+   */
+  private readonly transition = (() => {
+    if (typeof document === 'undefined') return false;
+    return typeof (document as Document & { startViewTransition?: unknown }).startViewTransition === 'function';
+  })();
+
+  /** The last stack signature, so a change can be detected. */
+  private lastStackKey = '';
+
+  /**
+   * Run a view transition when the visible stack changed.
+   */
+  protected withTransition(change: () => void): void {
+    const key = this.modal()
+      .visible()
+      .map((i) => `${i.id}:${i.status}`)
+      .join('|');
+    if (!this.transition || key === this.lastStackKey) {
+      change();
+      this.lastStackKey = key;
+      return;
+    }
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+    try {
+      doc.startViewTransition?.(() => {
+        change();
+        this.lastStackKey = key;
+      });
+    } catch {
+      change();
+      this.lastStackKey = key;
+    }
+  }
+
+  /** Whether an instance hides the ones below it. */
+  protected readonly covering = computed(() => {
+    const list = this.visible();
+    // The topmost covering instance hides everything under it.
+    let coverId: string | null = null;
+    for (const instance of list) {
+      if (covers(instance)) coverId = instance.id;
+    }
+    return coverId;
+  });
+
+  /**
+   * Whether this instance is loading.
+   *
+   * A throwing resolver must not break the dialog, so it falls back to "not
+   * loading" — the content renders, which is the safe default.
+   */
+  protected isLoading(instance: ModalInstance<unknown>): boolean {
+    try {
+      return this.loadingOf()?.(instance) === true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * The name of the component that opened this dialog.
+   *
+   * Rendered as `data-caller` on the dialog, so the DevTools inspector shows
+   * WHICH component opened it — the thing you want when a dialog appears and
+   * you need to find its source.
+   */
+  protected callerName(instance: ModalInstance<unknown>): string | null {
+    return instance.caller ?? null;
+  }
+
+  /**
+   * The size of an instance.
+   *
+   * The host's `size` is the default; an instance may override it, so a small
+   * confirm can sit on top of a wide form without a second host.
+   */
+  protected sizeOf(instance: ModalInstance<unknown>): RiviniaModalSize {
+    const own = (instance.metadata?.['size'] as RiviniaModalSize | undefined) ?? undefined;
+    return own ?? this.size();
+  }
+
+  /**
+   * Whether an instance hides the ones below it.
+   *
+   * A stack renders every dialog, so the ones below stay visible behind the
+   * top one. When the top one covers the others, the ones below are not
+   * rendered at all — and they come back when it closes.
+   */
+  protected isCovered(instance: ModalInstance<unknown>): boolean {
+    return this.visible().some((other) => other.id !== instance.id && covers(other));
+  }
 
   protected titleOfInstance(instance: ModalInstance<unknown>): string {
     try {

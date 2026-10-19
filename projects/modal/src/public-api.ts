@@ -1,4 +1,5 @@
 export type { RiviniaModalConfig, ModalPreset } from './lib/modal-config';
+export type { RiviniaModalSize } from './lib/modal-types';
 export type {
   ModalContent,
   ModalContext,

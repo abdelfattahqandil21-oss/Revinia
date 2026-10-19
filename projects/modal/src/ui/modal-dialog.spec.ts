@@ -31,7 +31,6 @@ function ensureDialogApi(): void {
 }
 
 @Component({
-  standalone: true,
   imports: [RiviniaModalDialog],
   template: `<rv-modal-dialog
     [(open)]="open"
@@ -54,7 +53,6 @@ beforeEach(() => {
 });
 
 @Component({
-  standalone: true,
   imports: [RiviniaModalDialog],
   template: `<rv-modal-dialog
     [(open)]="open"
@@ -139,7 +137,6 @@ describe('RiviniaModalDialog', () => {
 
   it('passes position and size through as data attributes (CSS does the rest)', () => {
     @Component({
-      standalone: true,
       imports: [RiviniaModalDialog],
       template: `<rv-modal-dialog [position]="'side-end'" [size]="'lg'" />`,
     })

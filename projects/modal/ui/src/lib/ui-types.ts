@@ -3,7 +3,11 @@
  * preset is a CSS custom property (`--rv-modal-width-*`) the consumer can
  * override without touching library source. `auto` sizes to content.
  */
-export type RiviniaModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full' | 'auto';
+// The size vocabulary lives in the core, because the size is chosen when the
+// dialog is OPENED. One union, so the two entry points cannot drift.
+import type { RiviniaModalSize } from '@rivinia/modal';
+
+export type { RiviniaModalSize };
 
 /**
  * Placement in the viewport. `start`/`end` are logical (RTL-aware).
