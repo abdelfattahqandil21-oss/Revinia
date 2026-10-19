@@ -43,7 +43,6 @@ import { ProofStore } from '@rivinia/proof-core';
 import { ProofBadge } from '@rivinia/proof-core/ui';
 
 @Component({
-  standalone: true,
   imports: [ProofBadge],
   template: `
     <button type="button" (click)="store.increment()">Add one</button>

@@ -22,7 +22,6 @@ import { Component, inject } from '@angular/core';
 import { SecondStore } from '@rivinia/proof-second';
 
 @Component({
-  standalone: true,
   template: `
     <button type="button" (click)="store.mark('invoice-42')">Record invoice</button>
     <button type="button" (click)="store.clear()">Clear</button>
