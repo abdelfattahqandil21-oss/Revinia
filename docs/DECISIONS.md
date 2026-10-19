@@ -588,3 +588,506 @@ Files in`public/i18n/{lang}.json`are served at`i18n/{lang}.json`, so the
   rebuilt and installed into a clean consumer build. WebKit cannot launch here
   (missing libWPEWebKit-2.0, libbacktrace, libjxl.so.0.8, libavif.so.16) and
   is NOT claimed. NOT published.
+
+## 2026-10-19 — D40: select's vendored popup leaves the `menu` namespace; CSS anchor positioning
+
+- Context: a consumer app (`brand-page`, not published) upgraded
+  `@rivinia/select` 0.4.2 → 0.5.0 and hit two failures, both reproduced and
+  measured in headed Chromium (viewport 900×912, RTL and LTR):
+  1. The app rendered `NG0912: Component ID generation collision detected.
+     Components 'RiviniaMenuComponent' and 'RiviniaMenuComponent' with selector
+     'rv-menu'`. `select` shipped a private copy of the menu component using the
+     SAME selector as `@rivinia/menu`. Angular registers one definition per
+     colliding id, so the loser's `styles` were never injected — the select's
+     panel was silently rendered with the other package's CSS.
+  2. With that CSS in place the panel flew away from its trigger: trigger at
+     `x=11..232`, panel at `x=708..929` (929 − 221 = 708, to the pixel).
+- Root causes, both verified rather than assumed:
+  - **Cascade leak.** `[data-top-layer='true'] { inset: auto }` and the
+    `[data-placement=…]` inset rules share specificity `(0,2,0)`, and the
+    top-layer rule came FIRST, so it lost. In LTR the leak was invisible
+    (`inset-inline-start: 0` → `left: 0`, the same property the component
+    writes inline, so the inline value won). In RTL it resolved to `right: 0`,
+    which the component never writes — the box became over-constrained and
+    CSS 2.1 §10.3.7 dropped `left`, pinning the panel to the viewport edge.
+  - **The collision**, which meant the fix could not even be applied: the
+    library's own styles were absent from the document (proved by enumerating
+    `document.styleSheets` — only the consumer's rules matched `rv-menu`).
+- Decisions:
+  - **The vendored copy is renamed out of the `menu` namespace**: selector
+    `rv-select-menu`, classes `.rv-select-menu-*`, tokens `--rv-select-menu-*`,
+    types `SelectPopup*`. `menu` no longer appears in the package's own
+    vocabulary. Renaming the SELECTOR is what breaks the id hash —
+    `componentDef.type.name` is not part of `getComponentId`, but
+    `componentDef.selectors` is (verified in the installed
+    `@angular/core` source). The `--rv-select-*` → `--rv-select-menu-*` token
+    bridge is kept, so ancestor theming still reaches the panel.
+  - **CSS anchor positioning places the panel**, inside `@supports`
+    (`anchor-name` / `position-anchor` / `position-area` with LOGICAL keywords,
+    `width: anchor-size(inline)`, `position-try-fallbacks`). Logical keywords
+    make RTL correctness structural rather than a JS branch. Baseline
+    widely-available since 2026-01, so the JS coordinate path stays as the
+    fallback and is direction-correct for both directions after the cascade fix.
+  - **`anchor-scope: all` on the component host is required**: without it every
+    panel resolves its anchor to the LAST trigger in the document (the spec's
+    tie-break for a duplicate `anchor-name`) — measured, all three panels of a
+    three-select page landed on the third trigger, up to 431px away.
+  - **ARIA is left alone**: `role="menu"`, `menuitem`, `aria-haspopup="menu"`
+    are W3C values, not package vocabulary; renaming them would change the
+    accessibility contract, not the code's naming.
+  - **Package layout follows Angular convention**: `components/<name>/` holds
+    the `.ts` + `.html` + `.css` triple; `models/`, `services/`, `utils/` hold
+    types, the headless controller and pure math. Templates and styles are
+    external files, not inline.
+- Alternatives rejected: fixing the JS position math alone (the math was
+  correct — the leak was the defect); dropping the top layer (loses clipping
+  and stacking escape); `role="listbox"` (a semantics change, out of scope);
+  renaming the class only (does not change the id hash).
+- Verified: 44/44 select unit tests (specs updated to the new selectors),
+  ng-packagr build, dist FESM grep shows zero `menu` vocabulary outside the
+  ARIA values, and a consumer app measured 0px offset / equal width / correct
+  inline-start alignment for all three selects in BOTH LTR and RTL.
+  NOT published.
+
+## 2026-10-19 — D41: `@rivinia/menu` had the same RTL defect; fixed with the same mechanism
+
+- Context: D40 fixed the select's popup. The same consumer app then exposed
+  the **identical** defect in `@rivinia/menu`, which had never been reported
+  because the app's only menu used a placement that hides it.
+- Verified from source (not inferred): `projects/menu/ui/src/lib/menu-panel.ts`
+  had the same rule order as the select's pre-fix CSS — the
+  `[data-top-layer='true'] { inset: auto }` rule sat **before** the four
+  `[data-placement=…]` inset rules, both at specificity `(0,2,0)`, so the
+  placement rules won and `inset-inline-start/end` leaked into the fixed
+  top-layer box.
+- **Why it was never seen:** the default placement is `bottom-start`, but the
+  consumer's menu used `bottom-end`. In LTR, `inset-inline-end: 0` resolves to
+  `left: 0` — the same physical property the component writes inline, so the
+  inline value won and the panel looked correct. In RTL the two swap:
+  `inset-inline-start: 0` resolves to `right: 0`, which the component never
+  writes, and CSS 2.1 §10.3.7 drops `left` in RTL, pinning the panel to the
+  viewport edge. Measured in the consumer app with `placement="bottom-start"`:
+  trigger at `x=19..74`, panel at `x=636..1010` — **617px away**.
+- Decision: **the same fix as D40**, applied to the menu's CSS:
+  - the top-layer rule moves after the placement rules;
+  - CSS anchor positioning places the panel (`anchor-name` /
+    `position-anchor` / `position-area` with logical keywords,
+    `position-try-fallbacks`, `position-visibility`);
+  - `anchor-scope: all` on the `rv-menu` host, which is required for the
+    same measured reason as the select.
+- **One deliberate difference from the select:** a menu sizes to its
+  **content**, a select matches its trigger. The select uses
+  `width: anchor-size(inline)`; the menu uses `width: max-content` plus its
+  `min-width`, and `justify-self` picks the edge inside a
+  `span-inline-*` area. Using `anchor-size(inline)` on the menu would squeeze
+  a 55px avatar button into a 55px menu. A bare `block-end` area was also
+  measured and rejected: it spans the whole inline axis, so `justify-self`
+  aligns to the viewport rather than the trigger (measured: panel at `x=0`,
+  19px from its trigger).
+- Verified: 32/32 menu unit tests, ng-packagr build, and a consumer app
+  measured `distance: 0` and the panel's end edge aligned with its trigger's
+  in **both** LTR and RTL, with the panel keeping its content width (320px
+  beside a 55px trigger).
+- Version: **0.3.5** (patch; a bug fix, not a feature).
+- Open, from the same audit — the theme work is NOT started:
+  - `modal` and `toast` declare their token defaults **on the component
+    element**, so a global `--rv-*` layer cannot reach them at all today; the
+    read sites need two-level chains (`var(--rv-modal-bg, var(--rv-bg, …))`)
+    and the element-local default blocks have to go.
+  - `modal` forces a dark scheme and `toast` forces a light one via
+    `prefers-color-scheme`, which contradicts the documented "no forced dark
+    mode" contract the other packages keep.
+  - the e2e suite only asserts the placements where the leak is invisible
+    (RTL `bottom-end`, LTR `bottom-*`); the dangerous combinations
+    (RTL + `bottom-start`, LTR + `bottom-end`, any `top-*`) are asserted
+    nowhere.
+  - the toast README documents no theming surface at all.
+  NOT published.
+
+## 2026-10-19 — D42: one global token layer, and the surface a consumer can actually change
+
+- Context: after D40/D41 the select and the menu both behave correctly, but a
+  consumer asked the sharp question: *the component carries too much style; I
+  cannot change the radius, the border, the panel background.* Measured in the
+  consumer app, the truth was more precise than the complaint:
+  - the **palette and shape** tokens (`--rv-select-bg`, `--rv-select-radius`,
+    `--rv-select-shadow`, …) DID work, and they reached the trigger and the
+    panel together (measured: `oklch(0.21 0.03 265)` → `rgb(1,2,3)` on both);
+  - the **metrics** were hard-coded (row padding `8px 10px`, row radius
+    `8px`, row min-height `40px`, trigger padding `8px 12px`, focus ring,
+    hover/active tints, search and empty-state padding);
+  - and the **CSS class names** already worked as an override surface, because
+    the component styles are unencapsulated — but nothing documented that, so
+    a consumer could not rely on it.
+- Decisions:
+  - **A shared semantic layer**, `--rv-bg` / `--rv-fg` / `--rv-muted` /
+    `--rv-border` / `--rv-radius` / `--rv-shadow` / `--rv-font` / status
+    colours, read by every package as
+    `var(--rv-<pkg>-<x>, var(--rv-<semantic>, <default>))`. Three levels of
+    control, each beating the next: per-package token → semantic token →
+    built-in default. Measured on the consumer app: `--rv-select-bg` (blue)
+    won over `--rv-bg` (magenta), which won over the default.
+  - **A new `@rivinia/theme` package** carrying that layer, so ONE import
+    does it — the shape `tailwindcss` uses: `@import '@rivinia/theme';`.
+    It also ships `tailwind.css` and `bootstrap.css` adapters and an SCSS
+    entry. The layer's defaults live inside `@layer rivinia-theme`, because
+    unlayered declarations beat layered ones: a consumer's own
+    `:root { --rv-bg: … }` must win wherever it appears. (Measured: with the
+    defaults unlayered, the shipped file beat the app's mapping and the
+    override did nothing.)
+    - The layer must be mapped on `:root`, never on a component element —
+      an element-level declaration shadows the root value and the override
+      silently stops working. Measured.
+  - **The metric hard-codings became tokens** — ~22 for the select and ~12 for
+    the menu (row padding/radius/min-height/size/gap, hover and active tints,
+    disabled opacity, focus ring and offset, search and empty-state metrics,
+    text alignment, trigger justification). Measured end to end: row padding
+    `8px 10px` → `18px 22px`, row radius `8px` → `2px`, trigger padding
+    `8px 12px` → `16px 20px`.
+  - **The class names are documented as a stable override API**, with the
+    `data-*` hooks. They were always global; they are now contract.
+  - **`optionTemplate`** — a new input on `rv-select` that replaces an option
+    row's content with the consumer's markup, which is the answer to icons,
+    avatars, badges and group headers. The `<button>` wrapper stays, so the
+    ARIA, the keyboard handling, the disabled state and the multi-mode check
+    keep working. An `icon` FIELD was rejected: it would put raw markup (or a
+    URL the library must fetch) in the component's hands, and every consumer's
+    icons differ. Verified by a test: 59/59 select tests.
+- **Framework support** — all of these work, because the components read CSS
+  custom properties and every stack can produce or consume them: plain CSS
+  (`@import '@rivinia/theme'`), Tailwind v4 (`@theme` / `@theme inline`),
+  Bootstrap 5.3 (`--bs-*` + `data-bs-theme`), Sass (`@use '@rivinia/theme/scss'`
+  — Dart Sass loads a plain `.css` file as a module when the extension is
+  omitted, so the SCSS entry exists for that reason), and Less (custom
+  properties pass through untouched; Less VARIABLES are a different mechanism
+  and do not interoperate). The library's CSS uses `@supports` and `@media`
+  only — no Sass or Less syntax — so it compiles as plain CSS anywhere.
+- Verified: 59/59 select, 32/32 menu, all three packages build, the dist
+  greps are clean, and a consumer app measures the override surface working
+  (tokens, alignment tokens, the global layer reaching both the select and
+  the menu, and the panel still attached to its trigger at 0px offset).
+  NOT published.
+
+## 2026-10-19 — D43: README convention, and a release skill
+
+- Context: the user pointed at `@tanstack/angular-virtual`'s README as the
+  model and asked for the Rivinia READMEs to follow that order, and for
+  reliable "skills".
+- **README convention** (adopted from the TanStack shape, which is a good
+  model for an npm library page):
+  1. title, badges, one-paragraph description, then the facts (version,
+     Angular requirement, entry points, side effects);
+  2. **Quick features** — a bulleted list of what the package does;
+  3. **Install** — the command for EVERY package manager (npm / pnpm / yarn /
+     bun), not just npm;
+  4. the rest of the documentation, in the order a reader needs it:
+     imports → package layout → quick start → API → forms → headless usage →
+     custom UI → override surface → theming → keyboard → accessibility →
+     migration notes.
+  - The ordering rule that mattered: **API before the deep dives.** A reader
+    who wants the input names should not have to scroll past the headless
+    chapter to find them.
+- **`@rivinia/theme` README** — written from scratch in the same shape; it is
+  also shipped in the tarball (an `assets` entry), because the npm page IS
+  the README.
+- **A release skill** at `.opencode/skills/rivinia-release/SKILL.md`:
+  - The gates in `AGENTS.md` were already written, but they were prose an
+    agent had to re-interpret on every release. The skill turns them into a
+    runnable sequence — build → test → **inspect the tarball** (exports,
+    types, peers, sideEffects, file list, and a grep of the dist FESM for
+    runtime imports beyond the declared peers) → prove it in a CLEAN consumer
+    (a `file:` link proves nothing about what npm will serve) → test the
+    public imports as a consumer uses them → record bundle sizes → **get
+    explicit user confirmation** (name, version, access, file list) → publish
+    from a namespaced tag → verify the registry state.
+  - It also encodes the two traps this repo has actually hit: a spec glob
+    that silently excludes a suite (the `ui/src/**` gap that left the
+    regression specs unrun), and a rename leaking into the bundle.
+  - `opencode/autoinvoke: false` — a release must be asked for, never
+    volunteered. The skill's ID is the path (`rivinia-release`), not the
+    frontmatter `name`.
+- Verified: 59/59 select, 32/32 menu, all three packages build, and
+  `npm pack --dry-run` on the theme tarball shows 8 files / 4.5 kB with the
+  README included.
+  NOT published.
+
+## 2026-10-19 — D44: sizes in rem, `standalone` dropped, and migration notes written for the consumer
+
+- Context: three sharp corrections from a consumer reading the packages as a
+  user, not as an author of them.
+- **Sizes are now `rem`, not `px`.** Every type and spacing token moved:
+  `13px → 0.8125rem`, `14px → 0.875rem`, `8px 12px → 0.5rem 0.75rem`,
+  `40px → 2.5rem`, and so on. Measured in the consumer app: at a 17px root
+  the trigger is 14.875px with `8.5px 12.75px` padding; at a 24px root it is
+  21px with `12px 18px` padding. In `px` nothing would have moved. This is
+  what makes the components follow the browser's text-size preference, a
+  user-set accessibility default, and the app's own `html { font-size }` —
+  the levers that matter on the 2026 device range, where the root font size
+  varies far more than the viewport width does.
+  - What deliberately stayed in `px`: hairline borders (`1px`), focus-ring
+    widths (`2px`), SVG icon boxes (`16px`, which carry a `viewBox`), and
+    shadow offsets/blur. None of them is type or spacing, and a hairline must
+    stay a hairline.
+- **`standalone: true` removed** from every component, directive and spec in
+  the workspace, and from every README example. Verified in the installed
+  Angular: `standalone: metadata.standalone === undefined ? true : …` — it is
+  the default since Angular 19, so writing it says nothing, and the README
+  was teaching consumers to write it.
+- **Migration notes rewritten for the reader, not the author.** The previous
+  notes explained how the bugs were fixed — cascade leaks, CSS specificity,
+  over-constrained boxes. That is a `DECISIONS.md` entry, not a migration
+  note; a consumer needs to know what to change, if anything.
+  - `@rivinia/menu` 0.3.4 → 0.3.5 is now: **"Nothing to do."** No API
+    changed, no token was renamed, no class was renamed; the panel just stays
+    attached to its trigger in RTL now. The selectors a consumer might have
+    targeted are listed, unchanged, so they can confirm.
+  - `@rivinia/select` 0.4.x → 0.5.1 is now two mechanical steps: the
+    markup rename table (only if you targeted the markup) and `[menuLabel]`
+    → `[popupLabel]` (only if you bound it), plus a line saying everything
+    else is additive.
+- **The "Package layout" section was removed** from the select README and
+  from its migration notes. The internal file tree is an implementation
+  detail; a consumer needs the public entry points, and the public exports
+  did not change — so there was no migration to document.
+- Verified: all five packages build; 59/59 select, 32/32 menu, 51/51 modal,
+  33/33 toast; and the rem scaling measured in the consumer app.
+  NOT published.
+
+## 2026-10-19 — D45: reopening a single-mode select, and the paged-data features
+
+- Context: a consumer reported that after picking a value with the arrow keys
+  and reopening the panel, the active row started at the FIRST option instead
+  of the chosen one — and noted that multi mode was already right.
+- **Cause.** `openMenu('first')` calls `activateFirst()` unconditionally, and
+  the select's own query effect calls `activateFirst()` on every query change.
+  Neither consulted the current selection. Multi mode was right for a
+  different reason: it never closes on a pick, so the active row simply stayed
+  where it was.
+- **Fix.** On open, in single mode, the select activates the option that is
+  already selected (if it is still in the filtered list). The popup service
+  has no knowledge of the selection — that lives in the headless controller —
+  so the select is the right place to make the decision.
+- **The regression test is real**: with the fix reverted, two cases fail
+  ("reopens on the option that was picked" and the open-close cycle); with it
+  in place, all pass. Verified by actually reverting and re-running, not by
+  asserting the test exists. 70/70 select tests.
+- **Paged data.** A select whose options come from a paged API now has:
+  - `[loading]` — a loader row under the list, `role="status"` so it is
+    announced without stealing focus;
+  - `(reachEnd)` — emitted when the panel scrolls near its end. The threshold
+    is a **length** (`--rv-select-popup-reach-end-offset`), not a percentage:
+    the panel's scrollable height changes as rows arrive, so a percentage
+    would fire at a different row every time;
+  - a **footer slot** (`[rv-select-popup-footer]`) for a "Load more" button;
+  - `[listTemplate]` — replaces the whole list, for a virtualised one;
+  - `(panelReady)` — hands over the panel element, which is the scroll
+    container a virtualizer needs (`injectVirtualizer`'s `scrollElement`).
+- **Custom animation.** The entrance is now ONE token,
+  `--rv-select-popup-animation`, not three separate ones. A token rather than
+  an `animation` override on purpose: Angular injects a component's styles
+  into `<head>` at runtime, which is AFTER the app's stylesheet, so at equal
+  specificity the library's declaration wins and a consumer's override would
+  silently do nothing. The duration and easing are still separate tokens for
+  the common case.
+- Verified: 70/70 select, 32/32 menu, 51/51 modal, 33/33 toast; all five
+  packages build; and the reopen fix measured in the consumer app (the active
+  row after reopening is the picked option, not the first one).
+  NOT published.
+
+## 2026-10-19 — D46: modal and toast join the shared layer; the forced schemes go
+
+- Context: D42 introduced the shared semantic layer and applied it to the
+  select and the menu. The modal and the toast were left out, and they had a
+  structural problem the other two did not: they declared their token defaults
+  **on the component element**.
+- **Why that blocked everything.** A declaration on the element out-ranks any
+  value an ancestor sets, so `--rv-modal-bg` declared on `.rv-modal` made the
+  semantic layer unreachable for the dialog — not "harder to theme", but
+  impossible. The select and the menu read their tokens at the read site, so
+  an ancestor's value won there.
+- **Decisions:**
+  - The modal and the toast now read their palette at the READ SITE, as
+    two-level chains: `var(--rv-modal-bg, var(--rv-bg, #ffffff))`. The
+    per-package token still wins for that component alone; the semantic layer
+    is next; the built-in default is last.
+  - The element keeps only the LAYOUT tokens (widths, padding, durations) —
+    they are component-specific and have no semantic counterpart.
+  - **The forced scheme blocks are gone**: the modal forced a dark palette
+    under `prefers-color-scheme: dark` and the toast forced a light one. Both
+    contradicted the "no forced dark mode" contract the other packages
+    document, and both overrode a consumer's explicit choice. The components
+    now follow the consumer's scheme, like everything else.
+  - The toast's kind colours chain too: `--rv-toast-success` →
+    `--rv-ok`, `--rv-toast-error` → `--rv-danger`, and so on.
+  - The remaining type and spacing values in the modal and the toast moved to
+    `rem`, like the select and the menu (D44).
+- **The consumer app was cleaned up too**: `brand-page` no longer sets
+  `--rv-modal-bg` / `--rv-toast-bg` / `--rv-toast-fg` etc. per package. With
+  the semantic layer mapped once on `:root` next to the `--app-*` values it
+  derives from, those rules were redundant — and they were what had been
+  masking the global layer.
+- **Verified in the consumer app**, with one variable overridden on `:root`:
+  the select's trigger, the menu's panel and the modal's surface all turned
+  `rgb(255, 0, 255)`, the modal's text turned `rgb(0, 255, 255)`, and the
+  dialog's font scaled from 17px to 24px with the root font size. The toast's
+  chain was verified in the built artefact
+  (`.rv-toast { background: var(--rv-toast-bg, var(--rv-bg, #ffffff)) }`) —
+  the app did not produce a toast during the run, so that one is verified in
+  the build rather than on screen, and is reported as such.
+- Also added: a **Theming** section to the toast README (it documented no
+  theming surface at all) and to the modal README, both example-first.
+- 70/70 select, 32/32 menu, 51/51 modal, 33/33 toast; all five packages
+  build. NOT published.
+
+## 2026-10-19 — D47: a select cannot overflow its row; unexpected errors are not masked; the dialog gets a loader
+
+Three defects, all found by a consumer using the packages.
+
+### 1. A select could overflow its cell and land on its neighbour
+
+- **Measured.** A grid cell was 207px; the trigger was **357px** — overflowing by
+  150px and overlapping the next select. The cause: `min-width:
+  var(--rv-select-width)` on the trigger, with `--rv-select-width` set to 21rem
+  (357px at a 17px root). In CSS **`min-width` beats `max-width`**, so the
+  trigger's `max-width: 100%` could not cap it. A plain `max-width` was
+  powerless, and a `width: 100%` on the trigger would have fought the
+  `min-width` instead of resolving it.
+- **Fix, in three parts:**
+  - `min-width: min(var(--rv-select-width, 14rem), 100%)` on the trigger —
+    `min()` is the only way to cap a `min-width`, because the cascade gives
+    `min-width` priority over `max-width`.
+  - the width has to reach the trigger, and the chain is host → wrapper →
+    popup host → trigger wrapper → trigger. Two links in it were
+    `inline-block`/`inline-flex` and therefore shrink-to-fit, so the cap
+    resolved against a narrow width. Both now carry `width: 100%`, which
+    resolves to `auto` when nothing upstream has a definite width — so a select
+    with no size constraint still shrink-wraps to its content, as before.
+  - the panel's own `min-width` is capped the same way, so the popup can never
+    be wider than the button that opened it.
+- **Verified in the consumer app**: the triggers are now 207/207/207 in 207px
+  cells (no overflow), the panel is 207px — exactly the trigger's width — and
+  it stays 0px from it. Before: 357px, overflowing.
+
+### 2. Unexpected runtime errors were masked as network failures
+
+- The consumer's `ApiService.toApiError` turned **every** thrown value into an
+  `ApiError`, so a `TypeError` from a response shape that did not match the
+  model surfaced as *"Could not reach the lab backend. Is it running on port
+  4010?"* — sending every hunt for the cause to the wrong place. This is
+  exactly the class of failure that passes TypeScript and breaks at runtime.
+- **Fix.** Only an `HttpErrorResponse` is an expected failure and becomes an
+  `ApiError`. Anything else is **logged and rethrown**, so the app's global
+  handler sees it too. A `rethrowIfUnexpected(error, context)` helper applies
+  the same rule at every screen-level catch: an `ApiError` is shown, anything
+  else is reported and rethrown. The screen still finishes its work — the
+  world continues — but the defect is never silent.
+- The library's own `catch` blocks were reviewed and left alone: they are
+  best-effort DOM calls (focus, scroll lock) and one known condition
+  (NG0205, an owner destroyed before the dialog opened). Rethrowing those
+  would break the app for a non-problem.
+
+### 3. The dialog had no loading state
+
+- A dialog that opens before its data arrives showed an empty box, which
+  reads as a broken dialog.
+- **Fix.** `loadingOf` on the host — the same shape as the existing `titleOf`
+  — decides PER INSTANCE whether it is loading, because one host can have
+  several dialogs open and they load independently. While it is true the host
+  renders a loader instead of the instance's content: a `role="status"`
+  polite live region (announced without stealing focus) with a spinner that
+  `prefers-reduced-motion` stops. A throwing resolver falls back to "not
+  loading", so the content renders — the safe default.
+- Verified: 51/51 → 53/53 modal tests, the new cases covering both the
+  loading and the not-loading paths.
+
+## 2026-10-19 — D48: DI for the select controller, frozen options, and errors the consumer can see
+
+- **The controller can be injected.** `new RiviniaSelect('multi')` in a component
+  is opaque to Angular: it cannot be overridden in a test and it is invisible
+  to the injector graph. A root singleton would be wrong — the controller is
+  per-select state — so the provider form is used instead:
+  `provideRiviniaSelect(mode)` + `injectRiviniaSelect()`, over a
+  `RIVINIA_SELECT` token typed as the structural
+  `RiviniaSelectController`. A test replaces the controller by providing the
+  token, without touching the component. `injectRiviniaSelect()` throws when
+  nothing is provided, rather than returning `undefined` and failing much
+  later somewhere unrelated.
+- **Registered options are frozen.** `readonly` on `RiviniaSelectOption` is a
+  compile-time promise only. An option that could be mutated after
+  registration would let the filtered list and the selection disagree, so the
+  registry now holds `Object.freeze`d copies.
+- **The item radius follows the semantic layer**, like every other shape:
+  `--rv-select-item-radius` → `--rv-radius` → `0.5rem`, and the same for the
+  menu's item radius.
+- **An unexpected error now reaches the consumer.**
+  - The library throws; the app decides what "unexpected" means.
+  - The consumer app replaced Angular's `ErrorHandler` with one that logs
+    WITH the cause and shows a toast. Angular's default only logs, so a defect
+    that passes TypeScript and breaks at runtime used to vanish into the
+    console while the screen quietly stopped working.
+  - `rethrowIfUnexpected(error, context)` reports through the `ErrorHandler`
+    (so the app can show it) and then rethrows (so it is never silent). An
+    `ApiError` is still just handled.
+  - **Verified on screen**: an unhandled `TypeError` produced a toast reading
+    *"Cannot read properties of undefined (reading 'data')"*.
+  - **A second defect fell out of that work**: the app's `<rv-toast-list>` had
+    no `[manager]`, so the list was in presentational mode with an empty
+    array — **no toast had ever appeared in this app**. Every toast the app
+    had been showing was going nowhere. The list is now managed, and the
+    app's own "Signed in as …" toast appears for the first time.
+
+## 2026-10-19 — D42: the release set — what changed, what the versions are, and what is still open
+
+- **The version set**, chosen by what actually changed, not by convenience:
+  | Package  | From  | To     | Why                                                             |
+  | -------- | ----- | ------ | --------------------------------------------------------------- |
+  | `select` | 0.5.0 | 0.6.0  | The popup rename and `[menuLabel]` → `[popupLabel]` are breaking. |
+  | `modal`  | 0.5.3 | 0.6.0  | The forced scheme blocks are gone, and `size`/`coversOthers` are new. Behaviour changed. |
+  | `toast`  | 0.4.2 | 0.5.0  | The list became a top-layer popover. Behaviour changed.            |
+  | `menu`   | 0.3.4 | 0.3.5  | The RTL panel fix. A bug fix, so a patch.                            |
+  | `theme`  | —     | 0.1.0  | New package.                                                      |
+  Pre-1.0 rule from `AGENTS.md`: a minor bump is a breaking change, a patch is
+  a bug fix.
+- **The published 0.5.0 of `@rivinia/select` had MORE public API than the
+  local source** — it was built from the 0.5.0 branch, while the work
+  continued on the 0.4.2 base. Publishing the local source as-is would have
+  REMOVED `computeSelectPosition`, `SELECT_GAP`, the position types and
+  `setValue`/`setValues` from the public surface. They were restored before
+  the release, and the position helper is exported under its 0.5.0 name
+  (`computeSelectPosition`, `SELECT_GAP`, `PanelCoordinates`, `PanelSize`,
+  `SelectPlacement`, `TriggerRect`, `ViewportSize`), so 0.6.0 is a strict
+  superset of 0.5.0 rather than a regression.
+- **A toast now floats above a modal dialog.** The list is a manual popover,
+  so it is in the browser's top layer — the layer a `<dialog>` uses — and it is
+  re-shown whenever its contents change, because the top layer stacks in the
+  order elements are SHOWN. Measured: the element at the toast's position is
+  the toast, not the dialog.
+  - The popover's **user-agent styles are reset** (background, border, padding,
+    `overflow`). Left alone they put a shared canvas and a scrollbar around the
+    stack, so five toasts read as one block.
+  - Two traps found by measuring, not by reading: `showPopover()` on an
+    element that is not a popover yet throws `NotSupportedError`, so the
+    attribute is set imperatively as well as by the binding; and
+    `inject(ElementRef)` in a component yields the HOST element, so the
+    popover has to be the panel — a `viewChild` — not the host.
+- **The dialog** gained a per-instance `size`, a `coversOthers` flag, a
+  `loadingOf` loader, responsive `clamp()` presets, a `data-caller` attribute
+  naming the component that opened it, a box transition, and a view transition
+  for the stack change.
+- **The select** gained the DI helpers (`provideRiviniaSelect` /
+  `injectRiviniaSelect`), frozen registered options, `optionTemplate`,
+  `listTemplate`, `loading`, `reachEnd`, a footer slot, and a single
+  `--rv-select-popup-animation` token.
+- **The consumer app** stopped masking unexpected errors: only an
+  `HttpErrorResponse` becomes an `ApiError`; anything else is reported
+  through Angular's `ErrorHandler` — which the app replaced with one that
+  logs AND shows a toast — and then rethrown. Its `<rv-toast-list>` also had
+  no `[manager]`, so **no toast had ever appeared in that app**; that was
+  found while wiring the error handler, and fixed.
+- Gates: all eight packages build; 70/70 select, 32/32 menu, 53/53 modal,
+  35/35 toast; every tarball inspected (exports, types, peers, sideEffects,
+  file list) with **zero runtime imports** beyond the declared peers; the
+  tarballs installed into a consumer as real npm packages and built.
+- **Not published** — the tarballs are in `pack/` and await the user's
+  explicit confirmation (name, version, access, file list), per `AGENTS.md`
+  gate 7 and D05.
