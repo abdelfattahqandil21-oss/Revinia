@@ -49,7 +49,6 @@ class FakeManager implements RiviniaToastListManager {
 }
 
 @Component({
-  standalone: true,
   imports: [RiviniaToastList],
   template: `<rv-toast-list [manager]="manager" [position]="'top-end'" />`,
 })
@@ -58,7 +57,6 @@ class ListHarness {
 }
 
 @Component({
-  standalone: true,
   imports: [RiviniaToastList],
   template: `<rv-toast-list [toasts]="items" (dismissed)="onDismiss($event)" />`,
 })

@@ -7,7 +7,7 @@ An Angular signal-based toast queue with timers, actions, deduplication, and
 overflow handling. Core is headless; an optional standalone UI is available at
 `@rivinia/toast/ui`.
 
-- Package version: **0.4.2**
+- Package version: **0.5.0**
 - Peer dependency: **`@angular/core` `^22.0.0`**
 - No `tslib`, router, or HTTP peer dependency.
 
@@ -57,7 +57,6 @@ import { RiviniaToastList } from '@rivinia/toast/ui';
 
 @Component({
   selector: 'app-notifications',
-  standalone: true,
   imports: [RiviniaToastList],
   templateUrl: './notifications.component.html',
 })
@@ -108,7 +107,6 @@ import { RiviniaToastList } from '@rivinia/toast/ui';
 
 @Component({
   selector: 'app-toast-snapshots',
-  standalone: true,
   imports: [RiviniaToastList],
   templateUrl: './toast-snapshots.component.html',
 })
@@ -159,7 +157,6 @@ import { resolveToastText, RiviniaToast } from '@rivinia/toast';
 
 @Component({
   selector: 'app-save-status',
-  standalone: true,
   templateUrl: './save-status.component.html',
 })
 export class SaveStatusComponent {
@@ -191,6 +188,109 @@ export class SaveStatusComponent {
 `message` and action `label` accept either a string or a reactive string
 signal, so they can reflect language changes. For a custom outlet, use the exported
 `resolveToastText(message)` utility to read either shape.
+
+## Theming
+
+Every component reads **its own token → the shared semantic layer → its
+built-in default**:
+
+```css
+--rv-toast-bg  →  --rv-bg  →  #ffffff
+```
+
+| Level          | Token           | Scope                               |
+| -------------- | --------------- | ----------------------------------- |
+| 1. per package | `--rv-toast-bg` | that toast only                     |
+| 2. global      | `--rv-bg`       | every Rivinia component, everywhere |
+| 3. default     | —               | what you get if you set nothing     |
+
+```css
+@import '@rivinia/theme';
+
+:root {
+  --rv-bg: #ffffff;
+  --rv-fg: #111111;
+  --rv-border: #e0e0e0;
+}
+```
+
+Its defaults sit in `@layer rivinia-theme`, so your unlayered `:root` rules win
+wherever they appear. **Map it on `:root`, never on a component element** — an
+element-level declaration shadows the root value and the override silently
+stops working.
+
+### The library's own tokens
+
+| Token               | Default                       | Applies to     |
+| ------------------- | ----------------------------- | -------------- |
+| `--rv-toast-bg`     | `#ffffff`                     | the toast      |
+| `--rv-toast-fg`     | `#111111`                     | the toast      |
+| `--rv-toast-muted`  | `#555555`                     | the kind rail  |
+| `--rv-toast-border` | `#e0e0e0`                     | the toast      |
+| `--rv-toast-radius` | `12px`                        | the toast      |
+| `--rv-toast-shadow` | `0 12px 32px rgba(0,0,0,.32)` | the toast      |
+| `--rv-toast-gap`    | `8px`                         | between toasts |
+| `--rv-toast-width`  | `22rem`                       | the list       |
+| `--rv-toast-z`      | `1000`                        | the list       |
+
+The kind colours chain to the semantic layer too:
+
+| Token                | Semantic token |
+| -------------------- | -------------- |
+| `--rv-toast-success` | `--rv-ok`      |
+| `--rv-toast-error`   | `--rv-danger`  |
+| `--rv-toast-info`    | `--rv-info`    |
+| `--rv-toast-warning` | `--rv-warning` |
+
+**No forced light mode** — there is no `prefers-color-scheme` block in this
+package, so a toast never overrides your explicit choice.
+
+### Which styling stack?
+
+| Stack           | Import                                       |
+| --------------- | -------------------------------------------- |
+| **Plain CSS**   | `@import '@rivinia/theme';`                  |
+| **Tailwind v4** | `@import '@rivinia/theme/tailwind.css';`     |
+| **Bootstrap**   | `@import '@rivinia/theme/bootstrap.css';`    |
+| **Sass / SCSS** | `@use '@rivinia/theme/scss';`                |
+| **Less**        | `@import (less) '@rivinia/theme/theme.css';` |
+
+## The list is in the top layer
+
+A `position: fixed` list with a `z-index` is still in the DOCUMENT, so it is
+clipped by an `overflow: hidden` ancestor and loses to any stacking context
+above it — including the one a modal `<dialog>` creates.
+
+The list is therefore a **manual popover**, which puts it in the browser's top
+layer: the same layer a modal `<dialog>` uses. The top layer stacks in the
+order elements are shown, and the list is re-shown whenever its contents
+change, so a toast raised while a dialog is open lands above it. Measured: the
+element at the toast's position is the toast, not the dialog.
+
+A manual popover is not modal: it does not trap focus, does not make the page
+inert, and does not close on an outside click — so it behaves exactly like
+the list it replaces.
+
+**The popover's user-agent styles are reset.** A popover gets a background, a
+border, padding and `overflow: auto` from the UA, which puts a shared canvas
+and a scrollbar around the stack — so the toasts read as one block instead of
+separate cards. The list is a transparent, borderless column.
+
+Where the browser has no `showPopover` the list stays in the document and a
+`z-index` decides its order. The feature is detected, not assumed.
+
+## The list must be MANAGED
+
+`rv-toast-list` renders what it is given. Without a manager it has an empty
+list and **no toast ever appears**:
+
+```html
+<!-- nothing shows: the list is presentational and empty -->
+<rv-toast-list position="bottom-end" />
+
+<!-- the manager drives it -->
+<rv-toast-list [manager]="toast" position="bottom-end" />
+```
 
 ## API and behavior
 
