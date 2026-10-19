@@ -6,5 +6,11 @@
     "outDir": "../../out-tsc/spec",
     "types": ["vitest/globals"]
   },
-  "include": ["src/**/*.d.ts", "src/**/*.spec.ts"]
+  /*
+   * `ui/` is a SECONDARY ENTRY POINT, so its specs sit under `ui/src/`, not
+   * `src/`. The previous `src/**` glob covered the headless controller only and
+   * silently excluded every `rv-select` component spec — the regression and
+   * positioning suites reported here were never executed by `ng test select`.
+   */
+  "include": ["src/**/*.d.ts", "src/**/*.spec.ts", "ui/src/**/*.d.ts", "ui/src/**/*.spec.ts"]
 }

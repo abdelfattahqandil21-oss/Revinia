@@ -1,4 +1,14 @@
-import { Component, computed, effect, input, output, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  viewChild,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import type { Toast, ToastKind, ToastOptions } from '@rivinia/toast';
 import { resolveToastText } from '@rivinia/toast';
 import type { ToastAnimation, ToastPosition } from './ui-toast-types';
@@ -40,12 +50,13 @@ interface LeavingToast {
  */
 @Component({
   selector: 'rv-toast-list',
-  standalone: true,
   template: `
     <div
+      #panel
       class="rv-toasts"
       role="region"
       aria-label="Notifications"
+      [attr.popover]="topLayerSupported ? 'manual' : null"
       [attr.data-position]="position()"
       [attr.data-animation]="animation()"
       [attr.data-rich-colors]="richColors()"
@@ -86,13 +97,17 @@ interface LeavingToast {
   styles: [
     `
       .rv-toasts {
-        --rv-toast-bg: #1c1c1e;
-        --rv-toast-fg: #f5f5f7;
-        --rv-toast-muted: #a8a8a8;
-        --rv-toast-border: #38383a;
-        --rv-toast-radius: 12px;
-        --rv-toast-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
-        --rv-toast-gap: 8px;
+        /*
+         * The PALETTE tokens are NOT declared here — see the same note in
+         * @rivinia/modal. A declaration on the element out-ranks an
+         * ancestor's value, so the shared semantic layer would never reach
+         * the toast. They are read as
+         * var(--rv-toast-*, var(--rv-<semantic>, <default>)) instead.
+         *
+         * The LAYOUT tokens (gap, width, duration) stay here: they are
+         * component-specific and have no semantic counterpart.
+         */
+        --rv-toast-gap: 0.5rem;
         --rv-toast-width: 22rem;
         --rv-toast-duration: 180ms;
         --rv-toast-easing: cubic-bezier(0.21, 1.02, 0.73, 1);
@@ -102,6 +117,34 @@ interface LeavingToast {
         --rv-toast-warning: #ff9f0a;
         position: fixed;
         z-index: var(--rv-toast-z, 1000);
+        /*
+         * Reset the POPOVER's UA styles.
+         *
+         * A popover gets a background, a border, padding and overflow: auto
+         * from the user agent — which puts a shared canvas and a scrollbar
+         * around the stack, so the toasts read as one block instead of
+         * separate cards. The list is a transparent, borderless column.
+         */
+        background: transparent;
+        border: 0;
+        padding: 0;
+        color: inherit;
+        overflow: visible;
+        height: auto;
+
+        /*
+         * The list is a manual popover, so it lives in the browser's TOP
+         * LAYER — the same layer a modal <dialog> uses. A top layer stacks
+         * in the order elements are shown, so a toast shown while a dialog is
+         * open lands ABOVE it. A z-index cannot do this: a dialog in the top
+         * layer is above every z-index in the document.
+         *
+         * The popover UA style sets inset: 0 and margin: auto, which would
+         * over-constrain the box. Reset it, so the per-position rules below
+         * have the last word.
+         */
+        inset: auto;
+        margin: 0;
         display: flex;
         flex-direction: column;
         gap: var(--rv-toast-gap);
@@ -111,15 +154,6 @@ interface LeavingToast {
       }
       .rv-toasts > * {
         pointer-events: auto;
-      }
-      @media (prefers-color-scheme: light) {
-        .rv-toasts {
-          --rv-toast-bg: #ffffff;
-          --rv-toast-fg: #111111;
-          --rv-toast-muted: #555555;
-          --rv-toast-border: #e0e0e0;
-          --rv-toast-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
-        }
       }
       .rv-toasts[data-position='top-start'],
       .rv-toasts[data-position='bottom-start'] {
@@ -143,41 +177,41 @@ interface LeavingToast {
       .rv-toast {
         display: flex;
         align-items: flex-start;
-        gap: 10px;
-        background: var(--rv-toast-bg);
-        color: var(--rv-toast-fg);
-        border: 1px solid var(--rv-toast-border);
-        border-inline-start: 3px solid var(--rv-toast-muted);
-        border-radius: var(--rv-toast-radius);
-        box-shadow: var(--rv-toast-shadow);
+        gap: 0.625rem;
+        background: var(--rv-toast-bg, var(--rv-bg, #ffffff));
+        color: var(--rv-toast-fg, var(--rv-fg, #111111));
+        border: 1px solid var(--rv-toast-border, var(--rv-border, #e0e0e0));
+        border-inline-start: 3px solid var(--rv-toast-muted, var(--rv-muted, #555555));
+        border-radius: var(--rv-toast-radius, var(--rv-radius, 12px));
+        box-shadow: var(--rv-toast-shadow, var(--rv-shadow, 0 12px 32px rgba(0, 0, 0, 0.32)));
         padding: 12px 14px;
       }
       .rv-toast[data-kind='success'] {
-        border-inline-start-color: var(--rv-toast-success);
+        border-inline-start-color: var(--rv-toast-success, var(--rv-ok, #16a34a));
       }
       .rv-toast[data-kind='error'] {
-        border-inline-start-color: var(--rv-toast-error);
+        border-inline-start-color: var(--rv-toast-error, var(--rv-danger, #dc2626));
       }
       .rv-toast[data-kind='info'] {
-        border-inline-start-color: var(--rv-toast-info);
+        border-inline-start-color: var(--rv-toast-info, var(--rv-info, #2563eb));
       }
       .rv-toast[data-kind='warning'] {
-        border-inline-start-color: var(--rv-toast-warning);
+        border-inline-start-color: var(--rv-toast-warning, var(--rv-warning, #d97706));
       }
       .rv-toasts[data-rich-colors='true'] .rv-toast[data-kind='success'] {
-        background: var(--rv-toast-success);
+        background: var(--rv-toast-success, var(--rv-ok, #16a34a));
         color: #06130a;
       }
       .rv-toasts[data-rich-colors='true'] .rv-toast[data-kind='error'] {
-        background: var(--rv-toast-error);
+        background: var(--rv-toast-error, var(--rv-danger, #dc2626));
         color: #1c0605;
       }
       .rv-toasts[data-rich-colors='true'] .rv-toast[data-kind='info'] {
-        background: var(--rv-toast-info);
+        background: var(--rv-toast-info, var(--rv-info, #2563eb));
         color: #04121f;
       }
       .rv-toasts[data-rich-colors='true'] .rv-toast[data-kind='warning'] {
-        background: var(--rv-toast-warning);
+        background: var(--rv-toast-warning, var(--rv-warning, #d97706));
         color: #1d1204;
       }
       .rv-toast-icon {
@@ -199,19 +233,19 @@ interface LeavingToast {
       .rv-toast-message {
         margin: 0;
         flex: 1;
-        font-size: 14px;
+        font-size: 0.875rem;
         line-height: 1.45;
       }
       .rv-toast-action,
       .rv-toast-close {
         flex: none;
         cursor: pointer;
-        border-radius: 8px;
-        border: 1px solid var(--rv-toast-border);
+        border-radius: 0.5rem;
+        border: 1px solid var(--rv-toast-border, var(--rv-border, #e0e0e0));
         background: transparent;
         color: inherit;
-        padding: 4px 10px;
-        font-size: 13px;
+        padding: 0.25rem 0.625rem;
+        font-size: 0.8125rem;
       }
       .rv-toast-action:focus-visible,
       .rv-toast-close:focus-visible {
@@ -252,7 +286,86 @@ interface LeavingToast {
     `,
   ],
 })
-export class RiviniaToastList {
+export class RiviniaToastList implements AfterViewInit {
+  /**
+   * Whether the browser can put the list in the top layer.
+   *
+   * Where it cannot, the list stays in the document and a `z-index` decides
+   * its order — which puts it BELOW a modal dialog, because a dialog in the
+   * top layer is above every z-index. The limitation is documented.
+   */
+  protected readonly topLayerSupported =
+    typeof HTMLElement !== 'undefined' && 'showPopover' in HTMLElement.prototype;
+
+  /**
+   * Put the list in the top layer.
+   *
+   * The top layer stacks in the order elements are shown, so a toast shown
+   * while a dialog is open lands above it. A `z-index` cannot do this.
+   *
+   * A manual popover is not modal: it does not trap focus, does not make the
+   * page inert, and does not close on an outside click — so it behaves like
+   * the list it replaces.
+   */
+  /** The panel — the element that becomes the popover. */
+  private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
+
+  /**
+   * Put the list in the top layer.
+   *
+   * `ngAfterViewInit` rather than `afterNextRender`: the callback has to run
+   * with the view in the DOM and the `popover` attribute already applied, and
+   * `showPopover()` on an element that is not a popover yet throws
+   * NotSupportedError — measured, not assumed.
+   */
+  ngAfterViewInit(): void {
+    this.promote();
+  }
+
+  /**
+   * Put the list at the TOP of the top layer.
+   *
+   * The top layer stacks in the order elements are SHOWN, so a list that was
+   * shown when the app started sits BELOW a dialog opened later. Re-showing it
+   * moves it back to the top — which is what "a toast appears above the
+   * dialog" means.
+   *
+   * `showPopover()` on an open popover throws, so it is hidden first.
+   */
+  private promote(): void {
+    if (!this.topLayerSupported) return;
+    // The POPOVER is the panel, not the component host: the host is the
+    // `<rv-toast-list>` element, and showing THAT would put the wrong box in
+    // the top layer.
+    const el = this.panel()?.nativeElement as
+      | (HTMLElement & { showPopover?: () => void; hidePopover?: () => void })
+      | undefined;
+    if (!el || typeof el.showPopover !== 'function') return;
+    // Set imperatively as well as by the template binding: the binding can
+    // land after this hook, and the imperative set makes the order irrelevant.
+    el.setAttribute('popover', 'manual');
+    try {
+      if (el.matches(':popover-open')) el.hidePopover?.();
+      el.showPopover();
+    } catch {
+      // The browser refused. The list still works — it is just not in the top
+      // layer.
+    }
+  }
+
+  /**
+   * Re-promote the list whenever its contents change.
+   *
+   * A toast that appears while a dialog is open must be ABOVE it, and a
+   * dialog opened after the list was shown pushes the list down in the top
+   * layer. Promoting on every change puts the list back on top each time.
+   */
+  private readonly keepOnTop = effect(() => {
+    // Track the rendered items, so the effect runs when the list changes.
+    this.rendered();
+    this.promote();
+  });
+
   /** Managed mode: the service (or a structural test double). Wins over `toasts`. */
   readonly manager = input<RiviniaToastListManager | null>(null);
   /** Presentational mode: snapshots you own (timers/pause are yours). */

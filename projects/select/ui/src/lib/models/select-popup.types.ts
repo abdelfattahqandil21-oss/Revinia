@@ -1,35 +1,35 @@
 import type { Signal } from '@angular/core';
 
 /**
- * One navigable menu entry. The controller only tracks identity and
- * enabled state — labels, icons, badges and actions are UI-owned.
+ * One navigable popup entry, as the controller tracks it: identity and
+ * enabled state only. Labels, icons, badges and actions are UI-owned.
  */
-export interface RiviniaMenuItem {
+export interface SelectPopupItem {
   readonly id: string;
-  /** Skipped by keyboard navigation and reported as disabled. @default false */
+  /** Skipped by keyboard navigation and refused on pick. @default false */
   readonly disabled?: boolean;
 }
 
 /** Panel placement relative to the trigger. Logical (RTL-aware). */
-export type RiviniaMenuPlacement = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
+export type SelectPopupPlacement = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
 
 /** Which item takes focus when the menu opens. @default 'first' */
-export type RiviniaMenuFocus = 'first' | 'last' | 'none' | 'current';
+export type SelectPopupFocus = 'first' | 'last' | 'none' | 'current';
 
 /**
- * Structural slice of {@link RiviniaMenu} a UI layer drives. The full
+ * Structural slice of {@link RiviniaSelectPopup} a UI layer drives. The full
  * controller satisfies it from any module realm (same input-composition
  * rule as `@rivinia/modal`'s host manager interface).
  */
-export interface RiviniaMenuController {
+export interface SelectPopupController {
   readonly open: Signal<boolean>;
   readonly activeId: Signal<string | null>;
-  readonly items: Signal<readonly RiviniaMenuItem[]>;
-  register(item: RiviniaMenuItem): void;
+  readonly items: Signal<readonly SelectPopupItem[]>;
+  register(item: SelectPopupItem): void;
   unregister(id: string): void;
-  openMenu(focus?: RiviniaMenuFocus): void;
-  closeMenu(): void;
-  toggle(focus?: RiviniaMenuFocus): void;
+  openMenu(focus?: SelectPopupFocus): void;
+  closePopup(): void;
+  toggle(focus?: SelectPopupFocus): void;
   pickActive(): string | null;
   activateFirst(): void;
   activateLast(): void;
@@ -39,10 +39,10 @@ export interface RiviniaMenuController {
 }
 
 /**
- * Data-driven item, for the declarative `[items]` API of the vendored menu UI.
- * Headless consumers of the registry use {@link RiviniaMenuItem} instead.
+ * Data-driven item, for the declarative `[items]` API of the vendored popup UI.
+ * Headless consumers of the registry use {@link SelectPopupItemData} instead.
  */
-export interface RiviniaMenuItemData {
+export interface SelectPopupItemData {
   /** Identity, emitted in the `picked` payload. */
   readonly id: string;
   /** Visible text. Also the accessible name and the typeahead search text. */

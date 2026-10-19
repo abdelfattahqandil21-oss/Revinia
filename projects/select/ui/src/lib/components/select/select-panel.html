@@ -1,0 +1,118 @@
+@if (label(); as text) {
+  <span class="rv-select-caption" [id]="labelId">{{ text }}</span>
+}
+<div class="rv-select" (focusout)="onFocusOut($event)">
+  <rv-select-popup
+    [popup]="popup"
+    [placement]="placement()"
+    [popupLabel]="panelLabel()"
+    (picked)="onPick($event.id)"
+    (opened)="onOpened()"
+    (closed)="onClosed()"
+    (reachEnd)="reachEnd.emit()"
+    (panelReady)="panelReady.emit($event)"
+  >
+    <button
+      rv-select-popup-trigger
+      type="button"
+      class="rv-select-trigger"
+      aria-haspopup="menu"
+      [attr.aria-label]="ariaLabel()"
+      [attr.aria-labelledby]="label() ? labelId : null"
+      [attr.aria-expanded]="popup.open()"
+      [attr.aria-invalid]="invalid() || errors().length > 0 ? 'true' : null"
+      [attr.aria-disabled]="disabled() ? 'true' : null"
+      [attr.data-open]="popup.open()"
+      [disabled]="disabled()"
+    >
+      <span class="rv-select-value">{{ display() }}</span>
+      <svg
+        class="rv-select-chevron"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        aria-hidden="true"
+      >
+        <path d="M4 6.5 8 10.5 12 6.5" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+    <div rv-select-popup-panel class="rv-select-panel">
+      @if (searchable()) {
+        <input
+          class="rv-select-search"
+          type="text"
+          role="searchbox"
+          [attr.aria-label]="searchLabel()"
+          autocomplete="off"
+          [value]="controller().query()"
+          [placeholder]="searchPlaceholder()"
+          (input)="controller().setQuery($any($event.target).value)"
+          (keydown)="onSearchKey($event)"
+        />
+      }
+      @if (listTemplate(); as list) {
+        <!-- The consumer's own list — a virtualised one, typically. -->
+        <ng-container
+          [ngTemplateOutlet]="list"
+          [ngTemplateOutletContext]="{ $implicit: controller().filtered(), options: controller().filtered() }"
+        />
+      } @else {
+      @for (o of controller().filtered(); track o.id) {
+        <button
+          rvSelectPopupItem
+          [id]="o.id"
+          [disabled]="o.disabled ?? false"
+          [checked]="controller().mode === 'multi' ? controller().isSelected(o.id) : null"
+        >
+          @if (optionTemplate(); as row) {
+            <!--
+              The consumer's own row markup. It replaces the default row
+              entirely, so the hint and the check mark are theirs to render.
+              The button wrapper stays, which is what keeps the ARIA, the
+              keyboard handling and the check state working.
+            -->
+            <ng-container
+              [ngTemplateOutlet]="row"
+              [ngTemplateOutletContext]="{ $implicit: o, option: o }"
+            />
+          } @else {
+            <span class="rv-select-label">{{ o.label }}</span>
+            @if (o.hint) {
+              <span class="rv-select-hint">{{ o.hint }}</span>
+            }
+            @if (controller().isSelected(o.id)) {
+              <svg
+                class="rv-select-check"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <path
+                  d="M3 8.5 6.5 12 13 4.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            }
+          }
+        </button>
+      } @empty {
+        <div class="rv-select-empty">{{ emptyLabel() }}</div>
+      }
+      }
+      @if (loading()) {
+        <div class="rv-select-loading" role="status" aria-live="polite">
+          {{ loadingLabel() }}
+        </div>
+      }
+      <!--
+        The consumer's own footer: a "Load more" button, a count, anything.
+        It sits after the list and after the loader row.
+      -->
+      <ng-content select="[rv-select-popup-footer], [rvSelectPopupFooter]" />
+    </div>
+  </rv-select-popup>
+</div>

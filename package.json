@@ -19,6 +19,7 @@
     "build:env": "pnpm schematics:env && ng build env",
     "build:menu": "ng build menu",
     "build:select": "ng build select",
+    "build:theme": "ng build theme",
     "test:schematics": "vitest run projects/http/schematics projects/toast/schematics projects/i18n/schematics projects/modal/schematics projects/env/schematics",
     "check:docs": "node scripts/check-docs.mjs"
   },

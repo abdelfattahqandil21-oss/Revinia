@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/modal",
-  "version": "0.5.3",
+  "version": "0.6.0",
   "description": "Headless modal manager for Angular: stack/queue strategies, typed results, guards, ownership.",
   "keywords": [
     "angular",

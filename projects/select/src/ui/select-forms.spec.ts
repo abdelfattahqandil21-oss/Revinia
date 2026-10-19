@@ -7,7 +7,7 @@ import { TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule, FormControl, FormGroup } from '@angular/forms';
 import { signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
-import { RiviniaSelectComponent } from '../../ui/src/lib/select-panel';
+import { RiviniaSelectComponent } from '../../ui/src/lib/components/select/select-panel';
 
 const OPTIONS = [
   { id: 'a', label: 'Alpha' },
@@ -23,7 +23,6 @@ function q(root: ParentNode, sel: string): HTMLElement {
 
 // ── Reactive Forms ──
 @Component({
-  standalone: true,
   imports: [FormsModule, ReactiveFormsModule, RiviniaSelectComponent],
   template: `<form [formGroup]="fg"><rv-select formControlName="val" [options]="opts" /></form>`,
 })
@@ -34,7 +33,6 @@ class ReactiveHost {
 
 // ── Template-driven Forms ──
 @Component({
-  standalone: true,
   imports: [FormsModule, RiviniaSelectComponent],
   template: `<rv-select [(ngModel)]="val" [options]="opts" />`,
 })
@@ -45,7 +43,6 @@ class TemplateHost {
 
 // ── Signal Forms ──
 @Component({
-  standalone: true,
   imports: [RiviniaSelectComponent, FormField],
   template: `<rv-select [formField]="field" [options]="opts" />`,
 })
@@ -58,7 +55,6 @@ class SignalHost {
 
 // ── Multi-select (Reactive) ──
 @Component({
-  standalone: true,
   imports: [FormsModule, ReactiveFormsModule, RiviniaSelectComponent],
   template: `<form [formGroup]="fg">
     <rv-select formControlName="vals" mode="multi" [options]="opts" />
@@ -99,7 +95,7 @@ describe('RiviniaSelectComponent — Reactive Forms (formControlName)', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     await fixture.whenStable();
-    q(fixture.nativeElement, '[rvmenuitem]').click();
+    q(fixture.nativeElement, '[rvselectpopupitem]').click();
     fixture.detectChanges();
     await fixture.whenStable();
     await fixture.whenStable();
@@ -153,7 +149,7 @@ describe('RiviniaSelectComponent — Template-driven Forms (ngModel)', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     await fixture.whenStable();
-    q(fixture.nativeElement, '[rvmenuitem]').click();
+    q(fixture.nativeElement, '[rvselectpopupitem]').click();
     fixture.detectChanges();
     await fixture.whenStable();
     await fixture.whenStable();
@@ -177,7 +173,7 @@ describe('RiviniaSelectComponent — Signal Forms ([formField])', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     await fixture.whenStable();
-    q(fixture.nativeElement, '[rvmenuitem]').click();
+    q(fixture.nativeElement, '[rvselectpopupitem]').click();
     fixture.detectChanges();
     await fixture.whenStable();
     await fixture.whenStable();
@@ -212,7 +208,7 @@ describe('RiviniaSelectComponent — Multi-select (Reactive)', () => {
     await fixture.whenStable();
     await fixture.whenStable();
     // Click the SECOND item (Beta) to toggle it ON.
-    const items = fixture.nativeElement.querySelectorAll('[rvmenuitem]');
+    const items = fixture.nativeElement.querySelectorAll('[rvselectpopupitem]');
     (items[1] as HTMLElement).click();
     fixture.detectChanges();
     await fixture.whenStable();
@@ -236,7 +232,6 @@ describe('RiviniaSelectComponent — Multi-select (Reactive)', () => {
 
 describe('Multi-select keyboard navigation reset (regression)', () => {
   @Component({
-    standalone: true,
     imports: [FormsModule, ReactiveFormsModule, RiviniaSelectComponent],
     template: `<form [formGroup]="fg">
       <rv-select formControlName="vals" mode="multi" [options]="opts" />
@@ -266,7 +261,7 @@ describe('Multi-select keyboard navigation reset (regression)', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const panel = q(fixture.nativeElement, '.rv-menu-panel');
+    const panel = q(fixture.nativeElement, '.rv-select-popup-panel');
     // Navigate down to the 3rd item (Gamma): Alpha → Beta → Gamma.
     panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
     fixture.detectChanges();
@@ -286,7 +281,7 @@ describe('Multi-select keyboard navigation reset (regression)', () => {
     await fixture.whenStable();
 
     // The active item should still be Gamma (3rd), not reset to Alpha (1st).
-    const active = fixture.nativeElement.querySelector('[rvmenuitem][data-active="true"]');
+    const active = fixture.nativeElement.querySelector('[rvselectpopupitem][data-active="true"]');
     expect(active).toBeTruthy();
     expect(active!.textContent).toContain('Gamma');
 
@@ -295,7 +290,7 @@ describe('Multi-select keyboard navigation reset (regression)', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     await fixture.whenStable();
-    const next = fixture.nativeElement.querySelector('[rvmenuitem][data-active="true"]');
+    const next = fixture.nativeElement.querySelector('[rvselectpopupitem][data-active="true"]');
     expect(next!.textContent).toContain('Delta');
   });
 });
@@ -328,7 +323,7 @@ describe('FormValueControl backward compatibility', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     await fixture.whenStable();
-    const panel = q(fixture.nativeElement, '.rv-menu-panel');
+    const panel = q(fixture.nativeElement, '.rv-select-popup-panel');
     panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
     fixture.detectChanges();
     await fixture.whenStable();

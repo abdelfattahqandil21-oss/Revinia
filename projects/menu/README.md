@@ -1,14 +1,60 @@
 # @rivinia/menu
 
-Angular dropdown menus with a headless controller and an optional ready-made
-UI. The menu follows the WAI-ARIA menu-button interaction pattern; it is for
-actions, not a menubar or a general-purpose listbox.
+[![npm version](https://img.shields.io/npm/v/@rivinia/menu.svg)](https://www.npmjs.com/package/@rivinia/menu)
+[![license](https://img.shields.io/npm/l/@rivinia/menu.svg)](https://www.npmjs.com/package/@rivinia/menu)
 
-- Install: `npm install @rivinia/menu`
-- Package version: **0.3.4**
-- Angular peer dependency: `@angular/core ^22.0.0`
-- `@rivinia/menu` exports the headless controller and types.
+Angular dropdown menus: a headless controller and an optional ready-made UI.
+The menu follows the WAI-ARIA menu-button pattern; it is for **actions**, not
+for a menubar or a general-purpose listbox.
+
+- Package version: **0.3.5**
+- Requires: **Angular `^22.0.0`** (`@angular/core`).
+- `@rivinia/menu` exports the headless controller and its types.
 - `@rivinia/menu/ui` exports the standalone menu component and item directive.
+- Side effects: **none** (`sideEffects: false`).
+
+## Quick features
+
+- **Headless first.** The controller is the product; pixels are yours.
+- **APG menu-button.** Arrow keys, Home/End, Enter/Space, Escape, and a
+  non-modal Tab that steps past the menu instead of trapping focus.
+- **Two levels of use.** Declarative (`[items]` + `(picked)`) or composable
+  (`rvMenuItem` markup) — both routed through the same directives, so the
+  keyboard, focus and registration exist once.
+- **Placed with CSS anchor positioning**, so the panel stays with its trigger
+  in both LTR and RTL, with no JS coordinates.
+- **Two styling levels.** A global token layer (`@rivinia/theme`) or
+  per-menu tokens, plus documented class names for the details.
+
+## Install
+
+```bash
+npm install @rivinia/menu
+```
+
+or
+
+```bash
+pnpm add @rivinia/menu
+```
+
+or
+
+```bash
+yarn add @rivinia/menu
+```
+
+or
+
+```bash
+bun add @rivinia/menu
+```
+
+The optional theme layer, if you want the shared token set:
+
+```bash
+npm install @rivinia/theme
+```
 
 ## Ready-made menu
 
@@ -22,7 +68,6 @@ import type { MenuPick, RiviniaMenuItemData } from '@rivinia/menu/ui';
 import { RiviniaMenuComponent } from '@rivinia/menu/ui';
 
 @Component({
-  standalone: true,
   imports: [RiviniaMenuComponent],
   templateUrl: './account-menu.component.html',
 })
@@ -84,7 +129,6 @@ import { Component } from '@angular/core';
 import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
 
 @Component({
-  standalone: true,
   imports: [RiviniaMenuComponent, RiviniaMenuItem],
   templateUrl: './custom-account-menu.component.html',
 })
@@ -181,7 +225,6 @@ import { RiviniaMenu } from '@rivinia/menu';
 import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
 
 @Component({
-  standalone: true,
   imports: [RiviniaMenuComponent, RiviniaMenuItem],
   templateUrl: './export-menu.component.html',
 })
@@ -220,6 +263,172 @@ The core entry point also exports `RiviniaMenuController`,
 `RiviniaMenuUiPlacement`, plus `computeMenuPosition`, `MENU_GAP`,
 `MenuTriggerRect`, `MenuPanelSize`, `MenuViewport`, and `MenuCoordinates` for
 custom positioning integrations.
+
+## Theming
+
+Every component reads **its own token → the shared semantic layer → its
+built-in default**:
+
+```css
+--rv-menu-bg  →  --rv-bg  →  #ffffff
+```
+
+| Level          | Token          | Scope                               |
+| -------------- | -------------- | ----------------------------------- |
+| 1. per package | `--rv-menu-bg` | that menu only                      |
+| 2. global      | `--rv-bg`      | every Rivinia component, everywhere |
+| 3. default     | —              | what you get if you set nothing     |
+
+```css
+@import '@rivinia/theme';
+
+:root {
+  --rv-bg: #ffffff;
+  --rv-fg: #111111;
+  --rv-border: #e0e0e0;
+}
+```
+
+Its defaults sit in `@layer rivinia-theme`, so your unlayered `:root` rules win
+wherever they appear. **Map it on `:root`, never on a component element** — an
+element-level declaration shadows the root value and the override silently
+stops working.
+
+### Which styling stack?
+
+| Stack           | Import                                       |
+| --------------- | -------------------------------------------- |
+| **Plain CSS**   | `@import '@rivinia/theme';`                  |
+| **Tailwind v4** | `@import '@rivinia/theme/tailwind.css';`     |
+| **Bootstrap**   | `@import '@rivinia/theme/bootstrap.css';`    |
+| **Sass / SCSS** | `@use '@rivinia/theme/scss';`                |
+| **Less**        | `@import (less) '@rivinia/theme/theme.css';` |
+
+**Tailwind v4** — your palette in `@theme`, the components point at it:
+
+```css
+@import 'tailwindcss';
+@import '@rivinia/theme/tailwind.css';
+
+@theme {
+  --color-surface: #ffffff;
+  --color-fg: #111111;
+}
+
+:root {
+  --rv-bg: var(--color-surface);
+  --rv-fg: var(--color-fg);
+}
+```
+
+**Bootstrap 5.3** — the components read Bootstrap's own variables:
+
+```css
+@import 'bootstrap/dist/css/bootstrap.css';
+@import '@rivinia/theme/bootstrap.css';
+```
+
+**Sass** — Dart Sass loads a plain `.css` file, but the extension must be
+omitted for `@use` to treat it as a module:
+
+```scss
+@use '@rivinia/theme/scss';
+```
+
+**Less** — custom properties pass through untouched:
+
+```less
+@import (less) '@rivinia/theme/theme.css';
+```
+
+**Every size is in `rem`, not `px`.** The components scale with the reader's
+root font size, so they follow the browser's text-size preference, a
+user-set accessibility default, and whatever `html { font-size }` the app
+sets. Measured: at a 17px root the trigger is 14.875px with `0.5rem 0.75rem`
+padding; at a 24px root it is 21px with `0.75rem 1.125rem` padding. In `px`
+none of it would have moved.
+
+### The library's own tokens
+
+| Token              | Default                       | Applies to      |
+| ------------------ | ----------------------------- | --------------- |
+| `--rv-menu-bg`     | `#ffffff`                     | panel           |
+| `--rv-menu-fg`     | `#111111`                     | panel           |
+| `--rv-menu-border` | `#e0e0e0`                     | panel + divider |
+| `--rv-menu-muted`  | `#555555`                     | icon tone       |
+| `--rv-menu-radius` | `12px`                        | panel           |
+| `--rv-menu-shadow` | `0 16px 48px rgba(0,0,0,.22)` | panel           |
+| `--rv-menu-width`  | `16rem`                       | panel min-width |
+
+**No forced dark mode** — there is no `prefers-color-scheme` block in this
+package.
+
+## The override surface
+
+**Tokens** for colour and shape:
+
+```css
+rv-menu {
+  --rv-menu-bg: #101014;
+  --rv-menu-fg: #f2f2f7;
+  --rv-menu-border: #2a2a33;
+  --rv-menu-radius: 6px;
+}
+```
+
+**Tokens** for the metrics:
+
+```css
+rv-menu {
+  --rv-menu-item-padding: 0.75rem 0.875rem;
+  --rv-menu-item-radius: 0.25rem;
+  --rv-menu-item-min-height: 2.75rem;
+  --rv-menu-focus-ring: 2px solid var(--rv-accent);
+}
+```
+
+**Classes** for anything the tokens do not cover. The component styles are
+unencapsulated, so these selectors are global and stable:
+
+```css
+.rv-menu-panel [rvmenuitem] {
+  padding: 16px 20px;
+  border-radius: 0;
+}
+```
+
+| Selector                      | What it styles              |
+| ----------------------------- | --------------------------- |
+| `.rv-menu-panel`              | the opened panel            |
+| `.rv-menu-trigger`            | the trigger slot            |
+| `.rv-menu-panel [rvmenuitem]` | a menu row                  |
+| `.rv-menu-check`              | the multi-mode check mark   |
+| `.rv-menu-hint`               | a row's trailing hint       |
+| `.rv-menu-empty`              | the "nothing to show" state |
+| `rv-menu hr`                  | a divider between groups    |
+
+| Hook              | On    | Means                          |
+| ----------------- | ----- | ------------------------------ |
+| `data-active`     | row   | the keyboard-active row        |
+| `data-placement`  | panel | `bottom-start`, `top-end`, …   |
+| `data-flipped`    | panel | it flipped to the other side   |
+| `data-positioned` | panel | it has been measured           |
+| `data-top-layer`  | panel | it is in the browser top layer |
+
+## Migration notes
+
+### 0.3.4 → 0.3.5
+
+**Nothing to do.** No API changed, no token was renamed, no class was renamed.
+
+The only difference is that the panel now stays attached to its trigger in
+right-to-left layouts, where it used to drift to the edge of the viewport. If
+you styled the panel by targeting its markup, the selectors are unchanged:
+
+```css
+.rv-menu-panel { … }
+.rv-menu-panel [rvmenuitem] { … }
+```
 
 ## License
 

@@ -1,0 +1,52 @@
+/*
+ * Tailwind v4 adapter.
+ *
+ *   @import 'tailwindcss';
+ *   @import '@rivinia/theme/tailwind.css';
+ *
+ * Tailwind v4 is CSS-first: `@theme` turns a design token into a real CSS
+ * variable, and `@theme inline` makes the generated utility resolve the
+ * variable AT THE POINT OF USE instead of referencing the global one.
+ *
+ * Two rules of thumb, straight from the Tailwind docs:
+ *
+ *   - `@theme`        for a token with a LITERAL value — it also creates the
+ *                     utility.
+ *   - `@theme inline` for a token that REFERENCES another variable — the
+ *                     utility then resolves at use-site, so a scoped override
+ *                     still works. (With plain `@theme` the utility would
+ *                     point at the global variable and a container-scoped
+ *                     override would be ignored.)
+ *
+ * So: your palette in `@theme`, and the Rivinia surface pointing at it.
+ * This file wires the two together in both directions — Rivinia reads your
+ * palette, and your Tailwind utilities can read Rivinia's.
+ */
+
+@import './theme.css';
+
+@theme {
+  /* Your palette. Replace the values; the wiring below stays. */
+  --color-rv-bg: var(--rv-bg);
+  --color-rv-fg: var(--rv-fg);
+  --color-rv-muted: var(--rv-muted);
+  --color-rv-border: var(--rv-border);
+  --color-rv-accent: var(--rv-accent);
+  --color-rv-danger: var(--rv-danger);
+  --color-rv-ok: var(--rv-ok);
+  --color-rv-info: var(--rv-info);
+  --color-rv-warning: var(--rv-warning);
+}
+
+/*
+ * The reverse direction: map YOUR palette onto the semantic layer, so the
+ * components follow the same tokens your utilities use.
+ *
+ * `@theme inline` — these reference other variables, so the utility has to
+ * resolve at use-site.
+ */
+@theme inline {
+  --color-surface: var(--rv-bg);
+  --color-foreground: var(--rv-fg);
+  --color-line: var(--rv-border);
+}

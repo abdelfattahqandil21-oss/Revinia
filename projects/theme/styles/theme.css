@@ -1,0 +1,58 @@
+/*
+ * The Rivinia semantic layer.
+ *
+ * ONE import, ONE place to set the whole component ecosystem's colours:
+ *
+ *   @import '@rivinia/theme';
+ *
+ * Every Rivinia component reads its OWN token first, then this semantic layer,
+ * then its built-in default:
+ *
+ *   --rv-select-bg  →  --rv-bg  →  #ffffff
+ *   --rv-menu-bg    →  --rv-bg  →  #ffffff
+ *   --rv-modal-bg   →  --rv-bg  →  #ffffff
+ *   --rv-toast-bg   →  --rv-bg  →  #ffffff
+ *
+ * So there are three levels of control, and each beats the next:
+ *
+ *   1. `--rv-select-bg`  — this component only.
+ *   2. `--rv-bg`         — every Rivinia component, everywhere.
+ *   3. the default       — what you get if you set nothing.
+ *
+ * Set the semantic layer once and the whole ecosystem follows:
+ *
+ *   :root { --rv-bg: #fff; --rv-fg: #111; }
+ *   [data-theme='dark'] { --rv-bg: #161616; --rv-fg: #f2f2f2; }
+ *
+ * The defaults live in a @layer on purpose: unlayered declarations always beat
+ * layered ones, so your own `:root { --rv-bg: … }` wins wherever it appears in
+ * your stylesheet, with no import-ordering to get wrong.
+ *
+ * One thing to avoid: do not map the semantic layer ON a component element. An
+ * element-level declaration shadows the root value for that subtree, and the
+ * override silently stops working. Map it on `:root` (or `html`).
+ */
+
+@layer rivinia-theme {
+  :root {
+    /* Surfaces */
+    --rv-bg: #ffffff;
+    --rv-fg: #111111;
+    --rv-muted: #555555;
+    --rv-border: #e0e0e0;
+
+    /* Shape and elevation */
+    --rv-radius: 0.625rem;
+    --rv-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
+
+    /* Type */
+    --rv-font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    /* Status */
+    --rv-accent: #5b5bd6;
+    --rv-danger: #dc2626;
+    --rv-ok: #16a34a;
+    --rv-info: #2563eb;
+    --rv-warning: #d97706;
+  }
+}

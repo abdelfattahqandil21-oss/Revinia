@@ -12,13 +12,13 @@ import {
   output,
   signal,
 } from '@angular/core';
-import type { RiviniaMenuController, RiviniaMenuItemData } from './menu-types';
-import { RiviniaMenu } from './rivinia-menu';
-import type { RiviniaMenuUiPlacement } from './ui-menu-types';
-import { computeMenuPosition } from './menu-position';
+import type { SelectPopupController, SelectPopupItemData } from '../../models/select-popup.types';
+import type { SelectPopupUiPlacement } from '../../models/select-popup.ui-types';
+import { SelectPopupControllerImpl } from '../../services/select-popup';
+import { computeSelectPopupPosition } from '../../utils/select-popup-position';
 
-/** Payload of {@link RiviniaMenuComponent.picked}. */
-export interface MenuPick {
+/** Payload of {@link RiviniaSelectPopup.picked}. */
+export interface SelectPopupPick {
   readonly id: string;
 }
 
@@ -29,12 +29,11 @@ let nextPanelId = 0;
  * Marker + behavior for one navigable row. Registers itself with the
  * enclosing menu on init (unregisters on destroy), exposes `data-rv-id`
  * for focus targeting, and keeps `tabindex`/`aria-disabled` in sync.
- * Non-`rvMenuItem` content (headers, dividers, badges) is skipped by
+ * Non-`rvSelectPopupItem` content (headers, dividers, badges) is skipped by
  * keyboard navigation automatically.
  */
 @Directive({
-  selector: '[rvMenuItem]',
-  standalone: true,
+  selector: '[rvSelectPopupItem]',
   host: {
     '[attr.role]': 'computedRole()',
     '[attr.data-rv-id]': 'id()',
@@ -46,7 +45,7 @@ let nextPanelId = 0;
     '(pointerenter)': 'hover()',
   },
 })
-export class RiviniaMenuItem {
+export class SelectPopupItem {
   readonly id = input.required<string>();
   readonly disabled = input(false, {
     transform: (v: boolean | string) => v === '' || v === true,
@@ -59,8 +58,8 @@ export class RiviniaMenuItem {
   readonly checked = input<boolean | null>(null);
 
   private readonly host = inject(ElementRef<HTMLElement>, { optional: true });
-  private readonly menu = inject(RiviniaMenuComponent, { optional: true, skipSelf: true });
-  private readonly active = computed(() => this.menu?.controller().activeId() === this.id());
+  private readonly host_ = inject(SelectPopupComponent, { optional: true });
+  private readonly active = computed(() => this.host_?.controller().activeId() === this.id());
 
   protected tab(): string {
     return this.active() ? '0' : '-1';
@@ -78,7 +77,7 @@ export class RiviniaMenuItem {
   /**
    * `disabled` collides with the native `<button disabled>` property, so a
    * static attribute on a native button element can land on the DOM instead
-   * of this input (measured: `<button rvMenuItem disabled>` reported
+   * of this input (measured: `<button rvSelectPopupItem disabled>` reported
    * `aria-disabled="false"`). Accept both so the two spellings agree.
    */
   private isDisabled(): boolean {
@@ -88,12 +87,12 @@ export class RiviniaMenuItem {
 
   /** Mouse pick: disabled items are ignored (controller refuses them). */
   protected pick(): void {
-    this.menu?.pickItem(this.id());
+    this.host_?.pickItem(this.id());
   }
 
   /** Mouse hover follows keyboard focus so highlight tracks the pointer. */
   protected hover(): void {
-    this.menu?.hoverItem(this.id());
+    this.host_?.hoverItem(this.id());
   }
 
   /** Id currently present in the registry, so renames can be de-registered. */
@@ -110,41 +109,41 @@ export class RiviniaMenuItem {
     // panels. The effect only handles SUBSEQUENT changes.
     effect(() => {
       const id = this.id();
-      const menu = this.menu;
+      const menu = this.host_;
       if (this.registeredId === null) return;
-      if (this.registeredId !== id) menu?.unregisterItem(this.registeredId);
+      if (this.registeredId !== id) this.host_?.unregisterItem(this.registeredId);
       // Re-register unconditionally: covers a `disabled` flip as well as an
       // id rename (register is idempotent by id).
-      menu?.registerItem({ id, disabled: this.isDisabled() });
+      this.host_?.registerItem({ id, disabled: this.isDisabled() });
       this.registeredId = id;
     });
   }
 
   ngOnInit(): void {
     this.registeredId = this.id();
-    this.menu?.registerItem({ id: this.id(), disabled: this.isDisabled() });
+    this.host_?.registerItem({ id: this.id(), disabled: this.isDisabled() });
   }
 
   ngOnDestroy(): void {
     if (this.registeredId === null) return;
-    this.menu?.unregisterItem(this.registeredId);
+    this.host_?.unregisterItem(this.registeredId);
     this.registeredId = null;
   }
 }
 
 /**
- * Ready-made dropdown menu. Binds a {@link RiviniaMenu} controller (or owns
+ * Ready-made dropdown menu. Binds a {@link RiviniaSelectPopup} controller (or owns
  * one when omitted) and projects trigger + panel:
  *
  * ```html
- * <rv-menu [menu]="menu" [placement]="'bottom-start'" (picked)="go($event)">
- *   <button rv-menu-trigger><img src="avatar.png" alt="Account" /></button>
- *   <div rv-menu-panel>
+ * <rv-select-popup [menu]="menu" [placement]="'bottom-start'" (picked)="go($event)">
+ *   <button rv-select-popup-trigger><img src="avatar.png" alt="Account" /></button>
+ *   <div rv-select-popup-panel>
  *     <div class="head">Sophie · sophie@ui.live</div>
- *     <button rvMenuItem id="profile">Profile</button>
- *     <button rvMenuItem id="logout">Sign out</button>
+ *     <button rvSelectPopupItem id="profile">Profile</button>
+ *     <button rvSelectPopupItem id="logout">Sign out</button>
  *   </div>
- * </rv-menu>
+ * </rv-select-popup>
  * ```
  *
  * Keyboard: Enter/Space/ArrowDown opens; Escape closes and refocuses the
@@ -152,241 +151,89 @@ export class RiviniaMenuItem {
  * on (non-modal by design). Outside pointer-down closes. SSR renders closed.
  */
 @Component({
-  selector: 'rv-menu',
-  standalone: true,
+  selector: 'rv-select-popup',
   // Deliberately unencapsulated: projected item buttons belong to the
   // consumer's template, and emulated descendant selectors never match
   // projected content (measured in Chrome: `display` stayed `inline-block`).
-  // Every rule below is scoped under `.rv-menu-panel` / `.rv-menu-trigger`,
+  // Every rule below is scoped under `.rv-select-popup-panel` / `.rv-select-popup-trigger`,
   // so nothing leaks into application styles.
   encapsulation: ViewEncapsulation.None,
   // The declarative `[items]` mode renders its own rows through the SAME
   // directive consumers use, so registration, keyboard and click handling have
   // exactly one implementation.
-  imports: [RiviniaMenuItem],
-  template: `
-    <div class="rv-menu-trigger" (click)="onTriggerClick()" (keydown)="onTriggerKey($event)">
-      <ng-content select="[rv-menu-trigger], [rvMenuTrigger]"></ng-content>
-    </div>
-    @if (controller().open()) {
-      <div
-        #panel
-        class="rv-menu-panel"
-        [class]="panelClass()"
-        role="menu"
-        [attr.id]="panelId"
-        [attr.aria-label]="menuLabel()"
-        [attr.popover]="topLayerSupported ? 'manual' : null"
-        [attr.data-placement]="placement()"
-        [attr.data-flipped]="flipped()"
-        [attr.data-positioned]="positioned()"
-        [attr.data-top-layer]="topLayerSupported"
-        (keydown)="onPanelKey($event)"
-      >
-        @if (dataItems().length > 0) {
-          @for (item of dataItems(); track item.id) {
-            <button
-              rvMenuItem
-              [id]="item.id"
-              [disabled]="item.disabled ?? false"
-              [checked]="checkedFor(item.id)"
-              [class]="itemClass()"
-            >
-              {{ item.label }}
-            </button>
-          }
-        }
-        <ng-content select="[rv-menu-panel], [rvMenuPanel]"></ng-content>
-      </div>
-    }
-  `,
-  styles: [
-    `
-      .rv-menu-trigger {
-        display: inline-flex;
-        align-items: center;
-      }
-      .rv-menu-panel {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
-      .rv-menu-panel hr {
-        border: 0;
-        border-top: 1px solid var(--rv-menu-border, #e0e0e0);
-        margin: 6px 4px;
-      }
-      /* NOTE: the :host pseudo-class does not exist without encapsulation,
-         so the host element is styled directly (still rv-prefixed).
-         Relative positioning anchors the no-popover fallback panel. */
-      rv-menu {
-        position: relative;
-        display: inline-block;
-      }
-      /* Top-layer mode (popover-capable browsers): the panel escapes every
-         clipping ancestor and stacking context. Coordinates come from the
-         component (fixed + measured + flipped); the absolute placement
-         classes below stay as the no-popover fallback. */
-      .rv-menu-panel[data-top-layer='true'] {
-        position: fixed;
-        inset: auto;
-        margin: 0;
-      }
-      .rv-menu-panel[data-positioned='false'] {
-        animation: none;
-      }
-      /* Flipped panels grow out of the opposite edge (matches coordinates). */
-      .rv-menu-panel[data-top-layer='true'][data-placement^='bottom'][data-flipped='true'] {
-        transform-origin: bottom center;
-      }
-      .rv-menu-panel[data-top-layer='true'][data-placement^='top'][data-flipped='true'] {
-        transform-origin: top center;
-      }
-      .rv-menu-panel {
-        position: absolute;
-        z-index: var(--rv-menu-z, 500);
-        min-width: var(--rv-menu-width, 16rem);
-        max-width: calc(100dvw - 2rem);
-        /* Long lists scroll inside the panel instead of leaving the viewport. */
-        max-height: min(20rem, calc(100dvh - 2rem));
-        overflow-y: auto;
-        background: var(--rv-menu-bg, #ffffff);
-        color: var(--rv-menu-fg, #111111);
-        font-family: var(--rv-menu-font, system-ui, -apple-system, 'Segoe UI', sans-serif);
-        border: 1px solid var(--rv-menu-border, #e0e0e0);
-        border-radius: var(--rv-menu-radius, 12px);
-        box-shadow: var(--rv-menu-shadow, 0 16px 48px rgba(0, 0, 0, 0.22));
-        padding: var(--rv-menu-pad, 6px);
-      }
-      .rv-menu-panel[data-placement='bottom-start'] {
-        inset-block-start: calc(100% + 6px);
-        inset-inline-start: 0;
-      }
-      .rv-menu-panel[data-placement='bottom-end'] {
-        inset-block-start: calc(100% + 6px);
-        inset-inline-end: 0;
-      }
-      .rv-menu-panel[data-placement='top-start'] {
-        inset-block-end: calc(100% + 6px);
-        inset-inline-start: 0;
-      }
-      .rv-menu-panel[data-placement='top-end'] {
-        inset-block-end: calc(100% + 6px);
-        inset-inline-end: 0;
-      }
-      .rv-menu-panel [rvmenuitem] {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        width: 100%;
-        min-height: 40px;
-        border: 0;
-        border-radius: 8px;
-        background: transparent;
-        color: inherit;
-        font: inherit;
-        font-size: 14px;
-        line-height: 1.4;
-        text-align: start;
-        padding: 8px 10px;
-        cursor: pointer;
-      }
-      .rv-menu-panel [rvmenuitem][data-active='true'] {
-        background: color-mix(in srgb, currentColor 10%, transparent);
-      }
-      .rv-menu-panel [rvmenuitem]:hover {
-        background: color-mix(in srgb, currentColor 8%, transparent);
-      }
-      .rv-menu-panel [rvmenuitem]:focus-visible {
-        outline: 2px solid currentColor;
-        outline-offset: -2px;
-      }
-      .rv-menu-panel [rvmenuitem][aria-disabled='true'] {
-        opacity: 0.45;
-        cursor: default;
-      }
-      /* Optional icons: consumer projects any svg/icon content; the UI only
-         owns sizing, alignment and tone so rows stay consistent. */
-      .rv-menu-panel [rvmenuitem] svg,
-      .rv-menu-panel [rvmenuitem] [data-icon] {
-        width: 16px;
-        height: 16px;
-        flex: none;
-        color: var(--rv-menu-muted);
-      }
-      .rv-menu-panel [rvmenuitem][data-active='true'] svg,
-      .rv-menu-panel [rvmenuitem][data-active='true'] [data-icon] {
-        color: inherit;
-      }
-      /* Opening motion (researched: Radix/shadcn/HeadlessUI pattern):
-         fade + scale from the trigger edge + a small slide toward rest.
-         Origin follows the vertical side so the panel grows out of the
-         trigger; duration/easing stay overridable via vars. */
-      .rv-menu-panel {
-        transform-origin: top center;
-        animation: rv-menu-in var(--rv-menu-duration, 160ms)
-          var(--rv-menu-easing, cubic-bezier(0.16, 1, 0.3, 1));
-      }
-      .rv-menu-panel[data-placement='top-start'],
-      .rv-menu-panel[data-placement='top-end'] {
-        --rv-menu-from-y: 6px;
-        transform-origin: bottom center;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .rv-menu-panel {
-          animation: none;
-        }
-      }
-      @keyframes rv-menu-in {
-        from {
-          opacity: 0;
-          transform: translateY(var(--rv-menu-from-y, -6px)) scale(0.96);
-        }
-      }
-    `,
-  ],
+  imports: [SelectPopupItem],
+  templateUrl: './select-popup.html',
+  styleUrl: './select-popup.css',
 })
-export class RiviniaMenuComponent {
+export class SelectPopupComponent {
   /**
    * External controller (shared/test double). Omitted → the component owns
    * a private one (simplest embedding).
    */
-  readonly menu = input<RiviniaMenuController | null>(null);
+  readonly popup = input<SelectPopupController | null>(null);
   /** Panel placement relative to the trigger. @default 'bottom-start' */
-  readonly placement = input<RiviniaMenuUiPlacement>('bottom-start');
+  readonly placement = input<SelectPopupUiPlacement>('bottom-start');
   /**
    * Accessible name for the menu panel (`aria-label`). Menus should be named
    * so screen-reader users know what they chose from; omitted → no label.
    *
-   * Named `menuLabel` (not `label`) so it cannot be confused with the
-   * per-item `label` in {@link RiviniaMenuItemData}.
+   * Named `popupLabel` (not `label`) so it cannot be confused with the
+   * per-item `label` in {@link SelectPopupItemData}.
    */
-  readonly menuLabel = input<string | null>(null);
+  readonly popupLabel = input<string | null>(null);
   /**
    * Declarative items. When provided, the panel renders these rows itself —
-   * no `rvMenuItem` markup and no controller needed. Mutually exclusive with
-   * projected `rvMenuItem` children (see `ambiguous`).
+   * no `rvSelectPopupItem` markup and no controller needed. Mutually exclusive with
+   * projected `rvSelectPopupItem` children (see `ambiguous`).
    */
-  readonly items = input<readonly RiviniaMenuItemData[] | null>(null);
-  /** Extra class(es) on the panel, alongside `.rv-menu-panel`. */
+  readonly items = input<readonly SelectPopupItemData[] | null>(null);
+  /** Extra class(es) on the panel, alongside `.rv-select-popup-panel`. */
   readonly panelClass = input<string | null>(null);
   /** Extra class(es) on data-driven rows only (projected rows use your markup). */
   readonly itemClass = input<string | null>(null);
 
   /** Fired when the user picks an enabled item (id). Closes first. */
-  readonly picked = output<MenuPick>();
+  readonly picked = output<SelectPopupPick>();
   readonly opened = output<void>();
   readonly closed = output<void>();
 
-  private readonly owned = new RiviniaMenu();
+  /**
+   * The panel element, once it exists.
+   *
+   * The panel is the scroll container, so a consumer virtualising the list
+   * needs it as the virtualizer's scroll element:
+   *
+   * ```ts
+   * virtualizer = injectVirtualizer(() => ({
+   *   scrollElement: this.panel(),
+   *   count: this.options().length,
+   *   estimateSize: () => 36,
+   * }));
+   * ```
+   *
+   * Emitted after the panel is committed, so the element is in the document
+   * when it arrives.
+   */
+  readonly panelReady = output<HTMLElement>();
+
+  /**
+   * The panel was scrolled close to its end.
+   *
+   * The threshold is a token (`--rv-select-popup-reach-end-offset`), because
+   * "close to the end" is a distance, not a percentage — a percentage of a
+   * list that is still loading changes meaning as rows arrive.
+   */
+  readonly reachEnd = output<void>();
+
+  private readonly owned = new SelectPopupControllerImpl();
   private readonly self = inject(ElementRef<HTMLElement>);
   /** Item directives the consumer projected (not the ones we render). */
-  private readonly projectedItems = contentChildren(RiviniaMenuItem, { descendants: true });
+  private readonly projectedItems = contentChildren(SelectPopupItem, { descendants: true });
   /**
    * Stable panel id for `aria-controls`. Instance-unique via module counter;
    * SSR-safe because the panel (and its id) only renders client-side on open.
    */
-  protected readonly panelId = `rv-menu-panel-${++nextPanelId}`;
+  protected readonly panelId = `rv-select-popup-panel-${++nextPanelId}`;
   /** Deferred initial focus: set on open paths, consumed after render. */
   private focusPending = false;
   /** True between an open and the first row registered for it. */
@@ -399,6 +246,8 @@ export class RiviniaMenuComponent {
     typeof HTMLElement !== 'undefined' && 'showPopover' in HTMLElement.prototype;
   /** Coordinates applied (gates the enter animation until measured). */
   protected readonly positioned = signal(false);
+  /** Whether the panel element has already been handed over. */
+  private panelEmitted = false;
   /** Whether the panel flipped to the opposite vertical side. */
   protected readonly flipped = signal(false);
   /** Printable-character search buffer; reset by timer after 500ms quiet. */
@@ -406,12 +255,12 @@ export class RiviniaMenuComponent {
   private typeTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** Effective controller: external input or the owned fallback. */
-  controller(): RiviniaMenuController {
-    return this.menu() ?? this.owned;
+  controller(): SelectPopupController {
+    return this.popup() ?? this.owned;
   }
 
   /** Data-driven rows to render, or empty when the consumer projects markup. */
-  protected dataItems(): readonly RiviniaMenuItemData[] {
+  protected dataItems(): readonly SelectPopupItemData[] {
     return this.ambiguous() ? [] : (this.items() ?? []);
   }
 
@@ -422,14 +271,14 @@ export class RiviniaMenuComponent {
    * template reads.
    */
   protected checkedFor(id: string): boolean | null {
-    const c = this.controller() as RiviniaMenuController & {
+    const c = this.controller() as SelectPopupController & {
       isSelected?: (id: string) => boolean;
     };
     return typeof c.isSelected === 'function' ? c.isSelected(id) : null;
   }
 
   /**
-   * `[items]` and projected `rvMenuItem` children are two ways to populate the
+   * `[items]` and projected `rvSelectPopupItem` children are two ways to populate the
    * same panel. Supplying both is ambiguous: we throw instead of silently
    * picking a winner, because a silently-ignored list is a data-loss bug.
    */
@@ -437,7 +286,7 @@ export class RiviniaMenuComponent {
     return this.items() !== null && this.projectedItems().length > 0;
   }
 
-  /** Called by {@link RiviniaMenuItem} directives. */
+  /** Called by {@link SelectPopupItem} directives. */
   registerItem(item: { id: string; disabled: boolean }): void {
     const c = this.controller();
     c.register(item);
@@ -452,7 +301,7 @@ export class RiviniaMenuComponent {
     }
   }
 
-  /** Called by {@link RiviniaMenuItem} directives. */
+  /** Called by {@link SelectPopupItem} directives. */
   unregisterItem(id: string): void {
     this.controller().unregister(id);
   }
@@ -461,7 +310,7 @@ export class RiviniaMenuComponent {
     effect(() => {
       if (!this.ambiguous()) return;
       throw new Error(
-        'rv-menu: `[items]` cannot be combined with projected `rvMenuItem` ' +
+        'rv-select-popup: `[items]` cannot be combined with projected `rvSelectPopupItem` ' +
           'children — pick one way to populate the panel.',
       );
     });
@@ -480,7 +329,7 @@ export class RiviniaMenuComponent {
       // drifting (native-select-like; scrolling inside the panel is exempt).
       // Like Tab-close, this is APG-consistent non-modal behavior.
       const onScroll = (event: Event) => {
-        const panel = this.self.nativeElement.querySelector('.rv-menu-panel');
+        const panel = this.self.nativeElement.querySelector('.rv-select-popup-panel');
         if (panel && event.target instanceof Node && panel.contains(event.target)) return;
         this.doClose(false);
       };
@@ -506,6 +355,7 @@ export class RiviniaMenuComponent {
     });
     afterRenderEffect(() => {
       if (this.controller().open() && !this.positioned()) this.showAndPosition();
+      this.emitPanelReady();
       this.consumePendingFocus();
     });
   }
@@ -516,8 +366,50 @@ export class RiviniaMenuComponent {
    * afterRender — before paint, so no flash. Falls back to the absolute CSS
    * placement when popover is unsupported (jsdom included).
    */
+  /**
+   * Hand the panel element to the consumer, once.
+   *
+   * A virtualised list needs the panel as its scroll element, and the panel
+   * only exists while the popup is open — so it is emitted on open and the
+   * consumer keeps the reference.
+   */
+  private emitPanelReady(): void {
+    if (this.panelEmitted) return;
+    const root = this.self.nativeElement.querySelector(
+      '.rv-select-popup-panel',
+    ) as HTMLElement | null;
+    if (!root) return;
+    this.panelEmitted = true;
+    this.panelReady.emit(root);
+  }
+
+  /**
+   * The panel scrolled close to its end.
+   *
+   * A DISTANCE, not a percentage: the panel's scrollable height changes as
+   * rows arrive, so a percentage would fire at a different row every time.
+   */
+  protected onPanelScroll(event: Event): void {
+    const el = event.target as HTMLElement | null;
+    if (!el) return;
+    const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const offset = this.reachEndOffset();
+    if (remaining <= offset) this.reachEnd.emit();
+  }
+
+  /** How close to the end counts as "the end". A length, so it is stable. */
+  protected reachEndOffset(): number {
+    const raw = getComputedStyle(this.self.nativeElement).getPropertyValue(
+      '--rv-select-popup-reach-end-offset',
+    );
+    const parsed = Number.parseFloat(raw);
+    return Number.isFinite(parsed) ? parsed : 48;
+  }
+
   private showAndPosition(): void {
-    const root = this.self.nativeElement.querySelector('.rv-menu-panel') as HTMLElement | null;
+    const root = this.self.nativeElement.querySelector(
+      '.rv-select-popup-panel',
+    ) as HTMLElement | null;
     if (!root) return;
     if (typeof window === 'undefined' || !this.topLayerSupported) {
       this.positioned.set(true);
@@ -535,7 +427,7 @@ export class RiviniaMenuComponent {
         this.positioned.set(true);
         return;
       }
-      const at = computeMenuPosition(
+      const at = computeSelectPopupPosition(
         { left: trigger.left, top: trigger.top, width: trigger.width, height: trigger.height },
         { width: root.offsetWidth, height: root.offsetHeight },
         this.placement(),
@@ -700,7 +592,7 @@ export class RiviniaMenuComponent {
   }
 
   private matchTypeahead(buffer: string): string | null {
-    const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-menu-panel');
+    const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-select-popup-panel');
     if (!root) return null;
     const enabled = new Set(
       this.controller()
@@ -738,7 +630,7 @@ export class RiviniaMenuComponent {
   }
 
   /**
-   * Mouse pick of a concrete item. Called by {@link RiviniaMenuItem}.
+   * Mouse pick of a concrete item. Called by {@link SelectPopupItem}.
    * Disabled/unknown ids are ignored via `activate` (returns false).
    */
   pickItem(id: string): void {
@@ -747,7 +639,7 @@ export class RiviniaMenuComponent {
     this.picked.emit({ id });
   }
 
-  /** Mouse hover tracks keyboard focus. Called by {@link RiviniaMenuItem}. */
+  /** Mouse hover tracks keyboard focus. Called by {@link SelectPopupItem}. */
   hoverItem(id: string): void {
     this.controller().activate(id);
   }
@@ -757,7 +649,7 @@ export class RiviniaMenuComponent {
     // APG: the typeahead buffer is per-open. Keeping it across a close made
     // the next open start mid-word (measured: `due` + `d` matched nothing).
     this.resetTypeahead();
-    this.controller().closeMenu();
+    this.controller().closePopup();
     if (was) this.closed.emit();
     if (restoreFocus) this.focusTrigger();
   }
@@ -775,7 +667,7 @@ export class RiviniaMenuComponent {
     // `open` never changes again — the second pass is the retry.
     const ready = this.positioned();
     if (!ready || !this.controller().open() || !this.focusPending) return;
-    const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-menu-panel');
+    const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-select-popup-panel');
     // Panel not committed yet: keep the flag so the next pass retries. Clearing
     // it here is what used to strand focus on <body> (measured: Playwright
     // "received: inactive" on every arrow assertion).
@@ -792,11 +684,11 @@ export class RiviniaMenuComponent {
 
   private focusActive(): void {
     const id = this.controller().activeId();
-    const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-menu-panel');
+    const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-select-popup-panel');
     if (!root) return;
     const target = id
       ? root.querySelector<HTMLElement>(`[data-rv-id="${CSS.escape(id)}"]`)
-      : root.querySelector<HTMLElement>('[rvmenuitem]');
+      : root.querySelector<HTMLElement>('[rvselectpopupitem]');
     try {
       target?.focus({ preventScroll: true });
     } catch {
@@ -814,7 +706,9 @@ export class RiviniaMenuComponent {
 
   /** Focusable trigger child (APG target) or the wrapper as fallback. */
   private triggerEl(): HTMLElement | null {
-    const wrap = this.self.nativeElement.querySelector('.rv-menu-trigger') as HTMLElement | null;
+    const wrap = this.self.nativeElement.querySelector(
+      '.rv-select-popup-trigger',
+    ) as HTMLElement | null;
     if (!wrap) return null;
     return (wrap.querySelector('button, a, [tabindex]') as HTMLElement | null) ?? wrap;
   }
@@ -838,7 +732,7 @@ export class RiviniaMenuComponent {
       const stops = [...doc.querySelectorAll<HTMLElement>(selector)].filter((el) => {
         if (el.hasAttribute('disabled') || el.getAttribute('aria-hidden') === 'true') return false;
         // Rows inside any open panel are part of that menu, not this page flow.
-        if (el.closest('.rv-menu-panel')) return false;
+        if (el.closest('.rv-select-popup-panel')) return false;
         return el.getClientRects().length > 0;
       });
       stops.sort((a, b) =>

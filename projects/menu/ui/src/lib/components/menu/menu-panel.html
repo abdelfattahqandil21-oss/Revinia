@@ -1,0 +1,34 @@
+<div class="rv-menu-trigger" (click)="onTriggerClick()" (keydown)="onTriggerKey($event)">
+  <ng-content select="[rv-menu-trigger], [rvMenuTrigger]"></ng-content>
+</div>
+@if (controller().open()) {
+  <div
+    #panel
+    class="rv-menu-panel"
+    [class]="panelClass()"
+    role="menu"
+    [attr.id]="panelId"
+    [attr.aria-label]="menuLabel()"
+    [attr.popover]="topLayerSupported ? 'manual' : null"
+    [attr.data-placement]="placement()"
+    [attr.data-flipped]="flipped()"
+    [attr.data-positioned]="positioned()"
+    [attr.data-top-layer]="topLayerSupported"
+    (keydown)="onPanelKey($event)"
+  >
+    @if (dataItems().length > 0) {
+      @for (item of dataItems(); track item.id) {
+        <button
+          rvMenuItem
+          [id]="item.id"
+          [disabled]="item.disabled ?? false"
+          [checked]="checkedFor(item.id)"
+          [class]="itemClass()"
+        >
+          {{ item.label }}
+        </button>
+      }
+    }
+    <ng-content select="[rv-menu-panel], [rvMenuPanel]"></ng-content>
+  </div>
+}

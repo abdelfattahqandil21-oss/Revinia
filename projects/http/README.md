@@ -239,7 +239,6 @@ import type { Trip } from './trip.service';
 
 @Component({
   selector: 'app-trip-list',
-  standalone: true,
   templateUrl: './trip-list.component.html',
 })
 export class TripListComponent {

@@ -9,7 +9,7 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { RiviniaSelect } from '../lib/rivinia-select';
-import { RiviniaSelectComponent } from '../../ui/src/lib/select-panel';
+import { RiviniaSelectComponent } from '../../ui/src/lib/components/select/select-panel';
 
 const OPTIONS = [
   { id: 'outstanding', label: 'Outstanding invoices' },
@@ -19,7 +19,6 @@ const OPTIONS = [
 
 /** Single mode, searchable — the full interaction surface. */
 @Component({
-  standalone: true,
   imports: [RiviniaSelectComponent],
   template: `
     <rv-select
@@ -37,7 +36,6 @@ class Harness {
 
 /** Single mode, no filter box — pure menu keyboard model. */
 @Component({
-  standalone: true,
   imports: [RiviniaSelectComponent],
   template: `<rv-select [options]="options" (selectionChange)="changes.push($event)" />`,
 })
@@ -48,7 +46,6 @@ class PlainHarness {
 
 /** Multi mode; the test keeps a handle on the component to call clear(). */
 @Component({
-  standalone: true,
   imports: [RiviniaSelectComponent],
   template: `<rv-select
     mode="multi"
@@ -63,14 +60,13 @@ class MultiHarness {
 
 /** Accessible-name inputs, side by side. */
 @Component({
-  standalone: true,
   imports: [RiviniaSelectComponent],
   template: `
     <rv-select
       id="named"
       label="Invoice status"
       ariaLabel="Invoice status, screen-reader only"
-      menuLabel="Invoice status options"
+      popupLabel="Invoice status options"
       [options]="options"
     />
     <rv-select id="plain" [options]="options" />
@@ -123,24 +119,24 @@ describe('keyboard contract (single mode, no filter box)', () => {
     key(q(host, '.rv-select-trigger'), 'Enter');
     await settle(fixture);
 
-    expect(q(host, '.rv-menu-panel')).toBeTruthy();
+    expect(q(host, '.rv-select-popup-panel')).toBeTruthy();
     expect(q(host, '.rv-select-trigger').getAttribute('aria-expanded')).toBe('true');
 
-    const rows = () => qa(host, '[rvmenuitem]');
+    const rows = () => qa(host, '[rvselectpopupitem]');
     expect(rows().length).toBe(3);
     // Opening must land on the first *enabled* option, never the disabled one.
     expect(rows()[0].getAttribute('data-active')).toBe('true');
     expect(rows()[1].getAttribute('data-active')).toBe('false');
 
     // ArrowDown skips the disabled option instead of stopping on it.
-    key(q(host, '.rv-menu-panel'), 'ArrowDown');
+    key(q(host, '.rv-select-popup-panel'), 'ArrowDown');
     fixture.detectChanges();
     expect(rows()[0].getAttribute('data-active')).toBe('false');
     expect(rows()[1].getAttribute('data-active')).toBe('false');
     expect(rows()[2].getAttribute('data-active')).toBe('true');
 
     // ArrowUp walks back and also skips the disabled option.
-    key(q(host, '.rv-menu-panel'), 'ArrowUp');
+    key(q(host, '.rv-select-popup-panel'), 'ArrowUp');
     fixture.detectChanges();
     expect(rows()[0].getAttribute('data-active')).toBe('true');
     expect(rows()[2].getAttribute('data-active')).toBe('false');
@@ -154,13 +150,13 @@ describe('keyboard contract (single mode, no filter box)', () => {
     key(q(host, '.rv-select-trigger'), 'Enter');
     await settle(fixture);
 
-    key(q(host, '.rv-menu-panel'), 'ArrowDown');
+    key(q(host, '.rv-select-popup-panel'), 'ArrowDown');
     fixture.detectChanges();
-    key(q(host, '.rv-menu-panel'), 'Enter');
+    key(q(host, '.rv-select-popup-panel'), 'Enter');
     await settle(fixture);
 
     expect(fixture.componentInstance.changes).toEqual(['paid']);
-    expect(host.querySelector('.rv-menu-panel')).toBeNull();
+    expect(host.querySelector('.rv-select-popup-panel')).toBeNull();
     expect(q(host, '.rv-select-value').textContent).toContain('Paid');
   });
 
@@ -171,10 +167,10 @@ describe('keyboard contract (single mode, no filter box)', () => {
 
     key(q(host, '.rv-select-trigger'), 'Enter');
     await settle(fixture);
-    key(q(host, '.rv-menu-panel'), 'Escape');
+    key(q(host, '.rv-select-popup-panel'), 'Escape');
     fixture.detectChanges();
 
-    expect(host.querySelector('.rv-menu-panel')).toBeNull();
+    expect(host.querySelector('.rv-select-popup-panel')).toBeNull();
     expect(fixture.componentInstance.changes).toEqual([]);
   });
 
@@ -186,8 +182,8 @@ describe('keyboard contract (single mode, no filter box)', () => {
     key(q(host, '.rv-select-trigger'), 'Enter');
     await settle(fixture);
 
-    const panel = q(host, '.rv-menu-panel');
-    const rows = () => qa(host, '[rvmenuitem]');
+    const panel = q(host, '.rv-select-popup-panel');
+    const rows = () => qa(host, '[rvselectpopupitem]');
     // The disabled row can never become the active one through navigation —
     // menu's activateNext/activatePrevious skip it.
     key(panel, 'ArrowDown');
@@ -217,7 +213,7 @@ describe('keyboard contract (filter box)', () => {
     // Focus must LEAVE the box — this is the documented, non-combobox model.
     key(search, 'Tab');
     expect(document.activeElement).not.toBe(search);
-    expect((document.activeElement as HTMLElement).hasAttribute('rvmenuitem')).toBe(true);
+    expect((document.activeElement as HTMLElement).hasAttribute('rvselectpopupitem')).toBe(true);
   });
 
   it('picks the top match with Enter and closes', async () => {
@@ -244,7 +240,7 @@ describe('keyboard contract (filter box)', () => {
     key(search, 'Enter');
     await settle(fixture);
     expect(fixture.componentInstance.changes).toEqual(['paid']);
-    expect(host.querySelector('.rv-menu-panel')).toBeNull();
+    expect(host.querySelector('.rv-select-popup-panel')).toBeNull();
   });
 
   it('keeps ordinary typing out of the menu typeahead', async () => {
@@ -282,14 +278,14 @@ describe('accessible names (0.2.0)', () => {
     expect(q(plain, '.rv-select-trigger').hasAttribute('aria-label')).toBe(false);
   });
 
-  it('names the opened panel via menuLabel, or falls back to the caption', async () => {
+  it('names the opened panel via popupLabel, or falls back to the caption', async () => {
     const fixture = TestBed.createComponent(LabelHarness);
     fixture.detectChanges();
     const host = fixture.nativeElement;
 
     q(host, 'rv-select#named .rv-select-trigger').click();
     await settle(fixture);
-    expect(q(host, '#named .rv-menu-panel').getAttribute('aria-label')).toBe(
+    expect(q(host, '#named .rv-select-popup-panel').getAttribute('aria-label')).toBe(
       'Invoice status options',
     );
     q(host, 'rv-select#named .rv-select-trigger').click();
@@ -298,14 +294,14 @@ describe('accessible names (0.2.0)', () => {
     // A caption alone is enough to name the panel.
     q(host, 'rv-select#auto .rv-select-trigger').click();
     await settle(fixture);
-    expect(q(host, '#auto .rv-menu-panel').getAttribute('aria-label')).toBe('Only a caption');
+    expect(q(host, '#auto .rv-select-popup-panel').getAttribute('aria-label')).toBe('Only a caption');
     q(host, 'rv-select#auto .rv-select-trigger').click();
     await settle(fixture);
 
     // Unnamed stays unnamed — asserted so the fallback is not accidental.
     q(host, 'rv-select#plain .rv-select-trigger').click();
     await settle(fixture);
-    expect(q(host, '#plain .rv-menu-panel').hasAttribute('aria-label')).toBe(false);
+    expect(q(host, '#plain .rv-select-popup-panel').hasAttribute('aria-label')).toBe(false);
   });
 
   it('keeps the documented menu semantics, not combobox', async () => {
@@ -316,12 +312,12 @@ describe('accessible names (0.2.0)', () => {
     q(host, 'rv-select#named .rv-select-trigger').click();
     await settle(fixture);
 
-    const panel = q(host, '#named .rv-menu-panel');
+    const panel = q(host, '#named .rv-select-popup-panel');
     expect(panel.getAttribute('role')).toBe('menu');
     expect(q(host, 'rv-select#named .rv-select-trigger').getAttribute('aria-haspopup')).toBe(
       'menu',
     );
-    expect(q(panel, '[rvmenuitem]').getAttribute('role')).toBe('menuitem');
+    expect(q(panel, '[rvselectpopupitem]').getAttribute('role')).toBe('menuitem');
     // A combobox would require these; their absence is the documented model.
     expect(panel.hasAttribute('aria-activedescendant')).toBe(false);
     expect(panel.getAttribute('role')).not.toBe('listbox');
@@ -347,7 +343,7 @@ describe('clear() announces itself (0.2.0)', () => {
 
     q(host, '.rv-select-trigger').click();
     await settle(fixture);
-    key(q(host, '.rv-menu-panel'), 'Enter');
+    key(q(host, '.rv-select-popup-panel'), 'Enter');
     await settle(fixture);
     expect(fixture.componentInstance.changes).toEqual(['outstanding']);
     expect(q(host, '.rv-select-value').textContent).toContain('Outstanding invoices');
@@ -365,7 +361,7 @@ describe('clear() announces itself (0.2.0)', () => {
 
     q(host, '.rv-select-trigger').click();
     await settle(fixture);
-    qa(host, '[rvmenuitem]')[0].click();
+    qa(host, '[rvselectpopupitem]')[0].click();
     await settle(fixture);
     expect(fixture.componentInstance.changes).toEqual([['outstanding']]);
 

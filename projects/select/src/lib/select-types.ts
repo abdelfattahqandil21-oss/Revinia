@@ -38,6 +38,17 @@ export interface RiviniaSelectController {
   clearQuery(): void;
   select(id: string): boolean;
   toggle(id: string): boolean;
+  /**
+   * Force a value, bypassing the unknown/disabled guards of `select`.
+   *
+   * A UI driving a form binding writes restored values through it, so an id
+   * whose option has not loaded yet is preserved rather than silently
+   * dropped. Optional on the interface: an implementation predating it keeps
+   * working and falls back to `select`.
+   */
+  setValue?(id: string | null): void;
+  /** Force the values, the array counterpart of `setValue`. */
+  setValues?(ids: readonly string[]): void;
   clear(): void;
   isSelected(id: string): boolean;
 }

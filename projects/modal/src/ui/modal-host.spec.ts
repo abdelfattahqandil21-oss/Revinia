@@ -25,7 +25,6 @@ function ensureDialogApi(): void {
 }
 
 @Component({
-  standalone: true,
   imports: [RiviniaModalHost],
   template: `
     <rv-modal-host [modal]="modal" />
@@ -42,7 +41,6 @@ class HostHarness {
 }
 
 @Component({
-  standalone: true,
   template: `<p data-testid="mini-dlg">mini</p>`,
 })
 class MiniDialog {}

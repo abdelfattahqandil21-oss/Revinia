@@ -41,8 +41,15 @@ const OUTPUT_DIR: Record<EnvironmentName, string> = {
   prod: 'builds/prod',
 };
 
-/** Maps an environment name to its Angular CLI configuration name. */
+/** Public short configuration names used by `ng build --configuration`. */
 const CONFIG_NAME: Record<EnvironmentName, string> = {
+  dev: 'dev',
+  stage: 'stag',
+  prod: 'prod',
+};
+
+/** Existing long configuration names remain wired for compatibility. */
+const LEGACY_CONFIG_NAME: Record<EnvironmentName, string> = {
   dev: 'development',
   stage: 'staging',
   prod: 'production',
@@ -52,12 +59,12 @@ const fileDefs = (sourceRoot: string, selected: readonly EnvironmentName[]): Fil
   const files: FileDef[] = [
     { name: `${sourceRoot}/environments/environment.model.ts`, content: () => MODEL_FILE },
     // The base file is always scaffolded: it is the `replace` source for
-    // prod/staging swaps (and what `development` uses directly).
+    // prod/stag swaps (and what dev uses directly).
     {
       name: `${sourceRoot}/environments/environment.ts`,
       content: (version: string) =>
         `import type { AppEnvironment } from './environment.model';\n\n` +
-        `/** Development defaults. Used as-is by the \`development\` configuration. */\n` +
+        `/** Development defaults. Used as-is by the \`dev\` configuration. */\n` +
         `export const environment: AppEnvironment = {\n` +
         `  production: false,\n` +
         `  version: '${version}',\n` +
@@ -70,7 +77,7 @@ const fileDefs = (sourceRoot: string, selected: readonly EnvironmentName[]): Fil
       name: `${sourceRoot}/environments/environment.staging.ts`,
       content: (version: string) =>
         `import type { AppEnvironment } from './environment.model';\n\n` +
-        `/** Staging mirrors production. Wired via the \`staging\` configuration. */\n` +
+        `/** Staging mirrors production. Wired via the \`stag\` configuration. */\n` +
         `export const environment: AppEnvironment = {\n` +
         `  production: true,\n` +
         `  version: '${version}',\n` +
@@ -95,14 +102,15 @@ const fileDefs = (sourceRoot: string, selected: readonly EnvironmentName[]): Fil
 
 /**
  * `ng add @rivinia/env` — scaffolds typed environment files and wires
- * development/staging/production configurations with file replacements.
+ * dev/stag/prod configurations with file replacements.
  *
  * - Never overwrites existing files (each file skipped individually).
  * - Never removes user configuration: only ADDS missing fileReplacements
- *   (matched by replace+with pair) and creates a `staging` configuration
- *   (copied from `production` when present) if absent.
- * - `development` intentionally gets no replacement (CLI standard: it uses
- *   `environment.ts` directly).
+ *   (one per source file) and creates short configurations from their legacy
+ *   equivalents when absent.
+ * - `dev` intentionally gets no replacement (it uses `environment.ts`).
+ *   Existing `development`, `staging`, and `production` configurations remain
+ *   wired for compatibility.
  * - App version is snapshotted from the app's `package.json` (`0.0.0` fallback).
  */
 export function ngAdd(options: NgAddOptions): Rule {
@@ -153,13 +161,19 @@ export function ngAdd(options: NgAddOptions): Rule {
     }
 
     if (selected.includes('prod')) {
-      ensureReplacement(tree, angular, name, 'production', {
+      ensureNamedConfig(tree, angular, name, 'prod', ['production'], context);
+      const replacement = {
         replace: `${sourceRoot}/environments/environment.ts`,
         with: `${sourceRoot}/environments/environment.prod.ts`,
-      });
+      };
+      ensureReplacement(tree, angular, name, 'prod', replacement);
+      ensureReplacement(tree, angular, name, 'production', replacement);
     }
     if (selected.includes('stage')) {
       ensureStaging(tree, angular, name, sourceRoot, context);
+    }
+    if (selected.includes('dev')) {
+      ensureNamedConfig(tree, angular, name, 'dev', ['development'], context);
     }
     ensureOutputPaths(tree, angular, name, selected, context);
 
@@ -271,20 +285,27 @@ function ensureReplacement(
   if (!tree.exists('/angular.json')) return;
   const configurations = getConfigurations(angular, name);
   const target = configurations[configuration];
-  if (!target) return; // never create production/development for the user
+  if (!target) return;
   const list = target['fileReplacements'];
   if (!Array.isArray(list)) {
     target['fileReplacements'] = [{ ...entry }];
     return;
   }
-  const exists = list.some(
-    (item) =>
-      typeof item === 'object' &&
-      item !== null &&
-      (item as Record<string, unknown>)['replace'] === entry.replace &&
-      (item as Record<string, unknown>)['with'] === entry.with,
-  );
-  if (!exists) list.push({ ...entry });
+  const matches = list
+    .map((item, index) => ({ item, index }))
+    .filter(
+      ({ item }) =>
+        typeof item === 'object' &&
+        item !== null &&
+        (item as Record<string, unknown>)['replace'] === entry.replace,
+    );
+  if (matches.length === 0) {
+    list.push({ ...entry });
+    return;
+  }
+  const firstIndex = matches[0].index;
+  list[firstIndex] = { ...entry };
+  for (const { index } of matches.slice(1).reverse()) list.splice(index, 1);
 }
 
 /**
@@ -303,11 +324,12 @@ function ensureOutputPaths(
   const configurations = getConfigurations(angular, name);
   let touched = false;
   for (const env of selected) {
-    const configName = CONFIG_NAME[env];
-    const target = configurations[configName];
-    if (!target || 'outputPath' in target) continue;
-    target['outputPath'] = OUTPUT_DIR[env];
-    touched = true;
+    for (const configName of [CONFIG_NAME[env], LEGACY_CONFIG_NAME[env]]) {
+      const target = configurations[configName];
+      if (!target || 'outputPath' in target) continue;
+      target['outputPath'] = OUTPUT_DIR[env];
+      touched = true;
+    }
   }
   if (touched) ensureGitignore(tree, context);
 }
@@ -329,18 +351,35 @@ function ensureStaging(
   context: SchematicContext,
 ): void {
   if (!tree.exists('/angular.json')) return;
-  const configurations = getConfigurations(angular, name);
-  if (!configurations['staging']) {
-    const production = configurations['production'];
-    const copy: Record<string, unknown> =
-      production && typeof production === 'object' ? { ...production } : {};
-    delete copy['fileReplacements'];
-    delete copy['outputPath'];
-    configurations['staging'] = copy;
-    context.logger.info('[rivinia/env] created `staging` configuration.');
-  }
-  ensureReplacement(tree, angular, name, 'staging', {
+  ensureNamedConfig(tree, angular, name, 'stag', ['staging', 'production'], context);
+  ensureNamedConfig(tree, angular, name, 'staging', ['stag', 'production'], context);
+  const replacement = {
     replace: `${sourceRoot}/environments/environment.ts`,
     with: `${sourceRoot}/environments/environment.staging.ts`,
-  });
+  };
+  ensureReplacement(tree, angular, name, 'stag', replacement);
+  ensureReplacement(tree, angular, name, 'staging', replacement);
+}
+
+function ensureNamedConfig(
+  tree: Tree,
+  angular: { projects?: Record<string, ProjectDef> },
+  name: string,
+  configuration: string,
+  fallbacks: readonly string[],
+  context: SchematicContext,
+): void {
+  if (!tree.exists('/angular.json')) return;
+  const configurations = getConfigurations(angular, name);
+  if (configurations[configuration]) return;
+
+  const source = fallbacks
+    .map((fallback) => configurations[fallback])
+    .find((candidate) => candidate && typeof candidate === 'object');
+  const copy = source
+    ? (JSON.parse(JSON.stringify(source)) as Record<string, unknown>)
+    : {};
+  delete copy['outputPath'];
+  configurations[configuration] = copy;
+  context.logger.info(`[rivinia/env] created \`${configuration}\` configuration.`);
 }

@@ -1,0 +1,14 @@
+{
+  "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
+  "dest": "../../dist/theme",
+  "assets": [
+    "./styles/theme.css",
+    "./styles/tailwind.css",
+    "./styles/bootstrap.css",
+    "./styles/_index.scss",
+    "./README.md"
+  ],
+  "lib": {
+    "entryFile": "src/public-api.ts"
+  }
+}

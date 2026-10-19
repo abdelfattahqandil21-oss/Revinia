@@ -1,27 +1,27 @@
 import { signal } from '@angular/core';
-import type { RiviniaMenuController, RiviniaMenuFocus, RiviniaMenuItem } from './menu-types';
+import type { SelectPopupController, SelectPopupFocus, SelectPopupItem } from '../models/select-popup.types';
 
 /**
  * Headless per-menu controller. Owns open state, the registered items and
  * the active (keyboard-focused) item — no DOM, no styling, no positioning.
- * Instantiate one per menu (`new RiviniaMenu()`); rendering and focus moves
- * are the UI layer's job (the vendored menu UI implements them).
+ * Instantiate one per menu (`new RiviniaSelectPopup()`); rendering and focus moves
+ * are the UI layer's job (the vendored popup UI implements them).
  *
  * Navigation skips disabled items and wraps around. Closing clears the
  * active item; the UI restores focus to the trigger.
  */
-export class RiviniaMenu implements RiviniaMenuController {
+export class SelectPopupControllerImpl implements SelectPopupController {
   /** Whether the panel is open. */
   readonly open = signal(false);
   /** Id of the keyboard-active item (`null` when closed or unfocused). */
   readonly activeId = signal<string | null>(null);
 
-  private readonly _items = signal<readonly RiviniaMenuItem[]>([]);
+  private readonly _items = signal<readonly SelectPopupItem[]>([]);
   /** Registered items, in registration order. */
   readonly items = this._items.asReadonly();
 
   /** Register an item (idempotent by id — re-register updates it). */
-  register(item: RiviniaMenuItem): void {
+  register(item: SelectPopupItem): void {
     this._items.update((list) => {
       const at = list.findIndex((i) => i.id === item.id);
       if (at === -1) return [...list, { ...item }];
@@ -36,7 +36,7 @@ export class RiviniaMenu implements RiviniaMenuController {
   }
 
   /** Open and optionally focus the first/last enabled item, or preserve current. */
-  openMenu(focus: RiviniaMenuFocus = 'first'): void {
+  openMenu(focus: SelectPopupFocus = 'first'): void {
     this.open.set(true);
     if (focus === 'first') this.activateFirst();
     else if (focus === 'last') this.activateLast();
@@ -47,13 +47,13 @@ export class RiviniaMenu implements RiviniaMenuController {
   }
 
   /** Close and clear the active item. Focus restoration is UI-owned. */
-  closeMenu(): void {
+  closePopup(): void {
     this.open.set(false);
     this.activeId.set(null);
   }
 
-  toggle(focus: RiviniaMenuFocus = 'first'): void {
-    if (this.open()) this.closeMenu();
+  toggle(focus: SelectPopupFocus = 'first'): void {
+    if (this.open()) this.closePopup();
     else this.openMenu(focus);
   }
 
@@ -98,6 +98,6 @@ export class RiviniaMenu implements RiviniaMenuController {
   }
 }
 
-function firstEnabled(items: readonly RiviniaMenuItem[]): string | null {
+function firstEnabled(items: readonly SelectPopupItem[]): string | null {
   return items.find((i) => !i.disabled)?.id ?? null;
 }

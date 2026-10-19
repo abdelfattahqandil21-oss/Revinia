@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { RiviniaMenuItemData } from '../lib/menu-types';
-import { RiviniaMenuComponent, RiviniaMenuItem } from '../../ui/src/lib/menu-panel';
+import { RiviniaMenuComponent, RiviniaMenuItem } from '../../ui/src/lib/components/menu/menu-panel';
 
 /**
  * Consumer-level tests: the documented public surface only — no calls to the
@@ -18,7 +18,6 @@ const ITEMS: readonly RiviniaMenuItemData[] = [
 
 /** Level A: declarative. No controller, no registration, no markup rows. */
 @Component({
-  standalone: true,
   imports: [RiviniaMenuComponent, RiviniaMenuItem],
   template: `
     <rv-menu
@@ -39,7 +38,6 @@ class DataDrivenHarness {
 
 /** Level B: composable. Trigger + panel projected, items self-register. */
 @Component({
-  standalone: true,
   imports: [RiviniaMenuComponent, RiviniaMenuItem],
   template: `
     <rv-menu menuLabel="Custom">
@@ -56,7 +54,6 @@ class ComposableHarness {}
 
 /** Two instances in one template: isolation check. */
 @Component({
-  standalone: true,
   imports: [RiviniaMenuComponent, RiviniaMenuItem],
   template: `
     <rv-menu (picked)="picked.push('a:' + $event.id)">
@@ -75,7 +72,6 @@ class TwoHarness {
 
 /** Dynamic rows + live disabled toggling. */
 @Component({
-  standalone: true,
   imports: [RiviniaMenuComponent, RiviniaMenuItem],
   template: `
     <rv-menu (picked)="picked.push($event.id)">
@@ -257,7 +253,6 @@ describe('consumer API — dynamic rows and live disabled', () => {
 
 describe('consumer API — ambiguity guard', () => {
   @Component({
-    standalone: true,
     imports: [RiviniaMenuComponent, RiviniaMenuItem],
     template: `
       <rv-menu [items]="items" menuLabel="X">

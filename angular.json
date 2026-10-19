@@ -2,7 +2,8 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "pnpm"
+    "packageManager": "pnpm",
+    "analytics": "cc7c97c0-21e2-4001-9bcd-c458b99bee99"
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -283,7 +284,9 @@
                 "input": "projects/menu-e2e/public"
               }
             ],
-            "styles": ["projects/menu-e2e/src/styles.css"]
+            "styles": [
+              "projects/menu-e2e/src/styles.css"
+            ]
           },
           "configurations": {
             "production": {
@@ -320,6 +323,29 @@
             }
           },
           "defaultConfiguration": "development"
+        }
+      }
+    },
+    "theme": {
+      "projectType": "library",
+      "root": "projects/theme",
+      "sourceRoot": "projects/theme/src",
+      "prefix": "rv",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "options": {
+            "project": "projects/theme/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/theme/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/theme/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
         }
       }
     }

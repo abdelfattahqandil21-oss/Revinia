@@ -1,5 +1,6 @@
 import {
   Component,
+  OnDestroy,
   Directive,
   DOCUMENT,
   ElementRef,
@@ -59,7 +60,6 @@ export class RvModalFooter {}
  */
 @Component({
   selector: 'rv-modal-dialog',
-  standalone: true,
   // Unencapsulated like rv-menu: custom projected headers/footers belong to
   // the consumer's template, which emulated selectors cannot reach. Every
   // rule is scoped under `.rv-modal`, so nothing leaks.
@@ -73,6 +73,7 @@ export class RvModalFooter {}
       [attr.data-position]="position()"
       [attr.data-animation]="animation()"
       [attr.data-state]="state()"
+      [attr.data-resizing]="resizing()"
       [attr.aria-label]="computedLabel()"
       [attr.aria-labelledby]="title() && !ariaLabel() ? titleId : null"
       [attr.aria-describedby]="description() ? descriptionId : null"
@@ -120,19 +121,37 @@ export class RvModalFooter {}
     `
       .rv-modal {
         color-scheme: light dark;
-        --rv-modal-bg: #ffffff;
-        --rv-modal-fg: #111111;
-        --rv-modal-muted: #555555;
-        --rv-modal-border: #e0e0e0;
-        --rv-modal-radius: 12px;
-        --rv-modal-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
-        --rv-modal-backdrop: rgba(0, 0, 0, 0.5);
+        /*
+         * The PALETTE tokens are NOT declared here.
+         *
+         * A declaration on the component element out-ranks any value an
+         * ancestor sets, so declaring them here would make the shared
+         * semantic layer unreachable. They are read as
+         * var(--rv-modal-*, var(--rv-<semantic>, <default>)) at each read
+         * site instead — so a consumer's --rv-bg reaches the dialog, and
+         * --rv-modal-bg still wins for the dialog alone.
+         *
+         * The LAYOUT tokens (widths, padding, durations) stay here: they are
+         * genuinely component-specific and have no semantic counterpart.
+         */
         --rv-modal-pad: 20px;
         --rv-modal-gap: 12px;
-        --rv-modal-width-sm: 24rem;
-        --rv-modal-width-md: 32rem;
-        --rv-modal-width-lg: 48rem;
-        --rv-modal-width-xl: 64rem;
+        /*
+         * Responsive widths.
+         *
+         * A fixed rem width does not survive a small screen: the dialog
+         * either overflows or is capped by max-width and the PRESET loses its
+         * meaning — an 'sm' dialog and an 'xl' dialog end up the same width.
+         * clamp() scales the preset with the viewport between a floor and a
+         * ceiling, so the presets stay distinct AND the dialog fits.
+         *
+         * Every one of them is a plain custom property, so a consumer
+         * overrides the preset in CSS without touching the library.
+         */
+        --rv-modal-width-sm: clamp(16rem, 40vw, 24rem);
+        --rv-modal-width-md: clamp(20rem, 55vw, 32rem);
+        --rv-modal-width-lg: clamp(24rem, 70vw, 48rem);
+        --rv-modal-width-xl: clamp(28rem, 85vw, 64rem);
         --rv-modal-max-height: min(86dvh, 100%);
         --rv-modal-duration: 150ms;
         --rv-modal-duration-in: var(--rv-modal-duration);
@@ -140,29 +159,87 @@ export class RvModalFooter {}
         --rv-modal-easing: ease-out;
         --rv-modal-easing-in: var(--rv-modal-easing);
         --rv-modal-easing-out: ease-in;
-        --rv-modal-radius-sheet: 20px;
+        --rv-modal-radius-sheet: 1.25rem;
         --rv-modal-width-panel: 24rem;
         padding: 0;
-        border: 1px solid var(--rv-modal-border);
-        border-radius: var(--rv-modal-radius);
-        background: var(--rv-modal-bg);
-        color: var(--rv-modal-fg);
-        box-shadow: var(--rv-modal-shadow);
+        border: 1px solid var(--rv-modal-border, var(--rv-border, #e0e0e0));
+        border-radius: var(--rv-modal-radius, var(--rv-radius, 12px));
+        background: var(--rv-modal-bg, var(--rv-bg, #ffffff));
+        color: var(--rv-modal-fg, var(--rv-fg, #111111));
+        box-shadow: var(--rv-modal-shadow, var(--rv-shadow, 0 24px 64px rgba(0, 0, 0, 0.28)));
         max-height: var(--rv-modal-max-height);
         width: var(--rv-modal-width-md);
         max-width: calc(100dvw - 2rem);
+        /*
+         * Smooth when the dialog's box changes.
+         *
+         * A dialog that opens on top of another one, or that changes size,
+         * used to JUMP: the box changed in a single frame while the content
+         * reflowed, which reads as a flicker. Transitioning width, height and
+         * the offsets makes the change a movement.
+         *
+         * Only the box is transitioned — never all, which would also
+         * animate the content's own layout and produce lag.
+         */
+        transition:
+          width var(--rv-modal-size-duration, 180ms) var(--rv-modal-easing, ease-out),
+          height var(--rv-modal-size-duration, 180ms) var(--rv-modal-easing, ease-out),
+          max-height var(--rv-modal-size-duration, 180ms) var(--rv-modal-easing, ease-out),
+          inset var(--rv-modal-size-duration, 180ms) var(--rv-modal-easing, ease-out),
+          margin var(--rv-modal-size-duration, 180ms) var(--rv-modal-easing, ease-out);
       }
-      @media (prefers-color-scheme: dark) {
-        .rv-modal {
-          --rv-modal-bg: #161616;
-          --rv-modal-fg: #f2f2f2;
-          --rv-modal-muted: #a8a8a8;
-          --rv-modal-border: #333333;
-          --rv-modal-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+      /*
+       * While the viewport is being resized, the transition is OFF.
+       *
+       * The dialog's size is derived from the viewport, so during a resize
+       * every frame is a new target. Animating towards a moving target lags
+       * behind the pointer and looks worse than the jump it replaced. The
+       * dialog snaps instead, which is what the eye expects from a resize.
+       */
+      .rv-modal[data-resizing='true'] {
+        transition: none !important;
+      }
+      /*
+       * The loader shown while a dialog's data is still in flight.
+       *
+       * role="status" with a polite live region: the change is announced
+       * without stealing focus from whatever the user was doing.
+       */
+      .rv-modal-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--rv-modal-loading-gap, 0.625rem);
+        padding: var(--rv-modal-loading-padding, 2rem);
+        min-height: var(--rv-modal-loading-min-height, 6rem);
+        color: var(--rv-modal-muted, var(--rv-muted, #555555));
+        font-size: var(--rv-modal-loading-size, 0.875rem);
+      }
+      /*
+       * A ring that spins. currentColor so it follows the theme, and
+       * prefers-reduced-motion stops it — a spinner that will not stop is
+       * exactly the kind of thing that makes a page unusable for some people.
+       */
+      .rv-modal-spinner {
+        inline-size: var(--rv-modal-spinner-size, 1.125rem);
+        block-size: var(--rv-modal-spinner-size, 1.125rem);
+        border: 2px solid currentColor;
+        border-block-start-color: transparent;
+        border-radius: 50%;
+        animation: rv-modal-spin var(--rv-modal-spinner-duration, 700ms) linear infinite;
+      }
+      @keyframes rv-modal-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .rv-modal-spinner {
+          animation: none;
         }
       }
       .rv-modal::backdrop {
-        background: var(--rv-modal-backdrop);
+        background: var(--rv-modal-backdrop, rgba(0, 0, 0, 0.5));
       }
       .rv-modal[data-size='sm'] {
         width: var(--rv-modal-width-sm);
@@ -352,23 +429,23 @@ export class RvModalFooter {}
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 0.25rem;
       }
       .rv-modal-description {
         margin: 0;
         font-size: 0.875rem;
-        color: var(--rv-modal-muted);
+        color: var(--rv-modal-muted, var(--rv-muted, #555555));
       }
       .rv-modal-close {
         margin-inline-start: auto;
         flex: none;
-        border: 1px solid var(--rv-modal-border);
-        border-radius: 8px;
+        border: 1px solid var(--rv-modal-border, var(--rv-border, #e0e0e0));
+        border-radius: 0.5rem;
         background: transparent;
         color: inherit;
         font-size: 1.25rem;
         line-height: 1;
-        padding: 4px 10px;
+        padding: 0.25rem 0.625rem;
         cursor: pointer;
       }
       .rv-modal-close:focus-visible {
@@ -410,6 +487,58 @@ export class RiviniaModalDialog {
   readonly animation = input<RiviniaModalAnimation>('scale');
   readonly closeOnEscape = input<boolean>(true);
   readonly backdrop = input<RiviniaModalBackdrop>('close');
+
+  /**
+   * True while the viewport is being resized.
+   *
+   * The dialog's size is derived from the viewport, so during a resize every
+   * frame is a new target; animating towards a moving target lags behind the
+   * pointer. The transition is switched off for the duration, and the dialog
+   * snaps — which is what the eye expects from a resize.
+   */
+  protected readonly resizing = signal(false);
+
+  /**
+   * Track the viewport resize.
+   *
+   * matchMedia('(resolution: …)') is the reliable signal: a plain
+   * resize listener fires for every scroll-driven layout change too, and
+   * the resolution query only changes when the device pixel ratio or the
+   * viewport size really changed.
+   */
+  private readonly viewportQuery = signal<MediaQueryList | null>(null);
+
+  private readonly stopResizeWatch = (() => {
+    if (typeof window === 'undefined') return () => undefined;
+    let query: MediaQueryList | null = null;
+    const onChange = () => {
+      // A short settle window: the transition is switched off for the
+      // duration of the gesture and switched back on once it stops.
+      this.resizing.set(true);
+      if (this.settleTimer !== null) clearTimeout(this.settleTimer);
+      this.settleTimer = setTimeout(() => this.resizing.set(false), 120);
+    };
+    const attach = () => {
+      query?.removeEventListener('change', onChange);
+      // matchMedia is not everywhere (jsdom has no implementation), and the
+      // dialog must not fail to construct because of a nicety.
+      if (typeof window.matchMedia !== 'function') return;
+      const ratio = window.devicePixelRatio ?? 1;
+      query = window.matchMedia(`(resolution: ${ratio}dppx)`);
+      query.addEventListener('change', onChange, { once: true });
+      this.viewportQuery.set(query);
+    };
+    attach();
+    return () => query?.removeEventListener('change', onChange);
+  })();
+
+  private settleTimer: ReturnType<typeof setTimeout> | null = null;
+
+  ngOnDestroy(): void {
+    // The viewport listener outlives the component otherwise.
+    this.stopResizeWatch();
+    if (this.settleTimer !== null) clearTimeout(this.settleTimer);
+  }
   readonly showCloseButton = input<boolean>(true);
   /**
    * Managed mode (for {@link RiviniaModalHost}): UI intents (X button,

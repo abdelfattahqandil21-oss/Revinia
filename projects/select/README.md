@@ -3,13 +3,37 @@
 [![npm version](https://img.shields.io/npm/v/@rivinia/select.svg)](https://www.npmjs.com/package/@rivinia/select)
 [![license](https://img.shields.io/npm/l/@rivinia/select.svg)](https://www.npmjs.com/package/@rivinia/select)
 
-Headless select behavior for Angular 22+: option registry, accent-insensitive
-search filter, and single/multi value — no DOM, no styling. Rendering lives in `@rivinia/select/ui` or your own UI. Select is **independently
-installable** — it does not require `@rivinia/menu`.
+Headless select behaviour for Angular 22+: an option registry, an
+accent-insensitive search filter, and a single/multi value — no DOM, no
+styling. Rendering lives in `@rivinia/select/ui` or in your own UI.
 
-- Package version: **0.4.2**
-- Requires: **Angular `^22.0.0`** (`@angular/core` and `@angular/forms`). No dependency on `@rivinia/menu`.
+- Package version: **0.6.0**
+- Requires: **Angular `^22.0.0`** (`@angular/core` and `@angular/forms`).
+  Select has **no dependency** on `@rivinia/menu`.
 - Side effects: **none** (`sideEffects: false`).
+
+## Quick features
+
+- **Headless first.** The controller is the product; pixels are yours.
+  `rv-select` is one implementation of it, not the only one.
+- **Two entry points.** `@rivinia/select` (no DOM) and `@rivinia/select/ui`
+  (the components).
+- **Accent- and case-insensitive filtering**, with Arabic tashkeel, tatweel and
+  alef forms folded.
+- **Single and multi mode**, sharing one model.
+- **Form-ready.** `FormValueControl`, so Signal Forms, Reactive Forms and
+  `ngModel` all work without a custom accessor.
+- **RTL-correct by construction.** The panel is placed with CSS anchor
+  positioning and logical keywords, so a direction change needs no JS branch.
+- **Your own rows.** `optionTemplate` replaces a row's content for icons,
+  avatars or badges; the ARIA and the keyboard stay.
+- **Paged data.** A loader row, a `reachEnd` signal for infinite scroll, a
+  footer slot for a "Load more" button, and `listTemplate` for a virtualised
+  list.
+- **Your own animation.** The entrance is one token, so it never fights the
+  cascade.
+- **Themable end to end.** One global token layer (`@rivinia/theme`) or
+  per-component tokens — see Theming.
 
 ## Install
 
@@ -17,7 +41,29 @@ installable** — it does not require `@rivinia/menu`.
 npm install @rivinia/select
 ```
 
-The `0.4.2` package requires Angular 22.
+or
+
+```bash
+pnpm add @rivinia/select
+```
+
+or
+
+```bash
+yarn add @rivinia/select
+```
+
+or
+
+```bash
+bun add @rivinia/select
+```
+
+The optional theme layer, if you want the shared token set:
+
+```bash
+npm install @rivinia/theme
+```
 
 ## Imports
 
@@ -57,7 +103,6 @@ import type { SelectChange } from '@rivinia/select/ui';
 
 @Component({
   selector: 'app-invoice-filter',
-  standalone: true,
   imports: [RiviniaSelectComponent],
   templateUrl: './invoice-filter.component.html',
 })
@@ -93,7 +138,6 @@ import type { SelectChange } from '@rivinia/select/ui';
 
 @Component({
   selector: 'app-tag-picker',
-  standalone: true,
   imports: [RiviniaSelectComponent],
   templateUrl: './tag-picker.component.html',
 })
@@ -116,9 +160,94 @@ export class TagPickerComponent {
 ```
 
 Single mode picks one value and closes; multi mode toggles with a check mark and
-stays open. Typing filters, Tab moves focus into the list, Enter picks the top
-match. Disabled options render but refuse picks. Rich per-option custom content
-(icons, badges, headers) stays the job of raw `rv-menu`.
+stays open — without closing, so the filter you typed survives the pick.
+Typing filters, Tab moves focus into the list, Enter picks the top match.
+Disabled options render but refuse picks. Rich per-option custom content
+(icons, badges, headers) is not supported by `rv-select`; drive it yourself from
+the headless `RiviniaSelect` controller.
+
+## API
+
+> **Naming note:** the headless controller input is named `select` on
+> `rv-select`. It is a **controller input**, not a DOM name — the rendered
+> markup is `rv-select`, `.rv-select-trigger`, `.rv-select-popup-panel` and
+> `.rv-select-popup-item`. The package's popup shares no vocabulary with
+> `@rivinia/menu` and has no dependency on it — the two used to collide
+> (same `rv-menu` selector), which is why the popup is now `rv-select-popup`.
+
+| Export                       | Kind      | Purpose                                                                                                                                                                               |
+| ---------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RiviniaSelect`              | class     | `options/query/filtered/value/values/selectedLabels` signals + `registerOption/unregisterOption/syncOptions/setQuery/select/toggle/clear/isSelected`                                  |
+| `RiviniaSelectOption`        | interface | `{ id, label, disabled?, hint? }`. `hint` renders right-aligned in muted monospace (e.g. a keyboard shortcut). Typeahead matches on `label` only.                                     |
+| types                        | types     | `RiviniaSelectController` (structural UI contract), `RiviniaSelectOption`, `RiviniaSelectMode`                                                                                        |
+| `RiviniaSelectComponent`     | ui        | `rv-select`: `select/mode/options/searchable/placeholder/searchPlaceholder/emptyLabel/placement/label/ariaLabel/popupLabel/searchLabel` + `selectionChange/opened/closed` + `clear()` |
+| `computeSelectPopupPosition` | ui        | Pure top-layer placement math, used by the built-in panel. RTL-aware.                                                                                                                 |
+
+### Inputs
+
+| Input               | Type                              | Default            | Notes                                                                                     |
+| ------------------- | --------------------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
+| `options`           | `readonly RiviniaSelectOption[]`  | `[]`               | Re-synced into the controller on change. Each option may carry an optional `hint` string. |
+| `optionTemplate`    | `TemplateRef<unknown> \| null`    | `null`             | Custom markup for each option row — icons, avatars, badges. See Icons.                    |
+| `listTemplate`      | `TemplateRef<unknown> \| null`    | `null`             | Replaces the whole list — for a virtualised one. See Paged data.                          |
+| `loading`           | `boolean`                         | `false`            | Shows a loader row under the list.                                                        |
+| `loadingLabel`      | `string`                          | `'Loading…'`       | Text of the loader row.                                                                   |
+| `select`            | `RiviniaSelectController \| null` | `null`             | External controller. Omitted: the component owns one matching `mode()`.                   |
+| `mode`              | `'single' \| 'multi'`             | `'single'`         | Fixed at construction when the component owns the controller.                             |
+| `searchable`        | `boolean`                         | `false`            | Shows the filter box.                                                                     |
+| `placeholder`       | `string`                          | `'Select…'`        | Trigger text with no selection.                                                           |
+| `searchPlaceholder` | `string`                          | `'Search…'`        | Filter box hint.                                                                          |
+| `emptyLabel`        | `string`                          | `'No results'`     | Shown when the filter matches nothing.                                                    |
+| `placement`         | `SelectPlacement`                 | `'bottom-start'`   | Panel placement relative to the trigger. Logical, so RTL-aware.                           |
+| `label`             | `string \| null`                  | `null`             | Visible caption; becomes the trigger's accessible name (`aria-labelledby`).               |
+| `ariaLabel`         | `string \| null`                  | `null`             | Explicit accessible name for the trigger; used when there is no caption.                  |
+| `popupLabel`        | `string \| null`                  | `null`             | Accessible name for the opened panel (`aria-label`); falls back to `label`.               |
+| `searchLabel`       | `string`                          | `'Search options'` | Accessible name for the filter box.                                                       |
+
+### Outputs
+
+| Output            | Payload                                                 | When                               |
+| ----------------- | ------------------------------------------------------- | ---------------------------------- |
+| `selectionChange` | `string \| null` (single) / `readonly string[]` (multi) | A pick, or `clear()`.              |
+| `opened`          | `void`                                                  | Panel opened.                      |
+| `reachEnd`        | `void`                                                  | The panel scrolled near its end.   |
+| `panelReady`      | `HTMLElement`                                           | The panel element, once it exists. |
+| `closed`          | `void`                                                  | Panel closed.                      |
+
+### The controller
+
+```ts
+import {
+  RiviniaSelect,
+  type RiviniaSelectController,
+  type RiviniaSelectOption,
+} from '@rivinia/select';
+
+const select = new RiviniaSelect('single'); // or 'multi'
+```
+
+| Member                   | Kind                                     | Purpose                                                                               |
+| ------------------------ | ---------------------------------------- | ------------------------------------------------------------------------------------- |
+| `mode`                   | readonly                                 | `'single' \| 'multi'`, fixed at construction.                                         |
+| `options`                | `Signal<readonly RiviniaSelectOption[]>` | The registry, in registration order.                                                  |
+| `query`                  | `WritableSignal<string>`                 | The raw filter text.                                                                  |
+| `filtered`               | `Signal<readonly RiviniaSelectOption[]>` | Options matching `query`; disabled ones stay visible but unpickable.                  |
+| `value`                  | `WritableSignal<string \| null>`         | Single-mode selection.                                                                |
+| `values`                 | `WritableSignal<readonly string[]>`      | Multi-mode selections, in pick order.                                                 |
+| `selectedLabels`         | `Signal<readonly string[]>`              | Labels of the current selection (falls back to the raw id).                           |
+| `registerOption(option)` | method                                   | Idempotent by id; re-registering updates the entry.                                   |
+| `unregisterOption(id)`   | method                                   | Removes the entry; a selected id is dropped with it.                                  |
+| `syncOptions(list)`      | method                                   | Replaces the registry with exactly `list`.                                            |
+| `setQuery(text)`         | method                                   | Sets the filter.                                                                      |
+| `select(id)`             | method                                   | Single-mode pick. Returns `false` for an unknown or disabled id.                      |
+| `toggle(id)`             | method                                   | Multi-mode toggle. Returns `false` for an unknown/disabled id **and in single mode**. |
+| `clear()`                | method                                   | Clears the value (single) or the values (multi).                                      |
+| `isSelected(id)`         | method                                   | Whether the id is currently selected.                                                 |
+
+`RiviniaSelectController` is the **structural** subset of that surface. A UI
+layer may depend on the interface instead of the class, which keeps a
+controller usable across module realms (the same dual-realm rule
+`@rivinia/modal`'s host manager follows).
 
 ## Forms
 
@@ -137,7 +266,6 @@ import { RiviniaSelectComponent } from '@rivinia/select/ui';
 
 @Component({
   selector: 'app-signal-invoice-filter',
-  standalone: true,
   imports: [FormField, RiviniaSelectComponent],
   templateUrl: './signal-invoice-filter.component.html',
 })
@@ -167,7 +295,6 @@ import { RiviniaSelectComponent } from '@rivinia/select/ui';
 
 @Component({
   selector: 'app-edit-invoice-status',
-  standalone: true,
   imports: [ReactiveFormsModule, RiviniaSelectComponent],
   templateUrl: './edit-invoice-status.component.html',
 })
@@ -207,7 +334,6 @@ import { RiviniaSelectComponent } from '@rivinia/select/ui';
 
 @Component({
   selector: 'app-template-invoice-filter',
-  standalone: true,
   imports: [FormsModule, RiviniaSelectComponent],
   templateUrl: './template-invoice-filter.component.html',
 })
@@ -251,90 +377,665 @@ selection, set `mode="multi"` and use a `readonly string[]` model/control value.
 - **Validation errors / invalid:** reflected as `aria-invalid="true"` on the
   trigger.
 
-## API
+## The controller in the injector
 
-> **Naming note:** the headless controller input is named `select` on
-> `rv-select` (mirroring `menu` on `rv-menu`). Both are controller inputs —
-> the names differ only because each component's noun differs. This is
-> intentional; renaming would be a breaking change for no functional gain.
+`new RiviniaSelect('multi')` is opaque to Angular: it cannot be overridden in
+a test and it is invisible to the injector graph. A root singleton would be
+wrong — the controller is per-select state — so the provider form is used
+instead:
 
-| Export                   | Kind      | Purpose                                                                                                                                                                              |
-| ------------------------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `RiviniaSelect`          | class     | `options/query/filtered/value/values/selectedLabels` signals + `registerOption/unregisterOption/syncOptions/setQuery/select/toggle/clear/isSelected`                                 |
-| `RiviniaSelectOption`    | interface | `{ id, label, disabled?, hint? }`. `hint` renders right-aligned in muted monospace (e.g. a keyboard shortcut). Typeahead matches on `label` only.                                    |
-| types                    | types     | `RiviniaSelectController` (structural UI contract), `RiviniaSelectOption`, `RiviniaSelectMode`                                                                                       |
-| `RiviniaSelectComponent` | ui        | `rv-select`: `select/mode/options/searchable/placeholder/searchPlaceholder/emptyLabel/placement/label/ariaLabel/menuLabel/searchLabel` + `selectionChange/opened/closed` + `clear()` |
+```ts
+import { Component, inject, signal } from '@angular/core';
+import { injectRiviniaSelect, provideRiviniaSelect } from '@rivinia/select';
 
-### Inputs
+@Component({
+  providers: [provideRiviniaSelect('multi')],
+  template: `<rv-select [options]="options()" />`,
+})
+export class TagPicker {
+  readonly controller = injectRiviniaSelect();
+  readonly options = signal<readonly RiviniaSelectOption[]>([]);
+}
+```
 
-| Input               | Type                              | Default            | Notes                                                                                     |
-| ------------------- | --------------------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
-| `options`           | `readonly RiviniaSelectOption[]`  | `[]`               | Re-synced into the controller on change. Each option may carry an optional `hint` string. |
-| `select`            | `RiviniaSelectController \| null` | `null`             | External controller. Omitted: the component owns one matching `mode()`.                   |
-| `mode`              | `'single' \| 'multi'`             | `'single'`         | Fixed at construction when the component owns the controller.                             |
-| `searchable`        | `boolean`                         | `false`            | Shows the filter box.                                                                     |
-| `placeholder`       | `string`                          | `'Select…'`        | Trigger text with no selection.                                                           |
-| `searchPlaceholder` | `string`                          | `'Search…'`        | Filter box hint.                                                                          |
-| `emptyLabel`        | `string`                          | `'No results'`     | Shown when the filter matches nothing.                                                    |
-| `placement`         | `RiviniaMenuUiPlacement`          | `'bottom-start'`   | Panel placement relative to the trigger.                                                  |
-| `label`             | `string \| null`                  | `null`             | Visible caption; becomes the trigger's accessible name (`aria-labelledby`).               |
-| `ariaLabel`         | `string \| null`                  | `null`             | Explicit accessible name for the trigger; used when there is no caption.                  |
-| `menuLabel`         | `string \| null`                  | `null`             | Accessible name for the opened panel (`aria-label`); falls back to `label`.               |
-| `searchLabel`       | `string`                          | `'Search options'` | Accessible name for the filter box.                                                       |
+A test replaces it without touching the component:
 
-### Outputs
+```ts
+TestBed.configureTestingModule({
+  providers: [{ provide: RIVINIA_SELECT, useValue: fakeController }],
+});
+```
 
-| Output            | Payload                                                 | When                  |
-| ----------------- | ------------------------------------------------------- | --------------------- |
-| `selectionChange` | `string \| null` (single) / `readonly string[]` (multi) | A pick, or `clear()`. |
-| `opened`          | `void`                                                  | Panel opened.         |
-| `closed`          | `void`                                                  | Panel closed.         |
+`injectRiviniaSelect()` throws when nothing is provided, rather than handing
+back `undefined` and failing much later somewhere unrelated.
 
-## Theming and CSS tokens
+**Registered options are frozen.** `readonly` on `RiviniaSelectOption` is a
+compile-time promise only; an option that could be mutated after registration
+would let the filtered list and the selection disagree. The registry holds
+`Object.freeze`d copies.
 
-`rv-select` owns its own `--rv-select-*` namespace. The opened panel reuses Select's own vendored menu primitives, so Select
-bridges its tokens onto the panel element
-**only** — a consumer's `--rv-menu-*` theme for a real `rv-menu` can no longer
-bleed into a `rv-select`, and vice versa.
+## Headless usage
 
-| Token                | Default                             | Applies to                          |
-| -------------------- | ----------------------------------- | ----------------------------------- |
-| `--rv-select-bg`     | `#ffffff`                           | trigger + panel                     |
-| `--rv-select-fg`     | `#111111`                           | trigger + panel                     |
-| `--rv-select-border` | `#e0e0e0`                           | trigger + search input              |
-| `--rv-select-muted`  | `#555555`                           | chevron, placeholder, empty state   |
-| `--rv-select-radius` | `10px` (trigger) / `12px` (panel)   | trigger + panel                     |
-| `--rv-select-shadow` | `0 16px 48px rgba(0,0,0,0.22)`      | panel                               |
-| `--rv-select-width`  | `14rem` (trigger) / `16rem` (panel) | trigger min-width + panel min-width |
+`@rivinia/select` (the headless entry point) is the whole selection behaviour
+with **no DOM**: an option registry, an accent-insensitive filter, and a
+single/multi value. The UI entry point is one implementation on top of it —
+you are not obliged to use it.
 
-All values are `var(--rv-select-*, fallback)` — an ancestor theme always wins.
-**No forced dark mode:** there is no `@media (prefers-color-scheme: dark)`
-block. Opt in yourself:
+Per D21, the headless controller is the product; pixels are yours.
 
-```css
-@media (prefers-color-scheme: dark) {
-  .my-scope {
-    --rv-select-bg: #161616;
-    --rv-select-fg: #f2f2f2;
+### A complete headless example
+
+A searchable filter with no UI of our own — a plain `<input>` plus a `<ul>`:
+
+```ts
+import { Component, computed, inject, signal } from '@angular/core';
+import { RiviniaSelect, type RiviniaSelectOption } from '@rivinia/select';
+
+@Component({
+  selector: 'app-invoice-filter',
+  template: `
+    <input
+      type="search"
+      [value]="controller.query()"
+      (input)="controller.setQuery($any($event.target).value)"
+      placeholder="Filter invoices…"
+    />
+
+    @if (controller.filtered().length === 0) {
+      <p>No invoice matches "{{ controller.query() }}"</p>
+    } @else {
+      <ul>
+        @for (invoice of controller.filtered(); track invoice.id) {
+          <li>
+            <button type="button" (click)="pick(invoice)">
+              {{ invoice.label }}
+              @if (invoice.hint) {
+                <kbd>{{ invoice.hint }}</kbd>
+              }
+            </button>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (controller.selectedLabels().length > 0) {
+      <p>Chosen: {{ controller.selectedLabels().join(', ') }}</p>
+    }
+  `,
+})
+export class InvoiceFilter {
+  readonly controller = new RiviniaSelect('single');
+  readonly options: readonly RiviniaSelectOption[] = [
+    { id: 'inv-001', label: 'Invoice 001', hint: 'Ctrl+B' },
+    { id: 'inv-002', label: 'Invoice 002', hint: 'Ctrl+I' },
+    { id: 'inv-003', label: 'Invoice 003', disabled: true },
+  ];
+
+  constructor() {
+    // One-shot registration. `syncOptions` is the reactive alternative.
+    for (const option of this.options) this.controller.registerOption(option);
+  }
+
+  pick(invoice: RiviniaSelectOption): void {
+    this.controller.select(invoice.id);
   }
 }
 ```
 
+Notes on that example:
+
+- **The filter is accent- and case-insensitive.** `normalize()` lowercases and
+  strips diacritics, so `releve` finds `Relevé`, and Arabic tashkeel, tatweel
+  and alef forms are folded (verified in the unit suite).
+- **`disabled` options stay in the list** but refuse a pick — `select()`
+  returns `false`. That keeps the list stable while typing.
+- **`hint` is display-only.** It never participates in the filter.
+- **`selectedLabels` falls back to the raw id** when the option is not
+  registered, so a value restored from storage before its options loaded still
+  displays something meaningful instead of an empty trigger.
+
+### Keeping the registry in sync with a signal
+
+When the options come from an API, mirror them with `syncOptions` inside an
+`effect`:
+
+```ts
+@Component({
+  selector: 'app-status-filter',
+  imports: [ReactiveFormsModule],
+  template: `
+    <rv-select
+      label="Status"
+      mode="multi"
+      [options]="statuses()"
+      (selectionChange)="chosen.set($event)"
+    />
+  `,
+})
+export class StatusFilter {
+  readonly statuses = signal<readonly RiviniaSelectOption[]>([]);
+  readonly chosen = signal<readonly string[]>([]);
+  private readonly controller = new RiviniaSelect('multi');
+
+  constructor() {
+    effect(() => this.controller.syncOptions(this.statuses()));
+  }
+}
+```
+
+**Why this converges.** `syncOptions` _replaces_ the registry and never reads
+the signal it writes, so the mirroring effect has exactly one tracked
+dependency — your `options` signal. Measured: the effect runs **once** for a
+static list, not once per render. (An effect that read the registry it
+wrote would re-arm itself forever — an infinite change-detection loop, not a
+slow one. `syncOptions` deliberately avoids that shape.)
+
+**What gets dropped.** `syncOptions` is a replacement, not a merge: an id that
+is not in the incoming list is removed, and the selection is pruned with it.
+If you need to restore a value before its options have loaded, keep it in your
+own state and apply it once the list arrives.
+
+## Building a custom dropdown UI
+
+`rv-select` is one implementation. If your design needs rows with avatars,
+badges, group headers, or a different visual treatment, drive the headless
+controller yourself and render your own markup.
+
+The contract the controller gives you:
+
+| Signal / method    | What your UI does with it                                                  |
+| ------------------ | -------------------------------------------------------------------------- |
+| `query`            | The filter box's value. Bind both ways with `setQuery`.                    |
+| `filtered`         | The rows to render, already filtered.                                      |
+| `value` / `values` | The current selection; render the check mark or radio from it.             |
+| `selectedLabels`   | The trigger's text.                                                        |
+| `isSelected(id)`   | Per-row selected state.                                                    |
+| `select(id)`       | Single-mode pick. Returns `false` when the row is disabled — respect that. |
+| `toggle(id)`       | Multi-mode pick.                                                           |
+| `clear()`          | The clear button.                                                          |
+
+A minimal custom dropdown, single mode, with a grouped list:
+
+```ts
+import { Component, computed, signal } from '@angular/core';
+import { RiviniaSelect, type RiviniaSelectOption } from '@rivinia/select';
+
+interface Group {
+  readonly label: string;
+  readonly items: readonly RiviniaSelectOption[];
+}
+
+@Component({
+  selector: 'app-grouped-select',
+  template: `
+    <button type="button" (click)="open.set(!open())" [attr.aria-expanded]="open()">
+      {{ controller.selectedLabels()[0] ?? 'Pick one' }}
+    </button>
+
+    @if (open()) {
+      <div class="menu" role="listbox">
+        @for (group of groups; track group.label) {
+          <p class="group">{{ group.label }}</p>
+          @for (item of group.items; track item.id) {
+            <button
+              type="button"
+              role="option"
+              [attr.aria-selected]="controller.isSelected(item.id)"
+              [disabled]="item.disabled ?? false"
+              (click)="choose(item)"
+            >
+              {{ item.label }}
+            </button>
+          }
+        }
+      </div>
+    }
+  `,
+})
+export class GroupedSelect {
+  readonly controller = new RiviniaSelect('single');
+  readonly open = signal(false);
+
+  readonly groups: readonly Group[] = [
+    {
+      label: 'Open',
+      items: [
+        { id: 'a', label: 'Alpha' },
+        { id: 'b', label: 'Beta', disabled: true },
+      ],
+    },
+    { label: 'Closed', items: [{ id: 'c', label: 'Gamma' }] },
+  ];
+
+  constructor() {
+    for (const group of this.groups) {
+      for (const item of group.items) this.controller.registerOption(item);
+    }
+  }
+
+  choose(item: RiviniaSelectOption): void {
+    if (this.controller.select(item.id)) this.open.set(false);
+  }
+}
+```
+
+**What the controller does NOT do for you**, so you can budget for it:
+
+- **No positioning.** The built-in panel uses CSS anchor positioning (see
+  Theming). Your own markup must place itself — either with the same
+  `anchor-name` / `position-area` pair, or by not being a top-layer element.
+- **No keyboard model.** Arrows, Home/End, Enter, Escape and Tab are yours.
+  `@rivinia/menu` gives you a complete, audited menu-button implementation if
+  you want to compose rather than write it.
+- **No ARIA.** `role="listbox"` / `role="option"` / `aria-selected` above are
+  yours to keep consistent; the built-in panel uses `role="menu"` with
+  `menuitem` rows.
+- **No scroll or focus management.** The built-in panel moves focus into the
+  option list and returns it to the trigger on close.
+
+If you want the keyboard and ARIA for free but your own pixels, compose the
+headless controller with `@rivinia/menu`'s UI, which is a separate package
+with no dependency on this one.
+
+## Icons, avatars and custom rows
+
+The default option row is a label, an optional hint and a check mark. When you
+need an icon, an avatar or a badge, supply a template — it replaces the row's
+content and nothing else:
+
 ```html
-<div class="my-scope">
-  <rv-select [options]="invoices" />
-</div>
+<ng-template #row let-option>
+  <img class="size-4 shrink-0" [src]="option.icon" alt="" />
+  <span>{{ option.label }}</span>
+  @if (option.badge) {
+  <span class="badge">{{ option.badge }}</span>
+  }
+</ng-template>
+
+<rv-select label="Icon picker" [options]="options" [optionTemplate]="row" />
 ```
 
-### Migration from 0.1.x theming
+The `<button>` wrapper stays, so the ARIA, the keyboard handling, the
+disabled state and the multi-mode check keep working. What changes is the
+content inside it — which means the hint and the check mark become yours to
+render too.
 
-`0.1.x` consumed `--rv-menu-*` for Select styling and forced a dark palette.
-If you themed Select through `--rv-menu-*`, move those rules to `--rv-select-*`:
+The template context is the option, and it is typed **loosely on purpose**:
+your option shape (with an `icon`, say) is not the library's type, and the
+template is yours to narrow:
 
-```diff
--.app { --rv-menu-bg: #161616; --rv-menu-fg: #f2f2f2; }
-+.app { --rv-select-bg: #161616; --rv-select-fg: #f2f2f2; }
+```ts
+interface IconOption {
+  readonly id: string;
+  readonly label: string;
+  readonly icon: string;
+  readonly disabled?: boolean;
+}
+
+readonly options: readonly IconOption[] = [
+  { id: 'a', label: 'Alpha', icon: '/a.svg' },
+];
 ```
+
+**Why a template and not an `icon` field.** An icon field would put raw markup
+(or a URL the library has to fetch) into the component's hands, and every
+consumer's icons are different — a URL, an inline SVG, an icon font, an
+`<img>`. A template keeps that decision with you.
+
+If you want more than a row — group headers, a two-line description, a
+nested menu — drive the headless controller and render the list yourself
+(see Building a custom dropdown UI).
+
+## Paged data: loading, virtual lists, "load more"
+
+A select whose options come from a paged API needs three things, and the
+component provides all three.
+
+**A loader row**, while a request is in flight:
+
+```html
+<rv-select [options]="options()" [loading]="loading()" (reachEnd)="loadMore()" />
+```
+
+**`reachEnd`**, emitted when the panel scrolls close to its end — so the
+consumer fetches the next page:
+
+```ts
+loadMore() {
+  this.api.nextPage().then((page) => this.options.update((all) => [...all, ...page]));
+}
+```
+
+The threshold is a **length**, not a percentage: the panel's scrollable height
+changes as rows arrive, so a percentage would fire at a different row every
+time.
+
+```css
+rv-select {
+  --rv-select-popup-reach-end-offset: 3rem;
+}
+```
+
+**A footer slot**, for a "Load more" button or anything else under the list:
+
+```html
+<rv-select [options]="options()">
+  <button rv-select-popup-footer type="button" (click)="loadMore()">Load more</button>
+</rv-select>
+```
+
+### A virtualised list
+
+For a long list, render only the visible rows. `listTemplate` replaces the
+whole list, and `panelReady` hands you the panel element — which is the scroll
+container the virtualizer needs:
+
+```html
+<ng-template #list let-options>
+  <div [style.height.px]="virtualizer.getTotalSize()" style="position: relative">
+    @for (row of virtualizer.getVirtualItems(); track row.index) {
+    <div
+      [style.transform]="'translateY(' + row.start + 'px)'"
+      style="position: absolute; top: 0; left: 0; width: 100%"
+    >
+      {{ options[row.index].label }}
+    </div>
+    }
+  </div>
+</ng-template>
+
+<rv-select [options]="options()" [listTemplate]="list" (panelReady)="panel.set($event)" />
+```
+
+```ts
+readonly panel = signal<HTMLElement | null>(null);
+
+readonly virtualizer = injectVirtualizer(() => ({
+  scrollElement: this.panel(),
+  count: this.options().length,
+  estimateSize: () => 36,
+  overscan: 5,
+}));
+```
+
+With a virtual list you own the scroll, so `reachEnd` is yours to detect —
+the usual way is the virtualizer's own last-row check:
+
+```ts
+const items = this.virtualizer.getVirtualItems();
+const last = items[items.length - 1];
+if (last && last.index >= this.options().length - 1) this.loadMore();
+```
+
+`@tanstack/angular-virtual` is the usual choice, but any virtualizer works —
+it only needs the scroll element and the row count.
+
+### A custom entrance animation
+
+The whole animation is **one token**, so you never fight the cascade:
+
+```css
+my-scope {
+  --rv-select-popup-animation: my-slide-in 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+```
+
+A token rather than an `animation` override on purpose: Angular injects a
+component's styles into `<head>` at runtime, which is _after_ your stylesheet,
+so at equal specificity the library's declaration would win.
+
+The two halves are still separate if you only want one of them:
+
+```css
+my-scope {
+  --rv-select-popup-duration: 240ms;
+  --rv-select-popup-easing: cubic-bezier(0.2, 0, 0, 1);
+}
+```
+
+## The override surface
+
+**Tokens** for colour and shape:
+
+```css
+rv-select {
+  --rv-select-bg: #101014;
+  --rv-select-fg: #f2f2f7;
+  --rv-select-border: #2a2a33;
+  --rv-select-radius: 6px;
+}
+```
+
+**Tokens** for the metrics:
+
+```css
+rv-select {
+  --rv-select-trigger-padding: 0.625rem 0.875rem;
+  --rv-select-trigger-size: 0.9375rem;
+  --rv-select-item-padding: 0.75rem 0.875rem;
+  --rv-select-item-radius: 0.25rem;
+  --rv-select-item-min-height: 2.75rem;
+  --rv-select-focus-ring: 2px solid var(--rv-accent);
+}
+```
+
+**Classes** for anything the tokens do not cover. The component styles are
+unencapsulated, so these selectors are global and stable:
+
+```css
+/* Roomier rows, square corners, no hover tint. */
+.rv-select-popup-panel [rvselectpopupitem] {
+  padding: 16px 20px;
+  border-radius: 0;
+}
+.rv-select-popup-panel [rvselectpopupitem]:hover {
+  background: transparent;
+}
+```
+
+The selectors, and the `data-*` state hooks:
+
+| Selector                                     | What it styles              |
+| -------------------------------------------- | --------------------------- |
+| `.rv-select-caption`                         | the label above the trigger |
+| `.rv-select-trigger`                         | the button                  |
+| `.rv-select-value`                           | the trigger's text          |
+| `.rv-select-chevron`                         | the chevron                 |
+| `.rv-select-search`                          | the filter box              |
+| `.rv-select-empty`                           | the "no results" state      |
+| `.rv-select-hint`                            | an option's trailing hint   |
+| `.rv-select-check`                           | the multi-mode check mark   |
+| `.rv-select-popup-panel`                     | the opened panel            |
+| `.rv-select-popup-panel [rvselectpopupitem]` | an option row               |
+
+| Hook              | On      | Means                          |
+| ----------------- | ------- | ------------------------------ |
+| `data-open`       | trigger | the panel is open              |
+| `data-active`     | option  | the keyboard-active row        |
+| `data-placement`  | panel   | `bottom-start`, `top-end`, …   |
+| `data-flipped`    | panel   | it flipped to the other side   |
+| `data-positioned` | panel   | it has been measured           |
+| `data-top-layer`  | panel   | it is in the browser top layer |
+
+## Theming
+
+Every component reads **its own token → the shared semantic layer → its
+built-in default**:
+
+```css
+--rv-select-bg  →  --rv-bg  →  #ffffff
+```
+
+Three levels, each beating the next:
+
+| Level          | Token            | Scope                               |
+| -------------- | ---------------- | ----------------------------------- |
+| 1. per package | `--rv-select-bg` | that component only                 |
+| 2. global      | `--rv-bg`        | every Rivinia component, everywhere |
+| 3. default     | —                | what you get if you set nothing     |
+
+### The semantic layer
+
+```css
+:root {
+  --rv-bg: #ffffff;
+  --rv-fg: #111111;
+  --rv-muted: #555555;
+  --rv-border: #e0e0e0;
+  --rv-radius: 10px;
+  --rv-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
+  --rv-font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --rv-accent: #5b5bd6;
+  --rv-danger: #dc2626;
+  --rv-ok: #16a34a;
+  --rv-info: #2563eb;
+  --rv-warning: #d97706;
+}
+```
+
+Import it once, or define the names yourself:
+
+```css
+@import '@rivinia/theme';
+```
+
+Its defaults sit in `@layer rivinia-theme`, so your unlayered `:root` rules win
+wherever they appear.
+
+**Map it on `:root`, never on a component element** — an element-level
+declaration shadows the root value and the override silently stops working.
+
+### Which styling stack?
+
+| Stack           | Import                                       |
+| --------------- | -------------------------------------------- |
+| **Plain CSS**   | `@import '@rivinia/theme';`                  |
+| **Tailwind v4** | `@import '@rivinia/theme/tailwind.css';`     |
+| **Bootstrap**   | `@import '@rivinia/theme/bootstrap.css';`    |
+| **Sass / SCSS** | `@use '@rivinia/theme/scss';`                |
+| **Less**        | `@import (less) '@rivinia/theme/theme.css';` |
+
+**Plain CSS** — set the layer, done:
+
+```css
+@import '@rivinia/theme';
+
+:root {
+  --rv-bg: #ffffff;
+  --rv-fg: #111111;
+}
+```
+
+**Tailwind v4** — your palette in `@theme`, the components point at it:
+
+```css
+@import 'tailwindcss';
+@import '@rivinia/theme/tailwind.css';
+
+@theme {
+  --color-surface: #ffffff;
+  --color-fg: #111111;
+}
+
+:root {
+  --rv-bg: var(--color-surface);
+  --rv-fg: var(--color-fg);
+}
+```
+
+Optional, to expose the component surface as utilities too:
+
+```css
+@theme inline {
+  --color-rv-select-bg: var(--rv-select-bg);
+  --color-rv-select-fg: var(--rv-select-fg);
+}
+```
+
+`@theme` is for a literal value; `@theme inline` is for one that references
+another variable, so the utility resolves at use-site.
+
+Dark mode in one place:
+
+```css
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@theme {
+  --color-surface: #ffffff;
+  --color-fg: #111111;
+}
+
+[data-theme='dark'] {
+  --color-surface: #161616;
+  --color-fg: #f2f2f2;
+}
+
+:root {
+  --rv-bg: var(--color-surface);
+  --rv-fg: var(--color-fg);
+}
+```
+
+**Bootstrap 5.3** — the components read Bootstrap's own variables:
+
+```css
+@import 'bootstrap/dist/css/bootstrap.css';
+@import '@rivinia/theme/bootstrap.css';
+```
+
+which is this, under both colour schemes:
+
+```css
+:root,
+[data-bs-theme='light'],
+[data-bs-theme='dark'] {
+  --rv-bg: var(--bs-body-bg);
+  --rv-fg: var(--bs-body-color);
+  --rv-border: var(--bs-border-color);
+  --rv-muted: var(--bs-secondary-color);
+}
+```
+
+A `data-bs-theme` switch then re-themes the components with no extra wiring.
+
+**Sass** — Dart Sass loads a plain `.css` file, but the extension must be
+omitted for `@use` to treat it as a module:
+
+```scss
+@use '@rivinia/theme/scss';
+```
+
+**Less** — custom properties pass through untouched:
+
+```less
+@import (less) '@rivinia/theme/theme.css';
+```
+
+Less **variables** (`@color: …`) are a different mechanism and do not
+interoperate with CSS custom properties — use `var(--rv-*)` inside Less files.
+
+**Every size is in `rem`, not `px`.** The components scale with the reader's
+root font size, so they follow the browser's text-size preference, a
+user-set accessibility default, and whatever `html { font-size }` the app
+sets. Measured: at a 17px root the trigger is 14.875px with `0.5rem 0.75rem`
+padding; at a 24px root it is 21px with `0.75rem 1.125rem` padding. In `px`
+none of it would have moved.
+
+### The library's own tokens
+
+| Token                | Default                       | Applies to        |
+| -------------------- | ----------------------------- | ----------------- |
+| `--rv-select-bg`     | `#ffffff`                     | trigger + panel   |
+| `--rv-select-fg`     | `#111111`                     | trigger + panel   |
+| `--rv-select-border` | `#e0e0e0`                     | trigger + search  |
+| `--rv-select-muted`  | `#555555`                     | chevron, empty    |
+| `--rv-select-error`  | `#dc2626`                     | invalid trigger   |
+| `--rv-select-radius` | `0.625rem`                    | trigger + panel   |
+| `--rv-select-shadow` | `0 16px 48px rgba(0,0,0,.22)` | panel             |
+| `--rv-select-width`  | `14rem`                       | trigger min-width |
+
+**No forced dark mode** — there is no `prefers-color-scheme` block anywhere in
+the package, so a component can never override your explicit choice.
 
 ## Keyboard and focus
 
@@ -342,10 +1043,14 @@ Single/multi share the same model:
 
 - **Open:** Enter / Space on the trigger, or click.
 - **Filter box (when `searchable`):** typing filters; the box owns its
-  keystrokes (spaces never leak to the menu typeahead). Tab moves focus **into
-  the list**; Enter picks the top match; Escape closes.
+  keystrokes (spaces never leak to the typeahead). Tab moves focus **into
+  the list**; Enter picks the active option; Escape closes.
 - **List:** ArrowDown / ArrowUp move the active option (disabled options are
-  skipped); Enter / Space picks; Escape closes.
+  skipped); Home / End jump to the first / last enabled option; Enter / Space
+  picks; Escape closes.
+- **Typeahead:** typing in the list moves the active option to the next row
+  whose **label** starts with what you typed. The `hint` is deliberately not
+  part of the index, so a keyboard-shortcut hint never causes a match.
 - **Single mode** closes on pick; **multi mode** toggles with a check mark and
   stays open.
 - Opening focuses the filter box (when searchable) or the first enabled
@@ -353,19 +1058,20 @@ Single/multi share the same model:
 
 ## Accessibility
 
-Select is a **filterable menu**, not an ARIA combobox and not a native
-`<select>`. The opened panel is exposed as `role="menu"` with `menuitem` /
-`menuitemcheckbox` options; the trigger carries `aria-haspopup="menu"`,
-`aria-expanded`, and `aria-controls`. Focus physically moves into the option
-list, so there is no `aria-activedescendant`.
+Select is a **button + listbox**, not an ARIA combobox and not a native
+`<select>`. The opened panel is exposed as `role="listbox"` with
+`role="option"` children carrying `aria-selected`; the trigger carries
+`aria-haspopup="listbox"`, `aria-expanded`, and `aria-controls`, and the panel
+carries `aria-multiselectable="true"` in multi mode. Focus physically moves
+into the option list, so there is no `aria-activedescendant`.
 
 Consequences to be aware of:
 
-- Screen readers announce it as a menu, not a form control. If you need
-  native-select semantics, use a native `<select>` or a dedicated combobox
-  library; Select does not pretend to be one.
+- Screen readers announce it as a listbox, not a native `<select>`. If you need
+  native-select semantics, use a native `<select>`; Select does not pretend to
+  be one.
 - Give the field an accessible name: a visible `label` (preferred) or
-  `ariaLabel`. The opened panel should be named too, via `menuLabel` or by
+  `ariaLabel`. The opened panel should be named too, via `popupLabel` or by
   letting it fall back to the caption.
 - `role="searchbox"` is used on the filter input; its name defaults to
   `'Search options'` and is configurable through `searchLabel`.
@@ -387,13 +1093,51 @@ Consequences to be aware of:
 
 ## Migration notes
 
+### 0.5.x → 0.6.0
+
+**Two things to do, both mechanical.**
+
+**1. If you styled a select by targeting its markup**, the panel's class names
+changed. The select's private panel was called `rv-select-menu`; it is now
+`rv-select-popup`, so it can no longer collide with `@rivinia/menu`.
+
+| Was                             | Now                                   |
+| ------------------------------- | ------------------------------------- |
+| `.rv-select-menu-panel`         | `.rv-select-popup-panel`              |
+| `.rv-select-menu-trigger`       | `.rv-select-popup-trigger`            |
+| `[rvselectmenuitem]`            | `[rvselectpopupitem]`                 |
+| `rvSelectMenuItem`              | `rvSelectPopupItem`                   |
+| `rvSelectMenuTrigger`           | `rvSelectPopupTrigger`                |
+| `rvSelectMenuPanel`             | `rvSelectPopupPanel`                  |
+| `--rv-select-menu-*`            | `--rv-select-popup-*`                 |
+
+If you only set `--rv-select-*` on `rv-select`, there is nothing to change —
+those names are unchanged.
+
+**2. If you bound `[menuLabel]`**, rename it to `[popupLabel]`.
+
+```html
+<rv-select [options]="options" [popupLabel]="Status options" />
+```
+
+**Everything else is additive**: the DI helpers, the loader, `reachEnd`, the
+footer slot, `listTemplate`, the frozen options — and the RTL fix, which is
+why 0.5.0 was unusable in a right-to-left layout.
+
+### 0.4.x → 0.5.0 (popup rename, RTL panel fix, layout)
+
+**No breaking change to the type-level API.** `rv-select` still exports
+exactly `RiviniaSelectComponent` and `SelectChange`; no input, output or type you
+bind has been renamed. What changed: the name of the vendored popup, and the CSS
+that positions it.
+
 ### 0.1.1 → 0.2.0
 
 - **Theming tokens renamed.** `--rv-menu-*` → `--rv-select-*`
   (see Theming). Update any CSS overrides.
 - **Forced dark mode removed.** If you relied on the shipped dark palette,
   add your own `@media (prefers-color-scheme: dark)` block.
-- **New inputs `label`, `ariaLabel`, `menuLabel`, `searchLabel`** are
+- **New inputs `label`, `ariaLabel`, `popupLabel`, `searchLabel`** are
   additive; existing templates keep working.
 - **`toggle()` on a single-mode controller now returns `false`** instead of
   mutating `values`. It never had a defined meaning in single mode.
@@ -401,6 +1145,16 @@ Consequences to be aware of:
   `[]` multi). If you drove `clear()` at the controller level and reacted to
   `value()`/`values()` directly, nothing changes; if you listen to
   `selectionChange`, you will now also receive clears.
+
+### Migration from 0.1.x theming
+
+`0.1.x` consumed `--rv-menu-*` for Select styling and forced a dark palette.
+If you themed Select through `--rv-menu-*`, move those rules to `--rv-select-*`:
+
+```diff
+-.app { --rv-menu-bg: #161616; --rv-menu-fg: #f2f2f2; }
++.app { --rv-select-bg: #161616; --rv-select-fg: #f2f2f2; }
+```
 
 ## License
 

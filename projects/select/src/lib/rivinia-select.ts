@@ -53,9 +53,44 @@ export class RiviniaSelect implements RiviniaSelectController {
   registerOption(option: RiviniaSelectOption): void {
     this._options.update((list) => {
       const at = list.findIndex((o) => o.id === option.id);
-      if (at === -1) return [...list, { ...option }];
-      return list.map((o, index) => (index === at ? { ...o, ...option } : o));
+      if (at === -1) return [...list, RiviniaSelect.freeze(option)];
+      return list.map((o, index) => (index === at ? RiviniaSelect.freeze({ ...o, ...option }) : o));
     });
+  }
+
+  /**
+   * A frozen copy of an option.
+   *
+   * The registry is the controller's own state, and an option that can be
+   * mutated after registration would make the filtered list and the selection
+   * disagree. `readonly` in the type is a compile-time promise only; freezing
+   * keeps it at runtime too.
+   */
+  private static freeze(option: RiviniaSelectOption): RiviniaSelectOption {
+    return Object.freeze({ ...option });
+  }
+
+  /**
+   * Force a value, bypassing the unknown/disabled guards of {@link select}.
+   *
+   * This is the write a form restore needs: a stored id is authoritative even
+   * when its option has not loaded yet (or is currently disabled). The
+   * controller keeps it, `selectedLabels` renders the raw id, and the label
+   * replaces it the moment the option is registered — instead of `select`
+   * silently refusing and leaving the trigger on the placeholder while the
+   * form still held the value.
+   */
+  setValue(id: string | null): void {
+    this.value.set(id);
+  }
+
+  /**
+   * Force the values, the array counterpart of {@link setValue}. Same
+   * contract: ids are stored as given, in the given order, whether or not they
+   * resolve to an option yet.
+   */
+  setValues(ids: readonly string[]): void {
+    this.values.set([...ids]);
   }
 
   /** Remove an option; also drops it from the value(s). */
@@ -117,7 +152,7 @@ export class RiviniaSelect implements RiviniaSelectController {
    */
   syncOptions(list: readonly RiviniaSelectOption[]): void {
     const ids = new Set(list.map((o) => o.id));
-    this._options.set(list.map((o) => ({ ...o })));
+    this._options.set(list.map((o) => RiviniaSelect.freeze(o)));
     const current = this.value();
     if (current !== null && !ids.has(current)) this.value.set(null);
     this.values.update((vals) => vals.filter((v) => ids.has(v)));

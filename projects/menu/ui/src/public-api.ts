@@ -1,11 +1,11 @@
-export type { RiviniaMenuUiPlacement } from './lib/ui-menu-types';
-export { RiviniaMenuComponent, RiviniaMenuItem } from './lib/menu-panel';
-export type { MenuPick } from './lib/menu-panel';
+export type { RiviniaMenuUiPlacement } from './lib/models/menu.ui-types';
+export { RiviniaMenuComponent, RiviniaMenuItem } from './lib/components/menu/menu-panel';
+export type { MenuPick } from './lib/components/menu/menu-panel';
 export type { RiviniaMenuItemData } from '@rivinia/menu';
-export { computeMenuPosition, MENU_GAP } from './lib/menu-position';
+export { computeMenuPosition, MENU_GAP } from './lib/utils/menu-position';
 export type {
   MenuCoordinates,
   MenuPanelSize,
   MenuTriggerRect,
   MenuViewport,
-} from './lib/menu-position';
+} from './lib/utils/menu-position';

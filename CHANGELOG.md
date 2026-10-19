@@ -3,6 +3,171 @@
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.
 A change is listed the moment it lands on `main`, not when npm is published.
 
+## Prepared releases (unpublished)
+
+### @rivinia/select 0.6.0 (BREAKING)
+
+The select's private panel is renamed out of the `menu` namespace, and the
+right-to-left placement is fixed.
+
+**Why the rename:** the select shipped a private copy of the menu component
+using the SAME selector (`rv-menu`) as `@rivinia/menu`. An app depending on
+both packages hit
+
+```
+NG0912: Component ID generation collision detected. Components
+'RiviniaMenuComponent' and 'RiviniaMenuComponent' with selector 'rv-menu'
+generated the same component ID.
+```
+
+Angular registers one definition per colliding id, so the loser's `styles`
+were never injected — the select's panel was silently rendered with the other
+package's CSS.
+
+**DOM / CSS changes** (only if you targeted the markup):
+
+- `rv-select-menu` → `rv-select-popup`
+- `.rv-select-menu-panel` → `.rv-select-popup-panel`
+- `.rv-select-menu-trigger` → `.rv-select-popup-trigger`
+- `[rvselectmenuitem]` → `[rvselectpopupitem]`
+- `rvSelectMenuItem` / `rvSelectMenuTrigger` / `rvSelectMenuPanel` →
+  `rvSelectPopupItem` / `rvSelectPopupTrigger` / `rvSelectPopupPanel`
+- `--rv-select-menu-*` → `--rv-select-popup-*`
+
+The `--rv-select-*` tokens are unchanged, and they are still bridged onto the
+panel, so setting them on an ancestor of `rv-select` keeps working.
+
+**One input renamed:** `[menuLabel]` → `[popupLabel]`.
+
+Fixed:
+
+- **The panel flew across the viewport in a right-to-left layout.** A
+  specificity tie let the placement insets override the top-layer reset, so
+  the panel pinned itself to the viewport edge instead of its trigger's
+  (measured: trigger at `x=11..232`, panel at `x=708..929` in a 929px
+  viewport). The top-layer rule now comes after the placement rules.
+- **Reopening a single-mode select started at the first option** instead of
+  the one already chosen, so arrowing to a long list meant walking past
+  everything again. It now reopens on the current selection.
+- **A select could overflow its row.** A `min-width` beats `max-width` in
+  CSS, so a large `--rv-select-width` overflowed the cell and landed on the
+  next select. The width is now capped by the container.
+
+Added:
+
+- `provideRiviniaSelect(mode)` / `injectRiviniaSelect()`, so the controller
+  is in the injector and a test can replace it.
+- `optionTemplate` — custom markup for an option row (icons, avatars, badges).
+- `listTemplate` — replaces the whole list, for a virtualised one.
+- `loading` / `loadingLabel` — a loader row under the list.
+- `reachEnd` — emitted when the panel scrolls close to its end.
+- A footer slot, `[rv-select-popup-footer]`, for a "Load more" button.
+- `--rv-select-popup-animation` — the whole entrance as ONE token, so it
+  never fights the cascade.
+- Registered options are frozen, so the filtered list and the selection
+  cannot disagree.
+
+### @rivinia/menu 0.3.5
+
+**Nothing to do.** No API, token or class name changed.
+
+Fixed: the same right-to-left placement defect the select had — a panel in an
+RTL layout drifted to the viewport edge instead of staying with its trigger.
+The panel is now placed with CSS anchor positioning, so it follows its
+trigger in both directions and takes the trigger's width.
+
+### @rivinia/modal 0.6.0 (BREAKING)
+
+**No forced colour scheme.** The dialog forced a dark palette under
+`prefers-color-scheme: dark` and the toast forced a light one. Both
+overrode an explicit consumer choice and contradicted the "no forced dark
+mode" contract the other packages document. A dialog now follows the
+consumer's scheme.
+
+Added:
+
+- `size` per dialog, so one host can show a small confirm over a wide form.
+  The presets are `clamp()`, so they scale with the viewport.
+- `coversOthers` — a dialog that hides the ones below it, for a flow where
+  the detail view replaces the list view.
+- `loadingOf` — a loader while a dialog's data is in flight.
+- `data-caller` — the name of the component that opened the dialog, so the
+  DevTools inspector points at its source.
+- The dialog transitions its own box, and the stack change is wrapped in a
+  view transition, so a dialog opening over another is a movement rather
+  than a flicker.
+
+### @rivinia/toast 0.5.0 (BREAKING)
+
+**The list is in the browser's top layer.** It is a manual popover, so it is
+no longer clipped by an `overflow: hidden` ancestor and it floats above a
+modal dialog. Measured: the element at the toast's position is the toast, not
+the dialog.
+
+**The list must be MANAGED.** `<rv-toast-list>` without a `[manager]` renders
+an empty list — no toast ever appears. Pass the manager:
+
+```html
+<rv-toast-list [manager]="toast" position="bottom-end" />
+```
+
+### @rivinia/theme 0.1.0 (new)
+
+The shared design-token layer. One import, one place to set the whole
+component ecosystem's colours:
+
+```css
+@import '@rivinia/theme';
+
+:root {
+  --rv-bg: #ffffff;
+  --rv-fg: #111111;
+}
+```
+
+Every component reads its own token first, then the semantic layer, then its
+built-in default — so a consumer can theme one component, or all of them,
+from one place. Adapters are included for Tailwind v4 and Bootstrap 5.3, and
+an SCSS entry for `@use`.
+
+### @rivinia/http 0.5.2
+
+- Expanded the consumer guide with separate service, component, and template
+  examples covering every request method.
+
+### @rivinia/toast 0.4.2
+
+- Clarified the standalone UI and headless examples with separate TypeScript
+  and HTML files.
+
+### @rivinia/modal 0.5.3
+
+- Documented both decorator and signal view queries, component content through
+  the modal host's `NgComponentOutlet`, scoped modal context injection, and
+  rendering toast UI inside a native dialog.
+
+### @rivinia/i18n 0.3.2
+
+- Split the standalone component example into separate TypeScript and HTML
+  files.
+
+### @rivinia/env 0.3.2
+
+- Added real `dev`, `stag`, and `prod` build configurations while retaining
+  legacy configuration names; avoid sharing nested configuration state between
+  generated aliases.
+- Corrected the guide to match `ng build --configuration dev|stag|prod`.
+
+### @rivinia/menu 0.3.4
+
+- Replaced the unsupported NgModule example with standalone TypeScript and HTML
+  examples and clarified menu template inputs and event-handler naming.
+
+### @rivinia/select 0.4.2
+
+- Expanded the standalone forms and UI examples with separate TypeScript and
+  HTML files.
+
 ## select 0.4.0 (forms integration, unpublished)
 
 ### @rivinia/select

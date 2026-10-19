@@ -15,6 +15,15 @@ export type ModalResult<T> =
 /** Lifecycle state of one modal instance. Single source of truth: the manager. */
 export type ModalStatus = 'queued' | 'active' | 'closing' | 'closed';
 
+/**
+ * The size of a dialog.
+ *
+ * It lives in the CORE, not only in the UI, because the size is decided when
+ * the dialog is OPENED — `openModal({ size })` — and the core owns that call.
+ * The UI entry re-exports the same union, so there is one vocabulary.
+ */
+export type RiviniaModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full' | 'auto';
+
 /** Origin of a dismissal intent. Guards see it; forced paths bypass guards. */
 export type ModalDismissOrigin = 'escape' | 'backdrop' | 'button' | 'program' | 'system';
 
@@ -90,6 +99,7 @@ export interface ModalInstance<TData = unknown> {
   /** Stable key for a modal definition (e.g. `'confirm-delete'`). */
   readonly ref: string | null;
   /** Request origin label for diagnostics (e.g. component/feature name). */
+  /** The name of the component that opened this dialog, when known. */
   readonly caller: string | null;
   readonly parentId: string | null;
   readonly data: TData;
@@ -115,7 +125,6 @@ export interface ModalHandle<TResult = unknown> {
 export interface ModalOpenOptions<TData = unknown> {
   readonly data?: TData;
   readonly ref?: string;
-  readonly caller?: string;
   readonly parentId?: string;
   /**
    * Lifecycle owner. Destruction settles active modals as `owner-destroyed`
@@ -124,6 +133,26 @@ export interface ModalOpenOptions<TData = unknown> {
   readonly owner?: DestroyRef;
   /** Named preset from global config (explicit options always win). */
   readonly preset?: string;
+  /**
+   * Size for THIS dialog.
+   *
+   * The host's `size` is the default for every instance; this overrides it for
+   * one. Without it, a host can only ever show one size — so a small confirm
+   * over a wide form has to be opened by a different host.
+   */
+  readonly size?: RiviniaModalSize;
+  /**
+   * Hide the dialogs underneath this one.
+   *
+   * A stack shows every dialog, so the ones below stay visible behind the
+   * top one. That is right for a wizard, and wrong for a flow where the
+   * detail view REPLACES the list view: the list behind keeps peeking out and
+   * the two fight for attention.
+   *
+   * With this set, the instances below are not rendered while this one is up,
+   * and they come back when it closes.
+   */
+  readonly coversOthers?: boolean;
   readonly dismiss?: Partial<ModalDismissPolicy>;
   readonly guards?: readonly ModalGuard[];
   readonly metadata?: Record<string, unknown>;
@@ -133,6 +162,24 @@ export interface ModalOpenOptions<TData = unknown> {
    * fail silently at render. See `ModalContent` inputs.
    */
   readonly inputs?: Record<string, unknown>;
+  /**
+   * The component that opened the dialog.
+   *
+   * `openModal` is usually called from an event handler, which is NOT an
+   * injection context, so the manager cannot discover the caller on its own.
+   * Naming it makes the opener attributable: the dialog carries a
+   * `data-caller` attribute, which shows up in the DevTools inspector and
+   * points at the component that opened it.
+   *
+   * ```ts
+   * export class UsersScreen {
+   *   open() { this.modal.openModal(this.tpl, { caller: UsersScreen }); }
+   * }
+   * ```
+   *
+   * A plain string works too, when the name is all that is known.
+   */
+  readonly caller?: string | Type<unknown>;
 }
 
 /** Partial changes for `update()` (content shape itself is immutable). */

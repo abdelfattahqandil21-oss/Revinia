@@ -14,8 +14,8 @@ import {
 } from '@angular/core';
 import type { RiviniaMenuController, RiviniaMenuItemData } from '@rivinia/menu';
 import { RiviniaMenu } from '@rivinia/menu';
-import type { RiviniaMenuUiPlacement } from './ui-menu-types';
-import { computeMenuPosition } from './menu-position';
+import type { RiviniaMenuUiPlacement } from '../../models/menu.ui-types';
+import { computeMenuPosition } from '../../utils/menu-position';
 
 /** Payload of {@link RiviniaMenuComponent.picked}. */
 export interface MenuPick {
@@ -34,7 +34,6 @@ let nextPanelId = 0;
  */
 @Directive({
   selector: '[rvMenuItem]',
-  standalone: true,
   host: {
     '[attr.role]': 'computedRole()',
     '[attr.data-rv-id]': 'id()',
@@ -162,7 +161,6 @@ export class RiviniaMenuItem {
  */
 @Component({
   selector: 'rv-menu',
-  standalone: true,
   // Deliberately unencapsulated: projected item buttons belong to the
   // consumer's template, and emulated descendant selectors never match
   // projected content (measured in Chrome: `display` stayed `inline-block`).
@@ -173,187 +171,8 @@ export class RiviniaMenuItem {
   // directive consumers use, so registration, keyboard and click handling have
   // exactly one implementation.
   imports: [RiviniaMenuItem],
-  template: `
-    <div class="rv-menu-trigger" (click)="onTriggerClick()" (keydown)="onTriggerKey($event)">
-      <ng-content select="[rv-menu-trigger], [rvMenuTrigger]"></ng-content>
-    </div>
-    @if (controller().open()) {
-      <div
-        #panel
-        class="rv-menu-panel"
-        [class]="panelClass()"
-        role="menu"
-        [attr.id]="panelId"
-        [attr.aria-label]="menuLabel()"
-        [attr.popover]="topLayerSupported ? 'manual' : null"
-        [attr.data-placement]="placement()"
-        [attr.data-flipped]="flipped()"
-        [attr.data-positioned]="positioned()"
-        [attr.data-top-layer]="topLayerSupported"
-        (keydown)="onPanelKey($event)"
-      >
-        @if (dataItems().length > 0) {
-          @for (item of dataItems(); track item.id) {
-            <button
-              rvMenuItem
-              [id]="item.id"
-              [disabled]="item.disabled ?? false"
-              [checked]="checkedFor(item.id)"
-              [class]="itemClass()"
-            >
-              {{ item.label }}
-            </button>
-          }
-        }
-        <ng-content select="[rv-menu-panel], [rvMenuPanel]"></ng-content>
-      </div>
-    }
-  `,
-  styles: [
-    `
-      .rv-menu-trigger {
-        display: inline-flex;
-        align-items: center;
-      }
-      .rv-menu-panel {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
-      .rv-menu-panel hr {
-        border: 0;
-        border-top: 1px solid var(--rv-menu-border, #e0e0e0);
-        margin: 6px 4px;
-      }
-      /* NOTE: the :host pseudo-class does not exist without encapsulation,
-         so the host element is styled directly (still rv-prefixed).
-         Relative positioning anchors the no-popover fallback panel. */
-      rv-menu {
-        position: relative;
-        display: inline-block;
-      }
-      /* Top-layer mode (popover-capable browsers): the panel escapes every
-         clipping ancestor and stacking context. Coordinates come from the
-         component (fixed + measured + flipped); the absolute placement
-         classes below stay as the no-popover fallback. */
-      .rv-menu-panel[data-top-layer='true'] {
-        position: fixed;
-        inset: auto;
-        margin: 0;
-      }
-      .rv-menu-panel[data-positioned='false'] {
-        animation: none;
-      }
-      /* Flipped panels grow out of the opposite edge (matches coordinates). */
-      .rv-menu-panel[data-top-layer='true'][data-placement^='bottom'][data-flipped='true'] {
-        transform-origin: bottom center;
-      }
-      .rv-menu-panel[data-top-layer='true'][data-placement^='top'][data-flipped='true'] {
-        transform-origin: top center;
-      }
-      .rv-menu-panel {
-        position: absolute;
-        z-index: var(--rv-menu-z, 500);
-        min-width: var(--rv-menu-width, 16rem);
-        max-width: calc(100dvw - 2rem);
-        /* Long lists scroll inside the panel instead of leaving the viewport. */
-        max-height: min(20rem, calc(100dvh - 2rem));
-        overflow-y: auto;
-        background: var(--rv-menu-bg, #ffffff);
-        color: var(--rv-menu-fg, #111111);
-        font-family: var(--rv-menu-font, system-ui, -apple-system, 'Segoe UI', sans-serif);
-        border: 1px solid var(--rv-menu-border, #e0e0e0);
-        border-radius: var(--rv-menu-radius, 12px);
-        box-shadow: var(--rv-menu-shadow, 0 16px 48px rgba(0, 0, 0, 0.22));
-        padding: var(--rv-menu-pad, 6px);
-      }
-      .rv-menu-panel[data-placement='bottom-start'] {
-        inset-block-start: calc(100% + 6px);
-        inset-inline-start: 0;
-      }
-      .rv-menu-panel[data-placement='bottom-end'] {
-        inset-block-start: calc(100% + 6px);
-        inset-inline-end: 0;
-      }
-      .rv-menu-panel[data-placement='top-start'] {
-        inset-block-end: calc(100% + 6px);
-        inset-inline-start: 0;
-      }
-      .rv-menu-panel[data-placement='top-end'] {
-        inset-block-end: calc(100% + 6px);
-        inset-inline-end: 0;
-      }
-      .rv-menu-panel [rvmenuitem] {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        width: 100%;
-        min-height: 40px;
-        border: 0;
-        border-radius: 8px;
-        background: transparent;
-        color: inherit;
-        font: inherit;
-        font-size: 14px;
-        line-height: 1.4;
-        text-align: start;
-        padding: 8px 10px;
-        cursor: pointer;
-      }
-      .rv-menu-panel [rvmenuitem][data-active='true'] {
-        background: color-mix(in srgb, currentColor 10%, transparent);
-      }
-      .rv-menu-panel [rvmenuitem]:hover {
-        background: color-mix(in srgb, currentColor 8%, transparent);
-      }
-      .rv-menu-panel [rvmenuitem]:focus-visible {
-        outline: 2px solid currentColor;
-        outline-offset: -2px;
-      }
-      .rv-menu-panel [rvmenuitem][aria-disabled='true'] {
-        opacity: 0.45;
-        cursor: default;
-      }
-      /* Optional icons: consumer projects any svg/icon content; the UI only
-         owns sizing, alignment and tone so rows stay consistent. */
-      .rv-menu-panel [rvmenuitem] svg,
-      .rv-menu-panel [rvmenuitem] [data-icon] {
-        width: 16px;
-        height: 16px;
-        flex: none;
-        color: var(--rv-menu-muted);
-      }
-      .rv-menu-panel [rvmenuitem][data-active='true'] svg,
-      .rv-menu-panel [rvmenuitem][data-active='true'] [data-icon] {
-        color: inherit;
-      }
-      /* Opening motion (researched: Radix/shadcn/HeadlessUI pattern):
-         fade + scale from the trigger edge + a small slide toward rest.
-         Origin follows the vertical side so the panel grows out of the
-         trigger; duration/easing stay overridable via vars. */
-      .rv-menu-panel {
-        transform-origin: top center;
-        animation: rv-menu-in var(--rv-menu-duration, 160ms)
-          var(--rv-menu-easing, cubic-bezier(0.16, 1, 0.3, 1));
-      }
-      .rv-menu-panel[data-placement='top-start'],
-      .rv-menu-panel[data-placement='top-end'] {
-        --rv-menu-from-y: 6px;
-        transform-origin: bottom center;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .rv-menu-panel {
-          animation: none;
-        }
-      }
-      @keyframes rv-menu-in {
-        from {
-          opacity: 0;
-          transform: translateY(var(--rv-menu-from-y, -6px)) scale(0.96);
-        }
-      }
-    `,
-  ],
+  templateUrl: './menu-panel.html',
+  styleUrl: './menu-panel.css',
 })
 export class RiviniaMenuComponent {
   /**
