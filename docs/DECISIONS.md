@@ -1036,7 +1036,7 @@ Three defects, all found by a consumer using the packages.
     had been showing was going nowhere. The list is now managed, and the
     app's own "Signed in as …" toast appears for the first time.
 
-## 2026-10-19 — D42: the release set — what changed, what the versions are, and what is still open
+## 2026-10-19 — D49: the release set — what changed, what the versions are, and what is still open
 
 - **The version set**, chosen by what actually changed, not by convenience:
   | Package  | From  | To     | Why                                                             |
