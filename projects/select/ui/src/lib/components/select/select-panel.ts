@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   ElementRef,
@@ -10,11 +11,12 @@ import {
   model,
   output,
   signal,
+  TemplateRef,
 } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
-import { RiviniaMenu } from './rivinia-menu';
-import type { RiviniaMenuUiPlacement } from './ui-menu-types';
-import { RiviniaMenuComponent, RiviniaMenuItem } from './menu-panel';
+import { SelectPopupControllerImpl } from '../../services/select-popup';
+import type { SelectPopupUiPlacement } from '../../models/select-popup.ui-types';
+import { SelectPopupComponent, SelectPopupItem } from '../popup/select-popup';
 import { RiviniaSelect } from '@rivinia/select';
 import type { RiviniaSelectController, RiviniaSelectOption } from '@rivinia/select';
 
@@ -22,10 +24,10 @@ import type { RiviniaSelectController, RiviniaSelectOption } from '@rivinia/sele
 export type SelectChange = string | readonly string[] | null;
 
 /**
- * Ready-made select built on rv-menu. Single mode picks one value and closes;
+ * Ready-made select built on rv-select-popup. Single mode picks one value and closes;
  * multi mode toggles with a check mark and stays open. Options come from the
  * `options` input (labels double as the search index); rich per-option custom
- * content stays the job of raw rv-menu.
+ * content stays the job of raw rv-select-popup.
  *
  * ```html
  * <rv-select [options]="invoices" [searchable]="true" placeholder="Status…" (selectionChange)="apply($event)" />
@@ -43,214 +45,12 @@ export type SelectChange = string | readonly string[] | null;
  */
 @Component({
   selector: 'rv-select',
-  standalone: true,
-  imports: [RiviniaMenuComponent, RiviniaMenuItem],
-  // Same projection rule as rv-menu: option buttons belong to this template,
+  imports: [NgTemplateOutlet, SelectPopupComponent, SelectPopupItem],
+  // Same projection rule as rv-select-popup: option buttons belong to this template,
   // every rule below stays under .rv-select-* / rv-select.
   encapsulation: ViewEncapsulation.None,
-  template: `
-    @if (label(); as text) {
-      <span class="rv-select-caption" [id]="labelId">{{ text }}</span>
-    }
-    <div class="rv-select" (focusout)="onFocusOut($event)">
-      <rv-menu
-        [menu]="nav"
-        [placement]="placement()"
-        [menuLabel]="panelLabel()"
-        (picked)="onPick($event.id)"
-        (opened)="onOpened()"
-        (closed)="onClosed()"
-      >
-        <button
-          rv-menu-trigger
-          type="button"
-          class="rv-select-trigger"
-          aria-haspopup="menu"
-          [attr.aria-label]="ariaLabel()"
-          [attr.aria-labelledby]="label() ? labelId : null"
-          [attr.aria-expanded]="nav.open()"
-          [attr.aria-invalid]="invalid() || errors().length > 0 ? 'true' : null"
-          [attr.aria-disabled]="disabled() ? 'true' : null"
-          [attr.data-open]="nav.open()"
-          [disabled]="disabled()"
-        >
-          <span class="rv-select-value">{{ display() }}</span>
-          <svg
-            class="rv-select-chevron"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            aria-hidden="true"
-          >
-            <path d="M4 6.5 8 10.5 12 6.5" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </button>
-        <div rv-menu-panel class="rv-select-panel">
-          @if (searchable()) {
-            <input
-              class="rv-select-search"
-              type="text"
-              role="searchbox"
-              [attr.aria-label]="searchLabel()"
-              autocomplete="off"
-              [value]="controller().query()"
-              [placeholder]="searchPlaceholder()"
-              (input)="controller().setQuery($any($event.target).value)"
-              (keydown)="onSearchKey($event)"
-            />
-          }
-          @for (o of controller().filtered(); track o.id) {
-            <button
-              rvMenuItem
-              [id]="o.id"
-              [disabled]="o.disabled ?? false"
-              [checked]="controller().mode === 'multi' ? controller().isSelected(o.id) : null"
-            >
-              <span class="rv-select-label">{{ o.label }}</span>
-              @if (o.hint) {
-                <span class="rv-select-hint">{{ o.hint }}</span>
-              }
-              @if (controller().isSelected(o.id)) {
-                <svg
-                  class="rv-select-check"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  aria-hidden="true"
-                >
-                  <path d="M3 8.5 6.5 12 13 4.5" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              }
-            </button>
-          } @empty {
-            <div class="rv-select-empty">{{ emptyLabel() }}</div>
-          }
-        </div>
-      </rv-menu>
-    </div>
-  `,
-  styles: [
-    `
-      rv-select {
-        display: inline-block;
-      }
-      /*
-       * Theming boundary.
-       *
-       * The opened panel is rendered by the vendored menu primitives, whose surface paints
-       * itself from the --rv-menu-* tokens. Mapping select's own namespace
-       * onto those tokens HERE, on the panel element only, is what keeps the
-       * two components themeable independently: a --rv-select-* value
-       * inherited from an ancestor reaches this panel, and a consumer's
-       * --rv-menu-* value can no longer bleed into a select. Nothing outside
-       * .rv-select-panel sees these declarations.
-       *
-       * Every value is var(--rv-select-*, fallback), never a literal, so an
-       * ancestor theme always wins. No forced dark mode: opting in is the
-       * consumer's decision (see README -> Theming).
-       */
-      .rv-select .rv-menu-panel {
-        --rv-menu-bg: var(--rv-select-bg, #ffffff);
-        --rv-menu-fg: var(--rv-select-fg, #111111);
-        --rv-menu-border: var(--rv-select-border, #e0e0e0);
-        --rv-menu-muted: var(--rv-select-muted, #555555);
-        --rv-menu-radius: var(--rv-select-radius, 12px);
-        --rv-menu-shadow: var(--rv-select-shadow, 0 16px 48px rgba(0, 0, 0, 0.22));
-        --rv-menu-width: var(--rv-select-width, 16rem);
-      }
-      .rv-select-caption {
-        display: block;
-        margin-bottom: 4px;
-        font-size: 13px;
-        color: var(--rv-select-muted, #555555);
-      }
-      .rv-select-trigger {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        min-width: var(--rv-select-width, 14rem);
-        max-width: 100%;
-        padding: 8px 12px;
-        border-radius: var(--rv-select-radius, 10px);
-        border: 1px solid var(--rv-select-border, #e0e0e0);
-        background: var(--rv-select-bg, #ffffff);
-        color: var(--rv-select-fg, #111111);
-        font: inherit;
-        font-size: 14px;
-        cursor: pointer;
-      }
-      .rv-select-trigger[disabled] {
-        opacity: 0.55;
-        cursor: not-allowed;
-      }
-      .rv-select-trigger[aria-invalid='true'] {
-        border-color: var(--rv-select-error, #dc2626);
-      }
-      .rv-select-value {
-        flex: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        text-align: start;
-      }
-      .rv-select-chevron {
-        width: 16px;
-        height: 16px;
-        flex: none;
-        color: var(--rv-select-muted, #555555);
-        transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      .rv-select-trigger[data-open='true'] .rv-select-chevron {
-        transform: rotate(180deg);
-      }
-      .rv-select-search {
-        width: 100%;
-        box-sizing: border-box;
-        margin-bottom: 4px;
-        padding: 8px 10px;
-        border-radius: 8px;
-        border: 1px solid var(--rv-select-border, #e0e0e0);
-        background: transparent;
-        color: inherit;
-        font: inherit;
-        font-size: 14px;
-      }
-      .rv-select-search:focus {
-        outline: 2px solid currentColor;
-        outline-offset: -1px;
-      }
-      .rv-select-search::placeholder {
-        color: var(--rv-select-muted, #555555);
-      }
-      .rv-select-check {
-        width: 16px;
-        height: 16px;
-        flex: none;
-        margin-inline-start: auto;
-      }
-      .rv-select-hint {
-        flex: none;
-        margin-inline-start: 8px;
-        font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
-        font-size: 11px;
-        color: var(--rv-select-muted, #555555);
-        opacity: 0.85;
-      }
-      .rv-select-empty {
-        padding: 12px 10px;
-        text-align: center;
-        font-size: 13px;
-        color: var(--rv-select-muted, #555555);
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .rv-select-chevron {
-          transition: none;
-        }
-      }
-    `,
-  ],
+  templateUrl: './select-panel.html',
+  styleUrl: './select-panel.css',
 })
 export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
   /**
@@ -277,7 +77,7 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
   /**
    * Explicit accessible name for the trigger, used when there is no visible
    * caption. Ignored when `label` is set (a visible caption is the better
-   * name). Named `ariaLabel`, mirroring the vendored menu's `menuLabel`, so it
+   * name). Named `ariaLabel`, mirroring the vendored popup's `popupLabel`, so it
    * cannot be confused with an option's `label`.
    */
   readonly ariaLabel = input<string | null>(null);
@@ -285,15 +85,87 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
    * Accessible name for the opened panel (`aria-label` on the listbox-shaped
    * menu). Defaults to the visible caption when one is set.
    */
-  readonly menuLabel = input<string | null>(null);
+  readonly popupLabel = input<string | null>(null);
   /** Accessible name for the filter box. @default 'Search options' */
   readonly searchLabel = input('Search options');
+  /**
+   * Custom markup for each option row.
+   *
+   * The default row is a label, an optional hint and a check mark. When a
+   * consumer needs an icon, an avatar, a badge or a group header, they
+   * supply a template and it replaces the default row entirely.
+   *
+   * The context is the option, typed loosely on purpose: a consumer's own
+   * option shape (with an `icon`, say) is not the library's type, and the
+   * template is theirs to narrow.
+   *
+   * ```html
+   * <ng-template #row let-option>
+   *   <img class="size-4" [src]="option.icon" alt="" />
+   *   <span>{{ option.label }}</span>
+   * </ng-template>
+   *
+   * <rv-select [options]="options" [optionTemplate]="row" />
+   * ```
+   */
+  readonly optionTemplate = input<TemplateRef<unknown> | null>(null);
+
+  /**
+   * Replaces the whole option list.
+   *
+   * `optionTemplate` replaces a ROW's content; this replaces the LIST. It is
+   * the escape hatch for a virtualised list: the consumer renders only the
+   * visible rows and positions them.
+   *
+   * ```html
+   * <ng-template #list let-options>
+   *   <div [style.height.px]="virtualizer.getTotalSize()" style="position: relative">
+   *     @for (row of virtualizer.getVirtualItems(); track row.index) {
+   *       <div [style.transform]="'translateY(' + row.start + 'px)'">…</div>
+   *     }
+   *   </div>
+   * </ng-template>
+   *
+   * <rv-select [options]="options" [listTemplate]="list" (panelReady)="panel = $event" />
+   * ```
+   *
+   * The consumer owns the scroll container then, so `reachEnd` is theirs to
+   * detect (the virtualizer's own last-row check is the usual way).
+   */
+  readonly listTemplate = input<TemplateRef<unknown> | null>(null);
+
+  /**
+   * A request for more rows is in flight.
+   *
+   * Renders a loader row under the list, so the panel shows the state instead
+   * of looking finished.
+   */
+  readonly loading = input(false);
+
+  /** Text of the loader row. @default 'Loading…' */
+  readonly loadingLabel = input('Loading…');
+
+  /**
+   * The panel scrolled close to its end.
+   *
+   * The offset is a LENGTH (`--rv-select-popup-reach-end-offset`), not a
+   * percentage: the panel's scrollable height changes as rows arrive, so a
+   * percentage would fire at a different row each time.
+   */
+  readonly reachEnd = output<void>();
+
+  /**
+   * The panel element, once it exists.
+   *
+   * A virtualised list needs the panel as its scroll element.
+   */
+  readonly panelReady = output<HTMLElement>();
   /** Filter box hint. @default 'Search…' */
   readonly searchPlaceholder = input('Search…');
   /** Shown when the filter matches nothing. @default 'No results' */
   readonly emptyLabel = input('No results');
   /** Panel placement relative to the trigger. @default 'bottom-start' */
-  readonly placement = input<RiviniaMenuUiPlacement>('bottom-start');
+  readonly placement = input<SelectPopupUiPlacement>('bottom-start');
 
   /** Current selection. Single: id (or null). Multi: ids in pick order. */
   readonly selectionChange = output<SelectChange>();
@@ -319,8 +191,8 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
 
   private readonly ownedSingle = new RiviniaSelect('single');
   private readonly ownedMulti = new RiviniaSelect('multi');
-  /** Inner navigation controller driving the rv-menu panel. */
-  protected readonly nav = new RiviniaMenu();
+  /** Inner navigation controller driving the rv-select-popup panel. */
+  protected readonly popup = new SelectPopupControllerImpl();
   private readonly self = inject(ElementRef<HTMLElement>);
   /** Set on trigger-open; consumed after render to land focus in search. */
   private readonly justOpened = signal(false);
@@ -328,11 +200,11 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
   protected readonly labelId = 'rv-select-label';
 
   /**
-   * Accessible name for the opened panel: an explicit `menuLabel`, else the
+   * Accessible name for the opened panel: an explicit `popupLabel`, else the
    * visible caption, else none. Without any of these the panel is unnamed.
    */
   protected panelLabel(): string | null {
-    return this.menuLabel() ?? this.label();
+    return this.popupLabel() ?? this.label();
   }
 
   /**
@@ -367,7 +239,7 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
     // Typing re-aims keyboard focus at the top match, so Enter just works.
     effect(() => {
       this.controller().query();
-      this.nav.activateFirst();
+      this.popup.activateFirst();
     });
 
     // ── FormValueControl sync: form value → controller ──
@@ -404,7 +276,7 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
     // list (see onSearchKey -> Tab -> focusItem), so the exposed semantics are
     // menu/menuitem. See README -> Accessibility for the full rationale.
     afterRenderEffect(() => {
-      if (!this.justOpened() || !this.nav.open() || !this.searchable()) return;
+      if (!this.justOpened() || !this.popup.open() || !this.searchable()) return;
       this.justOpened.set(false);
       const search = this.self.nativeElement.querySelector(
         '.rv-select-search',
@@ -423,10 +295,26 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
   protected onOpened(): void {
     // FormValueControl: a disabled control must not open.
     if (this.disabled()) {
-      this.nav.closeMenu();
+      this.popup.closePopup();
       return;
     }
     this.justOpened.set(true);
+    /*
+     * Reopening lands on the CURRENT selection, not on the first row.
+     *
+     * `openMenu('first')` activates the first enabled option, which is right
+     * for an empty select and wrong for a filled one: arrowing from the top
+     * every time makes a long list unusable, and the user has to walk past
+     * everything to reach the value they already chose.
+     *
+     * Multi mode already had this right — it never closes on a pick, so the
+     * active row stayed where it was (see `onPick`).
+     */
+    const c = this.controller();
+    if (c.mode === 'single') {
+      const selected = c.value();
+      if (selected !== null) this.popup.activate(selected);
+    }
     this.opened.emit();
   }
 
@@ -463,8 +351,8 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
       // The inner menu closed synchronously; reopen in the same pass.
       // doClose() cleared activeId, so restore it to the picked item —
       // otherwise the next arrow-key navigation starts from the first item.
-      this.nav.openMenu('current');
-      this.nav.activate(id);
+      this.popup.openMenu('current');
+      this.popup.activate(id);
       this.value.set(c.values());
       this.selectionChange.emit(c.values());
     }
@@ -495,12 +383,14 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
   }
 
   private focusItem(): void {
-    const id = this.nav.activeId();
-    const root = this.self.nativeElement.querySelector('.rv-menu-panel') as HTMLElement | null;
+    const id = this.popup.activeId();
+    const root = this.self.nativeElement.querySelector(
+      '.rv-select-popup-panel',
+    ) as HTMLElement | null;
     const byId = id
       ? (root?.querySelector(`[data-rv-id="${CSS.escape(id)}"]`) as HTMLElement | null)
       : null;
-    const target = byId ?? (root?.querySelector('[rvmenuitem]') as HTMLElement | null);
+    const target = byId ?? (root?.querySelector('[rvselectpopupitem]') as HTMLElement | null);
     try {
       target?.focus({ preventScroll: true });
     } catch {

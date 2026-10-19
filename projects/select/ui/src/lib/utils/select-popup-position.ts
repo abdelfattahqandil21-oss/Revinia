@@ -1,7 +1,7 @@
-import type { RiviniaMenuPlacement } from './menu-types';
+import type { SelectPopupPlacement } from '../models/select-popup.types';
 
 /** Trigger rect in viewport coordinates. */
-export interface MenuTriggerRect {
+export interface SelectPopupTriggerRect {
   readonly left: number;
   readonly top: number;
   readonly width: number;
@@ -9,26 +9,26 @@ export interface MenuTriggerRect {
 }
 
 /** Measured panel size. */
-export interface MenuPanelSize {
+export interface SelectPopupPanelSize {
   readonly width: number;
   readonly height: number;
 }
 
 /** Viewport size. */
-export interface MenuViewport {
+export interface SelectPopupViewport {
   readonly width: number;
   readonly height: number;
 }
 
 /** Fixed-position coordinates plus whether the vertical side flipped. */
-export interface MenuCoordinates {
+export interface SelectPopupCoordinates {
   readonly left: number;
   readonly top: number;
   readonly flipped: boolean;
 }
 
 /** Gap between trigger and panel. */
-export const MENU_GAP = 6;
+export const SELECT_POPUP_GAP = 6;
 /** Minimum distance kept from viewport edges. */
 const EDGE = 8;
 
@@ -39,14 +39,14 @@ const EDGE = 8;
  * viewport. Zero DOM access — unit-testable with fake rects; the component
  * only measures and applies.
  */
-export function computeMenuPosition(
-  trigger: MenuTriggerRect,
-  panel: MenuPanelSize,
-  placement: RiviniaMenuPlacement,
-  viewport: MenuViewport,
+export function computeSelectPopupPosition(
+  trigger: SelectPopupTriggerRect,
+  panel: SelectPopupPanelSize,
+  placement: SelectPopupPlacement,
+  viewport: SelectPopupViewport,
   rtl: boolean,
-  gap = MENU_GAP,
-): MenuCoordinates {
+  gap = SELECT_POPUP_GAP,
+): SelectPopupCoordinates {
   const [vertical, horizontal] = placement.split('-');
   const below = vertical !== 'top';
   // Logical start: left edge in LTR, right edge in RTL.

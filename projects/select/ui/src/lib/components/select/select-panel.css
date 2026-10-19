@@ -1,0 +1,142 @@
+rv-select {
+  display: inline-block;
+}
+/*
+ * Theming boundary.
+ *
+ * The opened panel is rendered by the vendored popup primitives, whose surface paints
+ * itself from the --rv-select-popup-* tokens. Mapping select's own namespace
+ * onto those tokens HERE, on the panel element only, is what keeps the
+ * two components themeable independently: a --rv-select-* value
+ * inherited from an ancestor reaches this panel, and a consumer's
+ * --rv-select-popup-* value can no longer bleed into a select. Nothing outside
+ * .rv-select-panel sees these declarations.
+ *
+ * Every value is var(--rv-select-*, fallback), never a literal, so an
+ * ancestor theme always wins. No forced dark mode: opting in is the
+ * consumer's decision (see README -> Theming).
+ */
+.rv-select .rv-select-popup-panel {
+  --rv-select-popup-bg: var(--rv-select-bg, var(--rv-bg, #ffffff));
+  --rv-select-popup-fg: var(--rv-select-fg, var(--rv-fg, #111111));
+  --rv-select-popup-border: var(--rv-select-border, var(--rv-border, #e0e0e0));
+  --rv-select-popup-muted: var(--rv-select-muted, var(--rv-muted, #555555));
+  --rv-select-popup-radius: var(--rv-select-radius, var(--rv-radius, 0.75rem));
+  --rv-select-popup-shadow: var(--rv-select-shadow, var(--rv-shadow, 0 16px 48px rgba(0, 0, 0, 0.22)));
+  --rv-select-popup-width: var(--rv-select-width, 16rem);
+  /*
+   * The panel's own metrics ride the same tokens as the trigger, so a
+   * consumer sets one value and both surfaces follow.
+   */
+  --rv-select-popup-pad: var(--rv-select-panel-padding, 0.375rem);
+  --rv-select-popup-font: var(--rv-select-font, system-ui, -apple-system, 'Segoe UI', sans-serif);
+}
+.rv-select-caption {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: var(--rv-select-caption-size, 0.8125rem);
+  color: var(--rv-select-muted, var(--rv-muted, #555555));
+}
+.rv-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: var(--rv-select-trigger-justify, flex-start);
+  gap: var(--rv-select-trigger-gap, 0.5rem);
+  /*
+   * Capped by the container, so a large --rv-select-width can never make the
+   * trigger overflow its cell. `min()` is the only way to cap a min-width:
+   * a plain `max-width: 100%` LOSES to `min-width` by the cascade, so a
+   * 21rem min-width would still be 21rem wide in a 12rem cell.
+   */
+  min-width: min(var(--rv-select-width, 14rem), 100%);
+  max-width: 100%;
+  padding: var(--rv-select-trigger-padding, 0.5rem 0.75rem);
+  border-radius: var(--rv-select-radius, var(--rv-radius, 0.625rem));
+  border: 1px solid var(--rv-select-border, var(--rv-border, #e0e0e0));
+  background: var(--rv-select-bg, var(--rv-bg, #ffffff));
+  color: var(--rv-select-fg, var(--rv-fg, #111111));
+  font: inherit;
+  font-size: var(--rv-select-trigger-size, 0.875rem);
+  cursor: pointer;
+}
+.rv-select-trigger[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.rv-select-trigger[aria-invalid='true'] {
+  border-color: var(--rv-select-error, var(--rv-danger, #dc2626));
+}
+.rv-select-value {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Logical, so it follows the writing direction. `center` centres it. */
+  text-align: var(--rv-select-value-align, start);
+}
+.rv-select-chevron {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--rv-select-muted, var(--rv-muted, #555555));
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.rv-select-trigger[data-open='true'] .rv-select-chevron {
+  transform: rotate(180deg);
+}
+.rv-select-search {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 0.25rem;
+  padding: var(--rv-select-search-padding, 0.5rem 0.625rem);
+  border-radius: var(--rv-select-search-radius, 0.5rem);
+  border: 1px solid var(--rv-select-border, var(--rv-border, #e0e0e0));
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--rv-select-search-size, 0.875rem);
+}
+.rv-select-search:focus {
+  outline: var(--rv-select-focus-ring, 2px solid currentColor);
+  outline-offset: var(--rv-select-focus-offset, -1px);
+}
+.rv-select-search::placeholder {
+  color: var(--rv-select-muted, var(--rv-muted, #555555));
+}
+.rv-select-check {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-inline-start: auto;
+}
+.rv-select-hint {
+  flex: none;
+  margin-inline-start: 0.5rem;
+  font-family: var(--rv-select-hint-font, ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace);
+  font-size: var(--rv-select-hint-size, 0.6875rem);
+  color: var(--rv-select-muted, var(--rv-muted, #555555));
+  opacity: 0.85;
+}
+/*
+ * The loader row, shown while a request for more rows is in flight.
+ *
+ * It is a `role="status"` so a screen reader announces the change without
+ * stealing focus — the panel keeps the focus it had.
+ */
+.rv-select-loading {
+  padding: var(--rv-select-loading-padding, 0.5rem 0.625rem);
+  text-align: center;
+  font-size: var(--rv-select-loading-size, 0.8125rem);
+  color: var(--rv-select-muted, var(--rv-muted, #555555));
+}
+.rv-select-empty {
+  padding: var(--rv-select-empty-padding, 0.75rem 0.625rem);
+  text-align: center;
+  font-size: var(--rv-select-empty-size, 0.8125rem);
+  color: var(--rv-select-muted, var(--rv-muted, #555555));
+}
+@media (prefers-reduced-motion: reduce) {
+  .rv-select-chevron {
+    transition: none;
+  }
+}

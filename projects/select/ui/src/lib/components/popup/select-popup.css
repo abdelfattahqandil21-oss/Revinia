@@ -1,0 +1,275 @@
+.rv-select-popup-trigger {
+  display: inline-flex;
+  align-items: center;
+  /*
+   * The last link in the width chain.
+   *
+   * host -> wrapper -> popup host -> THIS -> trigger. Every other link
+   * carries the width; this one is `inline-flex`, so it shrink-wraps to the
+   * button and the chain breaks here — the trigger ends up content-sized
+   * inside a cell the consumer sized, and the min-width cap then resolves
+   * against that narrow width instead of the cell's.
+   */
+  width: 100%;
+  max-width: 100%;
+}
+.rv-select-popup-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+.rv-select-popup-panel hr {
+  border: 0;
+  border-top: 1px solid var(--rv-select-popup-border, var(--rv-select-border, var(--rv-border, #e0e0e0)));
+  margin: 0.375rem 0.25rem;
+}
+/* NOTE: the :host pseudo-class does not exist without encapsulation,
+   so the host element is styled directly (still rv-prefixed).
+   Relative positioning anchors the no-popover fallback panel. */
+rv-select-popup {
+  position: relative;
+  display: inline-block;
+  /*
+   * Carry the width down to the trigger.
+   *
+   * The chain is host -> wrapper -> popup host -> trigger, and the trigger's
+   * min-width is capped at 100% of its containing block. This element is that
+   * containing block, so without a width here the cap resolves against a
+   * shrink-to-fit width and the trigger ends up content-sized instead of
+   * filling the space the consumer gave it.
+   *
+   * With no definite width upstream, `width: 100%` resolves to auto and the
+   * select shrink-wraps to its content, as before.
+   */
+  width: 100%;
+  max-width: 100%;
+}
+.rv-select-popup-panel[data-positioned='false'] {
+  animation: none;
+}
+/* Flipped panels grow out of the opposite edge (matches coordinates). */
+.rv-select-popup-panel[data-top-layer='true'][data-placement^='bottom'][data-flipped='true'] {
+  transform-origin: bottom center;
+}
+.rv-select-popup-panel[data-top-layer='true'][data-placement^='top'][data-flipped='true'] {
+  transform-origin: top center;
+}
+.rv-select-popup-panel {
+  /*
+   * How close to the end counts as "the end", for the `reachEnd` output.
+   * A LENGTH, not a percentage: the panel's scrollable height changes as rows
+   * arrive, so a percentage would fire at a different row every time.
+   */
+  --rv-select-popup-reach-end-offset: 3rem;
+  position: absolute;
+  z-index: var(--rv-select-popup-z, 500);
+  /*
+   * Capped by the wrapper. The panel is `position: absolute` in this path, so
+   * 100% is the wrapper's width — the same cap the trigger uses, so the panel
+   * can never be wider than the button that opened it.
+   */
+  min-width: min(var(--rv-select-popup-width, 16rem), 100%);
+  max-width: calc(100dvw - 2rem);
+  /* Long lists scroll inside the panel instead of leaving the viewport. */
+  max-height: min(20rem, calc(100dvh - 2rem));
+  overflow-y: auto;
+  background: var(--rv-select-popup-bg, var(--rv-select-bg, var(--rv-bg, #ffffff)));
+  color: var(--rv-select-popup-fg, var(--rv-select-fg, var(--rv-fg, #111111)));
+  font-family: var(--rv-select-popup-font, system-ui, -apple-system, 'Segoe UI', sans-serif);
+  border: 1px solid var(--rv-select-popup-border, var(--rv-select-border, var(--rv-border, #e0e0e0)));
+  border-radius: var(--rv-select-popup-radius, var(--rv-select-radius, var(--rv-radius, 0.75rem)));
+  box-shadow: var(--rv-select-popup-shadow, var(--rv-select-shadow, var(--rv-shadow, 0 16px 48px rgba(0, 0, 0, 0.22))));
+  padding: var(--rv-select-popup-pad, 0.375rem);
+}
+.rv-select-popup-panel[data-placement='bottom-start'] {
+  inset-block-start: calc(100% + 0.375rem);
+  inset-inline-start: 0;
+}
+.rv-select-popup-panel[data-placement='bottom-end'] {
+  inset-block-start: calc(100% + 0.375rem);
+  inset-inline-end: 0;
+}
+.rv-select-popup-panel[data-placement='top-start'] {
+  inset-block-end: calc(100% + 0.375rem);
+  inset-inline-start: 0;
+}
+.rv-select-popup-panel[data-placement='top-end'] {
+  inset-block-end: calc(100% + 0.375rem);
+  inset-inline-end: 0;
+}
+/*
+ * TOP-LAYER MODE — MUST come after the placement rules above.
+ *
+ * Those four rules are also (0,2,0), so whichever appears last wins.
+ * This block used to sit ABOVE them, so inset: auto was silently
+ * overridden by inset-inline-start/end, and the panel fell back to the
+ * ABSOLUTE fallback placement while still being positioned as fixed.
+ *
+ * In LTR that stayed invisible: inset-inline-start: 0 resolves to
+ * left: 0, which is the same physical property the component writes
+ * inline, so the inline value won and the panel looked correct.
+ *
+ * In RTL it diverges: inset-inline-start: 0 resolves to right: 0,
+ * a property the component never writes. The box became over-constrained
+ * (left: <inline> + right: 0), and CSS 2.1 s10.3.7 drops left when
+ * direction is rtl — so the panel pinned itself to the VIEWPORT's right
+ * edge instead of its trigger's. Measured: trigger at x=11..232, panel at
+ * x=708..929 in a 929px viewport (929 - 221 = 708, to the pixel).
+ */
+.rv-select-popup-panel[data-top-layer='true'] {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+}
+/*
+ * CSS ANCHOR POSITIONING.
+ *
+ * Baseline widely-available since 2026-01 (Firefox 147 shipped the last
+ * piece), so the top-layer panel can be tethered to its trigger with no
+ * JavaScript coordinates at all. position-area takes LOGICAL keywords,
+ * which makes the placement direction-correct in RTL for free — the
+ * asymmetry that broke the JS path cannot reappear here.
+ *
+ * anchor-size(inline) makes the panel exactly as wide as its trigger.
+ * position-try-fallbacks replaces the clamp/flip arithmetic: the
+ * browser tries each option and keeps the first that does not overflow.
+ *
+ * The !important insets are load-bearing: the component writes
+ * left/top inline, and an !important author declaration outranks an
+ * inline one. Without them the two coordinate systems fight and the
+ * inline value wins, which is the bug this block exists to remove.
+ *
+ * NOT scoped with anchor-scope: that property limits an anchor name to
+ * an element and its DESCENDANTS, and a top-layer panel is not a DOM
+ * descendant of its trigger, so scoping it here makes the anchor
+ * unreachable (measured: panel jumped 686px away).
+ */
+@supports (anchor-name: --a) and (position-area: block-end span-inline-end) {
+  /*
+   * ESSENTIAL: without this every panel anchors to the LAST trigger in
+   * the document, because the spec resolves a duplicate anchor-name to
+   * "the last one already laid out". Measured with three selects: all
+   * three panels landed on the third trigger, up to 431px away from their
+   * own. anchor-scope confines the name to one component instance, which
+   * is the CSS-native equivalent of the per-instance ids.
+   *
+   * The scope must sit on an ancestor of BOTH the trigger and the panel.
+   * The panel is promoted to the top layer, but the top layer changes
+   * rendering only, not DOM ancestry, so the host still contains it.
+   */
+  rv-select {
+    anchor-scope: all;
+  }
+  .rv-select-popup-trigger {
+    anchor-name: --rv-select-popup-anchor;
+  }
+  .rv-select-popup-panel[data-top-layer='true'] {
+    position-anchor: --rv-select-popup-anchor;
+    /* A popover defaults to margin: auto, which fights position-area. */
+    margin: 0.375rem 0 0 0;
+    width: anchor-size(inline);
+    min-width: 0;
+    left: auto !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    position-try-fallbacks: flip-block, flip-inline;
+    /* Hide the panel when its trigger scrolls out of view. */
+    position-visibility: anchors-visible;
+  }
+  .rv-select-popup-panel[data-top-layer='true'][data-placement='bottom-start'] {
+    position-area: block-end span-inline-end;
+  }
+  .rv-select-popup-panel[data-top-layer='true'][data-placement='bottom-end'] {
+    position-area: block-end span-inline-start;
+  }
+  .rv-select-popup-panel[data-top-layer='true'][data-placement='top-start'] {
+    position-area: block-start span-inline-end;
+  }
+  .rv-select-popup-panel[data-top-layer='true'][data-placement='top-end'] {
+    position-area: block-start span-inline-start;
+  }
+}
+.rv-select-popup-panel [rvselectpopupitem] {
+  display: flex;
+  align-items: center;
+  gap: var(--rv-select-item-gap, 0.625rem);
+  width: 100%;
+  min-height: var(--rv-select-item-min-height, 2.5rem);
+  border: 0;
+  border-radius: var(--rv-select-item-radius, var(--rv-radius, 0.5rem));
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--rv-select-item-size, 0.875rem);
+  line-height: 1.4;
+  text-align: var(--rv-select-item-align, start);
+  padding: var(--rv-select-item-padding, 0.5rem 0.625rem);
+  cursor: pointer;
+}
+.rv-select-popup-panel [rvselectpopupitem][data-active='true'] {
+  background: var(--rv-select-item-active-bg, color-mix(in srgb, currentColor 10%, transparent));
+}
+.rv-select-popup-panel [rvselectpopupitem]:hover {
+  background: var(--rv-select-item-hover-bg, color-mix(in srgb, currentColor 8%, transparent));
+}
+.rv-select-popup-panel [rvselectpopupitem]:focus-visible {
+  outline: var(--rv-select-focus-ring, 2px solid currentColor);
+  outline-offset: var(--rv-select-focus-offset, -2px);
+}
+.rv-select-popup-panel [rvselectpopupitem][aria-disabled='true'] {
+  opacity: var(--rv-select-item-disabled-opacity, 0.45);
+  cursor: default;
+}
+/* Optional icons: consumer projects any svg/icon content; the UI only
+   owns sizing, alignment and tone so rows stay consistent. */
+.rv-select-popup-panel [rvselectpopupitem] svg,
+.rv-select-popup-panel [rvselectpopupitem] [data-icon] {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--rv-select-popup-muted);
+}
+.rv-select-popup-panel [rvselectpopupitem][data-active='true'] svg,
+.rv-select-popup-panel [rvselectpopupitem][data-active='true'] [data-icon] {
+  color: inherit;
+}
+/* Opening motion (researched: Radix/shadcn/HeadlessUI pattern):
+   fade + scale from the trigger edge + a small slide toward rest.
+   Origin follows the vertical side so the panel grows out of the
+   trigger; duration/easing stay overridable via vars. */
+.rv-select-popup-panel {
+  transform-origin: top center;
+  /*
+   * The whole animation is ONE token, not three.
+   *
+   * A consumer who wants a different entrance cannot win by overriding
+   * `animation` in their own stylesheet: Angular injects a component's styles
+   * into <head> at runtime, which is AFTER the app's stylesheet, so at equal
+   * specificity the library's declaration wins. A token sidesteps the
+   * specificity fight entirely:
+   *
+   *   .my-scope { --rv-select-popup-animation: my-slide 200ms ease-out; }
+   */
+  animation: var(
+    --rv-select-popup-animation,
+    rv-select-popup-in var(--rv-select-popup-duration, 160ms)
+      var(--rv-select-popup-easing, cubic-bezier(0.16, 1, 0.3, 1))
+  );
+}
+.rv-select-popup-panel[data-placement='top-start'],
+.rv-select-popup-panel[data-placement='top-end'] {
+  --rv-select-popup-from-y: 0.375rem;
+  transform-origin: bottom center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rv-select-popup-panel {
+    animation: none;
+  }
+}
+@keyframes rv-select-popup-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rv-select-popup-from-y, -0.375rem)) scale(0.96);
+  }
+}
