@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeMenuPosition } from '../../ui/src/lib/menu-position';
+import { computeMenuPosition } from '../../ui/src/lib/utils/menu-position';
 
 const VIEWPORT = { width: 1280, height: 900 };
 const PANEL = { width: 256, height: 300 };

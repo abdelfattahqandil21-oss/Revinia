@@ -1,0 +1,250 @@
+.rv-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+}
+.rv-menu-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+.rv-menu-panel hr {
+  border: 0;
+  border-top: 1px solid var(--rv-menu-border, var(--rv-border, #e0e0e0));
+  margin: 0.375rem 0.25rem;
+}
+/* NOTE: the :host pseudo-class does not exist without encapsulation,
+   so the host element is styled directly (still rv-prefixed).
+   Relative positioning anchors the no-popover fallback panel. */
+rv-menu {
+  position: relative;
+  display: inline-block;
+}
+/* Top-layer mode (popover-capable browsers): the panel escapes every
+   clipping ancestor and stacking context. Coordinates come from the
+   component (fixed + measured + flipped); the absolute placement
+   classes below stay as the no-popover fallback. */
+.rv-menu-panel[data-positioned='false'] {
+  animation: none;
+}
+/* Flipped panels grow out of the opposite edge (matches coordinates). */
+.rv-menu-panel[data-top-layer='true'][data-placement^='bottom'][data-flipped='true'] {
+  transform-origin: bottom center;
+}
+.rv-menu-panel[data-top-layer='true'][data-placement^='top'][data-flipped='true'] {
+  transform-origin: top center;
+}
+.rv-menu-panel {
+  position: absolute;
+  z-index: var(--rv-menu-z, 500);
+  min-width: var(--rv-menu-width, 16rem);
+  max-width: calc(100dvw - 2rem);
+  /* Long lists scroll inside the panel instead of leaving the viewport. */
+  max-height: var(--rv-menu-panel-max-height, min(20rem, calc(100dvh - 2rem)));
+  overflow-y: auto;
+  background: var(--rv-menu-bg, var(--rv-bg, #ffffff));
+  color: var(--rv-menu-fg, var(--rv-fg, #111111));
+  font-family: var(--rv-menu-font, var(--rv-font, system-ui, -apple-system, 'Segoe UI', sans-serif));
+  border: 1px solid var(--rv-menu-border, var(--rv-border, #e0e0e0));
+  border-radius: var(--rv-menu-radius, var(--rv-radius, 0.75rem));
+  box-shadow: var(--rv-menu-shadow, var(--rv-shadow, 0 16px 48px rgba(0, 0, 0, 0.22)));
+  padding: var(--rv-menu-pad, 0.375rem);
+}
+.rv-menu-panel[data-placement='bottom-start'] {
+  inset-block-start: calc(100% + 0.375rem);
+  inset-inline-start: 0;
+}
+.rv-menu-panel[data-placement='bottom-end'] {
+  inset-block-start: calc(100% + 0.375rem);
+  inset-inline-end: 0;
+}
+.rv-menu-panel[data-placement='top-start'] {
+  inset-block-end: calc(100% + 0.375rem);
+  inset-inline-start: 0;
+}
+.rv-menu-panel[data-placement='top-end'] {
+  inset-block-end: calc(100% + 0.375rem);
+  inset-inline-end: 0;
+}
+/*
+ * TOP-LAYER MODE — MUST come after the placement rules above.
+ *
+ * Those four rules are also (0,2,0), so whichever appears last wins.
+ * This block used to sit ABOVE them, so inset: auto was silently
+ * overridden by inset-inline-start/end, and the panel fell back to the
+ * ABSOLUTE fallback placement while still being positioned as fixed.
+ *
+ * In LTR that stayed invisible: inset-inline-start: 0 resolves to
+ * left: 0, which is the same physical property the component writes
+ * inline, so the inline value won and the panel looked correct.
+ *
+ * In RTL it diverges: inset-inline-start: 0 resolves to right: 0,
+ * a physical property JS never writes inline — so the box was
+ * over-constrained (left: <inline> + right: 0) and CSS 2.1 s10.3.7
+ * dropped left when direction is rtl. The panel then pinned itself to
+ * the VIEWPORT's right edge instead of its trigger's.
+ *
+ * The default placement is bottom-start, so this hit every consumer
+ * that did not explicitly opt into bottom-end.
+ */
+.rv-menu-panel[data-top-layer='true'] {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+}
+/*
+ * CSS ANCHOR POSITIONING.
+ *
+ * Baseline widely-available since 2026-01, so the top-layer panel can
+ * be tethered to its trigger with no JavaScript coordinates at all.
+ * position-area takes LOGICAL keywords, which makes the placement
+ * direction-correct in RTL for free — the asymmetry that broke the JS
+ * path cannot reappear here.
+ *
+ * A menu sizes to its CONTENT; only a select matches its trigger width.
+ * position-try-fallbacks replaces the clamp/flip arithmetic: the
+ * browser tries each option and keeps the first that does not overflow.
+ *
+ * The !important insets are load-bearing: the component writes
+ * left/top inline, and an !important author declaration outranks
+ * an inline one. Without them the two coordinate systems fight and the
+ * inline value wins, which is the bug this block exists to remove.
+ *
+ * NOT scoped with anchor-scope: that property limits an anchor name
+ * to an element and its DESCENDANTS, and a top-layer panel is not a DOM
+ * descendant of its trigger, so scoping it here makes the anchor
+ * unreachable.
+ */
+@supports (anchor-name: --a) and (position-area: block-end span-inline-end) {
+  /*
+   * ESSENTIAL: without this every panel anchors to the LAST trigger in
+   * the document, because the spec resolves a duplicate anchor-name to
+   * "the last one already laid out". anchor-scope confines the name to
+   * one menu instance, which is the CSS-native equivalent of the
+   * per-instance ids.
+   *
+   * The scope must sit on an ancestor of BOTH the trigger and the panel.
+   * The panel is promoted to the top layer, but the top layer changes
+   * rendering only, not DOM ancestry, so the host still contains it.
+   */
+  rv-menu {
+    anchor-scope: all;
+  }
+  .rv-menu-trigger {
+    anchor-name: --rv-menu-anchor;
+  }
+  .rv-menu-panel[data-top-layer='true'] {
+    position-anchor: --rv-menu-anchor;
+    /* A popover defaults to margin: auto, which fights position-area. */
+    margin: 0.375rem 0 0 0;
+    /*
+     * NO width: anchor-size(inline) here. A MENU sizes to its content;
+     * only a SELECT matches its trigger. Forcing the panel to the
+     * trigger's width would squeeze a 55px avatar button into a 55px
+     * menu. The area spans the full inline axis and justify-self picks
+     * the edge, so the panel keeps its own size.
+     */
+    width: max-content;
+    min-width: var(--rv-menu-width, 16rem);
+    max-width: calc(100dvw - 2rem);
+    left: auto !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    position-try-fallbacks: flip-block, flip-inline;
+    position-visibility: anchors-visible;
+  }
+  /*
+   * The area must be anchored to the TRIGGER's edge, so it takes the
+   * span-inline-* form; a bare block-end spans the whole inline axis
+   * and justify-self would then align to the viewport, not the trigger
+   * (measured: the panel left the trigger by 19px and sat at x=0).
+   *
+   * justify-self picks which edge of that area the panel sits on, and
+   * width: max-content keeps it from stretching to the area's width.
+   */
+  .rv-menu-panel[data-top-layer='true'][data-placement='bottom-start'] {
+    position-area: block-end span-inline-end;
+    justify-self: start;
+  }
+  .rv-menu-panel[data-top-layer='true'][data-placement='bottom-end'] {
+    position-area: block-end span-inline-start;
+    justify-self: end;
+  }
+  .rv-menu-panel[data-top-layer='true'][data-placement='top-start'] {
+    position-area: block-start span-inline-end;
+    justify-self: start;
+  }
+  .rv-menu-panel[data-top-layer='true'][data-placement='top-end'] {
+    position-area: block-start span-inline-start;
+    justify-self: end;
+  }
+}
+.rv-menu-panel [rvmenuitem] {
+  display: flex;
+  align-items: center;
+  gap: var(--rv-menu-item-gap, 0.625rem);
+  width: 100%;
+  min-height: var(--rv-menu-item-min-height, 2.5rem);
+  border: 0;
+  border-radius: var(--rv-menu-item-radius, var(--rv-radius, 0.5rem));
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--rv-menu-item-size, 0.875rem);
+  line-height: 1.4;
+  text-align: var(--rv-menu-item-align, start);
+  padding: var(--rv-menu-item-padding, 0.5rem 0.625rem);
+  cursor: pointer;
+}
+.rv-menu-panel [rvmenuitem][data-active='true'] {
+  background: var(--rv-menu-item-active-bg, color-mix(in srgb, currentColor 10%, transparent));
+}
+.rv-menu-panel [rvmenuitem]:hover {
+  background: var(--rv-menu-item-hover-bg, color-mix(in srgb, currentColor 8%, transparent));
+}
+.rv-menu-panel [rvmenuitem]:focus-visible {
+  outline: var(--rv-menu-focus-ring, 2px solid currentColor);
+  outline-offset: var(--rv-menu-focus-offset, -2px);
+}
+.rv-menu-panel [rvmenuitem][aria-disabled='true'] {
+  opacity: var(--rv-menu-item-disabled-opacity, 0.45);
+  cursor: default;
+}
+/* Optional icons: consumer projects any svg/icon content; the UI only
+   owns sizing, alignment and tone so rows stay consistent. */
+.rv-menu-panel [rvmenuitem] svg,
+.rv-menu-panel [rvmenuitem] [data-icon] {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--rv-menu-muted, var(--rv-muted, #555555));
+}
+.rv-menu-panel [rvmenuitem][data-active='true'] svg,
+.rv-menu-panel [rvmenuitem][data-active='true'] [data-icon] {
+  color: inherit;
+}
+/* Opening motion (researched: Radix/shadcn/HeadlessUI pattern):
+   fade + scale from the trigger edge + a small slide toward rest.
+   Origin follows the vertical side so the panel grows out of the
+   trigger; duration/easing stay overridable via vars. */
+.rv-menu-panel {
+  transform-origin: top center;
+  animation: rv-menu-in var(--rv-menu-duration, 160ms)
+    var(--rv-menu-easing, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.rv-menu-panel[data-placement='top-start'],
+.rv-menu-panel[data-placement='top-end'] {
+  --rv-menu-from-y: 0.375rem;
+  transform-origin: bottom center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rv-menu-panel {
+    animation: none;
+  }
+}
+@keyframes rv-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rv-menu-from-y, -0.375rem)) scale(0.96);
+  }
+}

@@ -3,10 +3,9 @@ import { By } from '@angular/platform-browser';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { RiviniaMenu } from '../lib/rivinia-menu';
-import { RiviniaMenuComponent, RiviniaMenuItem } from '../../ui/src/lib/menu-panel';
+import { RiviniaMenuComponent, RiviniaMenuItem } from '../../ui/src/lib/components/menu/menu-panel';
 
 @Component({
-  standalone: true,
   imports: [RiviniaMenuComponent, RiviniaMenuItem],
   template: `
     <rv-menu [menu]="menu" [menuLabel]="menuLabel" (picked)="picked.push($event.id)">
