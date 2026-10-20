@@ -2,10 +2,10 @@ export type {
   RiviniaSelectController,
   RiviniaSelectMode,
   RiviniaSelectOption,
-} from './lib/select-types';
-export { RiviniaSelect } from './lib/rivinia-select';
+} from './lib/models/select-types';
+export { RiviniaSelect } from './lib/services/rivinia-select';
 export {
   RIVINIA_SELECT,
   injectRiviniaSelect,
   provideRiviniaSelect,
-} from './lib/select-di';
+} from './lib/providers/select-di';

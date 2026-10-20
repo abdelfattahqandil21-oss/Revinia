@@ -53,7 +53,7 @@ export function ngAdd(options: NgAddOptions): Rule {
     const provideCall = `provideRiviniaToast(${parts.length > 0 ? `{ ${parts.join(', ')} }` : ''})`;
 
     let changed = false;
-    if (!content.includes(PROVIDE_IMPORT)) {
+    if (!importsValue(content, '@rivinia/toast', 'provideRiviniaToast')) {
       content = insertAfterLastImport(content, PROVIDE_IMPORT);
       changed = true;
     }
@@ -124,4 +124,31 @@ function insertProvider(content: string, call: string): string {
   }
   const at = match.index + match[0].length;
   return `${content.slice(0, at)}\n    ${call},${content.slice(at)}`;
+}
+
+/**
+ * Whether the file already binds `symbol` as a VALUE imported from `module`.
+ *
+ * A plain `content.includes(IMPORT_LINE)` recognises only ONE shape of the
+ * import — `import { symbol } from 'module';`. An app that imports the
+ * symbol beside others (`import { other, symbol } from 'module';`) would be
+ * given a SECOND import of the same symbol, and its build would then fail
+ * with "Duplicate identifier" (TS2300).
+ *
+ * An aliased or a type-only import does not bind the name we need, so it
+ * does not count as present.
+ */
+function importsValue(content: string, module: string, symbol: string): boolean {
+  const pattern = /import\s+(?:type\s+)?\{([^}]*)\}\s*from\s*['"]([^'"]+)['"]/g;
+  for (const match of content.matchAll(pattern)) {
+    if (match[2] !== module) continue;
+    if (/^\s*import\s+type\s/.test(match[0])) continue; // a type-only import
+    for (const entry of match[1].split(',')) {
+      const raw = entry.trim();
+      if (!raw || /^type\s/.test(raw)) continue; // a type-only specifier
+      const local = raw.split(/\s+as\s+/).pop()!.trim();
+      if (local === symbol) return true;
+    }
+  }
+  return false;
 }
