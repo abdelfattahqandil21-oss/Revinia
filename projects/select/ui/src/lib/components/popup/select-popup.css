@@ -167,6 +167,7 @@ rv-select-popup {
     position-anchor: --rv-select-popup-anchor;
     /* A popover defaults to margin: auto, which fights position-area. */
     margin: 0.375rem 0 0 0;
+    box-sizing: border-box;
     width: anchor-size(inline);
     min-width: 0;
     left: auto !important;

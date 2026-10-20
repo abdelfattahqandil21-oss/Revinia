@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/toast",
-  "version": "0.5.0",
+  "version": "0.5.2",
   "description": "Headless toast queue for Angular: signals, pause-on-hover timers, actions.",
   "keywords": [
     "angular",
@@ -11,6 +11,7 @@
   ],
   "license": "MIT",
   "peerDependencies": {
+    "@angular-devkit/schematics": "^22.0.0",
     "@angular/core": "^22.0.0"
   },
   "sideEffects": false,
