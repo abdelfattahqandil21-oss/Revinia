@@ -1,5 +1,5 @@
-export type { RiviniaModalConfig, ModalPreset } from './lib/modal-config';
-export type { RiviniaModalSize } from './lib/modal-types';
+export type { RiviniaModalConfig, ModalPreset } from './lib/models/modal-config';
+export type { RiviniaModalSize } from './lib/models/modal-types';
 export type {
   ModalContent,
   ModalContext,
@@ -16,8 +16,8 @@ export type {
   ModalTemplateContext,
   ModalUpdate,
   DescendantPolicy,
-} from './lib/modal-types';
-export { QueueStrategy, StackStrategy, type ModalStrategy } from './lib/modal-strategy';
-export { RIVINIA_MODAL_CONTEXT } from './lib/modal-context';
-export { injectRiviniaModal, provideRiviniaModal } from './lib/provide-modal';
-export { RiviniaModal } from './lib/rivinia-modal';
+} from './lib/models/modal-types';
+export { QueueStrategy, StackStrategy, type ModalStrategy } from './lib/services/modal-strategy';
+export { RIVINIA_MODAL_CONTEXT } from './lib/models/modal-context';
+export { injectRiviniaModal, provideRiviniaModal } from './lib/providers/provide-modal';
+export { RiviniaModal } from './lib/services/rivinia-modal';

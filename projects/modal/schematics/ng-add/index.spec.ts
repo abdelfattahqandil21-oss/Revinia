@@ -27,6 +27,29 @@ async function run(options: object, base?: UnitTestTree) {
 }
 
 describe('ng-add', () => {
+  it('does not duplicate an import the app already has in another shape', async () => {
+    const t = new EmptyTree();
+    t.create(
+      '/angular.json',
+      JSON.stringify({
+        version: 1,
+        defaultProject: 'demo',
+        projects: { demo: { root: '', sourceRoot: 'src', architect: {} } },
+      }),
+    );
+    t.create(
+      '/src/app/app.config.ts',
+      `import { injectRiviniaModal, provideRiviniaModal } from '@rivinia/modal';\n\nexport const appConfig: ApplicationConfig = {\n  providers: [],\n};\n`,
+    );
+    const tree = await run({}, new UnitTestTree(t));
+    const content = tree.readContent('/src/app/app.config.ts');
+    const imports = content.split('\n').filter((line) => /^import\s/.test(line));
+    // A SECOND import of the same symbol is TS2300, which breaks the build.
+    expect(imports.filter((line) => line.includes('provideRiviniaModal'))).toHaveLength(1);
+    // The provider call is still added — the app only had the import.
+    expect(content).toContain('provideRiviniaModal(');
+  });
+
   it('inserts the import and a bare provider by default', async () => {
     const tree = await run({});
     const content = tree.readContent('/src/app/app.config.ts');
