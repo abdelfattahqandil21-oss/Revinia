@@ -158,7 +158,10 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/i18n/tsconfig.spec.json"
+            "tsConfig": "projects/i18n/tsconfig.spec.json",
+            "include": [
+              "../tests/**/*.spec.ts"
+            ]
           }
         }
       }
