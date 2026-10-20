@@ -1,1 +1,1 @@
-export type { BaseEnvironment } from './lib/env-types';
+export type { BaseEnvironment } from './lib/models/env-types';

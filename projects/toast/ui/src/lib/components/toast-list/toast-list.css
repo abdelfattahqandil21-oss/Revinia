@@ -1,0 +1,187 @@
+.rv-toasts {
+  /*
+   * The PALETTE tokens are NOT declared here — see the same note in
+   * @rivinia/modal. A declaration on the element out-ranks an
+   * ancestor's value, so the shared semantic layer would never reach
+   * the toast. They are read as
+   * var(--rv-toast-*, var(--rv-<semantic>, <default>)) instead.
+   *
+   * The LAYOUT tokens (gap, width, duration) stay here: they are
+   * component-specific and have no semantic counterpart.
+   */
+  --rv-toast-gap: 0.5rem;
+  --rv-toast-width: 22rem;
+  --rv-toast-duration: 180ms;
+  --rv-toast-easing: cubic-bezier(0.21, 1.02, 0.73, 1);
+  --rv-toast-success: #34c759;
+  --rv-toast-error: #ff453a;
+  --rv-toast-info: #0a84ff;
+  --rv-toast-warning: #ff9f0a;
+  position: fixed;
+  z-index: var(--rv-toast-z, 1000);
+  /*
+   * Reset the POPOVER's UA styles.
+   *
+   * A popover gets a background, a border, padding and overflow: auto
+   * from the user agent — which puts a shared canvas and a scrollbar
+   * around the stack, so the toasts read as one block instead of
+   * separate cards. The list is a transparent, borderless column.
+   */
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  overflow: visible;
+  height: auto;
+
+  /*
+   * The list is a manual popover, so it lives in the browser's TOP
+   * LAYER — the same layer a modal <dialog> uses. A top layer stacks
+   * in the order elements are shown, so a toast shown while a dialog is
+   * open lands ABOVE it. A z-index cannot do this: a dialog in the top
+   * layer is above every z-index in the document.
+   *
+   * The popover UA style sets inset: 0 and margin: auto, which would
+   * over-constrain the box. Reset it, so the per-position rules below
+   * have the last word.
+   */
+  inset: auto;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--rv-toast-gap);
+  width: var(--rv-toast-width);
+  max-width: calc(100dvw - 2rem);
+  pointer-events: none;
+}
+.rv-toasts > * {
+  pointer-events: auto;
+}
+.rv-toasts[data-position='top-start'],
+.rv-toasts[data-position='bottom-start'] {
+  inset-inline-start: 1rem;
+}
+.rv-toasts[data-position='top-end'],
+.rv-toasts[data-position='bottom-end'] {
+  inset-inline-end: 1rem;
+}
+.rv-toasts[data-position='top-center'],
+.rv-toasts[data-position='bottom-center'] {
+  inset-inline: 0;
+  margin-inline: auto;
+}
+.rv-toasts[data-position^='top'] {
+  inset-block-start: 1rem;
+}
+.rv-toasts[data-position^='bottom'] {
+  inset-block-end: 1rem;
+}
+.rv-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  background: var(--rv-toast-bg, var(--rv-bg, #ffffff));
+  color: var(--rv-toast-fg, var(--rv-fg, #111111));
+  border: 1px solid var(--rv-toast-border, var(--rv-border, #e0e0e0));
+  border-inline-start: 3px solid var(--rv-toast-muted, var(--rv-muted, #555555));
+  border-radius: var(--rv-toast-radius, var(--rv-radius, 12px));
+  box-shadow: var(--rv-toast-shadow, var(--rv-shadow, 0 12px 32px rgba(0, 0, 0, 0.32)));
+  padding: 12px 14px;
+}
+.rv-toast[data-kind='success'] {
+  border-inline-start-color: var(--rv-toast-success, var(--rv-ok, #16a34a));
+}
+.rv-toast[data-kind='error'] {
+  border-inline-start-color: var(--rv-toast-error, var(--rv-danger, #dc2626));
+}
+.rv-toast[data-kind='info'] {
+  border-inline-start-color: var(--rv-toast-info, var(--rv-info, #2563eb));
+}
+.rv-toast[data-kind='warning'] {
+  border-inline-start-color: var(--rv-toast-warning, var(--rv-warning, #d97706));
+}
+.rv-toasts[data-rich-colors='true'] .rv-toast[data-kind='success'] {
+  background: var(--rv-toast-success, var(--rv-ok, #16a34a));
+  color: #06130a;
+}
+.rv-toasts[data-rich-colors='true'] .rv-toast[data-kind='error'] {
+  background: var(--rv-toast-error, var(--rv-danger, #dc2626));
+  color: #1c0605;
+}
+.rv-toasts[data-rich-colors='true'] .rv-toast[data-kind='info'] {
+  background: var(--rv-toast-info, var(--rv-info, #2563eb));
+  color: #04121f;
+}
+.rv-toasts[data-rich-colors='true'] .rv-toast[data-kind='warning'] {
+  background: var(--rv-toast-warning, var(--rv-warning, #d97706));
+  color: #1d1204;
+}
+.rv-toast-icon {
+  flex: none;
+  font-weight: 700;
+}
+.rv-toast[data-kind='success'] .rv-toast-icon::before {
+  content: '✓';
+}
+.rv-toast[data-kind='error'] .rv-toast-icon::before {
+  content: '!';
+}
+.rv-toast[data-kind='info'] .rv-toast-icon::before {
+  content: 'i';
+}
+.rv-toast[data-kind='warning'] .rv-toast-icon::before {
+  content: '⚠';
+}
+.rv-toast-message {
+  margin: 0;
+  flex: 1;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+.rv-toast-action,
+.rv-toast-close {
+  flex: none;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  border: 1px solid var(--rv-toast-border, var(--rv-border, #e0e0e0));
+  background: transparent;
+  color: inherit;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.8125rem;
+}
+.rv-toast-action:focus-visible,
+.rv-toast-close:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.rv-toasts[data-animation='slide'] .rv-toast[data-state='active'] {
+  animation: rv-toast-in var(--rv-toast-duration) var(--rv-toast-easing);
+}
+.rv-toasts[data-animation='fade'] .rv-toast[data-state='active'] {
+  animation: rv-toast-in-fade var(--rv-toast-duration) ease-out;
+}
+.rv-toast[data-state='leaving'] {
+  animation: rv-toast-out 150ms ease-in forwards;
+}
+@keyframes rv-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes rv-toast-in-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes rv-toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rv-toasts .rv-toast {
+    animation: none;
+  }
+}
