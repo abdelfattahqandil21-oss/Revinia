@@ -4,5 +4,5 @@ export type {
   RiviniaMenuFocus,
   RiviniaMenuItem,
   RiviniaMenuPlacement,
-} from './lib/menu-types';
-export { RiviniaMenu } from './lib/rivinia-menu';
+} from './lib/models/menu-types';
+export { RiviniaMenu } from './lib/services/rivinia-menu';
