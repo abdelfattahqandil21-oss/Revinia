@@ -80,7 +80,10 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/http/tsconfig.spec.json"
+            "tsConfig": "projects/http/tsconfig.spec.json",
+            "include": [
+              "../tests/**/*.spec.ts"
+            ]
           }
         }
       }
