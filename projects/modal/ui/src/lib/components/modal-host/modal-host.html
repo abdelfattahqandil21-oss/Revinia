@@ -1,0 +1,46 @@
+@for (instance of visible(); track instance.id) {
+  @if (isCovered(instance)) {
+    <!--
+      Hidden by a dialog above it that asked to cover the others. It stays
+      in the manager — only the rendering is skipped, so it comes back when
+      the cover closes.
+    -->
+  } @else {
+  <rv-modal-dialog
+    [open]="true"
+    [managed]="true"
+    [closing]="instance.status === 'closing'"
+    [title]="titleOfInstance(instance)"
+    [size]="sizeOf(instance)"
+    [attr.data-caller]="callerName(instance)"
+    [showCloseButton]="showCloseButton()"
+    [closeOnEscape]="instance.dismiss.closeOnEscape ?? true"
+    [backdrop]="instance.dismiss.backdrop ?? 'close'"
+    (dismissRequested)="onIntent(instance.id, $event)"
+    (exitDone)="onExitDone(instance.id)"
+  >
+    @if (isLoading(instance)) {
+      <!--
+        The data has not arrived yet. A loader says so; an empty dialog
+        looks broken.
+      -->
+      <div class="rv-modal-loading" role="status" aria-live="polite">
+        <span class="rv-modal-spinner" aria-hidden="true"></span>
+        <span>{{ loadingLabel() }}</span>
+      </div>
+    } @else if (instance.content.kind === 'template') {
+      <ng-container
+        *ngTemplateOutlet="instance.content.template; context: templateContext(instance)"
+      ></ng-container>
+    } @else {
+      <ng-container
+        *ngComponentOutlet="
+          instance.content.component;
+          inputs: instance.content.inputs;
+          injector: contextInjector(instance)
+        "
+      ></ng-container>
+    }
+  </rv-modal-dialog>
+  }
+}

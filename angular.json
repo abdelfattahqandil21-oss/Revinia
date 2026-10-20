@@ -132,7 +132,10 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/modal/tsconfig.spec.json"
+            "tsConfig": "projects/modal/tsconfig.spec.json",
+            "include": [
+              "../tests/**/*.spec.ts"
+            ]
           }
         }
       }
