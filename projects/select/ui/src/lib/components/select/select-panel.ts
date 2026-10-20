@@ -1,7 +1,9 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
+  APP_ID,
   Component,
   ElementRef,
+  Service,
   ViewEncapsulation,
   afterRenderEffect,
   computed,
@@ -22,6 +24,21 @@ import type { RiviniaSelectController, RiviniaSelectOption } from '@rivinia/sele
 
 /** Payload of RiviniaSelectComponent.selectionChange. Single: id (or null after clear). Multi: ids. */
 export type SelectChange = string | readonly string[] | null;
+
+/**
+ * Combines Angular's application ID with an application-local counter. Angular
+ * requires distinct APP_ID values when multiple application roots share a page.
+ */
+@Service()
+class SelectLabelIdGenerator {
+  private readonly appId = inject(APP_ID);
+  private next = 0;
+
+  allocate(): string {
+    this.next += 1;
+    return `rv-select-${this.appId}-label-${this.next}`;
+  }
+}
 
 /**
  * Ready-made select built on rv-select-popup. Single mode picks one value and closes;
@@ -194,10 +211,11 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
   /** Inner navigation controller driving the rv-select-popup panel. */
   protected readonly popup = new SelectPopupControllerImpl();
   private readonly self = inject(ElementRef<HTMLElement>);
+  private readonly labelIdGenerator = inject(SelectLabelIdGenerator);
   /** Set on trigger-open; consumed after render to land focus in search. */
   private readonly justOpened = signal(false);
   /** Id of the rendered caption element, referenced by the trigger. */
-  protected readonly labelId = 'rv-select-label';
+  protected readonly labelId = this.labelIdGenerator.allocate();
 
   /**
    * Accessible name for the opened panel: an explicit `popupLabel`, else the
