@@ -13,9 +13,6 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "paths": {
-      "@rivinia/proof-core": ["./dist/proof-core"],
-      "@rivinia/proof-core/ui": ["./dist/proof-core/ui"],
-      "@rivinia/proof-second": ["./dist/proof-second"],
       "@rivinia/http": ["./dist/http"],
       "@rivinia/toast": ["./dist/toast"],
       "@rivinia/toast/ui": ["./dist/toast/ui"],
@@ -38,18 +35,6 @@
   },
   "files": [],
   "references": [
-    {
-      "path": "./projects/proof-core/tsconfig.lib.json"
-    },
-    {
-      "path": "./projects/proof-core/tsconfig.spec.json"
-    },
-    {
-      "path": "./projects/proof-second/tsconfig.lib.json"
-    },
-    {
-      "path": "./projects/proof-second/tsconfig.spec.json"
-    },
     {
       "path": "./projects/http/tsconfig.lib.json"
     },
