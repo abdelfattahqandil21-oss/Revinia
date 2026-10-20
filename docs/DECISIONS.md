@@ -1147,3 +1147,12 @@ Three defects, all found by a consumer using the packages.
   menu 40 · select 71 tests pass, the same counts as before the move; the
   schematic suite passes; the packed tarballs and a clean consumer are
   verified separately.
+- **A trap worth recording:** `git checkout <commit> -- <path>` ADDS the
+  files of that path and never removes the ones the path no longer holds. The
+  per-package branches were built with it, so the old flat files came back
+  with the merge and every package carried two copies of the same module.
+  The bundle was never affected — the duplicates are unreachable from the
+  entry point, so the tree-shaker dropped them — and the packed tarballs came
+  out byte-identical before and after the cleanup. Only the source tree was
+  wrong, and only a human reading the tree could tell. A move must be done
+  with `git mv`, or with an explicit `git rm` of the old path.
