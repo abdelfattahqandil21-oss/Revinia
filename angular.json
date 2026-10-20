@@ -7,58 +7,6 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "proof-core": {
-      "projectType": "library",
-      "root": "projects/proof-core",
-      "sourceRoot": "projects/proof-core/src",
-      "prefix": "rv",
-      "architect": {
-        "build": {
-          "builder": "@angular/build:ng-packagr",
-          "configurations": {
-            "production": {
-              "tsConfig": "projects/proof-core/tsconfig.lib.prod.json"
-            },
-            "development": {
-              "tsConfig": "projects/proof-core/tsconfig.lib.json"
-            }
-          },
-          "defaultConfiguration": "production"
-        },
-        "test": {
-          "builder": "@angular/build:unit-test",
-          "options": {
-            "tsConfig": "projects/proof-core/tsconfig.spec.json"
-          }
-        }
-      }
-    },
-    "proof-second": {
-      "projectType": "library",
-      "root": "projects/proof-second",
-      "sourceRoot": "projects/proof-second/src",
-      "prefix": "rv",
-      "architect": {
-        "build": {
-          "builder": "@angular/build:ng-packagr",
-          "configurations": {
-            "production": {
-              "tsConfig": "projects/proof-second/tsconfig.lib.prod.json"
-            },
-            "development": {
-              "tsConfig": "projects/proof-second/tsconfig.lib.json"
-            }
-          },
-          "defaultConfiguration": "production"
-        },
-        "test": {
-          "builder": "@angular/build:unit-test",
-          "options": {
-            "tsConfig": "projects/proof-second/tsconfig.spec.json"
-          }
-        }
-      }
-    },
     "http": {
       "projectType": "library",
       "root": "projects/http",
@@ -80,7 +28,10 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/http/tsconfig.spec.json"
+            "tsConfig": "projects/http/tsconfig.spec.json",
+            "include": [
+              "../tests/**/*.spec.ts"
+            ]
           }
         }
       }
@@ -106,7 +57,10 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/toast/tsconfig.spec.json"
+            "tsConfig": "projects/toast/tsconfig.spec.json",
+            "include": [
+              "../tests/**/*.spec.ts"
+            ]
           }
         }
       }
@@ -132,7 +86,10 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/modal/tsconfig.spec.json"
+            "tsConfig": "projects/modal/tsconfig.spec.json",
+            "include": [
+              "../tests/**/*.spec.ts"
+            ]
           }
         }
       }
@@ -213,7 +170,10 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/menu/tsconfig.spec.json"
+            "tsConfig": "projects/menu/tsconfig.spec.json",
+            "include": [
+              "../tests/**/*.spec.ts"
+            ]
           }
         }
       }
@@ -239,7 +199,10 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/select/tsconfig.spec.json"
+            "tsConfig": "projects/select/tsconfig.spec.json",
+            "include": [
+              "../tests/**/*.spec.ts"
+            ]
           }
         }
       }
