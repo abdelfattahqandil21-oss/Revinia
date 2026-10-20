@@ -1,5 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
+function executableOverride(variable: string) {
+  const executablePath = process.env[variable];
+  return executablePath ? { launchOptions: { executablePath } } : {};
+}
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
@@ -28,19 +33,22 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        launchOptions: { executablePath: '/usr/bin/google-chrome' },
+        ...executableOverride('PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH'),
       },
     },
     {
       name: 'firefox',
       use: {
         ...devices['Desktop Firefox'],
-        launchOptions: {
-          executablePath:
-            '/home/abdelfattahqandi/.cache/ms-playwright/firefox-1555/firefox/firefox',
-        },
+        ...executableOverride('PLAYWRIGHT_FIREFOX_EXECUTABLE_PATH'),
       },
     },
-    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+    {
+      name: 'webkit',
+      use: {
+        ...devices['Desktop Safari'],
+        ...executableOverride('PLAYWRIGHT_WEBKIT_EXECUTABLE_PATH'),
+      },
+    },
   ],
 });
