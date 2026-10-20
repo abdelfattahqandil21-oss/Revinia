@@ -6,5 +6,10 @@
     "outDir": "../../out-tsc/spec",
     "types": ["vitest/globals"]
   },
-  "include": ["src/**/*.d.ts", "src/**/*.spec.ts"]
+  /*
+   * The specs live in `<project>/tests`, OUTSIDE the source root: `src/`
+   * holds only what the package ships. The test target's `include` (see
+   * angular.json) reaches them; this tsconfig compiles them.
+   */
+  "include": ["src/**/*.d.ts", "tests/**/*.d.ts", "tests/**/*.spec.ts"]
 }

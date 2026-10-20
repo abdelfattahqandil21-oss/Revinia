@@ -5,22 +5,23 @@ application infrastructure and reusable UI behavior. Install and configure
 only the package your application needs; each package README is the detailed
 consumer reference for its public API.
 
-Published packages target Angular 22. The versions below are the latest
-published to npm as checked on 2026-10-17; workspace source and published
-versions can differ. The authoritative version for a release is the package's
-published npm metadata.
+Published packages target Angular 22. The versions below were checked on npm
+on 2026-10-20. “Workspace” shows each package manifest's version and may be
+unreleased. The authoritative version for a release is the package's published
+npm metadata.
 
 ## Packages
 
-| Package                                          | Latest on npm                                          | Prepared patch | `ng add` | Use it for                                                                                |
+| Package                                          | Latest on npm                                          | Workspace      | `ng add` | Use it for                                                                                |
 | ------------------------------------------------ | ------------------------------------------------------ | -------------- | -------- | ----------------------------------------------------------------------------------------- |
-| [`@rivinia/http`](./projects/http/README.md)     | [0.5.1](https://www.npmjs.com/package/@rivinia/http)   | 0.5.2          | Yes      | Typed `HttpClient` methods, response-envelope unwrapping, and `httpResource` integration. |
-| [`@rivinia/toast`](./projects/toast/README.md)   | [0.4.1](https://www.npmjs.com/package/@rivinia/toast)  | 0.4.2          | Yes      | A headless signal-based notification queue with timers and actions.                       |
-| [`@rivinia/modal`](./projects/modal/README.md)   | [0.5.2](https://www.npmjs.com/package/@rivinia/modal)  | 0.5.3          | Yes      | Headless modal coordination, stacking/queuing, and typed results.                         |
-| [`@rivinia/i18n`](./projects/i18n/README.md)     | [0.3.1](https://www.npmjs.com/package/@rivinia/i18n)   | 0.3.2          | Yes      | Language state, direction, and translation utilities.                                     |
-| [`@rivinia/env`](./projects/env/README.md)       | [0.3.1](https://www.npmjs.com/package/@rivinia/env)    | 0.3.2          | Yes      | Typed application environment configuration.                                              |
-| [`@rivinia/menu`](./projects/menu/README.md)     | [0.3.3](https://www.npmjs.com/package/@rivinia/menu)   | 0.3.4          | No       | Headless menu behavior and its optional ready-made UI.                                    |
-| [`@rivinia/select`](./projects/select/README.md) | [0.4.1](https://www.npmjs.com/package/@rivinia/select) | 0.4.2          | No       | Headless single/multi selection and optional UI at `@rivinia/select/ui`.                  |
+| [`@rivinia/http`](./projects/http/README.md)     | [0.5.2](https://www.npmjs.com/package/@rivinia/http)   | 0.5.2          | Yes      | Typed `HttpClient` methods, response-envelope unwrapping, and `httpResource` integration. |
+| [`@rivinia/toast`](./projects/toast/README.md)   | [0.5.0](https://www.npmjs.com/package/@rivinia/toast)  | 0.5.0          | Yes      | A headless signal-based notification queue with timers and actions.                       |
+| [`@rivinia/modal`](./projects/modal/README.md)   | [0.6.0](https://www.npmjs.com/package/@rivinia/modal)  | 0.6.0          | Yes      | Headless modal coordination, stacking/queuing, and typed results.                         |
+| [`@rivinia/i18n`](./projects/i18n/README.md)     | [0.3.2](https://www.npmjs.com/package/@rivinia/i18n)   | 0.3.2          | Yes      | Language state, direction, and translation utilities.                                     |
+| [`@rivinia/env`](./projects/env/README.md)       | [0.3.2](https://www.npmjs.com/package/@rivinia/env)    | 0.3.2          | Yes      | Typed application environment configuration.                                              |
+| [`@rivinia/menu`](./projects/menu/README.md)     | [0.3.5](https://www.npmjs.com/package/@rivinia/menu)   | 0.3.5          | No       | Headless menu behavior and its optional ready-made UI.                                    |
+| [`@rivinia/select`](./projects/select/README.md) | [0.6.0](https://www.npmjs.com/package/@rivinia/select) | 0.6.0          | No       | Headless single/multi selection and optional UI at `@rivinia/select/ui`.                  |
+| [`@rivinia/theme`](./projects/theme/README.md)   | [0.1.0](https://www.npmjs.com/package/@rivinia/theme)  | 0.1.0          | No       | Shared design tokens for Rivinia component colors, shapes, and typography.                |
 
 The proof projects [`@rivinia/proof-core`](./projects/proof-core/README.md)
 and [`@rivinia/proof-second`](./projects/proof-second/README.md) are internal
