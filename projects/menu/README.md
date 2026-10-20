@@ -213,20 +213,33 @@ support use the positioned-panel fallback.
   behavior are not provided. This component does not implement a persistent
   multi-select menu.
 
-## Headless controller
+## Headless usage
 
-Import `RiviniaMenu` from `@rivinia/menu` when implementing a custom renderer
-or when the component must control open state. Bind that instance to the UI's
-`menu` input to keep rendering and focus behavior integrated:
+`@rivinia/menu` (the headless entry point) is the whole menu behaviour with
+**no DOM**: which item is registered, which one is active, and how focus moves.
+The UI entry point is one implementation on top of it — you are not obliged to
+use it.
+
+### Binding a controller to the ready-made component
+
+When you want the component's keyboard, focus and placement but your own
+open/close logic, bind a controller to its `menu` input:
 
 ```ts
 import { Component } from '@angular/core';
 import { RiviniaMenu } from '@rivinia/menu';
-import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
+import { RiviniaMenuComponent, RiviniaItem } from '@rivinia/menu/ui';
 
 @Component({
-  imports: [RiviniaMenuComponent, RiviniaMenuItem],
-  templateUrl: './export-menu.component.html',
+  imports: [RiviniaMenuComponent, RiviniaItem],
+  template: `
+    <rv-menu [menu]="menu" menuLabel="Export actions" (picked)="exportAs($event.id)">
+      <button type="button" rvMenuTrigger>Export</button>
+      <div rvMenuPanel>
+        <button type="button" rvMenuItem id="csv">CSV</button>
+      </div>
+    </rv-menu>
+  `,
 })
 export class ExportMenu {
   readonly menu = new RiviniaMenu();
@@ -237,32 +250,157 @@ export class ExportMenu {
 }
 ```
 
-```html
-<!-- src/app/export-menu.component.html -->
-<rv-menu [menu]="menu" menuLabel="Export actions" (picked)="exportAs($event.id)">
-  <button type="button" rvMenuTrigger>Export</button>
-  <div rvMenuPanel>
-    <button type="button" rvMenuItem id="csv">CSV</button>
-    <button type="button" rvMenuItem id="json">JSON</button>
-  </div>
-</rv-menu>
-<button type="button" (click)="menu.openMenu('last')">Open at last action</button>
+### The controller
+
+| Member                                  | Kind                                 | What it does                                                         |
+| --------------------------------------- | ------------------------------------ | -------------------------------------------------------------------- |
+| `open`                                  | `Signal<boolean>`                    | Whether the menu is open.                                            |
+| `activeId`                              | `Signal<string \| null>`             | The active item's id, or `null`.                                     |
+| `items`                                 | `Signal<readonly RiviniaMenuItem[]>` | The registry, in registration order.                                 |
+| `register(item)`                        | method                               | Adds an item; re-registering the same id updates it.                 |
+| `unregister(id)`                        | method                               | Removes an item and clears it if it was active.                      |
+| `openMenu(focus?)`                      | method                               | Opens, activating the first, last, or the current item.              |
+| `closeMenu()`                           | method                               | Closes and clears the active item.                                   |
+| `toggle(focus?)`                        | method                               | Opens if closed, closes if open.                                     |
+| `pickActive()`                          | method                               | The active item's id — what a pick would return.                     |
+| `activateFirst()` / `activateLast()`    | methods                              | Move the active item to an end.                                      |
+| `activateNext()` / `activatePrevious()` | methods                              | Move the active item one step, wrapping around.                      |
+| `activate(id)`                          | method                               | Make an item active. Returns `false` for an unknown or disabled one. |
+
+`RiviniaMenuController` is the **structural** subset of that surface, so a UI
+layer can depend on the interface instead of the class — the same dual-realm
+rule the other Rivinia packages follow.
+
+### A complete headless example
+
+A custom dropdown that follows the menu-button pattern, with no Rivinia markup
+at all:
+
+```ts
+import { Component, computed, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { RiviniaMenu } from '@rivinia/menu';
+
+interface Action {
+  readonly id: string;
+  readonly label: string;
+  readonly disabled?: boolean;
+}
+
+@Component({
+  selector: 'app-action-menu',
+  template: `
+    <button
+      #trigger
+      type="button"
+      [attr.aria-expanded]="menu.open()"
+      aria-haspopup="menu"
+      (click)="menu.toggle()"
+      (keydown.arrowdown)="onArrow($event)"
+      (keydown.escape)="menu.closeMenu()"
+    >
+      Actions
+    </button>
+
+    @if (menu.open()) {
+      <ul role="menu" (keydown)="onKeydown($event)">
+        @for (action of actions(); track action.id) {
+          <li>
+            <button
+              type="button"
+              role="menuitem"
+              [attr.data-active]="menu.activeId() === action.id"
+              [disabled]="action.disabled"
+              (click)="run(action)"
+              (mouseenter)="menu.activate(action.id)"
+            >
+              {{ action.label }}
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  `,
+})
+export class ActionMenu {
+  readonly menu = new RiviniaMenu();
+  readonly actions = signal<readonly Action[]>([
+    { id: 'copy', label: 'Copy link' },
+    { id: 'move', label: 'Move' },
+    { id: 'delete', label: 'Delete', disabled: true },
+  ]);
+
+  private readonly trigger = viewChild<ElementRef<HTMLButtonElement>>('trigger');
+
+  constructor() {
+    /*
+     * The controller's registry is IDENTITY and enabled state only — the
+     * label is UI-owned, so it is not registered. That is what lets the
+     * consumer render the row however it likes.
+     */
+    for (const action of this.actions()) {
+      this.menu.register({ id: action.id, disabled: action.disabled });
+    }
+  }
+
+  onArrow(event: Event): void {
+    event.preventDefault();
+    this.menu.openMenu('first');
+  }
+
+  onKeydown(event: KeyboardEvent): void {
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.menu.activateNext();
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.menu.activatePrevious();
+        break;
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        this.run(this.actions().find((a) => a.id === this.menu.pickActive())!);
+        break;
+      default:
+        break;
+    }
+  }
+
+  run(action: Action): void {
+    if (action.disabled) return;
+    this.menu.closeMenu();
+    this.trigger()?.nativeElement.focus();
+    console.log('ran', action.id);
+  }
+}
 ```
 
-`RiviniaMenu` has readonly `open`, `activeId`, and `items` signals. Its
-methods include `openMenu('first' | 'last' | 'none')`, `closeMenu()`,
-`toggle()`, `activate(id)`, `activateFirst()`, `activateLast()`,
-`activateNext()`, `activatePrevious()`, `register(item)`, and
-`unregister(id)`. The UI directive manages registration for projected rows;
-register manually only when building a headless renderer.
+What the controller gives you, and what you still own:
 
-The core entry point also exports `RiviniaMenuController`,
-`RiviniaMenuItemData`, `RiviniaMenuItem`, `RiviniaMenuFocus`, and
-`RiviniaMenuPlacement`. The UI entry point exports
-`RiviniaMenuComponent`, `RiviniaMenuItem`, `MenuPick`, and
-`RiviniaMenuUiPlacement`, plus `computeMenuPosition`, `MENU_GAP`,
-`MenuTriggerRect`, `MenuPanelSize`, `MenuViewport`, and `MenuCoordinates` for
-custom positioning integrations.
+- **Given**: the registry, the active item, and the movement between items
+  (`activateNext` / `activatePrevious` wrap around and skip disabled ones).
+- **Yours**: the markup, the ARIA wiring, the focus management, and where the
+  panel is placed. `activate(id)` returns `false` for an unknown or disabled
+  item, so respect it.
+
+If you want the keyboard, the focus handling and the placement done for you,
+use the ready-made component instead — it drives this same controller.
+
+### Building a custom dropdown UI
+
+`rv-menu` is one implementation. If your design needs a different look, drive
+the headless controller yourself and render your own markup, as above.
+
+The pieces the ready-made component adds, so you know what you are taking on:
+
+- **Roving `tabindex`** — only the active item is tabbable; the rest are
+  `-1`, so Tab never walks the list.
+- **Focus** moves into the panel on open and returns to the trigger on close.
+- **Placement** with CSS anchor positioning, so the panel stays with its
+  trigger in both writing directions.
+- **Dismissal**: Escape closes, the backdrop click is configurable, and
+  Tab closes WITHOUT trapping focus and steps to the next tab stop.
 
 ## Theming
 

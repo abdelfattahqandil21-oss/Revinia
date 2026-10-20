@@ -177,7 +177,7 @@ the headless `RiviniaSelect` controller.
 
 | Export                       | Kind      | Purpose                                                                                                                                                                               |
 | ---------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `RiviniaSelect`              | class     | `options/query/filtered/value/values/selectedLabels` signals + `registerOption/unregisterOption/syncOptions/setQuery/select/toggle/clear/isSelected`                                  |
+| `RiviniaSelect`              | class     | `options/query/filtered/value/values/selectedLabels` signals + `registerOption/unregisterOption/syncOptions/setQuery/select/toggle/setValue/setValues/clear/isSelected`               |
 | `RiviniaSelectOption`        | interface | `{ id, label, disabled?, hint? }`. `hint` renders right-aligned in muted monospace (e.g. a keyboard shortcut). Typeahead matches on `label` only.                                     |
 | types                        | types     | `RiviniaSelectController` (structural UI contract), `RiviniaSelectOption`, `RiviniaSelectMode`                                                                                        |
 | `RiviniaSelectComponent`     | ui        | `rv-select`: `select/mode/options/searchable/placeholder/searchPlaceholder/emptyLabel/placement/label/ariaLabel/popupLabel/searchLabel` + `selectionChange/opened/closed` + `clear()` |
@@ -226,23 +226,25 @@ import {
 const select = new RiviniaSelect('single'); // or 'multi'
 ```
 
-| Member                   | Kind                                     | Purpose                                                                               |
-| ------------------------ | ---------------------------------------- | ------------------------------------------------------------------------------------- |
-| `mode`                   | readonly                                 | `'single' \| 'multi'`, fixed at construction.                                         |
-| `options`                | `Signal<readonly RiviniaSelectOption[]>` | The registry, in registration order.                                                  |
-| `query`                  | `WritableSignal<string>`                 | The raw filter text.                                                                  |
-| `filtered`               | `Signal<readonly RiviniaSelectOption[]>` | Options matching `query`; disabled ones stay visible but unpickable.                  |
-| `value`                  | `WritableSignal<string \| null>`         | Single-mode selection.                                                                |
-| `values`                 | `WritableSignal<readonly string[]>`      | Multi-mode selections, in pick order.                                                 |
-| `selectedLabels`         | `Signal<readonly string[]>`              | Labels of the current selection (falls back to the raw id).                           |
-| `registerOption(option)` | method                                   | Idempotent by id; re-registering updates the entry.                                   |
-| `unregisterOption(id)`   | method                                   | Removes the entry; a selected id is dropped with it.                                  |
-| `syncOptions(list)`      | method                                   | Replaces the registry with exactly `list`.                                            |
-| `setQuery(text)`         | method                                   | Sets the filter.                                                                      |
-| `select(id)`             | method                                   | Single-mode pick. Returns `false` for an unknown or disabled id.                      |
-| `toggle(id)`             | method                                   | Multi-mode toggle. Returns `false` for an unknown/disabled id **and in single mode**. |
-| `clear()`                | method                                   | Clears the value (single) or the values (multi).                                      |
-| `isSelected(id)`         | method                                   | Whether the id is currently selected.                                                 |
+| Member                   | Kind                                     | Purpose                                                                                                              |
+| ------------------------ | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `mode`                   | readonly                                 | `'single' \| 'multi'`, fixed at construction.                                                                        |
+| `options`                | `Signal<readonly RiviniaSelectOption[]>` | The registry, in registration order.                                                                                 |
+| `query`                  | `WritableSignal<string>`                 | The raw filter text.                                                                                                 |
+| `filtered`               | `Signal<readonly RiviniaSelectOption[]>` | Options matching `query`; disabled ones stay visible but unpickable.                                                 |
+| `value`                  | `WritableSignal<string \| null>`         | Single-mode selection.                                                                                               |
+| `values`                 | `WritableSignal<readonly string[]>`      | Multi-mode selections, in pick order.                                                                                |
+| `selectedLabels`         | `Signal<readonly string[]>`              | Labels of the current selection (falls back to the raw id).                                                          |
+| `registerOption(option)` | method                                   | Idempotent by id; re-registering updates the entry.                                                                  |
+| `unregisterOption(id)`   | method                                   | Removes the entry; a selected id is dropped with it.                                                                 |
+| `syncOptions(list)`      | method                                   | Replaces the registry with exactly `list`.                                                                           |
+| `setQuery(text)`         | method                                   | Sets the filter.                                                                                                     |
+| `select(id)`             | method                                   | Single-mode pick. Returns `false` for an unknown or disabled id.                                                     |
+| `toggle(id)`             | method                                   | Multi-mode toggle. Returns `false` for an unknown/disabled id **and in single mode**.                                |
+| `clear()`                | method                                   | Clears the value (single) or the values (multi).                                                                     |
+| `setValue(id)`           | method                                   | Force a value, bypassing the unknown/disabled guards of `select` — for a form restore whose options have not loaded. |
+| `setValues(ids)`         | method                                   | Force the values — the array counterpart of `setValue`.                                                              |
+| `isSelected(id)`         | method                                   | Whether the id is currently selected.                                                                                |
 
 `RiviniaSelectController` is the **structural** subset of that surface. A UI
 layer may depend on the interface instead of the class, which keeps a
@@ -1101,15 +1103,15 @@ Consequences to be aware of:
 changed. The select's private panel was called `rv-select-menu`; it is now
 `rv-select-popup`, so it can no longer collide with `@rivinia/menu`.
 
-| Was                             | Now                                   |
-| ------------------------------- | ------------------------------------- |
-| `.rv-select-menu-panel`         | `.rv-select-popup-panel`              |
-| `.rv-select-menu-trigger`       | `.rv-select-popup-trigger`            |
-| `[rvselectmenuitem]`            | `[rvselectpopupitem]`                 |
-| `rvSelectMenuItem`              | `rvSelectPopupItem`                   |
-| `rvSelectMenuTrigger`           | `rvSelectPopupTrigger`                |
-| `rvSelectMenuPanel`             | `rvSelectPopupPanel`                  |
-| `--rv-select-menu-*`            | `--rv-select-popup-*`                 |
+| Was                       | Now                        |
+| ------------------------- | -------------------------- |
+| `.rv-select-menu-panel`   | `.rv-select-popup-panel`   |
+| `.rv-select-menu-trigger` | `.rv-select-popup-trigger` |
+| `[rvselectmenuitem]`      | `[rvselectpopupitem]`      |
+| `rvSelectMenuItem`        | `rvSelectPopupItem`        |
+| `rvSelectMenuTrigger`     | `rvSelectPopupTrigger`     |
+| `rvSelectMenuPanel`       | `rvSelectPopupPanel`       |
+| `--rv-select-menu-*`      | `--rv-select-popup-*`      |
 
 If you only set `--rv-select-*` on `rv-select`, there is nothing to change —
 those names are unchanged.
