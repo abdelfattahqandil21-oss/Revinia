@@ -138,7 +138,10 @@ function identifiersIn(text) {
   for (const m of text.matchAll(/`([^`]+)`/g)) {
     const raw = m[1];
     const base = raw.split('(')[0].trim();
-    for (const token of base.split(/[^A-Za-z_$0-9]+/)) {
+    for (const token of base.match(/[\p{L}_$][\p{L}\p{M}\p{N}_$]*/gu) ?? []) {
+      // Object.freeze is a standard JavaScript built-in, not a package export.
+      // Keep this exception tied to the exact documented expression.
+      if (token === 'Object' && base === 'Object.freeze') continue;
       if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(token)) out.push(token);
     }
   }

@@ -27,6 +27,50 @@ async function run(options: object, base?: UnitTestTree) {
 }
 
 describe('ng-add', () => {
+  it('does not duplicate an import the app already has in another shape', async () => {
+    const t = new EmptyTree();
+    t.create(
+      '/angular.json',
+      JSON.stringify({
+        version: 1,
+        defaultProject: 'demo',
+        projects: { demo: { root: '', sourceRoot: 'src', architect: {} } },
+      }),
+    );
+    t.create(
+      '/src/app/app.config.ts',
+      `import { customLoader, provideRiviniaI18n } from '@rivinia/i18n';\n\nexport const appConfig: ApplicationConfig = {\n  providers: [],\n};\n`,
+    );
+    const tree = await run({}, new UnitTestTree(t));
+    const content = tree.readContent('/src/app/app.config.ts');
+    const imports = content.split('\n').filter((line) => /^import\s/.test(line));
+    // A SECOND import of the same symbol is TS2300, which breaks the build.
+    expect(imports.filter((line) => line.includes('provideRiviniaI18n'))).toHaveLength(1);
+    // The provider call is still added — the app only had the import.
+    expect(content).toContain('provideRiviniaI18n(');
+  });
+
+  it('adds a value import when the app only has a type-only one', async () => {
+    const t = new EmptyTree();
+    t.create(
+      '/angular.json',
+      JSON.stringify({
+        version: 1,
+        defaultProject: 'demo',
+        projects: { demo: { root: '', sourceRoot: 'src', architect: {} } },
+      }),
+    );
+    t.create(
+      '/src/app/app.config.ts',
+      `import type { provideRiviniaI18n } from '@rivinia/i18n';\n\nexport const appConfig: ApplicationConfig = {\n  providers: [],\n};\n`,
+    );
+    const tree = await run({}, new UnitTestTree(t));
+    const content = tree.readContent('/src/app/app.config.ts');
+    // A type-only import does not bind the value the provider call needs.
+    expect(content).toContain(`import { provideRiviniaI18n } from '@rivinia/i18n';`);
+    expect(content).toContain('provideRiviniaI18n(');
+  });
+
   it('inserts the import and an ar starter by default', async () => {
     const tree = await run({});
     const content = tree.readContent('/src/app/app.config.ts');

@@ -1,0 +1,51 @@
+<dialog
+  #dialog
+  tabindex="-1"
+  class="rv-modal"
+  [attr.data-size]="size()"
+  [attr.data-position]="position()"
+  [attr.data-animation]="animation()"
+  [attr.data-state]="state()"
+  [attr.data-resizing]="resizing()"
+  [attr.aria-label]="computedLabel()"
+  [attr.aria-labelledby]="title() && !ariaLabel() ? titleId : null"
+  [attr.aria-describedby]="description() ? descriptionId : null"
+  (cancel)="onCancel($event)"
+  (click)="onBackdropClick($event)"
+  (keydown)="onKeydown($event)"
+>
+  @if (hasCustomHeader()) {
+    <div class="rv-modal-header rv-modal-header-custom">
+      <ng-content select="[rv-modal-header]"></ng-content>
+    </div>
+  } @else if (title() || showCloseButton()) {
+    <div class="rv-modal-header">
+      <div class="rv-modal-heading">
+        @if (title()) {
+          <h2 class="rv-modal-title" [id]="titleId">{{ title() }}</h2>
+        }
+        @if (description()) {
+          <p class="rv-modal-description" [id]="descriptionId">{{ description() }}</p>
+        }
+      </div>
+      @if (showCloseButton()) {
+        <button
+          type="button"
+          class="rv-modal-close"
+          (click)="onCloseButton()"
+          aria-label="Close dialog"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      }
+    </div>
+  }
+  <div class="rv-modal-body">
+    <ng-content></ng-content>
+  </div>
+  @if (hasCustomFooter()) {
+    <div class="rv-modal-footer">
+      <ng-content select="[rv-modal-footer]"></ng-content>
+    </div>
+  }
+</dialog>
