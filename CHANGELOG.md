@@ -5,6 +5,102 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ## Prepared releases (unpublished)
 
+### @rivinia/env 0.3.4 · @rivinia/http 0.5.4 · @rivinia/i18n 0.3.4 · @rivinia/modal 0.6.2 · @rivinia/toast 0.5.2 · @rivinia/menu 0.3.6 · @rivinia/select 0.6.1
+
+- **The packages are organised into layers.** Every package used to keep its
+  types, its controller, its helpers, its provider and its pipe in one flat
+  `src/lib/`. Each package now follows the same layout:
+
+  ```
+  src/lib/models/       the types and the contracts — no behaviour
+  src/lib/services/     the classes that DO something
+  src/lib/utils/        pure functions and pure math
+  src/lib/providers/    provide*() and inject*()
+  src/lib/pipes/        the pipes
+  ui/src/lib/components/<name>/   the .ts, the .html and the .css together
+  tests/                the specs, outside the source the package ships
+  ```
+
+  The public API is unchanged — the same symbols are exported, from the same
+  entry points, and the `exports` map never exposed an internal path.
+- **The specs live in `tests/`.** `src/` now holds only what the package
+  ships. The test target reaches the specs through `include`, so a suite can
+  no longer be excluded by a glob that no longer matches.
+- **The UI templates and styles are files.** `@rivinia/modal` and
+  `@rivinia/toast` carried their template and their CSS inline; they now use
+  `templateUrl` / `styleUrl`, as `@rivinia/select` and `@rivinia/menu` already
+  did. The content moved verbatim.
+- **The dead references are gone.** The workspace root pointed at two
+  `proof-*` projects that no longer exist, which broke the build of every
+  package that loaded the root tsconfig.
+- `@rivinia/select` now declares `"@angular/common": "^22.0.0"` in its
+  `peerDependencies`. The select's UI imports `NgComponentOutlet` /
+  `NgTemplateOutlet` from `@angular/common` at runtime, and the FESM grep
+  confirms the import — it was undeclared.
+
+### @rivinia/env 0.3.3 (published 2026-10-20)
+
+- **Packaging fix:** the `ng add` schematic requires `@angular-devkit/schematics`
+  at runtime, but the package did not declare it — an undeclared runtime
+  dependency. Declared `"@angular-devkit/schematics": "^22.0.0"` in
+  `peerDependencies`. No API change.
+
+### @rivinia/http 0.5.3 (published 2026-10-20)
+
+- **Packaging fix:** the `ng add` schematic requires `@angular-devkit/schematics`
+  at runtime, but the package did not declare it — an undeclared runtime
+  dependency. Declared `"@angular-devkit/schematics": "^22.0.0"` in
+  `peerDependencies`. No API change.
+
+- **Fixed:** `ng add` could break the application's build. The import check
+  matched one exact line, so an app that already imported the provider beside
+  other symbols (`import { other, provideRiviniaHttp } from
+  '@rivinia/http';`) was given a SECOND import of the same symbol, and the
+  build failed with `TS2300: Duplicate identifier`. The check now reads the
+  file's import statements instead of matching one line.
+
+### @rivinia/i18n 0.3.3 (published 2026-10-20)
+
+- **Packaging fix:** the `ng add` schematic requires `@angular-devkit/schematics`
+  at runtime, but the package did not declare it — an undeclared runtime
+  dependency. Declared `"@angular-devkit/schematics": "^22.0.0"` in
+  `peerDependencies`. No API change.
+
+- **Fixed:** `ng add` could break the application's build. The import check
+  matched one exact line, so an app that already imported the provider beside
+  other symbols (`import { other, provideRiviniaI18n } from
+  '@rivinia/i18n';`) was given a SECOND import of the same symbol, and the
+  build failed with `TS2300: Duplicate identifier`. The check now reads the
+  file's import statements instead of matching one line.
+
+### @rivinia/modal 0.6.1 (published 2026-10-20)
+
+- **Packaging fix:** the `ng add` schematic requires `@angular-devkit/schematics`
+  at runtime, but the package did not declare it — an undeclared runtime
+  dependency. Declared `"@angular-devkit/schematics": "^22.0.0"` in
+  `peerDependencies`. No API change.
+
+- **Fixed:** `ng add` could break the application's build. The import check
+  matched one exact line, so an app that already imported the provider beside
+  other symbols (`import { other, provideRiviniaModal } from
+  '@rivinia/modal';`) was given a SECOND import of the same symbol, and the
+  build failed with `TS2300: Duplicate identifier`. The check now reads the
+  file's import statements instead of matching one line.
+
+### @rivinia/toast 0.5.1 (published 2026-10-20)
+
+- **Packaging fix:** the `ng add` schematic requires `@angular-devkit/schematics`
+  at runtime, but the package did not declare it — an undeclared runtime
+  dependency. Declared `"@angular-devkit/schematics": "^22.0.0"` in
+  `peerDependencies`. No API change.
+
+- **Fixed:** `ng add` could break the application's build. The import check
+  matched one exact line, so an app that already imported the provider beside
+  other symbols (`import { other, provideRiviniaToast } from
+  '@rivinia/toast';`) was given a SECOND import of the same symbol, and the
+  build failed with `TS2300: Duplicate identifier`. The check now reads the
+  file's import statements instead of matching one line.
+
 ### @rivinia/select 0.6.0 (BREAKING)
 
 The select's private panel is renamed out of the `menu` namespace, and the
