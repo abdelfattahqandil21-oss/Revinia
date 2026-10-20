@@ -37,6 +37,10 @@ A change is listed the moment it lands on `main`, not when npm is published.
   `peerDependencies`. The select's UI imports `NgComponentOutlet` /
   `NgTemplateOutlet` from `@angular/common` at runtime, and the FESM grep
   confirms the import — it was undeclared.
+- `@rivinia/env` gained a test. It ships no runtime code — its public API
+  is the `BaseEnvironment` type and everything it does happens in the
+  schematic — so the test covers the seam between the two: the environment
+  file the SHIPPED schematic scaffolds must satisfy the published type.
 
 ### @rivinia/env 0.3.3 (published 2026-10-20)
 
