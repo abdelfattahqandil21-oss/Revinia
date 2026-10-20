@@ -9,12 +9,15 @@ test.describe('select: single mode', () => {
     await expect(panel).toBeVisible();
 
     // accessible name from menuLabel
-    await expect(panel).toHaveAttribute('aria-label', 'Invoice status options');
+    await expect(page.locator('#single-select .rv-select-popup-panel')).toHaveAttribute(
+      'aria-label',
+      'Invoice status options',
+    );
 
     // searchable: filter
     const search = page.locator('#single-select .rv-select-search');
     await search.fill('paid');
-    await expect(page.locator('#single-select .rv-select-item')).toHaveCount(1);
+    await expect(page.locator('#single-select .rv-select-popup-panel [role="menuitem"]')).toHaveCount(1);
 
     await page.keyboard.press('Enter');
     await expect(page.locator('#single-select .rv-select-panel')).toBeHidden();
@@ -25,7 +28,7 @@ test.describe('select: single mode', () => {
   test('disabled option is never picked', async ({ page }) => {
     await page.goto('/select');
     await page.locator('#single-select .rv-select-trigger').click();
-    const rows = page.locator('#single-select .rv-select-item');
+    const rows = page.locator('#single-select .rv-select-popup-panel [role="menuitem"]');
     await expect(rows).toHaveCount(3);
     await expect(rows.nth(1)).toHaveAttribute('aria-disabled', 'true');
     await rows
@@ -52,7 +55,7 @@ test.describe('select: multi mode', () => {
     await page.goto('/select');
     const trigger = page.locator('#multi-select .rv-select-trigger');
     await trigger.click();
-    const rows = page.locator('#multi-select .rv-select-item');
+    const rows = page.locator('#multi-select .rv-select-popup-panel [role="menuitemcheckbox"]');
     await rows.nth(0).click();
     await rows.nth(1).click();
     await expect(page.locator('#multi-select .rv-select-panel')).toBeVisible();
@@ -65,7 +68,7 @@ test.describe('select: theme isolation', () => {
   test('menu theme does not leak into select, and vice versa', async ({ page }) => {
     await page.goto('/select');
     await page.locator('#single-select .rv-select-trigger').click();
-    const panel = page.locator('#single-select .rv-select-panel');
+    const panel = page.locator('#single-select .rv-select-popup-panel');
     await expect(panel).toBeVisible();
 
     const styles = await panel.evaluate((el) => {
@@ -93,8 +96,50 @@ test.describe('select: accessibility names', () => {
     const trigger = page.locator('#single-select .rv-select-trigger');
     await expect(trigger).toHaveAttribute('aria-labelledby', /.+/);
     await trigger.click();
-    const panel = page.locator('#single-select .rv-select-panel');
+    const panel = page.locator('#single-select .rv-select-popup-panel');
     await expect(panel).toHaveAttribute('aria-label', 'Invoice status options');
+  });
+
+  test('keeps label IDs and accessible names unique across application roots', async ({ page }) => {
+    // Contract: Given two independent Angular roots with distinct APP_ID values
+    // and different visible Select captions, when both triggers render, each
+    // trigger must name itself from its own caption and all document IDs must
+    // be unique. Must not pass on rendering/nonempty IDs alone. The prior
+    // counterexample produced label-1 in both roots, making both names resolve
+    // to the first caption.
+    await page.goto('/select-multi-root');
+
+    const first = page.getByRole('button', { name: 'First application label' });
+    const second = page.getByRole('button', { name: 'Second application label' });
+    await expect(first).toHaveCount(1);
+    await expect(second).toHaveCount(1);
+    await expect(first).toHaveAccessibleName('First application label');
+    await expect(second).toHaveAccessibleName('Second application label');
+
+    const documentIds = await page.locator('[id]').evaluateAll((elements) =>
+      elements.map((element) => element.id).filter((id) => id.length > 0),
+    );
+    const duplicateIds = documentIds.filter((id, index) => documentIds.indexOf(id) !== index);
+    expect(duplicateIds).toEqual([]);
+
+    const ids = await page.locator('.rv-select-caption').evaluateAll((captions) =>
+      captions.map((caption) => caption.id),
+    );
+    expect(ids).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
+
+    await expect(first).toHaveAttribute('aria-labelledby', ids[0]);
+    await expect(second).toHaveAttribute('aria-labelledby', ids[1]);
+    expect(
+      await first.evaluate((trigger) =>
+        document.getElementById(trigger.getAttribute('aria-labelledby')!)?.textContent?.trim(),
+      ),
+    ).toBe('First application label');
+    expect(
+      await second.evaluate((trigger) =>
+        document.getElementById(trigger.getAttribute('aria-labelledby')!)?.textContent?.trim(),
+      ),
+    ).toBe('Second application label');
   });
 });
 
@@ -103,7 +148,7 @@ test.describe('select: RTL placement', () => {
     await page.goto('/select');
     const trigger = page.locator('#rtl-select .rv-select-trigger');
     await trigger.click();
-    const panel = page.locator('#rtl-select .rv-select-panel');
+    const panel = page.locator('#rtl-select .rv-select-popup-panel');
     await expect(panel).toBeVisible();
 
     const t = await trigger.boundingBox();
@@ -125,7 +170,7 @@ test.describe('select: RTL placement', () => {
     await page.setViewportSize({ width: 420, height: 720 });
     await page.goto('/select');
     await page.locator('#rtl-select .rv-select-trigger').click();
-    const panel = page.locator('#rtl-select .rv-select-panel');
+    const panel = page.locator('#rtl-select .rv-select-popup-panel');
     await expect(panel).toBeVisible();
 
     const p = await panel.boundingBox();
@@ -137,7 +182,7 @@ test.describe('select: RTL placement', () => {
   test('picks work in RTL and the trigger shows the label', async ({ page }) => {
     await page.goto('/select');
     await page.locator('#rtl-select .rv-select-trigger').click();
-    await page.locator('#rtl-select .rv-select-item').nth(2).click();
+    await page.locator('#rtl-select .rv-select-popup-panel [role="menuitem"]').nth(2).click();
     await expect(page.getByTestId('rtl-value')).toContainText('value=member');
     await expect(page.locator('#rtl-select .rv-select-value')).toContainText('Member');
   });

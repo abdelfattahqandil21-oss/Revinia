@@ -1,4 +1,4 @@
-export type { RiviniaToastConfig } from './lib/toast-config';
+export type { RiviniaToastConfig } from './lib/models/toast-config';
 export type {
   Toast,
   ToastAction,
@@ -7,7 +7,7 @@ export type {
   ToastMessage,
   ToastOptions,
   ToastOverflowPolicy,
-} from './lib/toast-types';
-export { clampDuration, resolveToastText } from './lib/toast-utils';
-export { injectRiviniaToast, provideRiviniaToast } from './lib/provide-toast';
-export { RiviniaToast } from './lib/rivinia-toast';
+} from './lib/models/toast-types';
+export { clampDuration, resolveToastText } from './lib/utils/toast-utils';
+export { injectRiviniaToast, provideRiviniaToast } from './lib/providers/provide-toast';
+export { RiviniaToast } from './lib/services/rivinia-toast';

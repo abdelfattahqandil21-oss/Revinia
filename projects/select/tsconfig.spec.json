@@ -7,10 +7,9 @@
     "types": ["vitest/globals"]
   },
   /*
-   * `ui/` is a SECONDARY ENTRY POINT, so its specs sit under `ui/src/`, not
-   * `src/`. The previous `src/**` glob covered the headless controller only and
-   * silently excluded every `rv-select` component spec — the regression and
-   * positioning suites reported here were never executed by `ng test select`.
+   * The specs live in `<project>/tests`, OUTSIDE the source root: `src/`
+   * holds only what the package ships. The test target's `include` (see
+   * angular.json) reaches them; this tsconfig compiles them.
    */
-  "include": ["src/**/*.d.ts", "src/**/*.spec.ts", "ui/src/**/*.d.ts", "ui/src/**/*.spec.ts"]
+  "include": ["src/**/*.d.ts", "tests/**/*.d.ts", "tests/**/*.spec.ts"]
 }
