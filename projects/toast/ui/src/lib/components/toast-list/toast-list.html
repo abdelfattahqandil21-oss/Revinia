@@ -1,0 +1,42 @@
+<div
+  #panel
+  class="rv-toasts"
+  role="region"
+  aria-label="Notifications"
+  [attr.popover]="topLayerSupported ? 'manual' : null"
+  [attr.data-position]="position()"
+  [attr.data-animation]="animation()"
+  [attr.data-rich-colors]="richColors()"
+>
+  @for (item of rendered(); track item.toast.id) {
+    <div
+      class="rv-toast"
+      [attr.data-kind]="item.toast.kind"
+      [attr.data-state]="item.leaving ? 'leaving' : item.toast.paused ? 'paused' : 'active'"
+      role="status"
+      [attr.aria-live]="item.toast.kind === 'error' ? 'assertive' : 'polite'"
+      (mouseenter)="pause(item.toast.id)"
+      (mouseleave)="resume(item.toast.id)"
+      (focusin)="pause(item.toast.id)"
+      (focusout)="resume(item.toast.id)"
+    >
+      <span class="rv-toast-icon" aria-hidden="true">{{ iconFor(item.toast.kind) }}</span>
+      <p class="rv-toast-message">{{ textOf(item.toast) }}</p>
+      @if (item.toast.action) {
+        <button type="button" class="rv-toast-action" (click)="act(item.toast.id)">
+          {{ textOfAction(item.toast) }}
+        </button>
+      }
+      @if (showCloseButton()) {
+        <button
+          type="button"
+          class="rv-toast-close"
+          (click)="close(item.toast.id)"
+          aria-label="Dismiss notification"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      }
+    </div>
+  }
+</div>

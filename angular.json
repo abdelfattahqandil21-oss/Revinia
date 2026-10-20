@@ -106,7 +106,10 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/toast/tsconfig.spec.json"
+            "tsConfig": "projects/toast/tsconfig.spec.json",
+            "include": [
+              "../tests/**/*.spec.ts"
+            ]
           }
         }
       }
