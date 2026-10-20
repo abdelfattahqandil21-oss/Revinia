@@ -38,7 +38,7 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
       <rv-select
         id="single-select"
         label="Invoice status"
-        menuLabel="Invoice status options"
+        popupLabel="Invoice status options"
         [options]="singleOptions"
         [searchable]="true"
         (selectionChange)="singleValue.set($any($event))"
