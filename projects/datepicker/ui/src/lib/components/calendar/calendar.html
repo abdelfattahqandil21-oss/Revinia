@@ -1,0 +1,129 @@
+<div class="rv-calendar" (keydown)="onKeydown($event)">
+  <div class="rv-calendar-header">
+    <button
+      type="button"
+      class="rv-calendar-nav rv-calendar-nav-previous"
+      [attr.aria-label]="view() === 'day' ? labels().previousMonth : labels().previousYear"
+      (click)="page(-1)"
+    >
+      <svg class="rv-calendar-chevron" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+
+    @if (view() === 'year') {
+      <span class="rv-calendar-heading rv-calendar-heading-static" [id]="resolvedHeadingId()">
+        <span class="rv-calendar-heading-text" aria-live="polite">{{ heading() }}</span>
+      </span>
+    } @else {
+      <button
+        type="button"
+        class="rv-calendar-heading"
+        [attr.aria-label]="heading() + ' — ' + (view() === 'day' ? labels().switchToMonthView : labels().switchToYearView)"
+        (click)="openBiggerView()"
+      >
+        <span class="rv-calendar-heading-text" aria-live="polite" [id]="resolvedHeadingId()">{{ heading() }}</span>
+      </button>
+    }
+
+    <button
+      type="button"
+      class="rv-calendar-nav rv-calendar-nav-next"
+      [attr.aria-label]="view() === 'day' ? labels().nextMonth : labels().nextYear"
+      (click)="page(1)"
+    >
+      <svg class="rv-calendar-chevron" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+  </div>
+
+  <p class="rv-sr-only" [id]="instructionsId">{{ labels().instructions }}</p>
+
+  @switch (view()) {
+    @case ('day') {
+      <table
+        class="rv-calendar-grid"
+        role="grid"
+        [attr.aria-labelledby]="resolvedHeadingId()"
+        [attr.aria-describedby]="instructionsId"
+      >
+        <thead>
+          <tr>
+            @for (day of weekdays(); track day.weekday) {
+              <th scope="col" class="rv-calendar-weekday" [attr.abbr]="day.long">{{ day.narrow }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (week of grid().weeks; track $index) {
+            <tr>
+              @for (cell of week.cells; track trackCell($index, cell)) {
+                @if (cell) {
+                  <td
+                    class="rv-calendar-day"
+                    role="gridcell"
+                    [attr.data-date]="iso(cell.date)"
+                    [attr.aria-label]="dayLabel(cell)"
+                    [attr.aria-selected]="cell.selected ? 'true' : 'false'"
+                    [attr.aria-current]="cell.today ? 'date' : null"
+                    [attr.aria-disabled]="cell.disabled ? 'true' : null"
+                    [attr.tabindex]="cell.focused ? 0 : -1"
+                    [class.rv-calendar-day--selected]="cell.selected"
+                    [class.rv-calendar-day--today]="cell.today"
+                    [class.rv-calendar-day--disabled]="cell.disabled"
+                    (click)="pick(cell)"
+                  >
+                    <span class="rv-calendar-day-number">{{ dayNumber(cell) }}</span>
+                  </td>
+                } @else {
+                  <td class="rv-calendar-blank" aria-hidden="true"></td>
+                }
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+
+    @case ('month') {
+      <div class="rv-calendar-options" role="group" [attr.aria-labelledby]="resolvedHeadingId()">
+        @for (month of months(); track month.month) {
+          <button
+            type="button"
+            class="rv-calendar-option"
+            [attr.data-month]="month.month"
+            [attr.aria-current]="month.current ? 'true' : null"
+            [attr.aria-disabled]="month.disabled ? 'true' : null"
+            [attr.tabindex]="month.month === focusedMonth() ? 0 : -1"
+            [class.rv-calendar-option--current]="month.current"
+            [class.rv-calendar-option--disabled]="month.disabled"
+            (click)="chooseMonth(month)"
+          >
+            {{ month.label }}
+          </button>
+        }
+      </div>
+    }
+
+    @case ('year') {
+      <div class="rv-calendar-options" role="group" [attr.aria-labelledby]="resolvedHeadingId()">
+        @for (year of years(); track year.year) {
+          <button
+            type="button"
+            class="rv-calendar-option"
+            [attr.data-year]="year.year"
+            [attr.aria-current]="year.current ? 'true' : null"
+            [attr.aria-disabled]="year.disabled ? 'true' : null"
+            [attr.tabindex]="year.year === focusedYear() ? 0 : -1"
+            [class.rv-calendar-option--current]="year.current"
+            [class.rv-calendar-option--disabled]="year.disabled"
+            (click)="chooseYear(year)"
+          >
+            {{ year.label }}
+          </button>
+        }
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,295 @@
+/*
+ * The time row. Same token discipline as the rest of the package: every value
+ * is read at the read site, with a three-level chain
+ *   --rv-time-<part> → --rv-<semantic> → light-dark(light, dark)
+ * so a `:root` theme layer reaches it and a per-package token can still win.
+ *
+ * The fields are forced LTR: a clock is a numeric sequence (hour : minute),
+ * and in an RTL row the flex order would otherwise read minute : hour. The
+ * surrounding labels and buttons stay in the page's direction.
+ */
+
+:host {
+  position: relative;
+  display: block;
+  min-inline-size: 0;
+}
+
+.rv-time-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rv-time-row-gap, 0.5rem);
+  min-inline-size: 0;
+  padding-block-start: var(--rv-time-row-padding, 0.5rem);
+  border-block-start: 1px solid var(--rv-time-border, var(--rv-border, light-dark(#e4e4e7, #3f3f46)));
+  color: var(--rv-time-fg, var(--rv-fg, light-dark(#111111, #f4f4f5)));
+  font-size: var(--rv-time-font-size, 0.875rem);
+}
+
+.rv-time-fields {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rv-time-fields-gap, 0.125rem);
+  min-inline-size: 0;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.rv-time-input {
+  inline-size: var(--rv-time-field-width, 2.5rem);
+  min-inline-size: 0;
+  padding: var(--rv-time-field-padding, 0.25rem);
+  color: var(--rv-time-input-fg, var(--rv-time-fg, var(--rv-fg, light-dark(#111111, #f4f4f5))));
+  background: var(--rv-time-input-bg, var(--rv-bg, light-dark(#ffffff, #18181b)));
+  border: 1px solid var(--rv-time-input-border, var(--rv-border, light-dark(#d4d4d8, #3f3f46)));
+  border-radius: var(--rv-time-input-radius, var(--rv-radius, 0.5rem));
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  direction: ltr;
+}
+
+.rv-time-input:focus-visible {
+  outline: 2px solid var(--rv-time-focus, var(--rv-accent, light-dark(#4f46e5, #a5b4fc)));
+  outline-offset: 1px;
+}
+
+.rv-time-input:disabled {
+  opacity: var(--rv-time-disabled-opacity, 0.55);
+  cursor: not-allowed;
+}
+
+/* The clock button is the pointer path into the time tray. It is a separate
+   control, not a suffix on the input, so typing never has to fight a popup. */
+.rv-time-toggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--rv-time-toggle-size, 2rem);
+  block-size: var(--rv-time-toggle-size, 2rem);
+  padding: 0;
+  color: var(--rv-time-toggle-fg, var(--rv-muted, light-dark(#52525b, #a1a1aa)));
+  background: var(--rv-time-toggle-bg, transparent);
+  border: 1px solid var(--rv-time-input-border, var(--rv-border, light-dark(#d4d4d8, #3f3f46)));
+  border-radius: var(--rv-time-input-radius, var(--rv-radius, 0.5rem));
+  cursor: pointer;
+}
+
+.rv-time-toggle svg {
+  inline-size: 16px;
+  block-size: 16px;
+}
+
+.rv-time-toggle[aria-expanded='true'] {
+  color: var(--rv-time-toggle-active-fg, var(--rv-accent, light-dark(#4f46e5, #a5b4fc)));
+  background: var(
+    --rv-time-toggle-active-bg,
+    color-mix(in srgb, var(--rv-accent, #4f46e5) 14%, transparent)
+  );
+  border-color: var(--rv-time-toggle-active-border, var(--rv-accent, light-dark(#4f46e5, #a5b4fc)));
+}
+
+.rv-time-toggle:hover {
+  background: var(--rv-time-toggle-hover-bg, color-mix(in srgb, currentColor 8%, transparent));
+}
+
+.rv-time-toggle:focus-visible {
+  outline: 2px solid var(--rv-time-focus, var(--rv-accent, light-dark(#4f46e5, #a5b4fc)));
+  outline-offset: 1px;
+}
+
+.rv-time-toggle:disabled {
+  opacity: var(--rv-time-disabled-opacity, 0.55);
+  cursor: not-allowed;
+}
+
+.rv-time-separator {
+  color: var(--rv-time-separator, var(--rv-muted, light-dark(#52525b, #a1a1aa)));
+  font-weight: 600;
+}
+
+.rv-time-meridiem {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--rv-time-input-border, var(--rv-border, light-dark(#d4d4d8, #3f3f46)));
+  border-radius: var(--rv-time-input-radius, var(--rv-radius, 0.5rem));
+}
+
+.rv-time-meridiem-button {
+  padding: var(--rv-time-meridiem-padding, 0.25rem 0.5rem);
+  color: var(--rv-time-meridiem-fg, var(--rv-muted, light-dark(#52525b, #a1a1aa)));
+  background: transparent;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.rv-time-meridiem-button + .rv-time-meridiem-button {
+  border-inline-start: 1px solid var(--rv-time-input-border, var(--rv-border, light-dark(#d4d4d8, #3f3f46)));
+}
+
+.rv-time-meridiem-button[aria-pressed='true'] {
+  color: var(--rv-time-meridiem-active-fg, var(--rv-accent, light-dark(#4f46e5, #a5b4fc)));
+  background: var(
+    --rv-time-meridiem-active-bg,
+    color-mix(in srgb, var(--rv-accent, #4f46e5) 16%, transparent)
+  );
+}
+
+.rv-time-meridiem-button:focus-visible,
+.rv-time-now:focus-visible,
+.rv-time-ok:focus-visible {
+  outline: 2px solid var(--rv-time-focus, var(--rv-accent, light-dark(#4f46e5, #a5b4fc)));
+  outline-offset: 1px;
+}
+
+.rv-time-meridiem-button:disabled,
+.rv-time-now:disabled,
+.rv-time-ok:disabled {
+  opacity: var(--rv-time-disabled-opacity, 0.55);
+  cursor: not-allowed;
+}
+
+.rv-time-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rv-time-action-gap, 0.25rem);
+  margin-inline-start: auto;
+}
+
+.rv-time-now,
+.rv-time-ok {
+  padding: var(--rv-time-action-padding, 0.25rem 0.625rem);
+  border-radius: var(--rv-time-action-radius, var(--rv-radius, 0.5rem));
+  font: inherit;
+  cursor: pointer;
+}
+
+.rv-time-now {
+  color: var(--rv-time-now-fg, var(--rv-time-fg, var(--rv-fg, light-dark(#111111, #f4f4f5))));
+  background: transparent;
+  border: 1px solid var(--rv-time-input-border, var(--rv-border, light-dark(#d4d4d8, #3f3f46)));
+}
+
+.rv-time-now:hover {
+  background: var(--rv-time-now-hover-bg, color-mix(in srgb, currentColor 8%, transparent));
+}
+
+.rv-time-ok {
+  color: var(--rv-time-ok-fg, var(--rv-accent, light-dark(#4f46e5, #a5b4fc)));
+  background: var(
+    --rv-time-ok-bg,
+    color-mix(in srgb, var(--rv-accent, #4f46e5) 14%, transparent)
+  );
+  border: 1px solid var(--rv-time-ok-border, var(--rv-accent, light-dark(#4f46e5, #a5b4fc)));
+}
+
+.rv-time-ok:hover {
+  background: var(
+    --rv-time-ok-hover-bg,
+    color-mix(in srgb, var(--rv-accent, #4f46e5) 22%, transparent)
+  );
+}
+
+/* The tray overlays the calendar instead of growing the panel. The panel has
+   a fixed height that already fits the viewport; adding 189px of list would
+   push it off-screen on a 912px-tall window (measured: panel bottom 959px).
+   Anchoring the tray above the time row keeps it inside the panel and makes
+   the panel's block size independent of the list. */
+.rv-time-options {
+  position: absolute;
+  z-index: 2;
+  inset-inline: 0;
+  inset-block-end: calc(100% + var(--rv-time-options-gap, 0.25rem));
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--rv-time-options-gap, 0.25rem);
+  min-inline-size: 0;
+  padding: var(--rv-time-options-padding, 0.5rem);
+  background: var(--rv-time-options-bg, var(--rv-datepicker-panel-bg, var(--rv-bg, light-dark(#ffffff, #18181b))));
+  border: 1px solid var(--rv-time-options-border, var(--rv-border, light-dark(#d4d4d8, #3f3f46)));
+  border-radius: var(--rv-time-options-radius, var(--rv-radius, 0.625rem));
+  box-shadow: var(
+    --rv-time-options-shadow,
+    var(--rv-shadow, 0 12px 32px light-dark(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.65)))
+  );
+  direction: ltr;
+}
+
+.rv-time-option-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rv-time-option-heading-gap, 0.25rem);
+  min-inline-size: 0;
+}
+
+.rv-time-option-heading {
+  overflow: hidden;
+  color: var(--rv-time-option-heading-fg, var(--rv-muted, light-dark(#52525b, #a1a1aa)));
+  font-size: var(--rv-time-option-heading-size, 0.75rem);
+  line-height: 1.2;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rv-time-option-list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-block-size: var(--rv-time-options-max-height, 10rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--rv-time-option-list-bg, var(--rv-bg, light-dark(#ffffff, #18181b)));
+  border: 1px solid var(--rv-time-option-list-border, var(--rv-border, light-dark(#d4d4d8, #3f3f46)));
+  border-radius: var(--rv-time-option-list-radius, var(--rv-radius, 0.5rem));
+  scrollbar-width: thin;
+}
+
+.rv-time-option {
+  flex: 0 0 auto;
+  min-block-size: var(--rv-time-option-size, 1.75rem);
+  padding: var(--rv-time-option-padding, 0.25rem 0.375rem);
+  color: var(--rv-time-option-fg, var(--rv-time-fg, var(--rv-fg, light-dark(#111111, #f4f4f5))));
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  cursor: pointer;
+}
+
+.rv-time-option:hover {
+  background: var(--rv-time-option-hover-bg, color-mix(in srgb, currentColor 8%, transparent));
+}
+
+.rv-time-option[aria-selected='true'] {
+  color: var(--rv-time-option-selected-fg, var(--rv-accent, light-dark(#4f46e5, #a5b4fc)));
+  background: var(
+    --rv-time-option-selected-bg,
+    color-mix(in srgb, var(--rv-accent, #4f46e5) 16%, transparent)
+  );
+  font-weight: 600;
+}
+
+.rv-time-option:focus-visible {
+  outline: 2px solid var(--rv-time-focus, var(--rv-accent, light-dark(#4f46e5, #a5b4fc)));
+  outline-offset: -2px;
+}
+
+@media (max-width: 22rem) {
+  .rv-time-actions {
+    margin-inline-start: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv-time-now,
+  .rv-time-ok,
+  .rv-time-meridiem-button {
+    transition: none;
+  }
+}

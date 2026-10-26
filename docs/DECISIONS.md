@@ -1156,3 +1156,654 @@ Three defects, all found by a consumer using the packages.
   out byte-identical before and after the cleanup. Only the source tree was
   wrong, and only a human reading the tree could tell. A move must be done
   with `git mv`, or with an explicit `git rm` of the old path.
+
+## 2026-10-25 — D51: `@rivinia/datepicker` — headless Gregorian calendar + themed picker
+
+- Context: the ecosystem had no date primitive. The brief: Arabic and English,
+  LTR and RTL, Gregorian dates, configurable output formats, the Rivinia theme,
+  headless core plus ready-made UI — specs first, then implementation.
+- **The core is `Date`-free**, except the two functions that must cross the
+  local-time boundary (`todayDate()`, `toLocalDate()`). Days are integer
+  `{year, month, day}` values and all movement is civil-calendar arithmetic
+  (Hinnant's days-from-civil), so no timezone or DST can shift a date.
+  - `toLocalDate` builds `new Date(2000, m - 1, d, 12)` and then
+    `setFullYear(year)`: a two-digit year passed to the constructor maps to
+    1900+ (`formatYear(locale, 5)` returned `1905`, measured), and noon keeps
+    a ±12h zone shift from changing the day.
+- **Formatting**: one `format` input, two modes.
+  - A style keyword (`short|medium|long|full`) maps to `Intl.DateTimeFormat`'s
+    `dateStyle` — date only. Measured: en-US short `10/25/26`, medium
+    `Oct 25, 2026`; ar-EG medium `٢٥‏/١٠‏/٢٠٢٦`, long `٢٥ أكتوبر ٢٠٢٦`.
+  - A pattern (`MM-dd-yyyy`, `dd/MM/yy`, …) is parsed and formatted per token
+    through `Intl` parts. **Case-insensitive, width is the letter count**;
+    `mm` is month. Time letters (`h,H,k,K,s,S,a,A,X,Z,z,O,v,V,b,B`) throw a
+    date-only error instead of being silently dropped; `ddd` throws with an
+    "use EEEE" hint. Non-ASCII letters are literals; `''` escapes a quote.
+  - **`DatePipe` rejected, measured reasons**: its four presets all include
+    time; its pattern letters include time (so `dd/MM/yyyy` is ambiguous);
+    it does not produce Arabic-Indic digits; its bidi marks vary by locale.
+    The library inserts no invisible marks the formatter did not emit —
+    `Intl`'s output is authoritative.
+  - The calendar is pinned to `-u-ca-gregory` by rewriting the locale's
+    Unicode extension key/value pairs (a regex broke
+    `ar-SA-u-ca-islamic-umalqura`, whose calendar value spans two subtags).
+    **Measured: `ar-SA` formats as Gregorian here** (no default Hijri), so the
+    Hijri seam test pins the opposite direction explicitly:
+    `ar-SA-u-ca-islamic-umalqura` renders ١٤٤٨ unpinned and ٢٠٢٦ pinned.
+    A Hijri GRID is out of scope for 0.1.0; the formatting seam is the hook.
+  - Formatters are cached (bounded Map, 40 entries): a day view asks for 42
+    day labels plus 7 weekday names per render.
+- **Week start** comes from CLDR via `Intl.Locale.getWeekInfo()`, then the
+  legacy `weekInfo`, then ISO Monday. Measured: `en-US` 7/[6,7], `en-GB` 1,
+  `ar-EG` 6/[5,6], `ar-SA` 7/[5,6], `he` 7/[5,6], `fa` 6/[5], `fr` 1.
+- **RTL mirrors the horizontal arrows and nothing else.** In a right-to-left
+  grid the next day is drawn to the left, so `ArrowLeft` moves FORWARD and
+  `ArrowRight` moves BACK; Up/Down, Home/End, PageUp/Down and Shift+Page are
+  never mirrored. Direction is read at keydown from the nearest `[dir]`
+  attribute first, then `getComputedStyle(...).direction` (jsdom does not
+  inherit computed direction).
+- **The component follows the ecosystem's form contract**: `value` is a
+  `model()`, so it satisfies `FormValueControl` (the documented Angular 22
+  interface `@rivinia/select` already implements) and `touch` is the touched
+  protocol. A `ControlValueAccessor` was tried first and removed: Angular 22
+  auto-detects any component with a `value` input + `valueChange` output as a
+  custom control (measured in `initializeCustomControlStatus`), so with a plain
+  input the CVA was dead code and `touched` never fired; with
+  `NG_VALUE_ACCESSOR` the classic path won but Signal Forms' `[formField]`
+  would have had no model signal. `valueChange` belongs to the model and emits
+  only when the value really changes; a form writing the value in does not echo
+  (model input writes go through `inputSignalSetFn`, verified in core).
+  `touch` fires when the panel closes (a pick returns focus to the trigger, so
+  a focusout would never happen) and when focus leaves the host.
+  `@angular/forms` stays a peer because the published `.d.ts` imports
+  `FormValueControl` from `@angular/forms/signals`; the FESM imports no forms
+  code at all.
+- **State**: `rv-datepicker` provides its own `RiviniaCalendar`, so two pickers
+  never share a focused day; `rv-calendar` owns no state and takes the service
+  as an input (D06 input composition). The panel is non-modal, uses the top
+  layer where available (`popover="manual"` + CSS anchor positioning with
+  logical keywords) and an absolute fallback elsewhere; Escape closes and
+  restores focus, an outside pointerdown closes without stealing focus (D36).
+- **Packaging, and a D06 exception**: the UI entry imports the core through the
+  **package specifier** `@rivinia/datepicker`, not a relative path, because the
+  UI genuinely needs the service and the pure helpers. ng-packagr accepted it
+  (D06's TS6059 problem was relative cross-entry imports). Exports map: `.`
+  and `./ui` only. Dist FESM imports: core → `@angular/core`; UI →
+  `@angular/core` + `@rivinia/datepicker`. Zero `tslib` imports. Tarball:
+  8 files (the D20 injected dependency entry is expected).
+- **Three defects that only a real browser exposed** (jsdom has no layout and
+  does not forward label clicks):
+  1. **The panel filled its anchor area.** `position-area: block-end
+     span-inline-end` makes an auto-width box span from the anchor's
+     inline-start to the containing block's inline-end — measured 1006px for a
+     290px trigger. `width: max-content` is not an escape hatch: the day grid
+     is `inline-size: 100%`, so max-content is cyclic (measured 1,000,018px).
+     Fixed with an explicit token width (`--rv-datepicker-panel-width`,
+     19.25rem = 7 × 2.5rem cells + gaps + panel padding) capped by
+     `max-inline-size`. Measured after: 308px, 0px offset from the trigger in
+     LTR and RTL, 4px gap.
+  2. **A `<label>` around the picker re-opened the panel after every pick.**
+     Clicking inside a label makes the browser forward a synthetic click to
+     the label's control — the trigger — so `toggle()` ran right after
+     `closePanel()` (measured with a click-event trace: two clicks, the second
+     targeting the button). The panel now cancels the default action of its own
+     clicks; measured fix: inside a label, picking closes the panel and updates
+     the value. The README documents the sibling-label markup as the clean
+     option, and a new `label` input puts the field name into the trigger's
+     accessible name ("Departure: ٢٥/١٠/٢٠٢٦").
+  3. **The popover margin reset killed the gap.** `.rv-datepicker-panel[popover]
+     { margin: 0 }` and the placement rule have the same specificity, so the
+     gap was restored in a later `@supports` rule of the same specificity.
+     Measured 4px below and 4px above after flipping.
+- **A repo-level lesson, recorded because it cost a cycle**: in Angular 22's
+  zoneless test host, mutating a PLAIN field and calling
+  `fixture.detectChanges()` does not update a binding — a signal does. Four
+  "RTL is behaving like LTR" failures were the test host, not the library.
+- Verified: **380/380 unit tests (11 files)** — core date math, week info,
+  styles, patterns, month grid, key intents, the service, calendar UI,
+  datepicker UI, reactive + template-driven forms, and the published export
+  surface; `ng build datepicker` (both entry points); tarball inspected
+  (exports/types/peers/sideEffects/files/FESM imports); installed into a fresh
+  Angular 22 app created for this check and built in production
+  (**215.32 kB raw / 59.73 kB transfer**); and the real-browser run (Chromium,
+  production and dev builds) covering the popover path, the 308px panel,
+  the 4px gap, RTL alignment and arrow direction, flipping above at the
+  viewport edge, picking inside a `<label>`, and focus returning to the trigger.
+- NOT published. Version **0.1.0** (new package). Deliberately out of scope,
+  each additive: a typed input with segments, range selection, presets, time,
+  a Hijri grid, pattern PARSING, year-view virtualisation.
+
+## 2026-10-25 — D52: datepicker second pass — clear, per-picker isolation, three form APIs, a theme input, and one width
+
+- Context: after D51 the user tested the package and reported four concrete
+  things: a date cannot be cleared; two adjacent pickers behave as ONE (opening
+  a second must not leave two panels); only one form system was demonstrated;
+  and the light/dark theme must be reachable from the public API. The panel also
+  had to respect the parent's width and keep a minimum width.
+
+- **Two pickers, one panel — reproduced, then fixed.** Before the fix, opening
+  the second picker by KEYBOARD (Enter on its trigger) left both panels open in
+  Chromium. A pointer-only fix would have missed it: keyboard activation emits
+  no pointer event, so the outside-pointer close never runs.
+  - Fix: `DatepickerPanelRegistry`, a root service in the UI entry (internal —
+    no export, no public name), with `claim(handle)` / `release(handle)`; the
+    opening picker claims, the loser is closed with `closeForAnotherPanel()`,
+    `DestroyRef` always releases.
+  - Measured after: keyboard-open the second → one panel, the second; pointer
+    open the third → one panel, the third; Escape → focus returns to the third
+    trigger; `panels: 1` at every step in both dev and production builds.
+  - Auto-close emits `touch` (the user's interaction with the first field did
+    end) but never restores focus (the user is now in another field).
+
+- **Clear.** Opt-in, because a required date must not present a button that
+  makes it look optional: `clearable` in `provideRiviniaDatepicker(...)` and as
+  an input; an unbound input takes the config. A real `<button>` inside the
+  field, after the trigger, visible only while a value exists and the picker is
+  enabled.
+  - Clearing sets `null`, emits `valueChange(null)`, emits `touch`, closes an
+    open panel, and returns focus to the trigger — the button disappears with
+    the value, so focus must not stay on a removed node.
+  - Accessible name includes the field: `Departure: Clear date`;
+    `المغادرة: مسح التاريخ` in Arabic (measured in the browser).
+  - One focus ring for the whole field: `:focus-within` on the wrapper; the
+    trigger and the clear button draw none of their own, so keyboard and mouse
+    produce the same visual and there is no box-in-a-box.
+
+- **Signal Forms join reactive and template-driven.** The component already
+  satisfied `FormValueControl` (`value` model + `touch` output, D51); this pass
+  proved all three in the same consumer application: a reactive
+  `FormControl<RiviniaDate | null>`, `[(ngModel)]`, and the new
+  `form()` + `[formField]` API. Picking a day in the Signal Forms demo wrote
+  `Monday, 12 October 2026`; `ngModel` wrote `2026-10-20`; the reactive clear
+  set `null` and `touched: true`. No second code path exists for forms.
+
+- **A theme input, not a stylesheet swap.** `theme: 'auto' | 'light' | 'dark'`
+  in the provider config and as an input (input wins; an unbound input keeps the
+  config). The host mirrors it as `data-theme`, so a theme layer that maps
+  `[data-theme='dark']` reaches the picker.
+  - `light`/`dark` set `color-scheme` on the host; `auto` declares NOTHING and
+    inherits the page's scheme — no forced scheme, the D46 rule.
+  - The built-in palette is `light-dark()` read at the use site, never declared
+    on the host, so `--rv-*` tokens still win. Measured in the browser:
+    auto/light `rgb(255,255,255)` / `rgb(17,17,17)`; dark `rgb(24,24,27)` /
+    `rgb(244,244,245)` with the selected day `rgb(139,139,240)`; and a custom
+    token pair produced `rgb(240,253,250)` / `rgb(15,61,58)` with
+    `data-theme="auto"`.
+
+- **One width, measured rather than reasoned.** The first implementation put
+  `min-inline-size: min(11rem, 100%)` on the field inside a shrink-to-fit
+  inline-block host; Chrome collapsed it to the content width — measured
+  **132px**, not 176px. A `min-width` plus `max-width: 100%` cannot both hold
+  (the minimum wins and overflows — the D47 lesson), so the field takes ONE
+  definite width and lets the cap win:
+  - host: `inline-size: var(--rv-datepicker-width, 11rem)`,
+    `max-inline-size: 100%`;
+  - field: `inline-size: 100%` of that width.
+  Measured in Chromium: default field **176px**, panel **308px** (the floor);
+  a 25rem block field **400px** → panel **400px** with the calendar still
+  **308px**, centred (x=302 inside a 256–656 panel); a 7rem cell → field
+  **112px**, overflow **0**; RTL field **224px** (a 14rem override), panel
+  **308px**, end-aligned, **4px** gap; a 380px viewport → panel **308px** at
+  x=32..340, inside the viewport.
+  - Panel rules are unchanged in shape: `max(100%, 19.25rem)` on the absolute
+    fallback, `max(anchor-size(inline), 19.25rem)` when anchored, capped by
+    `--rv-datepicker-panel-max-width` (`100vw - 1rem`).
+  - Not one of those numbers is a unit test: jsdom has no layout. They come
+    from the probe.
+
+- Verified: **395/395 unit tests (11 files)**, including the new isolation,
+  clear (two-way, reactive, label), theme, Signal Forms, and public-export
+  specs; `ng build datepicker`; tarball **8 files / 61.0 kB**; the consumer app
+  built in **production** (**266.21 kB raw / 71.24 kB transfer** for that demo
+  page — it now imports reactive forms, Signal Forms, and 21 pickers, so this
+  is not comparable to D51's 215 kB figure); and the full Playwright probe in
+  production: isolation by keyboard and pointer, clear (two-way، reactive,
+  inside a `<label>`), Signal Forms and `ngModel`, the four theme cases, the
+  four width cases, RTL alignment/gap/arrows and the Arabic clear name — zero
+  console errors.
+- NOT published, NOT committed. Version remains **0.1.0** (the new surface is
+  additive to an unpublished package).
+
+## 2026-10-25 — D53: date + time — research and design, NOT implemented
+
+- Context: the user asked whether the picker will support date + time, and
+  required that time be an extension of the SAME panel ("لا تكسره وتعيده"),
+  that the panel respect the parent width, and that it keep a minimum width.
+  This entry records the research and the design. **No time code exists in
+  `projects/datepicker/`.**
+
+- Sources consulted (2026-10-25):
+  - PrimeNG 22.1.4 `DatePicker` — `showTime`, `hourFormat`, `timeOnly`,
+    per-unit spinner buttons with `aria-label`s (`prevHour`, `nextMinute`,
+    `am`/`pm`), popup `role="dialog"`, grid roles, `selectionMode`.
+  - ng-zorro 22.1.2 `DatePicker` — `nzShowTime`, `nzOnOk`, `nzShowNow`,
+    `nzDisabledTime`, the "Now"/"Today" footer.
+  - Ant Design 6 `TimePicker` — `needConfirm` (commit only on confirm),
+    `hourStep` / `minuteStep` / `secondStep`, `use12Hours`, `showNow`,
+    `renderExtraFooter`.
+  - MDN `<input type="datetime-local">` — value is always `YYYY-MM-DDTHH:mm`,
+    no time-zone/locale control, browser-owned UI, `size` does not apply.
+  - W3C APG **Spinbutton** pattern — the keyboard/ARIA model for a time field.
+  (MUI X and the Material 3 spec did not load in this environment; nothing in
+  this entry is attributed to them.)
+
+- **Native input rejected** for the same reasons the date half already rejects
+  it: the displayed format and the UI belong to the browser, so it cannot follow
+  the package's tokens, its RTL rules, or the panel rules above.
+
+- **Design: the time is a row inside the existing panel.**
+  ```
+  ┌────────────────────────────────────────────┐
+  │  ‹        October 2026        ›   [Today]  │
+  │  Mo Tu We Th Fr Sa Su                      │
+  │  …              day grid …                 │   never unmounted
+  ├────────────────────────────────────────────┤
+  │  [ 09 ] : [ 30 ]  [AM|PM]   [Now]   [OK]   │   the time row
+  └────────────────────────────────────────────┘
+  ```
+  - Same panel element, same popover/anchor, same border/shadow/tokens — the
+    row is added, the panel is not rebuilt or replaced by a second step.
+  - The day grid stays mounted while the time row is used, so focus and the
+    visible month are preserved.
+
+- **Commit is explicit.** A time makes the value incomplete, so a day click
+  updates a DRAFT; `OK` commits date and time together and closes; Escape or an
+  outside click discards. (`needConfirm` in Ant Design is the same rule.)
+  `Now` fills the draft and does not commit.
+
+- **Typed API.** A separate `rv-datetimepicker`, not a `showTime` flag on
+  `rv-datepicker`: `RiviniaDate` and `RiviniaDateTime = { date, time }` are
+  different types, and a union-typed model would push a narrowing check into
+  every consumer. The UI guarantee is unaffected because the panel parts
+  (`rv-calendar`, a new `rv-time-row`) are shared inside the same shell.
+  - `RiviniaTime { hour: 0–23; minute: 0–59; second: 0–59 }` always carries
+    seconds; `showTime: 'minutes' | 'seconds'` decides what is editable and
+    formatted.
+
+- **Time controls are spinbuttons, not dials or 60-row lists.** Per APG:
+  `role="spinbutton"`, `aria-valuenow/min/max`, localized `aria-valuetext`,
+  Up/Down ±1, PageUp/PageDown ±step, Home/End, and a digit buffer for direct
+  entry. A clock dial has no APG pattern, mirrors awkwardly in RTL, and is
+  pointer-heavy; two 60-option listboxes add 120 nodes and long scrolling.
+  The meridiem is a two-button `aria-pressed` group; 12/24h comes from the
+  locale's `Intl` `hourCycle` (`hour12: 'auto'`), never hardcoded.
+
+- **Width — the explicit rules, unchanged where they already exist.**
+  - Panel: `max(field, 19.25rem)`, capped by `100vw - 1rem`, 4px gap, logical
+    anchor alignment — exactly D51/D52.
+  - Time row: `display: flex; flex-wrap: wrap; min-inline-size: 0`, every child
+    shrinkable. Its natural width is below the 19.25rem floor, so time never
+    widens the panel; at large text or 320px it wraps and the panel grows in
+    BLOCK size only, never beyond the parent/viewport inline size.
+  - The day grid keeps `--rv-calendar-width` and stays centred.
+
+- **Formatting.** `format` stays the date; `timeFormat` accepts `'short'` /
+  `'medium'` or a pattern (`HH:mm`, `hh:mm a`). The trigger joins both through
+  `Intl.DateTimeFormat({ dateStyle, timeStyle })` so the locale's separator,
+  digits and bidi marks are used; `formatTime(locale, time, …)` is exported from
+  the headless entry. The date-only picker keeps REJECTING time tokens.
+
+- **Timezone/DST seam.** The core stores civil date + time and never constructs
+  a `Date`; a spring-forward gap cannot be validated here. The app converts to
+  an instant (`Temporal.ZonedDateTime` where available) — the same seam D51
+  documents, not a new one.
+
+- Planned tests are listed in the README (core arithmetic/formatting,
+  spinbutton keys, draft/commit/discard, RTL, width with the row wrapped, and
+  the browser pass). Status: **designed, not started**; no version is promised
+  for it.
+
+## 2026-10-25 — D54: consumer playground, the RTL anchor defect it exposed, and Angular 22's `ngModel` validator gap
+
+- Context: after D52 the package needed to be exercised the way a consumer uses
+  it, not only by the unit suite. A playground was built in `tmp/consumer`
+  (gitignored, outside the workspace, installed from the packed tarball, public
+  entry points only): one shared value across **eight formats**
+  (`short|medium|long|full`, `dd/MM/yyyy`, `yyyy-MM-dd`, `dd.MM.yy`,
+  `EEEE, d MMMM yyyy`), a Reactive Forms card (`FormGroup`,
+  `Validators.required`, submit/reset/disable), a Template-Driven card
+  (`ngModel`, touched/dirty, reset), a Signal Forms card (`form()` +
+  `[formField]`, `required()`), plus min/max bounds, a disabled picker, a
+  pinned-dark picker, a default-vs-full-width pair, and a toolbar that switches
+  **English/العربية** and **Light/Dark/Auto**.
+
+- Verified in Chromium against the consumer's **production** build (`ng build`,
+  292.82 kB raw / 76.36 kB transfer for the playground): en-GB renders
+  `25/10/2026`, `25 Oct 2026`, `25 October 2026`, `Sunday, 25 October 2026`,
+  `25/10/2026`, `2026-10-25`, `25.10.26`, `Sunday, 25 October 2026`; ar-EG
+  renders `٢٥‏/١٠‏/٢٠٢٦`, `٢٥‏/١٠‏/٢٠٢٦`, `٢٥ أكتوبر ٢٠٢٦`,
+  `الأحد، ٢٥ أكتوبر ٢٠٢٦`, `٢٥/١٠/٢٠٢٦`, `٢٠٢٦-١٠-٢٥`, `٢٥.١٠.٢٦`,
+  `الأحد, ٢٥ أكتوبر ٢٠٢٦` (the ASCII comma in the last row is the pattern's
+  literal, not Intl's). The Arabic panel weekdays are `س ح ن ث ر خ ج`
+  (week starts Saturday), one panel is open at a time, Escape closes it, and
+  clearing one picker clears all eight (shared `[(value)]`). Dark applies to
+  field `rgb(24, 24, 27)`, text `rgb(244, 244, 245)`, panel and selected day
+  `rgb(139, 139, 240)` while the page is light. Widths: default field 176px →
+  panel 308px (the 19.25rem floor); a full-width field 367px → panel 367px.
+  Reactive `required` keeps submit disabled until a pick, submit shows the
+  submitted state, and `control.disable()` reaches the picker
+  (`data-disabled="true"`); Signal Forms `required` reports `valid no` before
+  and `valid yes` after; Template-Driven reset clears the control, the value
+  and the submitted flag. Zero console errors.
+
+- **A real defect the playground exposed (fixed before this entry):** in an
+  RTL page the anchored panel grew toward the page's **inline-start** and sat
+  over its own row's label. Measured: field `x=940…1179`, panel
+  `x=940…1248` — the panel's **left** edge matched the field's left edge (its
+  inline-end), while the LTR case put the panel's left edge at the field's
+  left (inline-start). The cause is Chromium resolving
+  `position-area: block-end span-inline-end` **physically**: the computed
+  value is `span-end` in both directions, so the position area became
+  `[anchor inline-end → containing block inline-start]`, an LTR-shaped area.
+  The absolute fallback was already correct because
+  `inset-inline-start: 0` is logical. Fix: one direction-scoped rule —
+  `:host(:dir(rtl)) .rv-datepicker-panel { position-area: block-end
+  span-inline-start; }` — which puts the panel's inline-start edge on the
+  field's inline-start edge, extending toward the inline-end. Measured after:
+  field `940…1179`, panel `871…1179`, gap **4px**, inside the viewport; LTR
+  unchanged (`260…568`, gap 4). The 4px gap is a real margin once the entrance
+  animation settles; measuring immediately after `waitForSelector` catches the
+  animation mid-flight and reads ~0–1px.
+
+- **Angular 22.2.2 finding, documented rather than worked around:**
+  `NG_VALIDATORS` do not run for a value-model custom control bound with
+  `[(ngModel)]`. In the installed `@angular/forms` FESM, `NgControl` sets
+  `isCustomControlBased` and `_setupWithForm()` calls `setupCustomControl()`,
+  which never calls `setUpValidators()`; only `setUpControlValueAccessor()`
+  does. Measured in the playground: a plain `<input required>` in the same
+  form reports `errors: { required: true }` while the picker's `NgModel`
+  reports `errors: null` even though `_rawValidators` contains
+  `_RequiredValidator`. Reactive Forms and Signal Forms validate normally.
+  Decision: do not add a `ControlValueAccessor` (D51 removed one deliberately;
+  it would break the value-model/Signal Forms path). The README's Forms
+  section now states the limitation and the two supported options (validate in
+  the submit handler, or use a reactive control carrying the validators); the
+  playground's template card does exactly that.
+
+- Version stays **0.1.0** (unpublished). After the CSS fix: `ng build
+  datepicker`, 395/395 tests, tarball rebuilt and installed into the consumer;
+  the README note required one more build + pack. Final tarball: 8 files,
+  65.7 kB, npm shasum `d55769ff64726329601ad61718c337b7e8a65a18`, sha256
+  `c7d3b35b04f51e4386ed9955fe31108a84d1075fab336e8d8eb6bf1a1ecf8462`.
+  The consumer build and the browser run are the evidence for the RTL
+  placement — jsdom has no layout, so it cannot be a unit test.
+
+## 2026-10-25 — D55: date + time in the same panel, and time zones made explicit
+
+- Context: D53 designed date + time and time-zone handling but shipped nothing.
+  The user chose to finish both before the first publish. The panel had to stay
+  one panel (not a second step), respect its parent width, keep a minimum
+  width, and remain usable from Reactive Forms, `ngModel` and Signal Forms.
+- **The value model.** `RiviniaDateTime = { date: RiviniaDate; time:
+  RiviniaTime }` is civil: no zone, no offset, no implicit instant.
+  `RiviniaTime` always carries `second` (0–59), even when the row does not edit
+  it; two shapes for the same fact would be a compatibility trap. A separate
+  `<rv-datetimepicker>` (not a `showTime` flag) keeps `RiviniaDate` and
+  `RiviniaDateTime` distinct, so no consumer needs a narrowing check. The
+  panel parts are shared: the same `<rv-calendar>` and panel shell, with
+  `<rv-time-row>` below the grid.
+- **One panel, draft + explicit commit.** A day click or a time edit updates a
+  draft; `OK` commits both halves and closes. Escape or an outside click
+  discards. The calendar is never unmounted while the time is used, so the
+  visible month, the focused day and the selected date survive. `Now` fills the
+  draft (in the selected zone when one is set) and does not commit. This is the
+  Ant Design `needConfirm` rule: a date + time is incomplete until time is
+  confirmed.
+- **The time controls are APG spinbuttons**, not a clock dial: Arrow ±1,
+  PageUp/PageDown ±`minuteStep` on minute/second (±1 on hour), Home/End,
+  direct typing with clamping and padding, Enter commits. A two-button
+  `aria-pressed` group is the meridiem. The locale's `Intl` `hourCycle` and
+  day periods decide 12/24h and `AM`/`م`; `hour12` overrides. Digits are
+  localized (`٠٩:٣٠`).
+- **Formatting is two independent halves.** `format` remains date-only and
+  still rejects time tokens; `timeFormat` accepts `short`, `medium` or a
+  case-sensitive time pattern (`HH:mm`, `hh:mm a`, `HH:mm:ss`). Mixing a
+  24-hour token with `a` (or with `h`) throws instead of guessing; `M`, `S`,
+  `A`, `k`, `K`, date and zone letters throw with an actionable message.
+  `formatDateTime` uses one `Intl.DateTimeFormat({dateStyle,timeStyle})` when
+  both halves are styles; otherwise it joins with the locale's date-time
+  connector (` في ` in Arabic, a comma elsewhere).
+- **Time zones are a resolver, not a dependency.** `resolveWallTime(value,
+  zone, disambiguation?)` uses `Intl` only; there is no Temporal dependency and
+  no bundled tzdata. It returns `unique`, `ambiguous` or `nonexistent`, with
+  every candidate's `instant`, `offsetMinutes` and actual wall time.
+  `compatible` (default) takes the earlier instant for an overlap and the later
+  wall time for a gap; `earlier`/`later` are explicit; `reject` throws.
+  `wallTimeInTimeZone`, `getTimeZoneOffsetMinutes`, `nowInTimeZone`,
+  `todayInTimeZone`, `isValidTimeZone` and `listTimeZones` complete the
+  surface. The picker never stores an instant: it shows the zone's offset and
+  name, warns on a gap or overlap, offers the overlap offsets and the real
+  post-gap wall time as an explicit `Use …` action, and emits
+  `{ value, timeZone, resolution }` on commit **only when the zone is valid**.
+  An invalid zone warns and emits nothing. A time that crosses a gap is still
+  civil until the user adopts the suggestion; if they press `OK` anyway the
+  resolution is reported as `nonexistent`, never silently moved.
+- **Width.** The datetime field defaults to `15rem` (`--rv-datetimepicker-
+  width`) with the same parent cap as the date field. The panel keeps the
+  date picker's `19.25rem` floor, follows a wider field, and is capped by
+  `100vw - 1rem`. The time row is a wrapping flex row; it is below the floor's
+  width and cannot widen the panel; if forced it wraps in the block direction.
+- **`FormValueControl` and bounds.** The datetime picker implements
+  `FormValueControl<RiviniaDateTime | null>` with `value` + `touch`, like the
+  date picker. Its `min`/`max` inputs are therefore typed
+  `RiviniaDateTime | undefined` (a `RiviniaDate` bound would not satisfy the
+  interface); the calendar uses their `.date`, and the time half is not
+  bounded. All three form APIs bind the whole value; a form write while the
+  panel is open updates the calendar and the draft, while a draft edit does not
+  echo into the form. The Angular 22 template-driven validator gap documented
+  in D54 applies unchanged.
+- **`config.today` on open.** The date/time opener reads
+  `provideRiviniaDatepicker({ today })` before the zone/local clock, so the
+  visible month and today marker are deterministic under SSR pinning. Added a
+  regression test with a zone set (`today: 2026-03-09` opens March 2026).
+- Deliberately out of 0.1.0: a time-zone picker, time bounds, a time-only
+  picker, range/presets, typed date segments, date-pattern parsing, a Hijri
+  grid, year-view virtualisation, and Firefox/WebKit/SSR proof.
+- Verified in this session (2026-10-25):
+  - **444/444 unit tests in 14 files** (up from 395/395 before the time work),
+    including the 15 core time/zone cases, the 21 datetime UI cases, and the
+    three datetime form APIs.
+  - `ng build datepicker` (both entry points); tarball **8 files / 111.2 kB**,
+    shasum `3bc37e8d8b67ee6c6cf6a9dee650ff93c48931fb`, SHA-256
+    `98f244d5098d98f7a39f3bb00a3c0910c63842058d0edb573a5cfe40cf0147b5`.
+    Dist FESM imports only `@angular/core` (core) and
+    `@angular/core` + `@rivinia/datepicker` (UI); no `tslib` import;
+    `@angular/forms` is a type-only peer import for `FormValueControl`.
+  - Installed the tarball into the consumer playground, production build
+    **357.63 kB raw / 86.65 kB transfer** (the demo now carries date, datetime,
+    zones, DST presets and forms, so this is not comparable to D54's date-only
+    figure).
+  - Chromium against that production build, zero console errors:
+    - four shared datetime formats rendered `25 Oct 2026, 15:30`,
+      `25/10/2026, 15:30`, `Sunday, 25 October 2026, 03:30 pm` and
+      `2026-10-25, 15:30:00`; editing the first to `16:45` left all triggers
+      unchanged until `OK`, then all four changed; the calendar stayed mounted
+      and the heading was unchanged while typing; Escape discarded.
+    - date and datetime pickers share the one-panel registry (opening a
+      datetime closed a date; one panel).
+    - Reactive datetime showed `12 Oct 2026, 09:45` with touched/valid yes;
+      `ngModel` showed `2026-10-20T09:45:00`; Signal Forms showed a valid,
+      touched value on 15 Oct.
+    - `Africa/Cairo` line `Africa/Cairo · EEST · GMT+3`; New York resolved
+      `-240` at `2026-10-25T19:00:00.000Z`. The Cairo overlap offered
+      `EEST GMT+3` / `EET GMT+2`, choosing the second resolved
+      `ambiguous`, offset `120`, `2026-10-29T21:30:00.000Z`. The Cairo gap
+      warned about 24 Apr 2026 01:30; `OK` reported `nonexistent`, offset
+      `180`, `2026-04-23T22:30:00.000Z`; `Use 01:30` removed the warning and
+      committed `unique` with the same instant.
+    - widths, measured: default field **240px**, panel **308px**, time row
+      **290px** with no overflow (panel client/scroll 306/306); full-width
+      field and panel **1211px**; at a **320px viewport** the panel was
+      **304px** starting at x=16, the field 235px, and neither the panel nor
+      the time row overflowed (302/302 and 286/286). The first narrow run
+      exposed a **demo-only** 21rem grid track; the demo was fixed, not the
+      library.
+    - Arabic: `dir=rtl`, Arabic digits/names, time fields computed `ltr`,
+      meridiem `ص`/`م`, `OK` = `موافق`; the panel opened **above** the field
+      with a **4px** gap, start-aligned, inside the viewport, 308px wide.
+    - Dark: scheme `dark`; field, panel and time input `rgb(24,24,27)`, text
+      `rgb(244,244,245)`, selected day `rgb(139,139,240)`.
+    - axe-core on `#datetime`, `#zones` and `#datetime-forms`: **zero**
+      violations; the old date-only playground pass also stayed green.
+  - The package is **not published**. Version remains **0.1.0** (the name is
+    new; the registry returns 404). Firefox/WebKit and SSR were not run and are
+    not claimed. npm auth is currently absent on npmjs (the default registry is
+    the mirror), so a publish requires a login and explicit user confirmation.
+
+## 2026-10-25 — D56: pointer time tray, panel exit motion, fixed UTC offsets
+
+- Context: D55 shipped date + time in one panel. Three follow-ups were
+  reported: a pointer/touch user should not have to type or use arrow keys;
+  the panel should open AND close with motion, and dismiss the way a
+  non-modal popover does; and a developer must be able to fix a GMT offset in
+  code without exposing a time-zone selector to the end user.
+
+- **The time tray is an overlay, not a second step.** The clock button (a real
+  button with `aria-expanded` / `aria-controls`) opens one
+  `role="listbox"` per unit — hour, minute, and second only with
+  `showSeconds` — above the time row, over the day grid, inside the same
+  panel. It is `position: absolute`, so it changes neither the panel's width
+  nor its height. Each column scrolls independently, opens centred on its
+  selected value, and each row is a `role="option"` with `aria-selected`.
+  Picking a row writes the **draft** and leaves everything open; `OK` is still
+  the only commit. `Escape` closes the tray first (panel stays open, focus
+  returns to the clock button); an outside pointer or leaving the tray closes
+  only the tray. The tray is the clock button's immediate sibling in the DOM,
+  so the tab order is clock → selected hour → selected minute → [second] →
+  meridiem → Now → OK; only the selected row of each column has
+  `tabindex="0"`, and the rest are `-1` (APG roving tabindex).
+
+- **Panel exit motion uses the existing `closing` state.** On dismissal the
+  panel gets `.rv-datepicker-panel--closing`, `inert`, `aria-hidden="true"` and
+  `pointer-events: none`, and plays a 100 ms exit animation. Completion comes
+  from `animationend`, with a 500 ms fallback, and then the panel is removed.
+  - Angular scopes CSS animation names (`_ngcontent-…_rv-datepicker-exit`), so
+    the completion check uses `event.animationName.endsWith('rv-datepicker-exit')`
+    rather than equality — the first implementation compared exactly and the
+    panel stayed until the 500 ms fallback (measured: `animationend` fired at
+    ~100 ms, panel still present).
+  - `prefers-reduced-motion: reduce`, or an environment without `matchMedia`
+    (jsdom), closes instantly; another picker taking over
+    (`closeForAnotherPanel()`) skips the exit so two panels never coexist.
+  - During the exit the panel is inert, so a second click cannot re-enter a
+    control that is on its way out.
+
+- **Fixed UTC offsets are first-class `timeZone` values.** `+03:00` and
+  `-05:30` resolve through the same `Intl` path as an IANA id: offset `180`
+  minutes, `kind: 'unique'`, no gap and no overlap, in January and July alike.
+  `Etc/GMT-3` is the IANA zone with the same offset (POSIX signs are
+  inverted); `GMT+3` is rejected because it is a display name, not an offset.
+  `isValidTimeZone()` accepts the fixed form; `listTimeZones()` does not list
+  it (it enumerates IANA ids). There is **no end-user time-zone selector**:
+  the developer chooses `timeZone` in code, as required.
+
+- Verified in this session (2026-10-25):
+  - **462/462 unit tests in 14 files**, including a new DOM-order test that
+    pins the tray directly after the clock button, one tab stop per column,
+    and the actions after the tray; plus the `+03:00` / `Etc/GMT-3` / `GMT+3`
+    core test and the scoped-animation-completion test.
+  - `ng build datepicker` (both entry points); tarball **8 files**
+    (`package.json`, README, two FESM bundles + maps, two `.d.ts`); dist FESM
+    imports only `@angular/core` (core) and `@angular/core` +
+    `@rivinia/datepicker` (UI); zero `tslib` imports; the D20-injected
+    `tslib` dependency entry is expected.
+  - Tarball reinstalled into the consumer playground; production build
+    **371.50 kB raw / 88.64 kB transfer**.
+  - Chromium against that production build, zero console errors:
+    - exit: `animationstart` → `animationend` for
+      `…_rv-datepicker-exit` at ~100 ms, panel gone by the 150 ms sample;
+      closing class, `inert` and `aria-hidden` present immediately.
+    - tab order: clock → selected hour → selected minute → Now → OK, with
+      the tray closing on the step out; picking an hour left the tray and the
+      panel open.
+    - fixed offset: `+03:00` at 16:00 resolved `offset 180 min`,
+      `instant 2026-10-25T13:00:00.000Z`, `kind unique`; the trigger showed
+      `GMT+3`.
+    - narrow 320 × 568: panel 304 × 336.8 at x = 16, `Now`/`OK` bottom
+      566.6, panel bottom 577.1 — **9.1 px of the panel's bottom padding is
+      below the viewport**; no control is clipped and the page scrolls. This
+      is documented in the README as a measured limitation; the panel is
+      clamped in width, not shifted vertically.
+- Not published. Version remains **0.1.0**. Firefox/WebKit and SSR are still
+  unverified and are not claimed.
+
+## 2026-10-26 — D57: tray accessible names fixed (WCAG 2.5.3), final audit
+
+- The scoped axe run (the three picker sections) found **20 serious
+  `label-content-name-mismatch`** nodes in the pointer tray: the visible text
+  is `03` / `05`, while the accessible name was `3 PM` / `5 minutes`. The
+  visible text was not a substring (leading zero, 12-hour form, plural unit),
+  so voice-control users could not say what they see.
+- Fix: the row's accessible name now **starts with its visible text** —
+  `03, 3 PM`, `٠٣, ٣ م`, `05, 5 minutes`. It is composed once in the component
+  (`accessibleLabel`), not in the template. A regression test asserts, for
+  `en-US` and `ar-EG` and for hour/minute/second, that every row's visible text
+  is contained in its accessible name.
+- Verified on the final build (2026-10-26):
+  - **463/463 unit tests in 14 files**; `ng build datepicker`; tarball
+    **8 files**; dist FESM imports unchanged (`@angular/core`; UI adds
+    `@rivinia/datepicker`), no `tslib` import.
+  - Tarball reinstalled in the consumer; production build
+    **371.60 kB raw / 88.72 kB transfer**.
+  - Chromium, zero console errors: exit `animationstart` → `animationend` at
+    ~100 ms and panel gone by the 150 ms sample; `prefers-reduced-motion:
+    reduce` closes instantly; keyboard takeover leaves **1 panel, 0 closing**;
+    RTL panel 308 × 413.8 with a 290-wide tray, no overflow, tray labels
+    `الساعة` / `الدقيقة`, selected row `٠٣, ٣ م`; `+03:00` resolved offset 180,
+    instant `2026-10-25T13:00:00.000Z`, kind `unique`; **axe: 0 violations**
+    in `#datetime`, `#zones`, `#datetime-forms`.
+- The pointer-takeover path is different and stays as designed: clicking
+  another picker is an outside pointer for the open one, so the first closes
+  with its 100 ms exit (measured 2 panels with 1 closing for <100 ms); the
+  immediate close belongs to the keyboard/registry takeover.
+- Not published; version remains **0.1.0**.
+
+## 2026-10-26 — D58: the panel clamps to the viewport height (supersedes the D56 limit)
+
+- Context: D56 measured a 9.1px bottom overflow at 320×568 (panel bottom 577.1
+  on a 568 viewport). The user asked for it to be fixed before the release.
+- CSS could not express it: the panel is 336.8px tall, the viewport is 568px,
+  and neither the space below (319.7px) nor above (228px) fits, so
+  `position-try-fallbacks: flip-block` correctly keeps it below. `max-block-size`
+  cannot help either — the panel is shorter than the viewport; its POSITION is
+  the problem, not its size.
+- Decision: a **measured vertical clamp**, in the shared
+  `panelViewportShift()` (`utils/panel-motion.ts`):
+  - space below = `innerHeight - 8 - trigger.bottom - gap` (gap read from the
+    computed `margin-block-start`, so a consumer's `--rv-datepicker-panel-gap`
+    is respected);
+  - if the panel's `offsetHeight` fits below, or fits above (the CSS flip owns
+    that case), the shift is `0`;
+  - otherwise the shift is `-(height - spaceBelow)`, applied with a negative
+    `translate` via `--rv-datepicker-panel-shift`. `translate` is used, not
+    `transform`: the enter/exit keyframes animate `transform` and would
+    overwrite an inline transform.
+  - `offsetHeight` is layout height and ignores transforms, so the measurement
+    is correct during the entrance animation; jsdom/SSR report 0 and shift
+    nothing.
+  - a `ResizeObserver` on the panel (and `window.resize` while open) recomputes
+    it when the panel grows — a DST warning or a wrapped action row.
+- Verified (2026-10-26): 468/468 tests in **15 files** (new
+  `tests/panel-motion.spec.ts`: fits below, flip above, neither side, custom
+  gap, no-layout). Chromium production build: narrow 320×568 panel bottom
+  **560.1** (7.9px inside the edge, shift -28px), `Now`/`OK` at 549.6; desktop
+  973×912 unchanged (shift 0, panel 134.7, gap 5); RTL 973×912 unchanged
+  (shift 0, panel 308 wide, bottom 892.5). Tarball and consumer rebuild
+  re-run after the README edit; not published.
+
+## 2026-10-26 — D59: @rivinia/datepicker@0.1.0 LIVE
+
+- The user logged in on npmjs (`abdelfattahqandil21`; the old token problem from
+  D14 was not present) and published the inspected tarball:
+  `npm publish ./pack/rivinia-datepicker-0.1.0.tgz --access public --registry
+  https://registry.npmjs.org/`.
+- The publish went through **staged publishing** for the new name: the registry
+  now carries `0.0.0-stage` **and** `0.1.0`, with `dist-tags.latest = 0.1.0`.
+  The live `dist.shasum` is `c26a80285c71bb33c3a7e09d05848f12259e4dd4` — the
+  exact tarball that was built, inspected and installed into the consumer
+  (8 files, 126,524 bytes, readable README included).
+- `npm view @rivinia/datepicker version --registry https://registry.npmjs.org/`
+  returns `0.1.0`.
+- Repository finalisation after the publish (the user published from
+  `pkg-datepicker/specs-first`; the tag is added to the same tree): commit,
+  `--no-ff` merge into `main`, tag `datepicker/v0.1.0`.

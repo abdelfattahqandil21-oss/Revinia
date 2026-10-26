@@ -1,0 +1,145 @@
+<span class="rv-datepicker-field">
+  <button
+    #trigger
+    type="button"
+    class="rv-datepicker-trigger"
+    [disabled]="isDisabled()"
+    [attr.aria-haspopup]="'dialog'"
+    [attr.aria-expanded]="open() ? 'true' : 'false'"
+    [attr.aria-controls]="panelId"
+    [attr.aria-label]="triggerLabel()"
+    (click)="toggle()"
+  >
+    <span class="rv-datepicker-value">{{ triggerText() }}</span>
+    <svg class="rv-datepicker-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <circle
+        cx="8"
+        cy="8"
+        r="5.5"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.25"
+      />
+      <path
+        d="M8 4.75V8l2.25 1.5"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.25"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  </button>
+
+  @if (canClear()) {
+    <button
+      type="button"
+      class="rv-datepicker-clear"
+      [attr.aria-label]="clearLabel()"
+      (click)="clearDateTime()"
+    >
+      <svg class="rv-datepicker-clear-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <path
+          d="m4.5 4.5 7 7m0-7-7 7"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+        />
+      </svg>
+    </button>
+  }
+</span>
+
+@if (open() || closing()) {
+  <div
+    #panel
+    class="rv-datepicker-panel rv-datetimepicker-panel"
+    [class.rv-datepicker-panel--closing]="closing()"
+    role="dialog"
+    [id]="panelId"
+    [attr.aria-labelledby]="headingId"
+    [attr.inert]="closing() ? '' : null"
+    [attr.aria-hidden]="closing() ? 'true' : null"
+    [style.--rv-datepicker-panel-shift]="panelShift() + 'px'"
+    (click)="onPanelClick($event)"
+    (keydown)="onPanelKeydown($event)"
+    (animationend)="onPanelAnimationEnd($event)"
+  >
+    <rv-calendar
+      [calendar]="calendar"
+      [headingId]="headingId"
+      [autofocus]="true"
+      (picked)="onPicked($event)"
+      (dismissed)="dismiss()"
+    />
+
+    <rv-time-row
+      [value]="draft().time"
+      [locale]="effectiveLocale()"
+      [labels]="calendar.labels()"
+      [hour12]="effectiveHour12()"
+      [showSeconds]="effectiveShowSeconds()"
+      [minuteStep]="effectiveMinuteStep()"
+      [disabled]="isDisabled()"
+      (valueChange)="onTimeChanged($event)"
+      (commit)="commit()"
+      (now)="onNow()"
+    />
+
+    @if (effectiveTimeZone(); as zone) {
+      <div class="rv-datetimepicker-zone">
+        <bdi dir="ltr">{{ zone }}</bdi>
+        @if (zoneName()) {
+          <span aria-hidden="true">·</span>
+          <bdi>{{ zoneName() }}</bdi>
+        }
+      </div>
+    } @else if (invalidTimeZone()) {
+      <p class="rv-datetimepicker-warning" role="status">
+        {{ calendar.labels().invalidTimeZone }}
+        <bdi dir="ltr">{{ invalidTimeZone() }}</bdi>
+      </p>
+    }
+
+    @if (gapResolution(); as gap) {
+      <div class="rv-datetimepicker-warning">
+        <p role="status">
+          {{ calendar.labels().dstGap }}
+          <strong>{{ gapText() }}</strong>
+        </p>
+        <button
+          type="button"
+          class="rv-datetimepicker-action"
+          [disabled]="isDisabled()"
+          (click)="useSuggested()"
+        >
+          {{ suggestedLabel() }}
+        </button>
+      </div>
+    }
+
+    @if (overlapResolution(); as overlap) {
+      <div class="rv-datetimepicker-warning">
+        <p role="status">{{ calendar.labels().dstOverlap }}</p>
+        <div
+          class="rv-datetimepicker-offsets"
+          role="group"
+          [attr.aria-label]="calendar.labels().dstOverlap"
+        >
+          @for (alternative of overlap.alternatives; track alternative.instant) {
+            <button
+              type="button"
+              class="rv-datetimepicker-offset"
+              [attr.aria-pressed]="isChosenOffset(alternative)"
+              [disabled]="isDisabled()"
+              (click)="chooseOffset(alternative.offsetMinutes)"
+            >
+              {{ offsetLabel(alternative) }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}

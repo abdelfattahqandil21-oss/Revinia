@@ -1,0 +1,25 @@
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../out-tsc/spec",
+    "types": ["vitest/globals"],
+    /*
+     * The UI entry point imports the primary entry point by its PACKAGE name
+     * (what a consumer writes, and what ng-packagr resolves from `dist`). The
+     * test compilation has no dist, so the spec tsconfig points the same
+     * specifier at the source.
+     */
+    "paths": {
+      "@rivinia/datepicker": ["./src/public-api.ts"],
+      "@rivinia/datepicker/ui": ["./ui/src/public-api.ts"]
+    }
+  },
+  /*
+   * The specs live in `<project>/tests`, OUTSIDE the source root: `src/`
+   * holds only what the package ships. The test target's `include` (see
+   * angular.json) reaches them; this tsconfig compiles them.
+   */
+  "include": ["src/**/*.d.ts", "tests/**/*.d.ts", "tests/**/*.spec.ts"]
+}

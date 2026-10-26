@@ -317,6 +317,35 @@
           "defaultConfiguration": "production"
         }
       }
+    },
+    "datepicker": {
+      "projectType": "library",
+      "root": "projects/datepicker",
+      "sourceRoot": "projects/datepicker/src",
+      "prefix": "rv",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/datepicker/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/datepicker/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/datepicker/tsconfig.spec.json",
+            "include": [
+              "../tests/**/*.spec.ts"
+            ]
+          }
+        }
+      }
     }
   }
 }
