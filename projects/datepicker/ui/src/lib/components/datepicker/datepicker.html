@@ -1,0 +1,71 @@
+<span class="rv-datepicker-field">
+  <button
+    #trigger
+    type="button"
+    class="rv-datepicker-trigger"
+    [disabled]="isDisabled()"
+    [attr.aria-haspopup]="'dialog'"
+    [attr.aria-expanded]="open() ? 'true' : 'false'"
+    [attr.aria-controls]="panelId"
+    [attr.aria-label]="triggerLabel()"
+    (click)="toggle()"
+  >
+    <span class="rv-datepicker-value">{{ triggerText() }}</span>
+    <svg class="rv-datepicker-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <rect
+        x="2.5"
+        y="3.5"
+        width="11"
+        height="10"
+        rx="1.5"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.25"
+      />
+      <path d="M2.5 6.5h11M5.5 2v3M10.5 2v3" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" />
+    </svg>
+  </button>
+
+  @if (canClear()) {
+    <button
+      type="button"
+      class="rv-datepicker-clear"
+      [attr.aria-label]="clearLabel()"
+      (click)="clearDate()"
+    >
+      <svg class="rv-datepicker-clear-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <path
+          d="m4.5 4.5 7 7m0-7-7 7"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+        />
+      </svg>
+    </button>
+  }
+</span>
+
+@if (open() || closing()) {
+  <div
+    #panel
+    class="rv-datepicker-panel"
+    [class.rv-datepicker-panel--closing]="closing()"
+    role="dialog"
+    [id]="panelId"
+    [attr.aria-labelledby]="headingId"
+    [attr.inert]="closing() ? '' : null"
+    [attr.aria-hidden]="closing() ? 'true' : null"
+    [style.--rv-datepicker-panel-shift]="panelShift() + 'px'"
+    (click)="onPanelClick($event)"
+    (animationend)="onPanelAnimationEnd($event)"
+  >
+    <rv-calendar
+      [calendar]="calendar"
+      [headingId]="headingId"
+      [autofocus]="true"
+      (picked)="onPicked($event)"
+      (dismissed)="dismiss()"
+    />
+  </div>
+}

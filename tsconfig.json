@@ -23,6 +23,8 @@
       "@rivinia/menu": ["./dist/menu"],
       "@rivinia/menu/ui": ["./dist/menu/ui"],
       "@rivinia/select": ["./dist/select"],
+      "@rivinia/datepicker": ["./dist/datepicker"],
+      "@rivinia/datepicker/ui": ["./dist/datepicker/ui"],
       "@rivinia/select/ui": ["./dist/select/ui"]
     },
     "target": "ES2022",
@@ -76,6 +78,12 @@
     },
     {
       "path": "./projects/select/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/datepicker/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/datepicker/tsconfig.spec.json"
     },
     {
       "path": "./projects/menu-e2e/tsconfig.app.json"

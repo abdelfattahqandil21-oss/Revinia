@@ -1,0 +1,230 @@
+/*
+ * The calendar's style surface.
+ *
+ * Three levels, as everywhere in Rivinia (D42/D46):
+ *   --rv-calendar-<part>  →  --rv-<semantic>  →  built-in default
+ * Every value is read AT THE READ SITE, never declared on the host, so a
+ * `:root { --rv-bg: … }` really does reach this component.
+ *
+ * Sizes are rem (D44): the grid follows the user's text-size preference and the
+ * application's root font size. Only hairlines (1px), focus rings (2px) and the
+ * icon box (16px, it carries a viewBox) stay in px.
+ */
+
+:host {
+  display: block;
+  font-family: var(--rv-calendar-font, var(--rv-font, system-ui, sans-serif));
+}
+
+.rv-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rv-calendar-gap, 0.25rem);
+  inline-size: 100%;
+  /* The panel can be wider than the field. The calendar content keeps a
+     readable width and stays centred instead of stretching its day cells into
+     rectangles (D52). */
+  max-inline-size: var(--rv-calendar-width, 19.25rem);
+  margin-inline: auto;
+  color: var(--rv-calendar-fg, var(--rv-fg, light-dark(#111111, #f4f4f5)));
+  font-size: var(--rv-calendar-font-size, 0.875rem);
+  line-height: 1.4;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.rv-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rv-calendar-header-gap, 0.25rem);
+  padding-block-end: var(--rv-calendar-header-padding, 0.25rem);
+}
+
+.rv-calendar-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--rv-calendar-nav-size, 2rem);
+  block-size: var(--rv-calendar-nav-size, 2rem);
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: var(--rv-calendar-nav-radius, var(--rv-radius, 0.625rem));
+  cursor: pointer;
+}
+
+.rv-calendar-nav:hover {
+  background: var(--rv-calendar-nav-hover-bg, color-mix(in srgb, currentColor 10%, transparent));
+}
+
+.rv-calendar-nav:focus-visible,
+.rv-calendar-heading:focus-visible,
+.rv-calendar-day:focus-visible,
+.rv-calendar-option:focus-visible {
+  outline: 2px solid var(--rv-calendar-focus-ring, var(--rv-accent, light-dark(#5b5bd6, #8b8bf0)));
+  outline-offset: 2px;
+}
+
+.rv-calendar-chevron {
+  inline-size: 16px;
+  block-size: 16px;
+}
+
+/* The chevron points along the reading direction, not at a fixed side. */
+:dir(rtl) .rv-calendar-chevron {
+  transform: scaleX(-1);
+}
+
+.rv-calendar-heading {
+  flex: 1 1 auto;
+  padding: var(--rv-calendar-heading-padding, 0.25rem 0.5rem);
+  color: inherit;
+  font: inherit;
+  font-weight: var(--rv-calendar-heading-weight, 600);
+  background: transparent;
+  border: 0;
+  border-radius: var(--rv-calendar-nav-radius, var(--rv-radius, 0.625rem));
+  cursor: pointer;
+}
+
+.rv-calendar-heading:hover {
+  background: var(--rv-calendar-heading-hover-bg, color-mix(in srgb, currentColor 10%, transparent));
+}
+
+.rv-calendar-heading-static {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+
+.rv-calendar-heading-static:hover {
+  background: transparent;
+}
+
+.rv-calendar-heading-text {
+  display: inline-block;
+}
+
+/* ── Day grid ───────────────────────────────────────────────────────────── */
+
+.rv-calendar-grid {
+  inline-size: 100%;
+  border-collapse: separate;
+  border-spacing: var(--rv-calendar-grid-gap, 0.125rem);
+  table-layout: fixed;
+}
+
+.rv-calendar-weekday {
+  padding-block-end: var(--rv-calendar-weekday-padding, 0.25rem);
+  color: var(--rv-calendar-weekday-fg, var(--rv-muted, light-dark(#555555, #a1a1aa)));
+  font-size: var(--rv-calendar-weekday-size, 0.75rem);
+  font-weight: var(--rv-calendar-weekday-weight, 600);
+  text-align: center;
+}
+
+.rv-calendar-day {
+  inline-size: var(--rv-calendar-day-size, 2.5rem);
+  block-size: var(--rv-calendar-day-size, 2.5rem);
+  padding: 0;
+  color: inherit;
+  text-align: center;
+  vertical-align: middle;
+  border-radius: var(--rv-calendar-day-radius, var(--rv-radius, 0.625rem));
+  cursor: pointer;
+  user-select: none;
+}
+
+.rv-calendar-day:hover {
+  background: var(--rv-calendar-day-hover-bg, color-mix(in srgb, currentColor 10%, transparent));
+}
+
+.rv-calendar-day--today {
+  box-shadow: inset 0 0 0 1px
+    var(--rv-calendar-today-ring, var(--rv-accent, light-dark(#5b5bd6, #8b8bf0)));
+}
+
+.rv-calendar-day--selected {
+  color: var(--rv-calendar-selected-fg, light-dark(#ffffff, #101014));
+  background: var(--rv-calendar-selected-bg, var(--rv-accent, light-dark(#5b5bd6, #8b8bf0)));
+  font-weight: var(--rv-calendar-selected-weight, 600);
+}
+
+.rv-calendar-day--selected:hover {
+  background: var(--rv-calendar-selected-bg, var(--rv-accent, light-dark(#5b5bd6, #8b8bf0)));
+}
+
+.rv-calendar-day--disabled {
+  opacity: var(--rv-calendar-disabled-opacity, 0.4);
+  cursor: not-allowed;
+}
+
+.rv-calendar-day--disabled:hover {
+  background: transparent;
+}
+
+.rv-calendar-blank {
+  padding: 0;
+}
+
+/* ── Month / year grids ─────────────────────────────────────────────────── */
+
+.rv-calendar-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--rv-calendar-options-gap, 0.25rem);
+}
+
+.rv-calendar-option {
+  padding: var(--rv-calendar-option-padding, 0.5rem 0.25rem);
+  color: inherit;
+  font: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: var(--rv-calendar-day-radius, var(--rv-radius, 0.625rem));
+  cursor: pointer;
+}
+
+.rv-calendar-option:hover {
+  background: var(--rv-calendar-day-hover-bg, color-mix(in srgb, currentColor 10%, transparent));
+}
+
+.rv-calendar-option--current {
+  color: var(--rv-calendar-selected-fg, light-dark(#ffffff, #101014));
+  background: var(--rv-calendar-selected-bg, var(--rv-accent, light-dark(#5b5bd6, #8b8bf0)));
+  font-weight: var(--rv-calendar-selected-weight, 600);
+}
+
+.rv-calendar-option--disabled {
+  opacity: var(--rv-calendar-disabled-opacity, 0.4);
+  cursor: not-allowed;
+}
+
+.rv-calendar-option--disabled:hover {
+  background: transparent;
+}
+
+/* ── Utilities ──────────────────────────────────────────────────────────── */
+
+.rv-sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rv-calendar-day,
+  .rv-calendar-option,
+  .rv-calendar-nav,
+  .rv-calendar-heading {
+    transition: background-color 120ms ease;
+  }
+}

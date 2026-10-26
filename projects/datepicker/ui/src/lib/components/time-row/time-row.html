@@ -1,0 +1,231 @@
+<div
+  class="rv-time-row"
+  role="group"
+  [attr.aria-label]="labels().time"
+  (keydown)="onRowKeydown($event)"
+>
+  <div class="rv-time-fields" dir="ltr">
+    <input
+      #hourInput
+      class="rv-time-input rv-time-hour"
+      type="text"
+      inputmode="numeric"
+      autocomplete="off"
+      spellcheck="false"
+      role="spinbutton"
+      [value]="hourText()"
+      [attr.aria-label]="labels().hour"
+      [attr.aria-valuenow]="displayHourValue()"
+      [attr.aria-valuemin]="effectiveHour12() ? 1 : 0"
+      [attr.aria-valuemax]="effectiveHour12() ? 12 : 23"
+      [attr.aria-valuetext]="hourAriaValueText()"
+      [disabled]="disabled()"
+      (focus)="onUnitFocus($event)"
+      (blur)="onUnitBlur('hour', $event)"
+      (input)="onUnitInput('hour', $event)"
+      (keydown)="onUnitKeydown('hour', $event)"
+    />
+    <span class="rv-time-separator" aria-hidden="true">:</span>
+    <input
+      #minuteInput
+      class="rv-time-input rv-time-minute"
+      type="text"
+      inputmode="numeric"
+      autocomplete="off"
+      spellcheck="false"
+      role="spinbutton"
+      [value]="minuteText()"
+      [attr.aria-label]="labels().minute"
+      [attr.aria-valuenow]="value().minute"
+      [attr.aria-valuemin]="0"
+      [attr.aria-valuemax]="59"
+      [attr.aria-valuetext]="minuteAriaValueText()"
+      [disabled]="disabled()"
+      (focus)="onUnitFocus($event)"
+      (blur)="onUnitBlur('minute', $event)"
+      (input)="onUnitInput('minute', $event)"
+      (keydown)="onUnitKeydown('minute', $event)"
+    />
+    @if (showSeconds()) {
+      <span class="rv-time-separator" aria-hidden="true">:</span>
+      <input
+        #secondInput
+        class="rv-time-input rv-time-second"
+        type="text"
+        inputmode="numeric"
+        autocomplete="off"
+        spellcheck="false"
+        role="spinbutton"
+        [value]="secondText()"
+        [attr.aria-label]="labels().second"
+        [attr.aria-valuenow]="value().second"
+        [attr.aria-valuemin]="0"
+        [attr.aria-valuemax]="59"
+        [attr.aria-valuetext]="secondAriaValueText()"
+        [disabled]="disabled()"
+        (focus)="onUnitFocus($event)"
+        (blur)="onUnitBlur('second', $event)"
+        (input)="onUnitInput('second', $event)"
+        (keydown)="onUnitKeydown('second', $event)"
+      />
+    }
+  </div>
+
+  <button
+    #timeToggle
+    type="button"
+    class="rv-time-toggle"
+    [attr.aria-label]="labels().chooseTime ?? labels().time"
+    [attr.aria-expanded]="optionsOpen() ? 'true' : 'false'"
+    [attr.aria-controls]="optionsId"
+    [disabled]="disabled()"
+    (click)="toggleOptions()"
+    (focusout)="onToggleFocusOut($event)"
+  >
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <circle
+        cx="8"
+        cy="8"
+        r="5.5"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.25"
+      />
+      <path
+        d="M8 4.75V8l2.25 1.5"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.25"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  </button>
+
+  @if (optionsOpen()) {
+    <div
+      #timeOptions
+      class="rv-time-options"
+      [id]="optionsId"
+      dir="ltr"
+      (focusout)="onOptionsFocusOut($event)"
+    >
+      <div class="rv-time-option-column">
+        <span class="rv-time-option-heading" aria-hidden="true">{{ labels().hour }}</span>
+        <div
+          class="rv-time-option-list"
+          role="listbox"
+          [attr.aria-label]="labels().hour"
+          (keydown)="onListKeydown('hour', $event)"
+        >
+          @for (option of hourOptions(); track option.value) {
+            <button
+              type="button"
+              role="option"
+              class="rv-time-option"
+              [attr.aria-label]="option.accessibleLabel"
+              [attr.aria-selected]="option.selected ? 'true' : 'false'"
+              [attr.tabindex]="option.selected ? 0 : -1"
+              (click)="chooseHour(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="rv-time-option-column">
+        <span class="rv-time-option-heading" aria-hidden="true">{{ labels().minute }}</span>
+        <div
+          class="rv-time-option-list"
+          role="listbox"
+          [attr.aria-label]="labels().minute"
+          (keydown)="onListKeydown('minute', $event)"
+        >
+          @for (option of minuteOptions(); track option.value) {
+            <button
+              type="button"
+              role="option"
+              class="rv-time-option"
+              [attr.aria-label]="option.accessibleLabel"
+              [attr.aria-selected]="option.selected ? 'true' : 'false'"
+              [attr.tabindex]="option.selected ? 0 : -1"
+              (click)="chooseUnit('minute', option.value)"
+            >
+              {{ option.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (showSeconds()) {
+        <div class="rv-time-option-column">
+          <span class="rv-time-option-heading" aria-hidden="true">{{ labels().second }}</span>
+          <div
+            class="rv-time-option-list"
+            role="listbox"
+            [attr.aria-label]="labels().second"
+            (keydown)="onListKeydown('second', $event)"
+          >
+            @for (option of secondOptions(); track option.value) {
+              <button
+                type="button"
+                role="option"
+                class="rv-time-option"
+                [attr.aria-label]="option.accessibleLabel"
+                [attr.aria-selected]="option.selected ? 'true' : 'false'"
+                [attr.tabindex]="option.selected ? 0 : -1"
+                (click)="chooseUnit('second', option.value)"
+              >
+                {{ option.label }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (effectiveHour12()) {
+    <div class="rv-time-meridiem" role="group" [attr.aria-label]="labels().meridiem">
+      <button
+        type="button"
+        class="rv-time-meridiem-button"
+        [attr.aria-pressed]="meridiem() === 'am'"
+        [disabled]="disabled()"
+        (click)="setMeridiem('am')"
+      >
+        {{ periods().am }}
+      </button>
+      <button
+        type="button"
+        class="rv-time-meridiem-button"
+        [attr.aria-pressed]="meridiem() === 'pm'"
+        [disabled]="disabled()"
+        (click)="setMeridiem('pm')"
+      >
+        {{ periods().pm }}
+      </button>
+    </div>
+  }
+
+  <div class="rv-time-actions">
+    <button
+      type="button"
+      class="rv-time-now"
+      [disabled]="disabled()"
+      (click)="now.emit()"
+    >
+      {{ labels().now }}
+    </button>
+    <button
+      type="button"
+      class="rv-time-ok"
+      [disabled]="disabled()"
+      (click)="commit.emit()"
+    >
+      {{ labels().ok }}
+    </button>
+  </div>
+
+</div>

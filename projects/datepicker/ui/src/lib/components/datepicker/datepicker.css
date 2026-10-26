@@ -1,0 +1,288 @@
+/*
+ * The field, the clear button and the panel. Same token discipline as the
+ * calendar: read-site chains, rem sizes, no forced colour scheme.
+ *
+ * Three levels, as everywhere in Rivinia (D42/D46/D52):
+ *   --rv-datepicker-<part>  →  --rv-<semantic>  →  light-dark(light, dark)
+ * Every value is read AT THE READ SITE, never declared on the host, so a
+ * `:root { --rv-bg: … }` really does reach this component. The built-in
+ * palette responds to `color-scheme`, which `theme` pins per picker.
+ */
+
+:host {
+  display: inline-block;
+  position: relative;
+  /*
+   * One definite width, capped by the parent. A `min-width` plus a `max-width`
+   * of 100% cannot both hold — the minimum wins and the field overflows its
+   * cell (D47). A definite width can be capped: 11rem by default, the parent's
+   * width when the parent is narrower, and whatever the consumer sets on the
+   * host or via `--rv-datepicker-width` (e.g. `100%` for a full-width filter).
+   */
+  inline-size: var(--rv-datepicker-width, 11rem);
+  max-inline-size: 100%;
+  box-sizing: border-box;
+}
+
+/* ── The field ──────────────────────────────────────────────────────────── */
+
+.rv-datepicker-field {
+  display: inline-flex;
+  align-items: stretch;
+  /* The host carries the width (one definite number); the field fills it. */
+  inline-size: 100%;
+  box-sizing: border-box;
+  color: var(--rv-datepicker-fg, var(--rv-fg, light-dark(#111111, #f4f4f5)));
+  font-family: var(--rv-datepicker-font, var(--rv-font, system-ui, sans-serif));
+  font-size: var(--rv-datepicker-font-size, 0.875rem);
+  line-height: 1.4;
+  background: var(--rv-datepicker-bg, var(--rv-bg, light-dark(#ffffff, #18181b)));
+  border: 1px solid var(--rv-datepicker-border, var(--rv-border, light-dark(#e0e0e0, #3f3f46)));
+  border-radius: var(--rv-datepicker-radius, var(--rv-radius, 0.625rem));
+  box-shadow: var(--rv-datepicker-shadow, none);
+}
+
+.rv-datepicker-field:hover {
+  background: var(
+    --rv-datepicker-hover-bg,
+    var(--rv-datepicker-bg, var(--rv-bg, light-dark(#ffffff, #18181b)))
+  );
+}
+
+/* ONE ring around the whole field. It covers the trigger AND the clear button,
+   which is why the trigger does not draw its own outline. `:focus-within`
+   works everywhere; the panel is a sibling, so a focused day never rings the
+   field. */
+.rv-datepicker-field:focus-within {
+  outline: 2px solid
+    var(--rv-datepicker-focus-ring, var(--rv-accent, light-dark(#5b5bd6, #8b8bf0)));
+  outline-offset: 2px;
+}
+
+:host([data-open='true']) .rv-datepicker-field {
+  border-color: var(
+    --rv-datepicker-active-border,
+    var(--rv-datepicker-border, var(--rv-border, light-dark(#e0e0e0, #3f3f46)))
+  );
+}
+
+:host([data-disabled='true']) .rv-datepicker-field {
+  opacity: var(--rv-datepicker-disabled-opacity, 0.55);
+}
+
+.rv-datepicker-trigger {
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rv-datepicker-gap, 0.5rem);
+  min-inline-size: 0;
+  padding: var(--rv-datepicker-padding, 0.5rem 0.75rem);
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  text-align: start;
+  background: transparent;
+  border: 0;
+  border-radius: inherit;
+  cursor: pointer;
+}
+
+.rv-datepicker-trigger:disabled {
+  cursor: not-allowed;
+}
+
+.rv-datepicker-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rv-datepicker-icon {
+  flex: 0 0 auto;
+  inline-size: 16px;
+  block-size: 16px;
+  color: var(--rv-datepicker-icon-fg, var(--rv-muted, light-dark(#555555, #a1a1aa)));
+}
+
+/* ── The clear button ───────────────────────────────────────────────────── */
+
+.rv-datepicker-clear {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  margin-inline-end: 0.25rem;
+  padding: 0;
+  color: var(--rv-datepicker-icon-fg, var(--rv-muted, light-dark(#555555, #a1a1aa)));
+  background: transparent;
+  border: 0;
+  border-radius: var(--rv-datepicker-radius, var(--rv-radius, 0.625rem));
+  cursor: pointer;
+}
+
+.rv-datepicker-clear:hover {
+  color: var(--rv-datepicker-fg, var(--rv-fg, light-dark(#111111, #f4f4f5)));
+  background: var(--rv-datepicker-clear-hover-bg, color-mix(in srgb, currentColor 12%, transparent));
+}
+
+/* The field's ring already shows that focus is inside; a second ring on a
+   1.75rem icon button would draw a box inside a box. */
+.rv-datepicker-clear:focus-visible {
+  outline: none;
+}
+
+.rv-datepicker-clear-icon {
+  inline-size: 14px;
+  block-size: 14px;
+}
+
+/* ── Panel ──────────────────────────────────────────────────────────────── */
+
+.rv-datepicker-panel {
+  position: absolute;
+  z-index: 60;
+  inset-block-start: calc(100% + var(--rv-datepicker-panel-gap, 0.25rem));
+  inset-inline-start: 0;
+  box-sizing: border-box;
+  /*
+   * A date panel must never be NARROWER than its field, and never narrower
+   * than a readable calendar. It follows the field's width when the field is
+   * wider (a grid cell, a full-width filter) and the token sets the floor.
+   * `max-inline-size` is the viewport guard; a consumer can cap it with
+   * `--rv-datepicker-panel-max-width`.
+   */
+  inline-size: max(100%, var(--rv-datepicker-panel-width, 19.25rem));
+  max-inline-size: var(--rv-datepicker-panel-max-width, calc(100vw - 1rem));
+  margin: 0;
+  padding: var(--rv-datepicker-panel-padding, 0.5rem);
+  color: var(--rv-datepicker-panel-fg, var(--rv-fg, light-dark(#111111, #f4f4f5)));
+  background: var(--rv-datepicker-panel-bg, var(--rv-bg, light-dark(#ffffff, #18181b)));
+  border: 1px solid
+    var(--rv-datepicker-panel-border, var(--rv-border, light-dark(#e0e0e0, #3f3f46)));
+  border-radius: var(--rv-datepicker-panel-radius, var(--rv-radius, 0.625rem));
+  box-shadow: var(
+    --rv-datepicker-panel-shadow,
+    var(--rv-shadow, 0 16px 48px light-dark(rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.7)))
+  );
+}
+
+/*
+ * A short viewport can leave the bottom of the panel past the edge; the
+ * component measures the deficit and sets --rv-datepicker-panel-shift. The
+ * `translate` property is used, not `transform`, because the enter/exit
+ * keyframes animate `transform` and would overwrite it.
+ */
+.rv-datepicker-panel {
+  translate: 0 var(--rv-datepicker-panel-shift, 0px);
+}
+
+/* The user-agent popover styles would add a border and a canvas background. */
+.rv-datepicker-panel[popover] {
+  margin: 0;
+  border: 1px solid
+    var(--rv-datepicker-panel-border, var(--rv-border, light-dark(#e0e0e0, #3f3f46)));
+  padding: var(--rv-datepicker-panel-padding, 0.5rem);
+  overflow: visible;
+}
+
+/* ── Top layer + anchor positioning where supported ─────────────────────── */
+
+@supports (anchor-name: --rv-datepicker-anchor) {
+  :host {
+    anchor-name: --rv-datepicker-anchor;
+    /* Required with several pickers on a page: without it every panel
+       resolves its anchor to the LAST trigger in the document (D40/D41). */
+    anchor-scope: all;
+  }
+
+  .rv-datepicker-panel {
+    position: fixed;
+    inset: auto;
+    position-anchor: --rv-datepicker-anchor;
+    /*
+     * The area runs from the anchor's inline-start to the containing block's
+     * inline-end, so an auto-width box would FILL it — measured at 1006px for
+     * a 290px trigger. `width: max-content` is not an escape hatch either:
+     * the day grid is `inline-size: 100%`, which makes max-content cyclic
+     * (measured at 1,000,018px). The width therefore comes from the anchor and
+     * the token, and the alignment stays logical, so RTL needs no extra rule.
+     */
+    position-area: block-end span-inline-end;
+    position-try-fallbacks: flip-block, flip-inline;
+    inline-size: max(anchor-size(inline), var(--rv-datepicker-panel-width, 19.25rem));
+    max-inline-size: var(
+      --rv-datepicker-panel-max-width,
+      calc(100vw - 1rem)
+    );
+  }
+
+  /*
+   * `span-inline-end` is resolved PHYSICALLY by Chromium, so in an RTL page
+   * the panel would grow toward the page's inline-end and sit over the field's
+   * own label. Swapping the span keeps the panel's inline-start edge on the
+   * field's inline-start edge — the same mirror the absolute fallback gets
+   * from `inset-inline-start: 0`. Measured in both directions (gap 4px).
+   */
+  :host(:dir(rtl)) .rv-datepicker-panel {
+    position-area: block-end span-inline-start;
+  }
+
+  /* The `[popover]` reset above has the same specificity, so the gap is
+     restored here — after it. */
+  .rv-datepicker-panel[popover] {
+    margin-block-start: var(--rv-datepicker-panel-gap, 0.25rem);
+    margin-inline: 0;
+  }
+}
+
+/* ── Colour scheme ──────────────────────────────────────────────────────── */
+
+/* `auto` intentionally declares NOTHING: the picker inherits the page's
+   colour-scheme, and the palette above resolves `light-dark()` with it. */
+:host([data-theme='light']) {
+  color-scheme: light;
+}
+
+:host([data-theme='dark']) {
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rv-datepicker-panel {
+    animation: rv-datepicker-enter var(--rv-datepicker-animation-duration, 120ms) ease-out;
+  }
+
+  /* The exit is shorter than the entrance and never delays the control:
+     focus has already moved, the panel is inert, and only its pixels are
+     still on screen. One-panel coordination skips this phase entirely. */
+  .rv-datepicker-panel--closing {
+    pointer-events: none;
+    animation: rv-datepicker-exit var(--rv-datepicker-exit-duration, 100ms) ease-in forwards;
+  }
+}
+
+@keyframes rv-datepicker-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rv-datepicker-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+}
