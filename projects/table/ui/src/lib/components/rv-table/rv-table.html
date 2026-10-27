@@ -1,0 +1,237 @@
+<!--
+  The screen-reader instructions live OUTSIDE the grid and are referenced by
+  `aria-describedby`: a helper paragraph INSIDE a role="grid" would be content
+  the grid did not declare and would be announced as a row.
+-->
+<p class="rv-table-sr-only" [id]="instructionsId">{{ effectiveLabels().keyboardHelp }}</p>
+
+<div class="rv-table-scroller" #scroll>
+  <!--
+    `min-inline-size` is the sum of the declared column widths and the column
+    template is one custom property, so the header and the body cannot drift:
+    they read the same value from this element.
+  -->
+  <div
+    class="rv-table-grid"
+    role="grid"
+    [attr.aria-label]="ariaLabel() ?? hostLabel ?? effectiveLabels().grid"
+    [attr.aria-describedby]="instructionsId"
+    [attr.aria-rowcount]="rowCount()"
+    [attr.aria-colcount]="columnCount()"
+    [attr.aria-multiselectable]="selectable() ? 'true' : null"
+    [attr.aria-busy]="loading() ? 'true' : null"
+    [style.--rv-table-columns]="columnTemplate()"
+    [style.min-inline-size]="minWidth()"
+    (keydown)="onKeydown($event)"
+  >
+    <!--
+      The header is its own rowgroup, so it can be sticky without the body
+      participating in the same scroll offset. The row is the CSS grid: each
+      header cell is a direct grid item at its column.
+    -->
+    <div class="rv-table-head" role="rowgroup">
+      <div class="rv-table-row" role="row" aria-rowindex="1">
+        @for (column of visibleColumns(); track column.id; let index = $index) {
+          <div
+            class="rv-table-cell rv-table-head-cell"
+            role="columnheader"
+            [attr.aria-colindex]="index + 1"
+            [attr.aria-sort]="ariaSort(column)"
+            [attr.tabindex]="isActive(-1, index) ? 0 : -1"
+            [attr.data-rv-cell]="'-1:' + index"
+            [attr.data-sortable]="isSortable(column) ? 'true' : null"
+            [attr.data-sorted]="sortRank(column) > 0 ? 'true' : null"
+            [attr.data-sort-direction]="sortDirection(column)"
+            [attr.data-sort-rank]="sortRank(column) > 1 ? sortRank(column) : null"
+            [attr.data-align]="column.align ?? 'start'"
+            (click)="onHeaderClick(column, index, $event)"
+            (focus)="onCellFocus(-1, index)"
+          >
+            <!--
+              A real button, but NOT a tab stop: the cell owns the roving
+              tabindex, so the grid keeps exactly one. Enter/Space on the cell
+              sorts; the button keeps pointer and AT "click" working.
+            -->
+            <button type="button" class="rv-table-head-button" tabindex="-1">
+              <span class="rv-table-text rv-table-head-label" dir="auto">{{ column.header }}</span>
+              @if (isSortable(column)) {
+                <span
+                  class="rv-table-sort"
+                  aria-hidden="true"
+                  [attr.data-direction]="sortDirection(column) ?? 'none'"
+                >
+                  <svg viewBox="0 0 10 6" width="10" height="6" focusable="false">
+                    <path
+                      d="M1 5 5 1l4 4"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </span>
+                @if (sortRank(column) > 1) {
+                  <span class="rv-table-sort-rank" aria-hidden="true">{{ sortRank(column) }}</span>
+                }
+              }
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!--
+      One CSS grid for the whole body. A row wrapper is `display: contents`,
+      so its cells are grid items of THIS grid and a real `grid-row: span N`
+      can cross rows at any row height. Covered positions render no element.
+    -->
+    <div class="rv-table-body" role="rowgroup">
+      @if (loading()) {
+        @for (skeleton of skeletonList(); track $index; let rowIndex = $index) {
+          <!-- Decorative: the polite status below announces the load once. -->
+          <div class="rv-table-row rv-table-row--skeleton" aria-hidden="true">
+            @for (column of visibleColumns(); track column.id; let columnIndex = $index) {
+              <div
+                class="rv-table-cell rv-table-skeleton"
+                [style.grid-row]="(rowIndex + 1) + ' / span 1'"
+                [style.grid-column]="(columnIndex + 1) + ' / span 1'"
+                [attr.data-col]="columnIndex"
+              >
+                <span class="rv-table-skeleton-bar"></span>
+              </div>
+            }
+          </div>
+        }
+      } @else {
+        @for (item of bodyRows(); track item.id) {
+          <div
+            class="rv-table-row"
+            role="row"
+            [attr.aria-rowindex]="item.ariaRowIndex"
+            [attr.aria-selected]="selectable() ? (item.selected ? 'true' : 'false') : null"
+            [attr.data-selected]="item.selected ? 'true' : null"
+            [attr.data-row]="item.rowIndex"
+            (dblclick)="onRowDoubleClick(item, $event)"
+          >
+            @for (cell of item.cells; track cell.columnIndex; let isFirst = $first) {
+              <div
+                class="rv-table-cell"
+                role="gridcell"
+                [attr.aria-colindex]="cell.columnIndex + 1"
+                [attr.aria-rowspan]="cell.rowSpan > 1 ? cell.rowSpan : null"
+                [attr.aria-colspan]="cell.colSpan > 1 ? cell.colSpan : null"
+                [attr.aria-describedby]="cell.describedBy"
+                [attr.tabindex]="isActive(item.rowIndex, cell.columnIndex) ? 0 : -1"
+                [attr.data-rv-cell]="item.rowIndex + ':' + cell.columnIndex"
+                [attr.data-row]="item.rowIndex"
+                [attr.data-col]="cell.columnIndex"
+                [attr.data-span]="cell.spanned ? 'true' : null"
+                [attr.data-align]="cell.column.align ?? 'start'"
+                [attr.data-overflow]="cell.overflow"
+                [style.grid-row]="cell.gridRow"
+                [style.grid-column]="cell.gridColumn"
+                (click)="onCellClick(item, cell, $event)"
+                (focus)="onCellFocus(item.rowIndex, cell.columnIndex)"
+              >
+                @if (selectable() && isFirst) {
+                  <!--
+                    Decorative, deliberately: `aria-selected` on the row is the
+                    semantics, and a second real checkbox would announce the
+                    same state twice. Clicking it bubbles to the cell, which is
+                    what toggles the row.
+                  -->
+                  <span
+                    class="rv-table-select"
+                    aria-hidden="true"
+                    [attr.data-checked]="item.selected ? 'true' : null"
+                  ></span>
+                }
+                @if (cell.template; as template) {
+                  <ng-container
+                    [ngTemplateOutlet]="template"
+                    [ngTemplateOutletContext]="cell.context"
+                  />
+                } @else {
+                  <!--
+                    `dir="auto"`: the grid's direction is the page's, but the
+                    VALUE's direction is the value's. Without it an English
+                    client name in an Arabic table renders with its full stop
+                    moved to the front (".Nile Trading Co"), which is correct
+                    bidi for an RTL paragraph and wrong for the data.
+                  -->
+                  <span
+                    class="rv-table-text"
+                    dir="auto"
+                    [attr.data-overflow]="cell.overflow"
+                    [style.--rv-table-clamp-lines]="cell.lines"
+                    >{{ cell.text }}</span
+                  >
+                }
+                <!--
+                  The untruncated text, exposed through `aria-describedby` and
+                  hidden from the browse-order so it is not read twice. There is
+                  deliberately no `title`: the visual tooltip is the consumer's.
+                -->
+                @if (cell.describedBy) {
+                  <span class="rv-table-sr-only" [id]="cell.describedBy" aria-hidden="true">{{
+                    cell.text
+                  }}</span>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+  </div>
+
+  <!--
+    Inside the scroller (it belongs to the frame) but outside the grid (a grid
+    may only own rows). `position: sticky` on the inline axis keeps it in view
+    while the header scrolls horizontally.
+  -->
+  @if (state(); as current) {
+    <div
+      class="rv-table-state"
+      [attr.role]="current.kind === 'error' ? 'alert' : 'status'"
+      [attr.data-state]="current.kind"
+    >
+      <span class="rv-table-state-art" aria-hidden="true">
+        @if (current.kind === 'error') {
+          <svg viewBox="0 0 24 24" width="24" height="24" focusable="false">
+            <path
+              d="M12 7v6m0 4h.01M12 3l9 16H3l9-16Z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        } @else {
+          <svg viewBox="0 0 24 24" width="24" height="24" focusable="false">
+            <path
+              d="M4 6h16M4 12h16M4 18h10"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+          </svg>
+        }
+      </span>
+      <p class="rv-table-state-text">{{ current.message }}</p>
+    </div>
+  }
+</div>
+
+<!-- Always present, so the text change is announced by the live region. -->
+<p class="rv-table-sr-only" role="status">{{ loading() ? effectiveLabels().loading : '' }}</p>
+
+<!--
+  The cell templates are never rendered here: they are looked up by column id
+  and instantiated per row. Projecting them explicitly keeps the contract
+  visible in the DOM (and avoids keeping unprojected content around).
+-->
+<ng-content select="[rvTableCell]" />

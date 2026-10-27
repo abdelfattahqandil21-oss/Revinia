@@ -1,0 +1,527 @@
+/*
+ * `rv-table` — a role="grid" built from divs and CSS grid.
+ *
+ * Theming rules (the ecosystem contract, D42/D46):
+ *   - every colour/shape is read AT THE USE SITE as
+ *       var(--rv-table-<part>, var(--rv-<semantic>, <built-in default>))
+ *     so a single `:root { --rv-bg: … }` reaches the whole grid;
+ *   - no token is DECLARED on the host: an ancestor's value must always win;
+ *   - the density presets only change the `var()` FALLBACK (see the last
+ *     section), so an explicit `--rv-table-row-height` beats the preset;
+ *   - no forced colour scheme: the defaults use `light-dark()`, which follows
+ *     the page's `color-scheme`, exactly like the other packages.
+ *
+ * The override surface (stable):
+ *   classes  .rv-table-scroller, .rv-table-grid, .rv-table-head,
+ *            .rv-table-head-cell, .rv-table-head-button, .rv-table-head-label,
+ *            .rv-table-body, .rv-table-row, .rv-table-cell, .rv-table-text,
+ *            .rv-table-sort, .rv-table-sort-rank, .rv-table-state,
+ *            .rv-table-skeleton, .rv-table-sr-only
+ *   hooks    on the host: [data-density], [data-loading], [data-sticky],
+ *            [data-selectable]
+ *            on a header: [data-sortable], [data-sorted], [data-sort-rank],
+ *            [data-sort-direction]
+ *            on a cell: [data-row], [data-col], [data-span], [data-align],
+ *            [data-overflow], [data-selected] (on the row)
+ *   Component styles are scoped by Angular, so an app rule needs
+ *   `rv-table .rv-table-cell { … }` (or a token) to win at equal specificity.
+ */
+
+:host {
+  display: block;
+  font-size: var(--rv-table-font-size, 0.875rem);
+  color: var(--rv-table-fg, var(--rv-fg, light-dark(#111827, #f4f4f5)));
+  -webkit-text-size-adjust: 100%;
+}
+
+.rv-table-scroller,
+.rv-table-scroller *,
+.rv-table-scroller *::before,
+.rv-table-scroller *::after {
+  box-sizing: border-box;
+}
+
+/* ── The scroll box ────────────────────────────────────────────────────────
+   The ONLY scroll container: the sticky header and the measured PageUp/PageDown
+   step both belong to it. `--rv-table-max-height` is the one token a consumer
+   sets to get a vertically scrolling grid; without it the grid grows with its
+   rows and the page scrolls.
+   ───────────────────────────────────────────────────────────────────────── */
+.rv-table-scroller {
+  position: relative;
+  overflow: auto;
+  max-block-size: var(--rv-table-max-height, none);
+  overscroll-behavior: contain;
+  border: 1px solid
+    var(--rv-table-border, var(--rv-border, light-dark(#e5e7eb, #2f2f36)));
+  border-radius: var(--rv-table-radius, var(--rv-radius, 0.5rem));
+  background: var(--rv-table-bg, var(--rv-bg, light-dark(#ffffff, #17171b)));
+  scrollbar-width: thin;
+  scrollbar-color: var(--rv-table-scrollbar, light-dark(#cbd5e1, #3f3f46))
+    transparent;
+}
+
+/* The computed width lives in ONE inline custom property on this element; the
+   head and the body both spend it, so their columns cannot drift. */
+.rv-table-grid {
+  display: block;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.rv-table-head {
+  position: relative;
+  z-index: 2;
+  background: var(
+    --rv-table-header-bg,
+    color-mix(
+      in oklab,
+      var(--rv-table-bg, var(--rv-bg, light-dark(#ffffff, #17171b))) 92%,
+      var(--rv-table-fg, var(--rv-fg, light-dark(#111827, #f4f4f5)))
+    )
+  );
+  border-block-end: 1px solid
+    var(--rv-table-header-border, var(--rv-border, light-dark(#d1d5db, #3f3f46)));
+}
+
+:host([data-sticky='true']) .rv-table-head {
+  position: sticky;
+  inset-block-start: 0;
+}
+
+.rv-table-head .rv-table-row {
+  display: grid;
+  grid-template-columns: var(--rv-table-columns, 1fr);
+}
+
+.rv-table-head-cell {
+  min-block-size: var(--rv-table-head-height, 2.75rem);
+  /* The rowgroup owns the rule under the header; a cell rule here would draw
+     a second, half-pixel-offset line. */
+  border-block-end: 0;
+  color: var(--rv-table-header-fg, var(--rv-muted, light-dark(#52525b, #a1a1aa)));
+  font-size: var(--rv-table-header-font-size, 0.75rem);
+  font-weight: var(--rv-table-header-font-weight, 700);
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.rv-table-head-cell[data-sortable='true'] {
+  cursor: pointer;
+}
+
+.rv-table-head-cell[data-sortable='true']:hover {
+  background: var(
+    --rv-table-header-hover,
+    color-mix(
+      in oklab,
+      var(--rv-table-bg, var(--rv-bg, light-dark(#ffffff, #17171b))) 86%,
+      var(--rv-table-fg, var(--rv-fg, light-dark(#111827, #f4f4f5)))
+    )
+  );
+  color: var(--rv-table-header-fg-active, var(--rv-fg, light-dark(#111827, #f4f4f5)));
+}
+
+.rv-table-head-cell[data-sorted='true'] {
+  color: var(--rv-table-header-fg-active, var(--rv-fg, light-dark(#111827, #f4f4f5)));
+}
+
+/* A real button for pointer and AT "click", but never a tab stop: the CELL is
+   the grid's roving tabindex, so the grid keeps exactly one. */
+.rv-table-head-button {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  inline-size: 100%;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: inherit;
+  cursor: inherit;
+}
+
+.rv-table-head-button:focus {
+  outline: none;
+}
+
+.rv-table-head-label {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rv-table-sort {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1rem;
+  block-size: 1rem;
+  color: var(--rv-table-sort-fg, var(--rv-accent, light-dark(#5b5bd6, #8b8bf0)));
+  opacity: 0;
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease;
+}
+
+.rv-table-head-cell[data-sortable='true']:hover .rv-table-sort {
+  opacity: 0.45;
+}
+
+.rv-table-head-cell[data-sorted='true'] .rv-table-sort {
+  opacity: 1;
+}
+
+.rv-table-sort[data-direction='desc'] {
+  transform: rotate(180deg);
+}
+
+.rv-table-sort-rank {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  min-inline-size: 1rem;
+  block-size: 1rem;
+  padding-inline: 0.2rem;
+  border-radius: 999px;
+  background: color-mix(
+    in oklab,
+    var(--rv-table-sort-fg, var(--rv-accent, light-dark(#5b5bd6, #8b8bf0))) 16%,
+    transparent
+  );
+  color: var(--rv-table-sort-fg, var(--rv-accent, light-dark(#5b5bd6, #8b8bf0)));
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* ── Body ───────────────────────────────────────────────────────────────── */
+.rv-table-body {
+  display: grid;
+  grid-template-columns: var(--rv-table-columns, 1fr);
+  /* A real row track: a wrapped cell grows the whole row, and a row-spanning
+     cell stretches over the tracks instead of needing height arithmetic. */
+  grid-auto-rows: minmax(var(--rv-table-row-height, 2.5rem), auto);
+}
+
+/* `display: contents` is what lets the cells be items of the ONE body grid, so
+   `grid-row: span N` actually crosses rows. The element stays in the DOM (and
+   in the accessibility tree) as the row that owns the ARIA index and state. */
+.rv-table-row {
+  display: contents;
+}
+
+.rv-table-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-inline-size: 0;
+  padding: var(--rv-table-cell-padding, 0.5rem 0.75rem);
+  border-block-end: 1px solid
+    var(--rv-table-border, var(--rv-border, light-dark(#e5e7eb, #2f2f36)));
+  background: transparent;
+  transition: background-color 0.12s ease;
+}
+
+.rv-table-row:hover > .rv-table-cell {
+  background: var(
+    --rv-table-row-hover,
+    color-mix(
+      in oklab,
+      var(--rv-table-bg, var(--rv-bg, light-dark(#ffffff, #17171b))) 94%,
+      var(--rv-table-fg, var(--rv-fg, light-dark(#111827, #f4f4f5)))
+    )
+  );
+}
+
+/* ── The selection indicator ─────────────────────────────────────────────── */
+/* Decorative on purpose: the row carries `aria-selected`, so a real checkbox
+   here would announce the same state twice and add a tab stop inside a cell
+   that already owns one. Clicking it bubbles to the cell, which toggles. */
+.rv-table-select {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  inline-size: 1rem;
+  block-size: 1rem;
+  border: 1px solid
+    var(--rv-table-select-border, var(--rv-border, light-dark(#9ca3af, #52525b)));
+  border-radius: var(--rv-table-select-radius, 0.25rem);
+  background: var(--rv-table-select-bg, var(--rv-bg, light-dark(#ffffff, #17171b)));
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.rv-table-select::after {
+  content: '';
+  inline-size: 0.5rem;
+  block-size: 0.3rem;
+  border-inline-start: 2px solid
+    var(--rv-table-select-mark, var(--rv-bg, light-dark(#ffffff, #17171b)));
+  border-block-end: 2px solid
+    var(--rv-table-select-mark, var(--rv-bg, light-dark(#ffffff, #17171b)));
+  transform: translateY(-0.06rem) rotate(-45deg) scale(0);
+  transition: transform 0.12s ease;
+}
+
+.rv-table-select[data-checked='true'] {
+  border-color: var(--rv-table-accent, var(--rv-accent, light-dark(#5b5bd6, #8b8bf0)));
+  background: var(--rv-table-accent, var(--rv-accent, light-dark(#5b5bd6, #8b8bf0)));
+}
+
+.rv-table-select[data-checked='true']::after {
+  transform: translateY(-0.06rem) rotate(-45deg) scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv-table-select,
+  .rv-table-select::after {
+    transition: none;
+  }
+}
+
+/* Selection after hover, so a hovered selected row still reads as selected. */
+.rv-table-row[aria-selected='true'] > .rv-table-cell {
+  background: var(
+    --rv-table-row-selected,
+    color-mix(
+      in oklab,
+      var(--rv-table-accent, var(--rv-accent, light-dark(#5b5bd6, #8b8bf0))) 12%,
+      var(--rv-table-bg, var(--rv-bg, light-dark(#ffffff, #17171b)))
+    )
+  );
+}
+
+/* The selected rail is a pseudo-element, not a border: adding a border would
+   shift the text by its width, and a pseudo-element uses a logical inset so it
+   is on the start side in RTL too. */
+.rv-table-row[aria-selected='true'] > .rv-table-cell[data-col='0']::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: var(--rv-table-selected-rail, 3px);
+  background: var(--rv-table-accent, var(--rv-accent, light-dark(#5b5bd6, #8b8bf0)));
+}
+
+.rv-table-cell[data-align='center'] {
+  justify-content: center;
+  text-align: center;
+}
+
+.rv-table-cell[data-align='end'] {
+  justify-content: flex-end;
+  text-align: end;
+}
+
+/* A merged cell is the anchor of its block: its label belongs to the first row,
+   so centring it vertically would float the label away from where it started. */
+.rv-table-cell[data-span] {
+  align-items: flex-start;
+}
+
+/* ── Focus ──────────────────────────────────────────────────────────────── */
+.rv-table-cell:focus {
+  outline: none;
+}
+
+.rv-table-cell:focus-visible {
+  outline: 2px solid
+    var(--rv-table-focus, var(--rv-accent, light-dark(#5b5bd6, #8b8bf0)));
+  outline-offset: -2px;
+  /* Painted above the neighbouring cells' borders while focused; still below
+     the sticky header, which must cover a cell scrolled underneath it. */
+  z-index: 1;
+}
+
+/* ── Text behaviour ─────────────────────────────────────────────────────── */
+.rv-table-text {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.rv-table-text[data-overflow='nowrap'] {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.rv-table-text[data-overflow='wrap'] {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.rv-table-text[data-overflow='clamp'] {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--rv-table-clamp-lines, 2);
+  line-clamp: var(--rv-table-clamp-lines, 2);
+}
+
+/* ── Skeletons ──────────────────────────────────────────────────────────── */
+.rv-table-skeleton {
+  pointer-events: none;
+}
+
+.rv-table-skeleton-bar {
+  display: block;
+  inline-size: 64%;
+  block-size: 0.625rem;
+  border-radius: 0.3125rem;
+  background: linear-gradient(
+    90deg,
+    var(--rv-table-skeleton, light-dark(#eceff3, #26262d)) 25%,
+    var(--rv-table-skeleton-highlight, light-dark(#f6f8fa, #31313a)) 37%,
+    var(--rv-table-skeleton, light-dark(#eceff3, #26262d)) 63%
+  );
+  background-size: 400% 100%;
+  animation: rv-table-shimmer 1.4s ease-in-out infinite;
+}
+
+/* Varied widths read as content rather than as a progress bar. */
+.rv-table-skeleton:nth-child(3n + 2) .rv-table-skeleton-bar {
+  inline-size: 82%;
+}
+
+.rv-table-skeleton:nth-child(3n) .rv-table-skeleton-bar {
+  inline-size: 46%;
+}
+
+@keyframes rv-table-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+/* ── Empty / error state ────────────────────────────────────────────────── */
+.rv-table-state {
+  position: sticky;
+  inset-inline-start: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  inline-size: 100%;
+  padding: var(--rv-table-state-padding, 3rem 1.25rem);
+  text-align: center;
+  background: var(--rv-table-bg, var(--rv-bg, light-dark(#ffffff, #17171b)));
+  color: var(--rv-table-state-fg, var(--rv-muted, light-dark(#52525b, #a1a1aa)));
+}
+
+.rv-table-state-art {
+  display: grid;
+  place-items: center;
+  inline-size: 3rem;
+  block-size: 3rem;
+  border-radius: 1rem;
+  background: color-mix(
+    in oklab,
+    var(--rv-table-state-fg, var(--rv-muted, light-dark(#52525b, #a1a1aa))) 10%,
+    transparent
+  );
+}
+
+.rv-table-state[data-state='error'] .rv-table-state-art {
+  background: color-mix(
+    in oklab,
+    var(--rv-table-state-error, var(--rv-danger, light-dark(#dc2626, #f87171))) 14%,
+    transparent
+  );
+  color: var(--rv-table-state-error, var(--rv-danger, light-dark(#dc2626, #f87171)));
+}
+
+.rv-table-state-text {
+  margin: 0;
+  max-inline-size: 34rem;
+  color: var(--rv-table-state-text, var(--rv-fg, light-dark(#111827, #f4f4f5)));
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+/* ── Screen-reader-only helper ──────────────────────────────────────────────
+   The keyboard instructions and the full cell text both live here: described
+   by, never painted.
+   ───────────────────────────────────────────────────────────────────────── */
+.rv-table-sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Density: only the FALLBACK of the size tokens ──────────────────────────
+   `var(--rv-table-row-height, 2rem)` still prefers the consumer's token; the
+   preset is what you get when nothing is set. 32/40/48px at a 16px root, the
+   Carbon scale the design cites, and rem so the browser's text size wins.
+   ───────────────────────────────────────────────────────────────────────── */
+:host([data-density='compact']) .rv-table-body {
+  grid-auto-rows: minmax(var(--rv-table-row-height, 2rem), auto);
+}
+
+:host([data-density='compact']) .rv-table-cell {
+  padding: var(--rv-table-cell-padding, 0.25rem 0.5rem);
+}
+
+:host([data-density='compact']) .rv-table-head-cell {
+  min-block-size: var(--rv-table-head-height, 2.25rem);
+}
+
+:host([data-density='compact']) .rv-table-skeleton-bar {
+  block-size: 0.5rem;
+}
+
+:host([data-density='comfortable']) .rv-table-body {
+  grid-auto-rows: minmax(var(--rv-table-row-height, 3rem), auto);
+}
+
+:host([data-density='comfortable']) .rv-table-cell {
+  padding: var(--rv-table-cell-padding, 0.75rem 1rem);
+}
+
+:host([data-density='comfortable']) .rv-table-head-cell {
+  min-block-size: var(--rv-table-head-height, 3.25rem);
+}
+
+/* ── Motion / forced colours ────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .rv-table-cell,
+  .rv-table-sort {
+    transition: none;
+  }
+
+  .rv-table-skeleton-bar {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .rv-table-cell:focus-visible {
+    outline-color: Highlight;
+  }
+
+  .rv-table-skeleton-bar {
+    background: GrayText;
+  }
+
+  .rv-table-row[aria-selected='true'] > .rv-table-cell[data-col='0']::before {
+    background: Highlight;
+  }
+}
