@@ -23,6 +23,8 @@
       "@rivinia/menu": ["./dist/menu"],
       "@rivinia/menu/ui": ["./dist/menu/ui"],
       "@rivinia/select": ["./dist/select"],
+      "@rivinia/table": ["./dist/table"],
+      "@rivinia/table/ui": ["./dist/table/ui"],
       "@rivinia/datepicker": ["./dist/datepicker"],
       "@rivinia/datepicker/ui": ["./dist/datepicker/ui"],
       "@rivinia/select/ui": ["./dist/select/ui"]
@@ -84,6 +86,12 @@
     },
     {
       "path": "./projects/datepicker/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/table/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/table/tsconfig.spec.json"
     },
     {
       "path": "./projects/menu-e2e/tsconfig.app.json"

@@ -1,0 +1,19 @@
+{
+  "name": "@rivinia/table",
+  "version": "0.1.0",
+  "description": "Headless Angular table: typed columns, sorting, filtering, pagination, selection and real row/column spans.",
+  "keywords": [
+    "angular",
+    "table",
+    "grid",
+    "signals",
+    "headless",
+    "spans"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@angular/common": "^22.0.0",
+    "@angular/core": "^22.0.0"
+  },
+  "sideEffects": false
+}
