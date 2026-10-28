@@ -5,7 +5,60 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ## Prepared releases (unpublished)
 
-### @rivinia/env 0.3.4 · @rivinia/http 0.5.4 · @rivinia/i18n 0.3.4 · @rivinia/modal 0.6.2 · @rivinia/toast 0.5.2 · @rivinia/menu 0.3.6 · @rivinia/select 0.6.1
+### @rivinia/i18n 0.4.0 (prepared, unpublished)
+
+The production-hardening release. All API changes are additive; two behaviour
+changes are called out at the end. 0.3.4 was never published, so its layout
+move ships here and 0.3.4 is skipped on the registry.
+
+- **The default loader works under SSR.** `jsonLoader()` fetched a relative
+  `i18n/{lang}.json`, which Node's `fetch` rejects (`Failed to parse URL`), so
+  the server rendered raw keys. Loaders now receive a `LoaderContext`
+  (`baseUrl`, `isServer`) built from `REQUEST` + `<base href>` on the server
+  and `document.baseURI` in the browser; the built-in loaders absolutize only
+  when `isServer`. A custom SSR host must provide `REQUEST` (documented).
+- **The SSR DOM cannot crash construction.** Domino throws
+  `NotYetImplemented` on `baseURI`; the property read is now guarded.
+- **`fallbackLanguage`.** Lookup is current → fallback → `defaultValue` → key.
+  Fallback text renders with the FALLBACK locale's plural rules, loads in
+  parallel and silently (never drives `loadingState`), and is transferred to
+  the client.
+- **Missing-key reporting.** `onMissingKey(event)`, a `missingKeys` signal, and
+  `clearMissingKeys()`. Once per key per session, only after the current
+  language has a dictionary, so a slow load produces no false positives.
+- **`reload(language?)`.** Stale-while-revalidate with per-language generation
+  counters: the visible dictionary stays until the fresh one arrives, and a
+  response that was in flight is discarded instead of overwriting it.
+- **ICU additions.** `{n, selectordinal, …}`, `offset:` (ICU4J semantics:
+  `=N` matches the raw value, the category sees `value - offset`, `#` is
+  formatted with `Intl.NumberFormat`), `{n, number}` with `percent` /
+  `integer` / `::currency/XXX`, `{d, date}` with `short|medium|long|full`, and
+  `Date` in `TranslateParams`.
+- **`t(key, params?)` returns a `Signal<string>`.** A function `params` is
+  invoked inside the computation, so the signals it reads are tracked. Missing
+  keys are recorded in a microtask (a `computed` may not write signals).
+- **Typed keys.** `RiviniaI18nKeyRegistry` is augmentable; `translate()`,
+  `t()` and `RTranslatePipe` take `RegisteredI18nKey`, which resolves to
+  `string` until a generated declaration narrows it. `rivinia-i18n-keys`
+  (shipped as a `bin`) generates that file from a dictionary, with `--check`
+  for CI.
+- **The layout moved** (models/services/utils/providers/pipes, specs in
+  `tests/`) — no exported path changed.
+
+Behaviour changes:
+
+1. `#` inside a plural is now formatted with `Intl.NumberFormat(locale)`, so a
+   non-Latin numbering system renders its own digits (`ar-EG`: `٣`, was `3`).
+   `en` and `ar` are unchanged.
+2. An unresolved key logs `[rivinia/i18n] missing key "…"` once per session in
+   dev mode. `warnOnMissingKey: false` or `onMissingKey` controls it.
+
+Proven by 153 unit tests, 39 Playwright runs (chromium + system Chrome 156 +
+Playwright Firefox 157) against a production CSR build, and 16 SSR checks
+against a real `renderApplication` host (Arabic HTML, transfer payload, no
+client refetch, hydration, post-hydration language switch).
+
+### @rivinia/env 0.3.4 · @rivinia/http 0.5.4 · @rivinia/modal 0.6.2 · @rivinia/toast 0.5.2 · @rivinia/menu 0.3.6 · @rivinia/select 0.6.1
 
 - **The packages are organised into layers.** Every package used to keep its
   types, its controller, its helpers, its provider and its pipe in one flat
