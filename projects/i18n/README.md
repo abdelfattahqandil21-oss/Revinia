@@ -68,7 +68,8 @@ import {
   defineRiviniaI18n,
   injectRiviniaI18n,
   RiviniaI18n,
-  RTranslatePipe,
+  RvTranslatePipe,
+  RTranslatePipe, // deprecated alias for rTranslate
   jsonLoader,
   httpLoader,
   remoteLoader,
@@ -87,7 +88,8 @@ exist only so the package's own tests can import them; they may move to an
 | ------------------------------------------------------------------------------------- | ---------------- | ------------ |
 | `RiviniaI18n`                                                                         | service          | Stable       |
 | `provideRiviniaI18n`, `defineRiviniaI18n`, `injectRiviniaI18n`                        | providers        | Stable       |
-| `RTranslatePipe`                                                                      | pipe             | Stable       |
+| `RvTranslatePipe` (`rvTranslate`)                                                      | pipe             | Stable       |
+| `RTranslatePipe` (`rTranslate`)                                                        | pipe             | Deprecated   |
 | `RiviniaI18nConfig`                                                                   | type             | Stable       |
 | `Language`, `Direction`, `Translation`, `TranslateParams`, `StorageStrategy`, `SwitchStrategy` | types    | Stable       |
 | `RiviniaLoadError`                                                                    | class            | Stable       |
@@ -133,15 +135,15 @@ export const appConfig: ApplicationConfig = {
 ```ts
 // src/app/header.ts
 import { Component } from '@angular/core';
-import { RTranslatePipe } from '@rivinia/i18n';
+import { RvTranslatePipe } from '@rivinia/i18n';
 import { i18n } from './i18n.config';
 
 @Component({
   selector: 'app-header',
-  imports: [RTranslatePipe],
+  imports: [RvTranslatePipe],
   template: `
     <h1>{{ title() }}</h1>
-    <p>{{ 'booking.seats' | rTranslate: { count: seats } }}</p>
+    <p>{{ 'booking.seats' | rvTranslate: { count: seats } }}</p>
     <button type="button" (click)="use('en')">English</button>
   `,
 })
@@ -277,9 +279,10 @@ browser; `<base href>` resolved against the request on the server). `isServer` m
 | `clearMissingKeys()`                          | `void`                | Reset the missing-key report.                                         |
 | `clearMissingParams()`                        | `void`                | Reset the missing-parameter dedupe.                                   |
 
-`RTranslatePipe` (`rTranslate`) delegates to `translate()`. It is impure by necessity —
+`RvTranslatePipe` (`rvTranslate`) delegates to `translate()`. It is impure by necessity —
 the service reads signals on every call — so prefer `t()` or component code for long
-lists.
+lists. `RTranslatePipe` (`rTranslate`) is the pre-0.6 name and still works; it is
+deprecated and goes away in 1.0.
 
 ## ICU messages
 
@@ -481,6 +484,23 @@ URL, so Node's `fetch` never sees a relative path. The rendered dictionaries go 
 A complete, runnable host lives in `projects/i18n-e2e` (`node:http` +
 `renderApplication`, no Express), with `e2e/ssr-smoke.mjs` asserting the raw HTML, the
 server log, the transfer payload, the absence of a client refetch, and hydration.
+
+## Migration: 0.5.0 → 0.6.0
+
+The core split (RIV-18) is internal: no export was removed, no signature changed, and
+the emitted `.d.ts` surface is identical to 0.5.0. One thing to know:
+
+1. **The pipe has the package prefix now.** `RvTranslatePipe` (`rvTranslate`) is the
+   documented name. `RTranslatePipe` (`rTranslate`) keeps working, is marked
+   `@deprecated`, and is removed in 1.0. Nothing breaks if you do not rename; rename
+   when convenient:
+
+   ```html
+   <!-- before -->
+   {{ 'booking.seats' | rTranslate: { count: seats } }}
+   <!-- after -->
+   {{ 'booking.seats' | rvTranslate: { count: seats } }}
+   ```
 
 ## Migration: 0.3.3 → 0.4.0
 
