@@ -36,6 +36,12 @@
       }
     </ul>
 
+    <ul data-testid="compact-plural" class="rows">
+      @for (row of compactRows(); track row.count) {
+        <li [attr.data-count]="row.count">{{ row.text }}</li>
+      }
+    </ul>
+
     <ul data-testid="ordinal" class="rows">
       @for (row of ordinalRows(); track row.rank) {
         <li [attr.data-rank]="row.rank">{{ row.text }}</li>

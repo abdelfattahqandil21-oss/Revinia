@@ -27,12 +27,14 @@ const AR = {
   title: 'ريفينيا للتعريب',
   hero: 'مدير لغات واحد لكل اللغات',
   plural: ['لا عناصر', 'عنصر واحد', 'عنصران', '٣ عناصر', '١١ عنصرًا', '١٠٠ عنصر'],
+  compact: ['لا عناصر', 'عنصر واحد', 'عنصران', '٣ عناصر', '١١ عنصرًا', '١٠٠ عنصر'],
 } as const;
 
 const EN = {
   title: 'Rivinia i18n',
   hero: 'One language manager, every locale',
   plural: ['No items', '1 item', '2 items', '3 items', '11 items', '100 items'],
+  compact: ['none', '1 item', '2 items', '3 items', '11 items', '100 items'],
   ordinal: ['1st', '2nd', '3rd', '4th', '11th', '21st'],
 } as const;
 
@@ -111,6 +113,19 @@ test.describe('ICU in a real browser', () => {
     await page.goto('/');
     await page.getByTestId('lang-en').click();
     await expect(page.getByTestId('plural').locator('li')).toHaveText([...EN.plural]);
+  });
+
+  test('compact ICU from translation tools renders (no space before `{`)', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('lang-en').click();
+    await expect(page.getByTestId('compact-plural').locator('li')).toHaveText([
+      ...EN.compact,
+    ]);
+
+    await page.getByTestId('lang-ar').click();
+    await expect(page.getByTestId('compact-plural').locator('li')).toHaveText([
+      ...AR.compact,
+    ]);
   });
 
   test('ordinals use the locale ordinal rules', async ({ page }) => {

@@ -32,6 +32,10 @@ export class App {
   readonly pluralRows = computed(() =>
     this.counts.map((count) => ({ count, text: this.i18n.translate('icu.items', { count }) })),
   );
+  /** RIV-01: translation-tool output with no space before `{`. */
+  readonly compactRows = computed(() =>
+    this.counts.map((count) => ({ count, text: this.i18n.translate('icu.compact', { count }) })),
+  );
   readonly ordinalRows = computed(() =>
     this.ordinals.map((rank) => ({ rank, text: this.i18n.translate('icu.ordinal', { rank }) })),
   );

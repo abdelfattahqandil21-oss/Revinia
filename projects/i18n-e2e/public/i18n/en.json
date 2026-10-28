@@ -9,6 +9,7 @@
   },
   "icu": {
     "items": "{count, plural, =0 {No items} one {# item} other {# items}}",
+    "compact": "{count, plural, =0{none} one{# item} other{# items}}",
     "ordinal": "{rank, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}",
     "guests": "{n, plural, offset:1 =0 {Nobody} =1 {Only you} one {You and # other} other {You and # others}}",
     "amount": "{value, number, ::currency/USD}",
