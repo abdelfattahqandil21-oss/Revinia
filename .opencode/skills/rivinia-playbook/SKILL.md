@@ -1,5 +1,5 @@
 ---
-name: Rivinia playbook
+name: rivinia-playbook
 description: Route any task in the Rivinia repo to the right skill before acting — bug, feature, UI/CSS, packaging, release, review, research, docs, OpenCode config. Holds the per-skill catalogue, the skills that must NOT be used here, the verification ladder, and the known-trap index (symptom → D-entry). Load this first when a task starts, or when unsure which skill applies.
 ---
 
