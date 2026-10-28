@@ -7,11 +7,9 @@ import {
   computed,
   inject,
   isDevMode,
-  makeStateKey,
   signal,
   untracked,
   type Signal,
-  type StateKey,
 } from '@angular/core';
 import {
   DEFAULT_AUTO_APPLY_DIRECTION,
@@ -32,6 +30,7 @@ import { jsonLoader } from '../models/loaders';
 import { createLoaderContext } from '../utils/loader-context';
 import { browserLanguages } from '../utils/i18n-utils';
 import { DocumentDirectionApplier } from './document-direction-applier';
+import { DictionaryStore } from './dictionary-store';
 import { LanguageStorage } from './language-storage';
 import { MissingKeyReporter } from './missing-key-reporter';
 import { MessageFormatter } from './message-formatter';
@@ -93,46 +92,26 @@ export class RiviniaI18n<L extends string = string> {
   private readonly _currentLanguageId = signal<L>(
     this._languageStorage.resolveInitialLanguage(),
   );
-  private readonly _loadedTranslations = signal<Record<string, unknown>>({});
-  /**
-   * The fallback dictionary, kept separate from `_loadedTranslations` (which
-   * always mirrors the VISIBLE language). A signal so `t()`'s computed
-   * re-evaluates when the fallback arrives.
-   */
-  private readonly _fallbackDict = signal<Record<string, unknown> | null>(null);
-  /**
-   * Explicit loader wins; otherwise the conventional JSON layout
-   * (`i18n/{language}.json` — files in `public/i18n/`, served from the site
-   * root — unless the consumer overrides the path).
-   * The descriptor still code-splits: the fetch implementation loads only on
-   * first resolve.
-   */
-  private readonly _getLoader = (
-    context: LoaderContext,
-  ): Promise<TranslationLoader<L>> =>
-    this._config.loader
-      ? this._config.loader.resolve(context)
-      : (jsonLoader().resolve(context) as Promise<TranslationLoader<L>>);
-  private _resolvedLoader: TranslationLoader<L> | null = null;
-  private readonly _translationsCache = new Map<L, Record<string, unknown>>();
-  /**
-   * Per-language generation, bumped by `reload()`. A load captures the
-   * generation before its request and discards the response when it moved:
-   * a stale dictionary can never reach the cache or the signals.
-   */
-  private readonly _generations = new Map<L, number>();
-  private readonly _inflight = new Map<
-    L,
-    Promise<{ data: Record<string, unknown>; ok: boolean; error?: unknown }>
-  >();
-  /** Non-background loads in flight; `loadingState` follows this count. */
-  private _loadingCount = 0;
-  /**
-   * Out-of-order safety: a response reaches the visible signals only when it
-   * belongs to the currently intended language (`_currentLanguageId()`).
-   * Everything else stays cached. (A monotonic request token used to guard
-   * this, but it over-constrained legitimate same-language loads.)
-   */
+
+  private readonly _store = new DictionaryStore<L>({
+    // Explicit loader wins; otherwise the conventional JSON layout
+    // (`i18n/{language}.json`, served from the site root) unless the consumer
+    // overrides the path. The descriptor still code-splits: the fetch
+    // implementation loads only on first resolve.
+    loader: (context) =>
+      this._config.loader
+        ? this._config.loader.resolve(context)
+        : (jsonLoader().resolve(context) as Promise<TranslationLoader<L>>),
+    loaderContext: this.loaderContext,
+    request: this._request ?? null,
+    transfer: this._transfer,
+    onLoadError: this._config.onLoadError,
+    currentLanguage: () => this._currentLanguageId(),
+    fallbackLanguage: this._fallbackId,
+    languageIds: () => this._languages().map((l) => l.id),
+    hasInline: (languageId) => this._config.translations?.[languageId] !== undefined,
+  });
+
   private _initialized = false;
   private readonly _tasks = inject(PendingTasks, { optional: true });
 
@@ -152,13 +131,10 @@ export class RiviniaI18n<L extends string = string> {
   readonly dir = computed<Direction>(() => this.currentLanguageObject().dir);
   readonly isRtl = computed<boolean>(() => this.dir() === 'rtl');
 
-  private readonly _loadingState = signal<'idle' | 'loading' | 'error'>('idle');
-  private readonly _loadingError = signal<unknown>(null);
-
   /** Loader state for skeletons/spinners. */
-  readonly loadingState = this._loadingState.asReadonly();
-  readonly loadingError = this._loadingError.asReadonly();
-  readonly isLoading = computed(() => this._loadingState() === 'loading');
+  readonly loadingState = this._store.loadingState;
+  readonly loadingError = this._store.loadingError;
+  readonly isLoading = computed(() => this._store.loadingState() === 'loading');
 
   private readonly _ready = signal(false);
   /**
@@ -247,35 +223,33 @@ export class RiviniaI18n<L extends string = string> {
       const hasFallback = fallback !== null && fallback !== current;
       const preload = this._config.preload ?? true;
 
-      const transferred = this.readTransfer(current);
+      const transferred = this._store.consumeTransfer(current);
       if (transferred) {
-        this._translationsCache.set(current, transferred);
-        this._loadedTranslations.set(transferred);
+        this._store.adoptTransferred(current, transferred);
       } else {
         const inline = this._config.translations?.[current];
         if (inline) {
           // Instant paint without touching the cache: the refresh below still
           // runs, so a successful loader response wins; on failure the seed
           // stays visible and the error surfaces on loadingState/onLoadError.
-          this._loadedTranslations.set(inline);
+          this._store.seedVisible(inline);
         }
       }
 
       let fallbackTransferred: Record<string, unknown> | null = null;
       if (hasFallback) {
-        fallbackTransferred = this.readTransfer(fallback);
+        fallbackTransferred = this._store.consumeTransfer(fallback);
         if (fallbackTransferred) {
-          this._translationsCache.set(fallback, fallbackTransferred);
-          this._fallbackDict.set(fallbackTransferred);
+          this._store.adoptTransferred(fallback, fallbackTransferred);
         }
       }
 
       const loads: Array<Promise<unknown>> = [];
       if (!transferred && preload) {
-        loads.push(this._loadTranslations(current));
+        loads.push(this._store.load(current));
       }
       if (hasFallback && !fallbackTransferred && preload) {
-        loads.push(this._loadTranslations(fallback, { silent: true, background: true }));
+        loads.push(this._store.load(fallback, { silent: true, background: true }));
       }
       await Promise.all(loads);
     } finally {
@@ -355,14 +329,14 @@ export class RiviniaI18n<L extends string = string> {
     return params ? this.render(fallback, params, this.locale(), key) : fallback;
   }
 
-  loadedTranslations = this._loadedTranslations.asReadonly();
+  loadedTranslations = this._store.visible;
 
   /** Preload without switching (use in `APP_INITIALIZER` / route guards). */
   async loadTranslations(
     languageId: L,
     opts?: { silent?: boolean },
   ): Promise<Record<string, unknown>> {
-    return (await this._loadTranslations(languageId, opts)).data;
+    return (await this._store.load(languageId, opts)).data;
   }
 
   /**
@@ -382,49 +356,7 @@ export class RiviniaI18n<L extends string = string> {
    * `onLoadError` exactly like `loadTranslations`.
    */
   reload(languageId?: L): Promise<boolean> {
-    if (languageId !== undefined) {
-      if (!this._languages().some((l) => l.id === languageId)) {
-        return Promise.resolve(false);
-      }
-      this._invalidate(languageId);
-      return this._reloadOne(languageId);
-    }
-
-    const currentId = this._currentLanguageId();
-    const fallbackId = this._fallbackId;
-
-    for (const cachedId of [...this._translationsCache.keys()]) {
-      if (cachedId !== currentId && cachedId !== fallbackId) {
-        this._translationsCache.delete(cachedId);
-      }
-    }
-    // Every language is superseded, so any response already in flight for a
-    // dictionary this reload does not refetch is dropped instead of cached.
-    for (const language of this._languages()) {
-      this._invalidate(language.id);
-    }
-
-    const currentLoad = this._reloadOne(currentId);
-    if (fallbackId !== null && fallbackId !== currentId) {
-      void this._reloadOne(fallbackId);
-    }
-    return currentLoad;
-  }
-
-  private _reloadOne(languageId: L): Promise<boolean> {
-    return this._loadTranslations(languageId, {
-      force: true,
-      // A dictionary that is not on screen must not drive loadingState.
-      background: languageId !== this._currentLanguageId(),
-    }).then((result) => result.ok);
-  }
-
-  private _generationOf(languageId: L): number {
-    return this._generations.get(languageId) ?? 0;
-  }
-
-  private _invalidate(languageId: L): void {
-    this._generations.set(languageId, this._generationOf(languageId) + 1);
+    return this._store.reload(languageId);
   }
 
   /**
@@ -476,7 +408,7 @@ export class RiviniaI18n<L extends string = string> {
   async setLanguageAsync(id: L): Promise<void> {
     if (id === this._currentLanguageId()) return;
     if (!this._languages().some((l) => l.id === id)) return;
-    const { ok } = await this._loadTranslations(id, { silent: true });
+    const { ok } = await this._store.load(id, { silent: true });
     if (!ok) return;
     this.applyLanguage(id);
   }
@@ -510,8 +442,8 @@ export class RiviniaI18n<L extends string = string> {
     this._direction.apply(lang, () => this._currentLanguageId.set(id));
 
     if (!opts?.skipLoad) {
-      void this._loadTranslations(id);
-      this._ensureFallback();
+      void this._store.load(id);
+      this._store.ensureFallback();
     }
 
     // Explicit switch only (RIV-17): the initial language is never written.
@@ -533,14 +465,14 @@ export class RiviniaI18n<L extends string = string> {
    * template borrowed by an Arabic UI must use English plural rules.
    */
   private _lookupKey(key: string): { text: string; locale: string } | undefined {
-    const currentValue = this._resolveKey(this._loadedTranslations(), key);
+    const currentValue = this._resolveKey(this._store.visible(), key);
     if (currentValue !== undefined) {
       return { text: currentValue, locale: this.locale() };
     }
     const fallbackId = this._fallbackId;
     if (fallbackId === null || fallbackId === this._currentLanguageId()) return undefined;
     const fallbackDict =
-      this._fallbackDict() ?? this._config.translations?.[fallbackId] ?? null;
+      this._store.fallback() ?? this._config.translations?.[fallbackId] ?? null;
     if (!fallbackDict) return undefined;
     const fallbackValue = this._resolveKey(fallbackDict, key);
     if (fallbackValue === undefined) return undefined;
@@ -551,19 +483,8 @@ export class RiviniaI18n<L extends string = string> {
     return this._languages().find((l) => l.id === languageId)?.locale ?? languageId;
   }
 
-  /** Loads the fallback in the background when it is not cached yet. */
-  private _ensureFallback(): void {
-    const fallbackId = this._fallbackId;
-    if (fallbackId === null || fallbackId === this._currentLanguageId()) return;
-    if (this._hasDictionary(fallbackId)) return;
-    void this._loadTranslations(fallbackId, { silent: true, background: true });
-  }
-
   private _hasDictionary(languageId: L): boolean {
-    return (
-      this._translationsCache.has(languageId) ||
-      this._config.translations?.[languageId] !== undefined
-    );
+    return this._store.has(languageId);
   }
 
   /**
@@ -581,144 +502,6 @@ export class RiviniaI18n<L extends string = string> {
    */
   private _reportMissingParam(key: string, param: string): void {
     this._missingKeyReporter.reportParam(key, param);
-  }
-
-  private async _loadTranslations(
-    languageId: L,
-    opts?: { silent?: boolean; background?: boolean; force?: boolean },
-  ): Promise<{ data: Record<string, unknown>; ok: boolean }> {
-    // Background loads (the fallback dictionary) must never drive
-    // `loadingState`/`loadingError`: the visible language is what the UI needs.
-    const background = opts?.background === true;
-
-    // `force` is the reload path: the cache must not answer it, and a load
-    // already in flight for the same language is superseded, not joined.
-    if (!opts?.force) {
-      const cached = this._translationsCache.get(languageId);
-      if (cached) {
-        this._applyDictionary(languageId, cached);
-        return { data: cached, ok: true };
-      }
-    }
-
-    // One FETCH is shared by every caller; the decision to APPLY is made by
-    // each caller after the await, against the state at resolution time. A
-    // caller must never inherit another caller's `silent`/`background` flags
-    // (RIV-02: a background fallback load joined by an explicit switch).
-    let task = opts?.force ? undefined : this._inflight.get(languageId);
-    if (!task) {
-      // Captured before the request: `reload()` bumps it, which makes this
-      // response stale even if it arrives later.
-      task = this._fetchDictionary(languageId, this._generationOf(languageId));
-      this._inflight.set(languageId, task);
-    }
-
-    if (!background) {
-      this._loadingCount++;
-      this._loadingState.set('loading');
-    }
-
-    try {
-      const result = await task;
-      if (result.ok) {
-        this._applyDictionary(languageId, result.data);
-      } else if (
-        !background &&
-        result.error !== undefined &&
-        languageId === this._currentLanguageId()
-      ) {
-        this._loadingError.set(result.error);
-        this._loadingState.set('error');
-      }
-      return { data: result.data, ok: result.ok };
-    } finally {
-      if (!background) {
-        this._loadingCount = Math.max(0, this._loadingCount - 1);
-        if (this._loadingCount === 0 && this._loadingState() === 'loading') {
-          this._loadingState.set('idle');
-        }
-      }
-    }
-  }
-
-  /**
-   * A dictionary reaches the visible signals only when its language is
-   * current at resolution time; a fallback dictionary fills the fallback slot.
-   * Everything else stays cached for the next switch.
-   */
-  private _applyDictionary(languageId: L, data: Record<string, unknown>): void {
-    if (languageId === this._currentLanguageId()) {
-      this._loadedTranslations.set(data);
-      this._loadingError.set(null);
-      // A cached dictionary answers without a load, so the `finally` that
-      // normally clears `loading` never runs. Without this, switching away
-      // from a failed language to a cached one leaves loadingState 'error'
-      // even though the UI is fully translated.
-      if (this._loadingCount === 0 && this._loadingState() === 'error') {
-        this._loadingState.set('idle');
-      }
-    }
-    if (languageId === this._fallbackId) {
-      this._fallbackDict.set(data);
-    }
-  }
-
-  /** Fetch + cache + transfer. Shared by every caller; never applies. */
-  private _fetchDictionary(
-    languageId: L,
-    generation: number,
-  ): Promise<{ data: Record<string, unknown>; ok: boolean; error?: unknown }> {
-    let task!: Promise<{ data: Record<string, unknown>; ok: boolean; error?: unknown }>;
-    task = (async () => {
-      const stale = (): boolean => this._generationOf(languageId) !== generation;
-      try {
-        if (!this._resolvedLoader) {
-          this._resolvedLoader = await this._getLoader(this.loaderContext);
-        }
-        const translations = await this._resolvedLoader.load(languageId, this.loaderContext);
-
-        // A superseded response touches nothing: no cache, no transfer state,
-        // no signals, no error reporting.
-        if (stale()) return { data: {}, ok: false };
-
-        this._translationsCache.set(languageId, translations);
-        this.writeTransfer(languageId, translations);
-        return { data: translations, ok: true };
-      } catch (error) {
-        if (stale()) return { data: {}, ok: false };
-        // Once per failed fetch, however many callers joined it.
-        this._config.onLoadError?.(languageId, error);
-        return { data: {}, ok: false, error };
-      } finally {
-        // Only the owner of the in-flight slot may clear it (a reload may have
-        // replaced this entry with a newer request).
-        if (this._inflight.get(languageId) === task) {
-          this._inflight.delete(languageId);
-        }
-      }
-    })();
-    return task;
-  }
-
-  private transferKey(languageId: L): StateKey<Record<string, unknown>> {
-    return makeStateKey<Record<string, unknown>>(`rivinia.i18n.dict.${languageId}`);
-  }
-
-  /** Consumes server-rendered dictionaries so the client never refetches. */
-  private readTransfer(languageId: L): Record<string, unknown> | null {
-    const transfer = this._transfer;
-    if (!transfer) return null;
-    const key = this.transferKey(languageId);
-    if (!transfer.hasKey(key)) return null;
-    const dict = transfer.get(key, null);
-    transfer.remove(key);
-    return dict;
-  }
-
-  /** Stores freshly loaded dictionaries for hydration (server only). */
-  private writeTransfer(languageId: L, dict: Record<string, unknown>): void {
-    if (!this._request) return;
-    this._transfer?.set(this.transferKey(languageId), dict);
   }
 
   /**
