@@ -2,7 +2,10 @@
 
 Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
 
-## 0.4.1 (unreleased)
+## 0.5.0
+
+The 0.4.0 code-review set. 0.4.1 was never published, so its fixes ship here;
+RIV-18 (the internal split) moves to 0.6.0.
 
 - **RIV-01 (fix):** compact ICU templates parse. `one{# item}` (no space
   before `{`) was read as the selector `one{# item`, so translation-tool
@@ -14,19 +17,51 @@ Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
   applied against the state at resolution time. `loadingState` follows a
   counter of non-background loads, and `onLoadError` fires once per failed
   fetch.
+- **RIV-03 (packaging):** `@angular-devkit/schematics` is an OPTIONAL peer
+  (`peerDependenciesMeta`). `ng add` still requires it — the Angular CLI
+  provides it — but a plain install no longer warns.
+- **RIV-04 (performance):** the default `jsonLoader` and its URL helper ship in
+  the main bundle. The app initializer used to fetch two extra chunks before
+  the first dictionary; `httpLoader`/`remoteLoader` stay lazy.
 - **RIV-05 (fix):** `onMissingKey` runs from the deferred missing-key flush,
   not inside `t()`'s computed. A handler that writes a signal no longer
   throws NG0600; once-per-key dedupe and lookup order are unchanged.
+- **RIV-06 (performance):** ICU templates compile once into a cached AST.
+  Rendering the same plural 100k times is ~13x faster; output is unchanged.
 - **RIV-07 (feature):** loader failures throw `RiviniaLoadError`
   (`url`, `status`, `language`) with the message
   `[rivinia/i18n] Failed to load 'URL' (HTTP STATUS)`. HTTP/2 leaves
   `statusText` empty, so the numeric status is always present.
-- **RIV-03 (packaging):** `@angular-devkit/schematics` is an OPTIONAL peer
-  (`peerDependenciesMeta`). `ng add` still requires it — the Angular CLI
-  provides it — but a plain install no longer warns.
+- **RIV-08 (feature, behavior change):** ICU apostrophe quoting. `''` renders
+  one apostrophe (it previously rendered two), and `'{'`…`'}'` quotes literal
+  braces.
+- **RIV-09 (DX):** missing message arguments are reported via `onMissingParam`
+  (once per key/param, from a microtask) with a dev-mode warning controlled by
+  `warnOnMissingParam`. Output keeps the placeholder.
+- **RIV-10 (feature):** `date` arguments accept strict ISO-8601 strings.
+  Invalid strings still render raw.
+- **RIV-11 (behavior change):** `<html lang>` now uses the language `locale`
+  when configured (`ar` + `ar-EG` → `lang="ar-EG"`); without a locale the id is
+  used, as before.
+- **RIV-12 (feature):** dictionaries may keep dotted keys flat
+  (`{ "app.title": "…" }`). A flat key wins over a nested path on collision, and
+  the CLI warns.
+- **RIV-13 (DX):** `toggle()` is documented as a two-language flip and warns in
+  dev mode when more than two languages are configured.
 - **RIV-14 (packaging):** `repository`, `homepage`, `bugs`, `author`,
   `engines` (Angular 22's supported Node range), `publishConfig.access`, and
   this changelog are part of the published tarball.
+- **RIV-15 (API):** every export is classified Stable/Experimental/Internal in
+  the README; internal helpers carry `@internal`; `languageChanged` is
+  deprecated in favour of `currentLanguage`.
+- **RIV-16 (feature):** `rivinia-i18n-keys --parity --dir public/i18n --base en`
+  reports missing keys, extra keys and placeholder mismatches (including
+  arguments nested in plural/select branches), and exits 1 for CI.
+- **RIV-17 (privacy):** the language is persisted only after an explicit
+  switch, never on first load; writes already reflected in storage are skipped.
+  `persist: false` disables persistence.
+- **Fix:** switching to a cached language after a failed load left
+  `loadingState` at `'error'`; it now returns to `'idle'`.
 
 ## 0.4.0
 

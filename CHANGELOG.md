@@ -5,6 +5,34 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ## Prepared releases (unpublished)
 
+### @rivinia/i18n 0.5.0
+
+The 0.4.0 code-review set. 0.4.1 was never published, so its patch set ships
+here as well; RIV-18 (the internal split) moves to 0.6.0.
+
+- **Fix (0.4.1 scope).** Compact ICU selectors parse (`one{# item}`), an
+  in-flight load shares the fetch but not the decision to apply it,
+  `onMissingKey` runs outside `t()`'s computed, loader failures carry a typed
+  `RiviniaLoadError` with the numeric status, and the devkit schematic peer is
+  optional.
+- **Performance (RIV-04, RIV-06).** The default `jsonLoader` ships in the main
+  bundle (two fewer script requests before the first dictionary);
+  `httpLoader`/`remoteLoader` stay lazy. ICU templates compile into a bounded
+  AST cache (~13x on the 100k-render benchmark).
+- **Feature (RIV-08, RIV-09, RIV-10, RIV-12, RIV-16).** ICU apostrophe
+  quoting, `onMissingParam`/`warnOnMissingParam`, ISO-8601 `date` arguments,
+  flat dotted dictionary keys, and `rivinia-i18n-keys --parity`.
+- **Behavior change (RIV-08, RIV-11).** `''` now renders one apostrophe, and
+  `<html lang>` uses the configured `locale` when present.
+- **Privacy/API (RIV-13, RIV-15, RIV-17).** Persistence only after an explicit
+  switch (`persist: false` opts out); `toggle()` warns above two languages;
+  exports are classified Stable/Experimental/Internal and `languageChanged` is
+  deprecated.
+- **Packaging (RIV-14).** Repository/homepage/bugs/author/engines/publishConfig
+  metadata; provenance is not wired because the repo has no CI workflow.
+- **Fixed.** A cached switch after a load error left `loadingState` at
+  `'error'`.
+
 ### @rivinia/i18n 0.4.0 (prepared, unpublished)
 
 The production-hardening release. All API changes are additive; two behaviour
