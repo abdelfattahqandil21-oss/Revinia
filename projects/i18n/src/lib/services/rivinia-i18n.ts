@@ -10,6 +10,7 @@ import {
   isDevMode,
   makeStateKey,
   signal,
+  type Signal,
   type StateKey,
 } from '@angular/core';
 import {
@@ -269,15 +270,7 @@ export class RiviniaI18n<L extends string = string> {
   ): string {
     if (typeof keyOrTranslations === 'string') {
       const { defaultValue, params } = normalizeKeyArgs(defaultValueOrParams, maybeParams);
-      const resolved = this._lookupKey(keyOrTranslations);
-      if (resolved !== undefined) {
-        return this.render(resolved.text, params, resolved.locale);
-      }
-      if (defaultValue === undefined) {
-        this._reportMissingKey(keyOrTranslations);
-      }
-      const fallback = defaultValue ?? keyOrTranslations;
-      return params ? this.render(fallback, params, this.locale()) : fallback;
+      return this._resolveKeyText(keyOrTranslations, defaultValue, params);
     }
     const currentId = this._currentLanguageId();
     const fallbackId = this._fallbackId;
@@ -287,6 +280,52 @@ export class RiviniaI18n<L extends string = string> {
       Object.values(keyOrTranslations)[0] ??
       ''
     );
+  }
+
+  /**
+   * A `computed` over the same resolution chain as `translate()` — for
+   * component fields (`readonly title = i18n.t('home.title')`), not for
+   * calling from a template expression on every change detection.
+   *
+   * A function `params` is invoked inside the computation, so the signals it
+   * reads are tracked and a change re-renders the text.
+   */
+  t(key: string): Signal<string>;
+  t(key: string, params: TranslateParams | (() => TranslateParams)): Signal<string>;
+  t(
+    key: string,
+    defaultValue: string,
+    params?: TranslateParams | (() => TranslateParams),
+  ): Signal<string>;
+  t(
+    key: string,
+    defaultValueOrParams?: string | TranslateParams | (() => TranslateParams),
+    maybeParams?: TranslateParams | (() => TranslateParams),
+  ): Signal<string> {
+    const defaultValue =
+      typeof defaultValueOrParams === 'string' ? defaultValueOrParams : undefined;
+    const paramsSource =
+      typeof defaultValueOrParams === 'string' ? maybeParams : defaultValueOrParams;
+    return computed(() => {
+      const params = typeof paramsSource === 'function' ? paramsSource() : paramsSource;
+      return this._resolveKeyText(key, defaultValue, params);
+    });
+  }
+
+  private _resolveKeyText(
+    key: string,
+    defaultValue: string | undefined,
+    params: TranslateParams | undefined,
+  ): string {
+    const resolved = this._lookupKey(key);
+    if (resolved !== undefined) {
+      return this.render(resolved.text, params, resolved.locale);
+    }
+    if (defaultValue === undefined) {
+      this._reportMissingKey(key);
+    }
+    const fallback = defaultValue ?? key;
+    return params ? this.render(fallback, params, this.locale()) : fallback;
   }
 
   loadedTranslations = this._loadedTranslations.asReadonly();
