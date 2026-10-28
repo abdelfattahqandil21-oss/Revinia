@@ -36,9 +36,7 @@ export class DocumentDirectionApplier<L extends string = string> {
     const service = this._deps.viewTransition;
     this._applyCount++;
     const useTransition =
-      config?.enabled &&
-      (!config.skipInitialTransition || this._applyCount > 1) &&
-      service != null;
+      config?.enabled && (!config.skipInitialTransition || this._applyCount > 1) && service != null;
 
     if (!useTransition) {
       callback();

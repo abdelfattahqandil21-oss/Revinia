@@ -1,6 +1,9 @@
 # @rivinia/i18n 0.6.0 — core split and the `/ui` entry point
 
-Status: **proposed** (2026-10-28). Nothing in this document is implemented yet.
+Status: **Part 1 implemented** (2026-10-28, branch `pkg/i18n/core-split` over `1f366f2`);
+Part 2 (`/ui`) has not started. The pipe rename (open question 2) was decided as
+"add `rvTranslate`, keep `rTranslate` as a deprecated alias until 1.0", so the `.d.ts`
+diff is one added declaration rather than empty — see D65.
 Baseline: `main` at `68dd312`. Workspace version `0.5.0`, tagged `i18n/v0.5.0`
 (commit `23d5056`). npm `latest` is `0.4.0` (`npm view @rivinia/i18n`, 2026-10-28),
 so 0.5.0 is tagged but **not published**.
@@ -94,7 +97,8 @@ Rules:
 
 ### 2.5 Acceptance
 
-Public `.d.ts` diff against the baseline is **empty**. All AGENTS gates 1-6 pass.
+Public `.d.ts` diff against the baseline is **empty**, except the one declaration the
+decided pipe rename adds (`RvTranslatePipe`). All AGENTS gates 1-6 pass.
 Benchmark is not regressed. Size delta reported. Chromium and Firefox suites pass,
 CSR and SSR.
 
@@ -202,16 +206,18 @@ core. Public API tiers for every new export are added to the README table.
 
 ## 4. Decisions to log in `docs/DECISIONS.md` (next free number: D64)
 
-- Publish-before-refactor ordering and the tag rule applied to 0.5.0.
-- The collaborator split and the rule that specs stay unchanged.
+- Publish-before-refactor ordering and the tag rule applied to 0.5.0. → **D64**
+- The collaborator split and the rule that specs stay unchanged. → **D65**
 - `/ui` contract: structural manager, native names, no popup, recipes for menus.
 
 ## 5. Open questions for the owner
 
 1. Publish 0.5.0 from the existing tag first (recommended) or skip 0.5.0 and
-   release everything as 0.6.0 under a new tag?
+   release everything as 0.6.0 under a new tag? → **decided: publish 0.5.0 first** (D64).
 2. Keep the published pipe name `rTranslate`, or add an `rv`-style name later?
+   → **decided: add `rvTranslate`, keep `rTranslate` deprecated until 1.0** (D65).
 3. Ship the refactor alone as `0.5.1`, or fold it into `0.6.0`?
+   → **decided: fold it into `0.6.0`** (never published as 0.5.1).
 4. Add `rvLanguageOptions`, or keep menu support as recipes only?
 5. `rv-language-toggle` with more than two languages: dev warning only, or fall
    back to a cycle?

@@ -1,7 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Language, ViewTransitionConfig, ViewTransitionInfo } from '../src/lib/models/i18n-types';
+import type {
+  Language,
+  ViewTransitionConfig,
+  ViewTransitionInfo,
+} from '../src/lib/models/i18n-types';
 import { DocumentDirectionApplier } from '../src/lib/services/document-direction-applier';
 import type { ViewTransitionService } from '../src/lib/services/view-transition.service';
 
@@ -10,14 +14,15 @@ const EN: Language = { id: 'en', dir: 'ltr' };
 
 function make(opts?: { viewTransition?: ViewTransitionConfig; service?: boolean; doc?: Document }) {
   const calls: (() => void)[] = [];
-  const fake = opts?.service === false || opts?.viewTransition === undefined
-    ? null
-    : ({
-        run: (cb: () => void) => {
-          calls.push(cb);
-          cb();
-        },
-      } as unknown as ViewTransitionService);
+  const fake =
+    opts?.service === false || opts?.viewTransition === undefined
+      ? null
+      : ({
+          run: (cb: () => void) => {
+            calls.push(cb);
+            cb();
+          },
+        } as unknown as ViewTransitionService);
   const applier = new DocumentDirectionApplier({
     document: opts?.doc ?? document,
     viewTransition: fake,
@@ -92,7 +97,9 @@ describe('DocumentDirectionApplier view transitions', () => {
   });
 
   it('skipInitialTransition uses the transition from the second apply on', () => {
-    const { applier, calls } = make({ viewTransition: { enabled: true, skipInitialTransition: true } });
+    const { applier, calls } = make({
+      viewTransition: { enabled: true, skipInitialTransition: true },
+    });
     applier.apply(EN, () => {});
     expect(calls).toHaveLength(0);
     applier.apply(AR, () => {});

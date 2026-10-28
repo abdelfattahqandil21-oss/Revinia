@@ -4,9 +4,10 @@ Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
 
 ## 0.6.0 (unreleased)
 
-The core split (RIV-18) plus the prefixed pipe name. No public signature changed:
-the exported `.d.ts` surface is identical to 0.5.0, and the emitted FESM is ~3.0 kB
-larger raw (0.64 kB gzip) because the collaborator classes carry their own wiring.
+The core split (RIV-18) plus the prefixed pipe name. No public signature changed and no
+export was removed; the only declaration delta is the added `RvTranslatePipe`. The
+emitted FESM is ~3.6 kB larger raw (0.64 kB gzip) because the collaborator classes carry
+their own wiring.
 
 - **RIV-18 (internal):** `RiviniaI18n` (915 lines, eight responsibilities) is now a
   facade over five plain collaborators: `MessageFormatter` (ICU render + bounded
@@ -18,9 +19,12 @@ larger raw (0.64 kB gzip) because the collaborator classes carry their own wirin
   arguments instead of DI tokens, and each has direct unit tests.
 - **`rvTranslate` (feature, deprecation):** `RvTranslatePipe` uses the package
   prefix (`angular.json` already sets `prefix: "rv"`). `RTranslatePipe`
-  (`rTranslate`) still renders and is deprecated; it is removed in 1.0.
+  (`rTranslate`) still renders and is deprecated; it is removed in 1.0 and is now
+  an empty subclass of the new pipe.
 - **Unbounded map removed:** the `Intl` number/date memo is now a 40-entry LRU, the
-  same ceiling as the ICU compile cache; the emitted output is unchanged.
+  same ceiling as the `formatIcu` caches; the emitted output is unchanged.
+- **`loadedTranslations` is `readonly`:** a public `Signal` was assignable before;
+  no consumer can reasonably depend on writing it.
 - **Behaviour:** none intended. The characterization test (`fallback-after-init`)
   and the SSR smoke suite were added before the split and pass unchanged after it.
 

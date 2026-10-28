@@ -18,7 +18,7 @@
  */
 export interface RiviniaI18nKeyRegistry {}
 
-/** Every key accepted by `translate()`, `t()` and `RTranslatePipe`. */
+/** Every key accepted by `translate()`, `t()` and the `rvTranslate` pipe. */
 export type RegisteredI18nKey = RiviniaI18nKeyRegistry extends {
   keys: infer K extends string;
 }

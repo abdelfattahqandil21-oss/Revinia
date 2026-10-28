@@ -58,15 +58,15 @@ describe('LanguageStorage initial language', () => {
 
   it('keeps the stored language above browser detection', () => {
     localStorage.setItem('rv.lang', 'en');
-    expect(
-      make({ detectBrowser: true, browserLanguages: ['fr'] }).resolveInitialLanguage(),
-    ).toBe('en');
+    expect(make({ detectBrowser: true, browserLanguages: ['fr'] }).resolveInitialLanguage()).toBe(
+      'en',
+    );
   });
 
   it('falls back to the default when nothing matches', () => {
-    expect(
-      make({ detectBrowser: true, browserLanguages: ['de'] }).resolveInitialLanguage(),
-    ).toBe('ar');
+    expect(make({ detectBrowser: true, browserLanguages: ['de'] }).resolveInitialLanguage()).toBe(
+      'ar',
+    );
   });
 });
 

@@ -22,6 +22,16 @@ import { RiviniaI18n } from '../services/rivinia-i18n';
  *   ],
  * })
  * ```
+ *
+ * @example
+ * ```ts
+ * const AR = { id: 'ar', nativeName: 'العربية', dir: 'rtl' };
+ * const EN = { id: 'en', nativeName: 'English', dir: 'ltr' };
+ * provideRiviniaI18n({
+ *   defaultLanguage: 'ar',
+ *   languages: [AR, EN],
+ * })
+ * ```
  */
 export function provideRiviniaI18n<L extends string>(
   config: RiviniaI18nConfig<L>,
@@ -59,7 +69,9 @@ export function injectRiviniaI18n<L extends string = string>(): RiviniaI18n<L> {
  * const lang = i18n.inject();
  * ```
  */
-export function defineRiviniaI18n<L extends string>(config: RiviniaI18nConfig<L>): {
+export function defineRiviniaI18n<L extends string>(
+  config: RiviniaI18nConfig<L>,
+): {
   readonly config: RiviniaI18nConfig<L>;
   provide: () => EnvironmentProviders;
   inject: () => RiviniaI18n<L>;

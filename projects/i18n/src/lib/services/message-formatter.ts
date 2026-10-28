@@ -1,7 +1,7 @@
 import type { TranslateParams } from '../models/i18n-types';
 import { formatIcu } from '../utils/icu';
 
-/** Same ceiling as the ICU compile cache: enough for real option sets. */
+/** Same 40-entry ceiling as the `formatIcu` caches; evicts LRU, they flush. */
 const FORMATTER_CACHE_LIMIT = 40;
 
 export interface MessageFormatterDeps {
@@ -66,10 +66,7 @@ export class MessageFormatter {
   private _dateTimeFormatter(options?: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
     const locale = this._deps.locale();
     const key = `d|${locale}|${JSON.stringify(options ?? null)}`;
-    return this._memo(
-      key,
-      () => new Intl.DateTimeFormat(locale, options),
-    ) as Intl.DateTimeFormat;
+    return this._memo(key, () => new Intl.DateTimeFormat(locale, options)) as Intl.DateTimeFormat;
   }
 
   /** Least-recently-used eviction; a hit moves the entry to the fresh end. */

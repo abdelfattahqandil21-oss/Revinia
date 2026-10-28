@@ -487,8 +487,8 @@ server log, the transfer payload, the absence of a client refetch, and hydration
 
 ## Migration: 0.5.0 → 0.6.0
 
-The core split (RIV-18) is internal: no export was removed, no signature changed, and
-the emitted `.d.ts` surface is identical to 0.5.0. One thing to know:
+The core split (RIV-18) is internal: no export was removed and no signature changed;
+the only addition to the emitted `.d.ts` is `RvTranslatePipe`. One thing to know:
 
 1. **The pipe has the package prefix now.** `RvTranslatePipe` (`rvTranslate`) is the
    documented name. `RTranslatePipe` (`rTranslate`) keeps working, is marked
