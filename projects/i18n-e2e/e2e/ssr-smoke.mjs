@@ -129,6 +129,29 @@ try {
   const dir = await until(() => page.locator('html').getAttribute('dir'), 'ltr');
   check('the hydrated app flips dir', dir === 'ltr', dir);
 
+  // RIV-18 characterization: the fallback dictionary reaches the client through
+  // the transfer state, so switching after hydration must stay idle and keep
+  // the visible/fallback slots apart on the way back.
+  const state = (await page.getByTestId('state').textContent())?.trim();
+  check('the hydrated switch leaves loadingState idle', state === 'en · ltr · idle', String(state));
+
+  await page.getByTestId('lang-ar').click();
+  const backToArabic = await until(() => page.getByTestId('hero').textContent(), AR_HERO);
+  check('switching back restores the Arabic hero', backToArabic === AR_HERO, backToArabic);
+  const fallbackText = await page.getByTestId('fallback-text').textContent();
+  check(
+    'the fallback dictionary still answers after a round trip',
+    fallbackText === 'English-only fallback text',
+    String(fallbackText),
+  );
+  const missingCount = await page.getByTestId('missing-count').textContent();
+  check('missing keys stay deduped across switches', missingCount === '1', String(missingCount));
+  check(
+    'the round trip refetched no dictionary',
+    dictionaryRequests.length === 0,
+    dictionaryRequests.join(', '),
+  );
+
   check('zero console errors in the hydrated page', consoleErrors.length === 0, consoleErrors.join(' | '));
   check('zero uncaught page errors in the hydrated page', pageErrors.length === 0, pageErrors.join(' | '));
 } catch (error) {
