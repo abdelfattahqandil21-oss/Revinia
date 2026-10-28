@@ -77,6 +77,33 @@ import {
 } from '@rivinia/i18n';
 ```
 
+## API stability
+
+Every export is classified so the 1.0 freeze is predictable. **Internal** symbols
+exist only so the package's own tests can import them; they may move to an
+`@rivinia/i18n/internal` entry point (or disappear) before 1.0.
+
+| Export                                                                                | Kind             | Tier         |
+| ------------------------------------------------------------------------------------- | ---------------- | ------------ |
+| `RiviniaI18n`                                                                         | service          | Stable       |
+| `provideRiviniaI18n`, `defineRiviniaI18n`, `injectRiviniaI18n`                        | providers        | Stable       |
+| `RTranslatePipe`                                                                      | pipe             | Stable       |
+| `RiviniaI18nConfig`                                                                   | type             | Stable       |
+| `Language`, `Direction`, `Translation`, `TranslateParams`, `StorageStrategy`, `SwitchStrategy` | types    | Stable       |
+| `RiviniaLoadError`                                                                    | class            | Stable       |
+| `MissingKeyEvent`, `MissingParamEvent`                                                | types            | Stable       |
+| `TranslationLoader`, `LoaderDescriptor`, `LoaderContext`                              | types            | Stable       |
+| `jsonLoader`, `httpLoader`, `remoteLoader`, `customLoader`                            | loader factories | Stable       |
+| `HttpLoaderOptions`, `RemoteLoaderOptions`                                            | types            | Stable       |
+| `formatIcu`, `IcuFormatOptions`                                                       | ICU API          | Stable       |
+| `RegisteredI18nKey`, `RiviniaI18nKeyRegistry`                                         | typed-keys types | Stable       |
+| `ViewTransitionConfig`, `ViewTransitionInfo`                                          | types            | Experimental |
+| `ViewTransitionService`                                                               | service          | Internal     |
+| `parseCookie`, `serializeCookie`                                                      | cookie helpers   | Internal     |
+| `browserLanguages`, `detectBrowserLanguage`                                           | helpers          | Internal     |
+
+`languageChanged` is deprecated: `currentLanguage` is the same signal.
+
 ## Quick start
 
 ```ts
@@ -155,6 +182,9 @@ first content is available or initial loading has settled.
 | `onLoadError`        | `(language, error) => void`                 | none                               | Dictionary load failure. Initialization never rejects because of it.         |
 | `onMissingKey`       | `(event) => void`                           | none                               | Unresolved key; suppresses the default warning.                              |
 | `warnOnMissingKey`   | `boolean`                                   | `isDevMode() && !onMissingKey`     | `console.warn` once per key.                                                 |
+| `onMissingParam`     | `(event) => void`                           | none                               | Missing message argument; suppresses the default warning.                    |
+| `warnOnMissingParam` | `boolean`                                   | `isDevMode() && !onMissingParam`   | `console.warn` once per (key, param).                                        |
+| `persist`            | `boolean`                                   | `true`                             | Persist the language after an explicit switch. First load writes nothing.    |
 | `viewTransition`     | `ViewTransitionConfig`                      | none                               | Document view transition on language change.                                 |
 
 ## Dictionaries
@@ -175,8 +205,11 @@ remoteLoader({
 });
 ```
 
-Loader implementations are resolved lazily: `jsonLoader`, `httpLoader` and
-`remoteLoader` are separate chunks until first use. A loader can also be in-memory:
+Loader implementations are resolved lazily: `httpLoader` and `remoteLoader` are
+separate chunks until first use. The default `jsonLoader` is part of the main
+bundle — it runs in the app initializer, where a lazy chunk would put two extra
+script requests between the main bundle and the dictionary fetch. A loader can
+also be in-memory:
 
 ```ts
 import { customLoader } from '@rivinia/i18n';
@@ -214,7 +247,7 @@ browser; `<base href>` resolved against the request on the server). `isServer` m
 | ----------------------- | ----------------------------------- | -------------------------------------------------------------- |
 | `currentLanguage`       | `Signal<L>`                         | Active language id.                                            |
 | `currentLanguageObject` | `Signal<Language<L>>`               | The active language entry.                                     |
-| `languageChanged`       | `Signal<L>`                         | Alias of `currentLanguage` for effects.                        |
+| `languageChanged`       | `Signal<L>`                         | **Deprecated** — same signal as `currentLanguage`.                     |
 | `languages`             | `Signal<readonly Language<L>[]>`    | Supported languages.                                           |
 | `dir` / `isRtl`         | `Signal<Direction>` / `Signal<boolean>` | Document direction.                                        |
 | `locale`                | `Signal<string>`                    | BCP-47 locale driving `Intl` and plural rules.                  |
@@ -234,7 +267,7 @@ browser; `<base href>` resolved against the request on the server). `isServer` m
 | `translate({ en: 'Hi', ar: 'أهلاً' })`        | `string`              | Inline map: current → fallback → first value.                          |
 | `t(key, params?)`                             | `Signal<string>`      | Same chain as a `computed`; params may be a function of signals.       |
 | `setLanguage(id)` / `setLanguageAsync(id)`    | `void` / `Promise<void>` | Follows `switchStrategy`.                                          |
-| `toggle()` / `next()` / `previous()`          | `void`                | Cycle through `languages`.                                            |
+| `toggle()` / `next()` / `previous()`          | `void`                | `toggle()` flips the first two languages (dev warning with more); `next()`/`previous()` cycle. |
 | `loadTranslations(id, { silent? })`           | `Promise<Record<…>>`  | Preload without switching.                                            |
 | `reload(language?)`                           | `Promise<boolean>`    | Invalidate + refetch; never rejects.                                  |
 | `formatNumber(value, options?)`               | `string`              | `Intl.NumberFormat` bound to `locale`.                                |
@@ -242,6 +275,7 @@ browser; `<base href>` resolved against the request on the server). `isServer` m
 | `getLanguage(id)`                             | `Language<L> \| undefined` | Lookup.                                                          |
 | `initialize()`                                | `Promise<void>`       | Called by the provider; idempotent.                                   |
 | `clearMissingKeys()`                          | `void`                | Reset the missing-key report.                                         |
+| `clearMissingParams()`                        | `void`                | Reset the missing-parameter dedupe.                                   |
 
 `RTranslatePipe` (`rTranslate`) delegates to `translate()`. It is impure by necessity —
 the service reads signals on every call — so prefer `t()` or component code for long
@@ -273,6 +307,14 @@ Supported subset (MF1): `{name}` interpolation, `{n, plural, …}` (with `offset
 - Unsupported or malformed constructs never throw: the raw `{…}` segment is returned
   as-is and parsing continues.
 - `{name}` interpolation is `String(value)`; use `{n, number}` when formatting matters.
+- `''` renders one apostrophe. A single apostrophe immediately before `{` or `}` (and
+  `#` inside a plural) starts a quoted literal that ends at the next apostrophe:
+  `It''s '{'x'}'` → `It's {x}`. A lone apostrophe elsewhere (`Don't`) is unchanged.
+- `date` accepts a `Date`, epoch milliseconds, or a strict ISO-8601 string
+  (`2026-10-28`, `2026-10-28T12:00:00Z`). Invalid input keeps the raw segment. Plain
+  `{d}` on a `Date` uses `String()` — use `{d, date, …}` for localized output.
+- Templates are compiled once into a cached AST, so a message rendered on every
+  change-detection pass is not re-parsed.
 
 ## Missing keys
 
@@ -299,6 +341,22 @@ provideRiviniaI18n({
 
 Without `onMissingKey`, a `console.warn` is logged once per key in dev mode. Set
 `warnOnMissingKey: false` to silence it, or `true` to keep it in production.
+
+## Missing parameters
+
+A message that needs `{name}` but receives no `name` keeps the placeholder — it is
+never replaced with `undefined`. Report it the same way as missing keys:
+
+```ts
+provideRiviniaI18n({
+  // …
+  onMissingParam: ({ key, param, language }) => report(param, { key, language }),
+});
+```
+
+Without `onMissingParam`, dev mode logs one warning per (key, param) pair. Set
+`warnOnMissingParam: false` to silence it. The hook is delivered from a microtask,
+so it may write signals, and `i18n.clearMissingParams()` resets the dedupe.
 
 ## Fallback language
 
@@ -362,6 +420,7 @@ npx rivinia-i18n-keys
 # → src/i18n-keys.d.ts
 npx rivinia-i18n-keys --source public/i18n/en.json --out src/i18n-keys.d.ts
 npx rivinia-i18n-keys --check   # exit 1 when the file is stale (CI)
+npx rivinia-i18n-keys --parity --dir public/i18n --base en
 ```
 
 ```ts
@@ -383,9 +442,16 @@ i18n.t('app.titel'); // TS error: not assignable to 'app.title' | …
 i18n.translate(`status.${code}` as RegisteredI18nKey); // dynamic key, explicit
 ```
 
-The CLI flattens nested objects to dot paths, keeps string leaves only, warns about
-non-string leaves, sorts keys for stable diffs, and escapes quotes. It has no
-dependencies and ships with the package (`rivinia-i18n-keys`).
+The CLI flattens nested objects to dot paths, keeps literal dotted keys as-is, keeps
+string leaves only, warns about non-string leaves and key collisions (the flat key
+wins), sorts keys for stable diffs, and escapes quotes. It has no dependencies and
+ships with the package (`rivinia-i18n-keys`).
+
+`--parity` compares every `<language>.json` in `--dir` against `--base` and reports,
+sorted: keys missing from a language, keys extra to it, and ICU placeholders used by
+the base string but absent from the translation. Placeholders inside plural/select
+branches are compared too; branch text itself is never read as a parameter. Any
+mismatch exits 1, so CI fails on the common "added to `en.json`, forgot `ar.json`" bug.
 
 ## SSR
 

@@ -1,6 +1,10 @@
 import { DOCUMENT, Service, inject } from '@angular/core';
 
-/** Progressive-enhancement wrapper around the View Transition API. */
+/**
+ * Progressive-enhancement wrapper around the View Transition API.
+ * @internal Driven by `RiviniaI18n`; consumers configure
+ * `viewTransition` instead of injecting this service.
+ */
 @Service()
 export class ViewTransitionService {
   private readonly _doc = inject(DOCUMENT);

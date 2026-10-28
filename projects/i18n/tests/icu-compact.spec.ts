@@ -52,6 +52,13 @@ describe('RIV-01 compact ICU selectors', () => {
     expect(formatIcu(malformed, { n: 1 }, 'en')).toBe(malformed);
   });
 
+  it('parses a compact select nested inside a compact plural', () => {
+    const tpl =
+      '{c, plural, one{{g, select, male{He has #} other{They have #}}} other{{g, select, male{They have #} other{They have #}}}}';
+    expect(formatIcu(tpl, { c: 1, g: 'male' }, 'en')).toBe('He has 1');
+    expect(formatIcu(tpl, { c: 3, g: 'x' }, 'en')).toBe('They have 3');
+  });
+
   it('keeps the spaced form working (regression)', () => {
     const tpl = '{n, plural, one {# item} other {# items}}';
     expect(formatIcu(tpl, { n: 1 }, 'en')).toBe('1 item');

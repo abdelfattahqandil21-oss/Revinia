@@ -28,7 +28,7 @@ import type { TranslateParams } from '../models/i18n-types';
 import type { Translation } from '../models/i18n-types';
 import type { TranslationLoader } from '../models/loaders';
 import type { LoaderContext } from '../models/loaders';
-import type { MissingKeyEvent } from '../models/missing-key';
+import type { MissingKeyEvent, MissingParamEvent } from '../models/missing-key';
 import type { RegisteredI18nKey } from '../models/typed-keys';
 import { jsonLoader } from '../models/loaders';
 import { createLoaderContext } from '../utils/loader-context';
@@ -52,6 +52,8 @@ export class RiviniaI18n<L extends string = string> {
     this._config.storageStrategy ?? DEFAULT_STORAGE_STRATEGY;
   private readonly _autoApplyDirection: boolean =
     this._config.autoApplyDirection ?? DEFAULT_AUTO_APPLY_DIRECTION;
+  /** Writes reach storage/cookies only after an explicit switch (RIV-17). */
+  private readonly _persist: boolean = this._config.persist ?? true;
   /** Validated once; `null` means no fallback chain. */
   private readonly _fallbackId: L | null = this._config.fallbackLanguage ?? null;
   /**
@@ -117,6 +119,10 @@ export class RiviniaI18n<L extends string = string> {
   private _initialized = false;
   private readonly _tasks = inject(PendingTasks, { optional: true });
 
+  /**
+   * @deprecated Use `currentLanguage`, which is the same signal.
+   * Scheduled for removal before 1.0.
+   */
   readonly languageChanged = computed<L>(() => this._currentLanguageId());
   readonly languages = this._languages.asReadonly();
   readonly currentLanguage = this._currentLanguageId.asReadonly();
@@ -158,6 +164,14 @@ export class RiviniaI18n<L extends string = string> {
   private readonly _pendingMissingEvents: MissingKeyEvent<L>[] = [];
   private _missingFlushQueued = false;
 
+  private readonly _warnOnMissingParam: boolean =
+    this._config.warnOnMissingParam ??
+    (isDevMode() && this._config.onMissingParam === undefined);
+  /** Dedupe key: `key` + NUL + `param`, so neither part can collide. */
+  private readonly _reportedMissingParams = new Set<string>();
+  private readonly _pendingMissingParams: MissingParamEvent<L>[] = [];
+  private _missingParamsFlushQueued = false;
+
   /**
    * Keys that could not be resolved from the current dictionary, the fallback
    * dictionary, or a `defaultValue`, in the order they were first looked up.
@@ -172,6 +186,12 @@ export class RiviniaI18n<L extends string = string> {
     this._pendingMissingKeys.length = 0;
     this._pendingMissingEvents.length = 0;
     this._missingKeys.set([]);
+  }
+
+  /** Resets the missing-parameter dedupe, e.g. after adding the argument. */
+  clearMissingParams(): void {
+    this._reportedMissingParams.clear();
+    this._pendingMissingParams.length = 0;
   }
 
   constructor() {
@@ -191,18 +211,15 @@ export class RiviniaI18n<L extends string = string> {
       );
     }
 
-    effect(() => {
-      const id = this._currentLanguageId();
-      this._writeStored(id);
-    });
-
     if (this._autoApplyDirection) {
       effect(() => {
         const lang = this.currentLanguageObject();
         const root = this._doc.documentElement;
         if (!root) return;
         root.dir = lang.dir;
-        root.lang = lang.id;
+        // A configured BCP-47 locale is more precise than the internal id
+        // (`ar` + locale `ar-EG`), and ids are not required to be valid tags.
+        root.lang = lang.locale ?? lang.id;
       });
     }
   }
@@ -325,7 +342,7 @@ export class RiviniaI18n<L extends string = string> {
   ): string {
     const resolved = this._lookupKey(key);
     if (resolved !== undefined) {
-      return this.render(resolved.text, params, resolved.locale);
+      return this.render(resolved.text, params, resolved.locale, key);
     }
     if (defaultValue === undefined) {
       // Reporting reads language signals; keep those reads out of `t()`'s
@@ -333,7 +350,7 @@ export class RiviniaI18n<L extends string = string> {
       untracked(() => this._reportMissingKey(key));
     }
     const fallback = defaultValue ?? key;
-    return params ? this.render(fallback, params, this.locale()) : fallback;
+    return params ? this.render(fallback, params, this.locale(), key) : fallback;
   }
 
   loadedTranslations = this._loadedTranslations.asReadonly();
@@ -408,9 +425,21 @@ export class RiviniaI18n<L extends string = string> {
     this._generations.set(languageId, this._generationOf(languageId) + 1);
   }
 
+  /**
+   * Flips between the first two configured languages. Documentation and
+   * templates commonly place it next to `next()`/`previous()`, so it warns in
+   * dev mode when more than two languages are configured — use the cycling
+   * methods there.
+   */
   toggle(): void {
     const langs = this._languages();
     if (langs.length < 2) return;
+    if (langs.length > 2 && isDevMode()) {
+      console.warn(
+        '[rivinia/i18n] toggle() only flips the first two languages; ' +
+          'use next()/previous() when more than two are configured.',
+      );
+    }
     const currentId = this._currentLanguageId();
     const newId = currentId === langs[0].id ? langs[1].id : langs[0].id;
     this.applyLanguage(newId);
@@ -513,13 +542,33 @@ export class RiviniaI18n<L extends string = string> {
       void this._loadTranslations(id);
       this._ensureFallback();
     }
+
+    // Explicit switch only (RIV-17): the initial language is never written.
+    this._persistLanguage(id);
   }
 
-  private render(template: string, params: TranslateParams | undefined, locale: string): string {
-    if (!params) return template;
-    if (!template.includes('{')) return template;
+  private _persistLanguage(id: L): void {
+    if (!this._persist) return;
+    if (this._readStored() === id) return;
+    this._writeStored(id);
+  }
+
+  private render(
+    template: string,
+    params: TranslateParams | undefined,
+    locale: string,
+    key: string,
+  ): string {
+    // Apostrophe quoting is message syntax, so `''` collapses even when the
+    // caller passed no params; everything else keeps the no-params fast path
+    // (a plural template without values must stay raw, not pick `other`).
+    const quoting = template.includes("'");
+    if (params === undefined && !quoting) return template;
+    if (!quoting && !template.includes('{')) return template;
     try {
-      return formatIcu(template, params, locale);
+      return formatIcu(template, params ?? {}, locale, {
+        onMissingParam: (name) => untracked(() => this._reportMissingParam(key, name)),
+      });
     } catch {
       return template;
     }
@@ -611,6 +660,38 @@ export class RiviniaI18n<L extends string = string> {
     });
   }
 
+  /**
+   * Mirrors `_reportMissingKey` for absent message arguments. The output keeps
+   * the placeholder; this only records/warns, once per (key, param) pair. The
+   * hook is deferred to a microtask for the same NG0600 reason.
+   */
+  private _reportMissingParam(key: string, param: string): void {
+    const dedupe = `${key}\u0000${param}`;
+    if (this._reportedMissingParams.has(dedupe)) return;
+    this._reportedMissingParams.add(dedupe);
+
+    const language = this._currentLanguageId();
+    this._pendingMissingParams.push({ key, param, language });
+    this._queueMissingParamsFlush();
+
+    if (this._warnOnMissingParam) {
+      console.warn(
+        `[rivinia/i18n] Missing parameter "${param}" for key "${key}" ` +
+          `and language "${language}"; the placeholder was kept.`,
+      );
+    }
+  }
+
+  private _queueMissingParamsFlush(): void {
+    if (this._missingParamsFlushQueued) return;
+    this._missingParamsFlushQueued = true;
+    queueMicrotask(() => {
+      this._missingParamsFlushQueued = false;
+      const events = this._pendingMissingParams.splice(0);
+      for (const event of events) this._config.onMissingParam?.(event);
+    });
+  }
+
   private async _loadTranslations(
     languageId: L,
     opts?: { silent?: boolean; background?: boolean; force?: boolean },
@@ -678,6 +759,13 @@ export class RiviniaI18n<L extends string = string> {
     if (languageId === this._currentLanguageId()) {
       this._loadedTranslations.set(data);
       this._loadingError.set(null);
+      // A cached dictionary answers without a load, so the `finally` that
+      // normally clears `loading` never runs. Without this, switching away
+      // from a failed language to a cached one leaves loadingState 'error'
+      // even though the UI is fully translated.
+      if (this._loadingCount === 0 && this._loadingState() === 'error') {
+        this._loadingState.set('idle');
+      }
     }
     if (languageId === this._fallbackId) {
       this._fallbackDict.set(data);
@@ -779,14 +867,22 @@ export class RiviniaI18n<L extends string = string> {
     this._transfer?.set(this.transferKey(languageId), dict);
   }
 
+  /**
+   * Exact key first, then the nested walk. Exports from some tools keep the
+   * dot in the key (`{ "app.title": "x" }`); on a collision the flat key wins.
+   */
   private _resolveKey(obj: Record<string, unknown>, path: string): string | undefined {
-    const value = path
-      .split('.')
-      .reduce<unknown>(
-        (acc, segment) =>
-          acc && typeof acc === 'object' ? (acc as Record<string, unknown>)[segment] : undefined,
-        obj,
-      );
+    const value = Object.prototype.hasOwnProperty.call(obj, path)
+      ? obj[path]
+      : path
+          .split('.')
+          .reduce<unknown>(
+            (acc, segment) =>
+              acc && typeof acc === 'object'
+                ? (acc as Record<string, unknown>)[segment]
+                : undefined,
+            obj,
+          );
     if (typeof value === 'string') return value;
     if (typeof value === 'number' || typeof value === 'boolean') return String(value);
     return undefined;

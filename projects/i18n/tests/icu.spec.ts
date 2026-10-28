@@ -171,8 +171,12 @@ describe('formatIcu date', () => {
     expect(formatIcu('{d, date, short}', { d: day.getTime() }, 'en')).toBe('10/25/26');
   });
 
+  it('renders an ISO-8601 date string instead of returning it raw (RIV-10)', () => {
+    expect(formatIcu('{d, date}', { d: '2026-10-25' }, 'en')).toBe('10/25/2026');
+  });
+
   it('returns the raw segment for a non-date value or unknown style', () => {
-    expect(formatIcu('{d, date}', { d: '2026-10-25' }, 'en')).toBe('{d, date}');
+    expect(formatIcu('{d, date}', { d: 'garbage' }, 'en')).toBe('{d, date}');
     expect(formatIcu('{d, date, short}', { d: new Date(Number.NaN) }, 'en')).toBe(
       '{d, date, short}',
     );
