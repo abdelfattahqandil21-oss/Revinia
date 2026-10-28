@@ -23,7 +23,6 @@ import {
 } from '../models/i18n-config';
 import type { Direction } from '../models/i18n-types';
 import type { Language } from '../models/i18n-types';
-import type { StorageStrategy } from '../models/i18n-types';
 import type { TranslateParams } from '../models/i18n-types';
 import type { Translation } from '../models/i18n-types';
 import type { TranslationLoader } from '../models/loaders';
@@ -32,8 +31,8 @@ import type { MissingKeyEvent, MissingParamEvent } from '../models/missing-key';
 import type { RegisteredI18nKey } from '../models/typed-keys';
 import { jsonLoader } from '../models/loaders';
 import { createLoaderContext } from '../utils/loader-context';
-import { browserLanguages, detectBrowserLanguage, safeGetItem, safeSetItem } from '../utils/i18n-utils';
-import { parseCookie, serializeCookie, shouldSecureCookie } from '../utils/cookies';
+import { browserLanguages } from '../utils/i18n-utils';
+import { LanguageStorage } from './language-storage';
 import { MissingKeyReporter } from './missing-key-reporter';
 import { MessageFormatter } from './message-formatter';
 import { ViewTransitionService } from './view-transition.service';
@@ -48,13 +47,8 @@ import { ViewTransitionService } from './view-transition.service';
 export class RiviniaI18n<L extends string = string> {
   private readonly _config = inject<RiviniaI18nConfig<L>>(RIVINIA_I18N_CONFIG);
   private readonly _viewTransition = inject(ViewTransitionService, { optional: true });
-  private readonly _storageKey = this._config.storageKey ?? DEFAULT_STORAGE_KEY;
-  private readonly _storageStrategy: StorageStrategy =
-    this._config.storageStrategy ?? DEFAULT_STORAGE_STRATEGY;
   private readonly _autoApplyDirection: boolean =
     this._config.autoApplyDirection ?? DEFAULT_AUTO_APPLY_DIRECTION;
-  /** Writes reach storage/cookies only after an explicit switch (RIV-17). */
-  private readonly _persist: boolean = this._config.persist ?? true;
   /** Validated once; `null` means no fallback chain. */
   private readonly _fallbackId: L | null = this._config.fallbackLanguage ?? null;
   /**
@@ -74,8 +68,25 @@ export class RiviniaI18n<L extends string = string> {
    */
   readonly loaderContext: LoaderContext = createLoaderContext(this._request ?? null, this._doc);
 
-  private readonly _currentLanguageId = signal<L>(this._resolveInitialLanguage());
+  /** Declared before the storage collaborator: it reads this during setup. */
   private readonly _languages = signal<readonly Language<L>[]>(this._config.languages);
+
+  private readonly _languageStorage = new LanguageStorage<L>({
+    key: this._config.storageKey ?? DEFAULT_STORAGE_KEY,
+    strategy: this._config.storageStrategy ?? DEFAULT_STORAGE_STRATEGY,
+    languages: () => this._languages(),
+    defaultLanguage: this._config.defaultLanguage,
+    detectBrowser: this._config.detectBrowser ?? false,
+    document: this._doc,
+    request: this._request ?? null,
+    // Writes reach storage/cookies only after an explicit switch (RIV-17).
+    persist: this._config.persist ?? true,
+    browserLanguages,
+  });
+
+  private readonly _currentLanguageId = signal<L>(
+    this._languageStorage.resolveInitialLanguage(),
+  );
   private readonly _loadedTranslations = signal<Record<string, unknown>>({});
   /**
    * The fallback dictionary, kept separate from `_loadedTranslations` (which
@@ -521,13 +532,7 @@ export class RiviniaI18n<L extends string = string> {
     }
 
     // Explicit switch only (RIV-17): the initial language is never written.
-    this._persistLanguage(id);
-  }
-
-  private _persistLanguage(id: L): void {
-    if (!this._persist) return;
-    if (this._readStored() === id) return;
-    this._writeStored(id);
+    this._languageStorage.persistAfterSwitch(id);
   }
 
   private render(
@@ -712,43 +717,6 @@ export class RiviniaI18n<L extends string = string> {
     return task;
   }
 
-  /**
-   * Reads the persisted language. Cookie strategy: server reads the request
-   * `Cookie` header (no hydration mismatch), browser reads `document.cookie`.
-   * Everything else delegates to the SSR-safe storage helpers.
-   */
-  private _readStored(): string | null {
-    if (this._storageStrategy === 'cookie') {
-      const header = this._request?.headers.get('cookie') ?? null;
-      if (header !== null) return parseCookie(header, this._storageKey);
-      try {
-        return parseCookie(this._doc.cookie, this._storageKey);
-      } catch {
-        return null;
-      }
-    }
-    return safeGetItem(this._storageKey, this._storageStrategy);
-  }
-
-  /** Persists the language. Server never writes (response cookies are app-owned). */
-  private _writeStored(id: L): void {
-    if (this._storageStrategy === 'cookie') {
-      if (this._request) return;
-      try {
-        const location = (
-          this._doc as unknown as { location?: { protocol?: string; hostname?: string } }
-        )?.location;
-        this._doc.cookie = serializeCookie(this._storageKey, id, {
-          secure: shouldSecureCookie(location),
-        });
-      } catch {
-        // Best-effort persistence.
-      }
-      return;
-    }
-    safeSetItem(this._storageKey, id, this._storageStrategy);
-  }
-
   private transferKey(languageId: L): StateKey<Record<string, unknown>> {
     return makeStateKey<Record<string, unknown>>(`rivinia.i18n.dict.${languageId}`);
   }
@@ -789,21 +757,6 @@ export class RiviniaI18n<L extends string = string> {
     if (typeof value === 'string') return value;
     if (typeof value === 'number' || typeof value === 'boolean') return String(value);
     return undefined;
-  }
-
-  private _resolveInitialLanguage(): L {
-    const stored = this._readStored();
-    if (stored && this._config.languages.some((l) => l.id === stored)) {
-      return stored as L;
-    }
-    if (this._config.detectBrowser) {
-      const detected = detectBrowserLanguage(
-        this._config.languages.map((l) => l.id),
-        browserLanguages(),
-      );
-      if (detected) return detected;
-    }
-    return this._config.defaultLanguage;
   }
 }
 
