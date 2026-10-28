@@ -8,6 +8,13 @@ import type { LoaderDescriptor } from './loaders';
 export interface RiviniaI18nConfig<T extends string = string> {
   readonly languages: readonly Language<T>[];
   readonly defaultLanguage: T;
+  /**
+   * Language used when a key is absent from the current dictionary. Must be
+   * one of `languages`. The fallback dictionary is loaded silently (it never
+   * drives `loadingState`), and its messages are rendered with the fallback
+   * language's locale — an English plural template keeps English plural rules.
+   */
+  readonly fallbackLanguage?: T;
   readonly storageKey?: string;
   readonly storageStrategy?: StorageStrategy;
   readonly autoApplyDirection?: boolean;

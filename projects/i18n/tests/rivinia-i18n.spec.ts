@@ -6,6 +6,7 @@ import type { RiviniaI18nConfig } from '../src/lib/models/i18n-config';
 import { customLoader } from '../src/lib/models/loaders';
 import { defineRiviniaI18n, injectRiviniaI18n, provideRiviniaI18n } from '../src/lib/providers/provide-i18n';
 import { RiviniaI18n } from '../src/lib/services/rivinia-i18n';
+import { formatIcu } from '../src/lib/utils/icu';
 
 const AR = { id: 'ar', nativeName: 'العربية', dir: 'rtl' } as const;
 const EN = { id: 'en', nativeName: 'English', dir: 'ltr' } as const;
@@ -475,5 +476,179 @@ describe('RiviniaI18n formatting and state', () => {
     await new Promise((r) => setTimeout(r, 0));
     expect(i18n.currentLanguage()).toBe('ar');
     expect(i18n.loadedTranslations()).toEqual({ hello: 'مرحبا' });
+  });
+});
+
+describe('RiviniaI18n fallback language', () => {
+  it('resolves current → fallback → defaultValue → key', async () => {
+    const i18n = setup({
+      fallbackLanguage: 'en',
+      loader: customLoader(async (lang) =>
+        lang === 'ar'
+          ? { onlyAr: 'عربي', shared: 'مشترك' }
+          : { onlyEn: 'English only', shared: 'Shared' },
+      ),
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(i18n.translate('onlyAr')).toBe('عربي');
+    expect(i18n.translate('onlyEn')).toBe('English only');
+    expect(i18n.translate('shared')).toBe('مشترك');
+    expect(i18n.translate('nowhere', 'Inline')).toBe('Inline');
+    expect(i18n.translate('nowhere')).toBe('nowhere');
+  });
+
+  it('renders a fallback message with the FALLBACK locale plural rules', async () => {
+    const template = '{count, plural, one {one} two {two} other {other}}';
+    const i18n = setup({
+      fallbackLanguage: 'en',
+      languages: [{ id: 'ar', dir: 'rtl', locale: 'ar-EG' }, EN],
+      loader: customLoader(async (lang) => (lang === 'en' ? { items: template } : {})),
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+    // The template is English, so English rules apply: 2 is "other", not "two".
+    expect(i18n.translate('items', { count: 2 })).toBe('other');
+    // Control: the same template under the current locale would say "two".
+    expect(formatIcu(template, { count: 2 }, 'ar-EG')).toBe('two');
+  });
+
+  it('loads the fallback once, during initialize, alongside the current language', async () => {
+    const seen: string[] = [];
+    setup({
+      fallbackLanguage: 'en',
+      loader: customLoader(async (lang) => {
+        seen.push(lang);
+        return {};
+      }),
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(seen.sort()).toEqual(['ar', 'en']);
+  });
+
+  it('does not load twice when the fallback is the current language', async () => {
+    const seen: string[] = [];
+    setup({
+      fallbackLanguage: 'ar',
+      loader: customLoader(async (lang) => {
+        seen.push(lang);
+        return {};
+      }),
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(seen).toEqual(['ar']);
+  });
+
+  it('rejects a fallback that is not a configured language', () => {
+    expect(() => setup({ fallbackLanguage: 'fr' as 'ar' })).toThrow(/fallbackLanguage/);
+  });
+
+  it('uses inline fallback dictionaries without any loader', () => {
+    const i18n = setup({
+      fallbackLanguage: 'en',
+      preload: false,
+      translations: { ar: { a: 'أ' }, en: { a: 'A', b: 'B' } },
+      loader: customLoader(async () => ({})),
+    });
+    expect(i18n.translate('a')).toBe('أ');
+    expect(i18n.translate('b')).toBe('B');
+  });
+
+  it('Translation objects follow current → fallback → first value', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideRiviniaI18n({
+          defaultLanguage: 'ar',
+          languages: [AR, EN, { id: 'fr', dir: 'ltr' }],
+          fallbackLanguage: 'en',
+          storageStrategy: 'none',
+          preload: false,
+          loader: customLoader(async () => ({})),
+        }),
+      ],
+    });
+    const i18n = TestBed.inject(RiviniaI18n<'ar' | 'en' | 'fr'>);
+    const partial = { fr: 'Enregistrer', en: 'Save' } as Record<'ar' | 'en' | 'fr', string>;
+    expect(i18n.translate(partial)).toBe('Save');
+  });
+
+  it('consumes a transferred fallback dictionary without fetching it', async () => {
+    const seen: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        seen.push(url);
+        return { ok: true, statusText: 'OK', json: async () => ({}) } as Response;
+      }),
+    );
+    try {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          provideAppInitializer(() => {
+            const transfer = inject(TransferState);
+            transfer.set(makeStateKey<Record<string, unknown>>('rivinia.i18n.dict.ar'), {
+              hello: 'مرحبا',
+            });
+            transfer.set(makeStateKey<Record<string, unknown>>('rivinia.i18n.dict.en'), {
+              onlyEn: 'English only',
+            });
+          }),
+          provideRiviniaI18n({
+            defaultLanguage: 'ar',
+            languages: [AR, EN],
+            fallbackLanguage: 'en',
+            storageStrategy: 'none',
+          }),
+        ],
+      });
+      const i18n = TestBed.inject(RiviniaI18n<'ar' | 'en'>);
+      await TestBed.inject(ApplicationRef).whenStable();
+      expect(i18n.translate('onlyEn')).toBe('English only');
+      expect(seen).toEqual([]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('loads the fallback when switching to a language that was never loaded', async () => {
+    const seen: string[] = [];
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideRiviniaI18n({
+          defaultLanguage: 'ar',
+          languages: [AR, EN, { id: 'fr', dir: 'ltr' }],
+          fallbackLanguage: 'en',
+          storageStrategy: 'none',
+          preload: false,
+          loader: customLoader(async (lang) => {
+            seen.push(lang);
+            return lang === 'en' ? { b: 'B' } : {};
+          }),
+        }),
+      ],
+    });
+    const i18n = TestBed.inject(RiviniaI18n<'ar' | 'en' | 'fr'>);
+    expect(seen).toEqual([]);
+    i18n.setLanguage('fr');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(seen.sort()).toEqual(['en', 'fr']);
+    expect(i18n.translate('b')).toBe('B');
+  });
+
+  it('a fallback load failure never sets loadingState to error', async () => {
+    const failures: Array<[string, unknown]> = [];
+    const i18n = setup({
+      fallbackLanguage: 'en',
+      loader: customLoader(async (lang) => {
+        if (lang === 'en') throw new Error('fallback down');
+        return { hello: 'مرحبا' };
+      }),
+      onLoadError: (lang, error) => failures.push([lang, error]),
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(i18n.translate('hello')).toBe('مرحبا');
+    expect(i18n.loadingState()).toBe('idle');
+    expect(failures.map(([lang]) => lang)).toEqual(['en']);
   });
 });
