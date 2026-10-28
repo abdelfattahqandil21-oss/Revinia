@@ -11,12 +11,33 @@
     "typescript"
   ],
   "license": "MIT",
+  "author": "abdelfattahqandil21 <abdelfattahqandil21@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abdelfattahqandil21-oss/Revinia.git",
+    "directory": "projects/i18n"
+  },
+  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/projects/i18n#readme",
+  "bugs": {
+    "url": "https://github.com/abdelfattahqandil21-oss/Revinia/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "rivinia-i18n-keys": "./cli/rivinia-i18n-keys.mjs"
   },
   "peerDependencies": {
     "@angular-devkit/schematics": "^22.0.0",
     "@angular/core": "^22.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@angular-devkit/schematics": {
+      "optional": true
+    }
   },
   "sideEffects": false,
   "schematics": "./schematics/collection.json"
