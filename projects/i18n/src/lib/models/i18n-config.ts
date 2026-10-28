@@ -1,6 +1,7 @@
 import { InjectionToken } from '@angular/core';
 import type { Language, StorageStrategy, SwitchStrategy, ViewTransitionConfig } from './i18n-types';
 import type { LoaderDescriptor } from './loaders';
+import type { MissingKeyEvent } from './missing-key';
 
 /**
  * Global configuration for `@rivinia/i18n`.
@@ -8,6 +9,13 @@ import type { LoaderDescriptor } from './loaders';
 export interface RiviniaI18nConfig<T extends string = string> {
   readonly languages: readonly Language<T>[];
   readonly defaultLanguage: T;
+  /**
+   * Language used when a key is absent from the current dictionary. Must be
+   * one of `languages`. The fallback dictionary is loaded silently (it never
+   * drives `loadingState`), and its messages are rendered with the fallback
+   * language's locale — an English plural template keeps English plural rules.
+   */
+  readonly fallbackLanguage?: T;
   readonly storageKey?: string;
   readonly storageStrategy?: StorageStrategy;
   readonly autoApplyDirection?: boolean;
@@ -23,6 +31,18 @@ export interface RiviniaI18nConfig<T extends string = string> {
   readonly switchStrategy?: SwitchStrategy;
   /** Called when a dictionary load fails. The service still falls back safely. */
   readonly onLoadError?: (language: T, error: unknown) => void;
+  /**
+   * Called when `translate()` cannot resolve a key (absent from the current
+   * dictionary, from the fallback dictionary, and with no `defaultValue`).
+   * Fires once per key per session. When set, the default console warning is
+   * suppressed.
+   */
+  readonly onMissingKey?: (event: MissingKeyEvent<T>) => void;
+  /**
+   * Log a `console.warn` (once per key) for unresolved keys.
+   * @default isDevMode() && !onMissingKey
+   */
+  readonly warnOnMissingKey?: boolean;
   /**
    * Load the initial language during provider setup (before first paint).
    * SSR waits via `PendingTasks`. Set `false` to skip (e.g. fully inline apps

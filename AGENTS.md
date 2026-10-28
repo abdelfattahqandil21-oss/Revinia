@@ -3,17 +3,34 @@
 Production-ready Angular library ecosystem. Correctness over speed. Never sacrifice
 dependency boundaries or publishing correctness for convenience.
 
-## Baseline (verified 2026-10-12)
+## Baseline (verified 2026-10-28)
 
-- Angular stable: **22.2.2** (released 2026-10-08). Sources: `npm view @angular/core`,
+- Angular stable: **22.2.3** (released 2026-10-14). Sources: `npm view @angular/core`,
   https://angular.dev/reference/releases. Major 22 active until 2027-06, LTS until 2028-06.
-- CLI / ng-packagr aligned on major 22 (`@angular/cli 22.2.1` installed, ng-packagr `22.2.4` latest).
+  Angular 23 does not exist: the `next` tag is `22.3.0-next.2`.
+- CLI / ng-packagr aligned on major 22 (`@angular/cli` + `@angular/build` 22.2.4,
+  `@angular-devkit/*` 22.2.4, ng-packagr 22.2.5 installed).
 - `@Service()` — CONFIRMED stable in `@angular/core` (exported, used by i18n-egy v2.2.0).
 - `injectAsync` — CONFIRMED stable since v22.0 (`core.d.ts` exports it, `prefetch: onIdle` supported).
-- Signal Forms — CONFIRMED stable: `@angular/forms@22.2.2` exports `./signals` + `./signals/compat`.
-- Peer policy: `@angular/*` pinned exact within major (`@angular/compiler: 22.2.2`);
+- Signal Forms — CONFIRMED stable: `@angular/forms@22.2.3` exports `./signals` + `./signals/compat`.
+- TypeScript pinned by `@angular/compiler-cli` peers: `>=6.0 <6.1` (6.0.3 installed).
+- Peer policy: `@angular/*` pinned exact within major (`@angular/compiler: 22.2.3`);
   libraries declare `peerDependencies: {"@angular/core": "^22.0.0"}`, `tslib` as runtime dep.
 - Package manager: **pnpm** (matches i18n-egy precedent; `pnpm 12.8.1` available).
+
+## Skill routing
+
+- Start every non-trivial task by loading the `rivinia-playbook` skill
+  (`.opencode/skills/rivinia-playbook/SKILL.md`) and stating the route in one
+  line. It maps task → skill: bug → `diagnosing-bugs`, new logic → `tdd`,
+  UI → `impeccable`, public page → `design-taste-frontend`, release →
+  `rivinia-release` (hidden — load by exact ID), review → `code-review`,
+  API facts → `research`, OpenCode itself → `opencode`.
+- A skill body never overrides this file or `docs/DECISIONS.md`; the user
+  overrides both. A gate that was not run is reported as not run.
+- `pnpm build` / `ng test` / `npm pack` are development gates. A version bump,
+  a tag, or a registry publish is a release: `rivinia-release` plus explicit
+  confirmation (gate 7).
 
 ## Architecture boundaries (enforceable)
 

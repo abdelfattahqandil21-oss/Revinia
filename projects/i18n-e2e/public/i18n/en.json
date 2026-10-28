@@ -1,0 +1,24 @@
+{
+  "app": {
+    "title": "Rivinia i18n",
+    "tagline": "Production hardening"
+  },
+  "home": {
+    "hero": "One language manager, every locale",
+    "switch": "Language"
+  },
+  "icu": {
+    "items": "{count, plural, =0 {No items} one {# item} other {# items}}",
+    "ordinal": "{rank, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}",
+    "guests": "{n, plural, offset:1 =0 {Nobody} =1 {Only you} one {You and # other} other {You and # others}}",
+    "amount": "{value, number, ::currency/USD}",
+    "ratio": "{value, number, percent}",
+    "day": "{value, date, long}"
+  },
+  "fallback": {
+    "onlyEnglish": "English-only fallback text"
+  },
+  "signal": {
+    "count": "{count, plural, one {# live update} other {# live updates}}"
+  }
+}

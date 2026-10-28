@@ -4,7 +4,13 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "../../out-tsc/spec",
-    "types": ["vitest/globals"]
+    /*
+     * `node` is required by the CLI specs, which spawn the published
+     * `rivinia-i18n-keys` binary in a child process (the same reason the
+     * schematic specs carry it). Everything else in this suite is a
+     * browser-environment spec and never touches a Node API.
+     */
+    "types": ["vitest/globals", "node"]
   },
   /*
    * The specs live in `<project>/tests`, OUTSIDE the source root: `src/`

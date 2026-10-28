@@ -4,7 +4,8 @@
   "assets": [
     "./schematics/collection.json",
     "./schematics/ng-add/schema.json",
-    "./schematics/ng-add/index.cjs"
+    "./schematics/ng-add/index.cjs",
+    "./cli/rivinia-i18n-keys.mjs"
   ],
   "lib": {
     "entryFile": "src/public-api.ts"

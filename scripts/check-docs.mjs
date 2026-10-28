@@ -83,6 +83,8 @@ const ALLOWLIST = new Set([
   'FormValueControl',
   // Angular's own provider fns referenced in our docs:
   'provideHttpClient',
+  'provideServerRendering',
+  'provideClientHydration',
   // Cross-package UI/provider references in integration guides:
   'RiviniaToastList',
   'provideRiviniaToast',

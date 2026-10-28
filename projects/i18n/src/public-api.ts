@@ -9,7 +9,9 @@ export type {
   ViewTransitionInfo,
 } from './lib/models/i18n-types';
 export type { RiviniaI18nConfig } from './lib/models/i18n-config';
-export type { TranslationLoader, LoaderDescriptor } from './lib/models/loaders';
+export type { MissingKeyEvent } from './lib/models/missing-key';
+export type { RegisteredI18nKey, RiviniaI18nKeyRegistry } from './lib/models/typed-keys';
+export type { TranslationLoader, LoaderDescriptor, LoaderContext } from './lib/models/loaders';
 export type { HttpLoaderOptions, RemoteLoaderOptions } from './lib/models/loaders';
 export { customLoader, httpLoader, jsonLoader, remoteLoader } from './lib/models/loaders';
 export { browserLanguages, detectBrowserLanguage } from './lib/utils/i18n-utils';

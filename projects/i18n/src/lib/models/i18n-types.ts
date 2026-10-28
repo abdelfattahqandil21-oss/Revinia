@@ -24,8 +24,12 @@ export type Translation<T extends string> = Record<T, string>;
 /** Persistence backend. SSR-safe: everything degrades to no-op off-browser. */
 export type StorageStrategy = 'local' | 'session' | 'none' | 'cookie';
 
-/** Interpolation + ICU params (`{count}`, `{gender}`). */
-export type TranslateParams = Record<string, string | number | boolean>;
+/**
+ * Interpolation + ICU params (`{count}`, `{gender}`, `{day, date}`).
+ * `Date` values are consumed by `{d, date[, style]}`; a plain `{name}`
+ * renders them with `String(value)`.
+ */
+export type TranslateParams = Record<string, string | number | boolean | Date>;
 
 export interface ViewTransitionInfo {
   readonly language: string;

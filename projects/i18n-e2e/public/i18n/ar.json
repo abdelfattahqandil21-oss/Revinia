@@ -1,0 +1,21 @@
+{
+  "app": {
+    "title": "ريفينيا للتعريب",
+    "tagline": "تجهيز للإنتاج"
+  },
+  "home": {
+    "hero": "مدير لغات واحد لكل اللغات",
+    "switch": "اللغة"
+  },
+  "icu": {
+    "items": "{count, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {# عناصر} many {# عنصرًا} other {# عنصر}}",
+    "ordinal": "{rank, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}",
+    "guests": "{n, plural, offset:1 =0 {لا أحد} =1 {أنت فقط} one {أنت و# آخر} other {أنت و# آخرين}}",
+    "amount": "{value, number, ::currency/USD}",
+    "ratio": "{value, number, percent}",
+    "day": "{value, date, long}"
+  },
+  "signal": {
+    "count": "{count, plural, zero {لا تحديثات} one {تحديث واحد} two {تحديثان} few {# تحديثات} many {# تحديثًا} other {# تحديث}}"
+  }
+}
