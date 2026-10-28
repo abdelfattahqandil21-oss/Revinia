@@ -242,7 +242,9 @@ function skipSpaces(src: string, i: number, end: number): number {
 function readWord(src: string, i: number, end: number): { word: string; next: number } {
   const start = skipSpaces(src, i, end);
   let j = start;
-  while (j < end && /[^\s,}]+/.test(src[j])) j++;
+  // `{` starts the branch body: `one{# item}` must read the selector as `one`,
+  // not `one{# item`. Whitespace, `,` and `}` already terminate a word.
+  while (j < end && /[^\s,{}]+/.test(src[j])) j++;
   return { word: src.slice(start, j), next: j };
 }
 
