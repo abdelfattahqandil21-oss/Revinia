@@ -44,22 +44,4 @@ export class RvTranslatePipe<L extends string = string> {
   name: 'rTranslate',
   pure: false,
 })
-export class RTranslatePipe<L extends string = string> {
-  private readonly _i18n = inject(RiviniaI18n<L>);
-
-  transform(key: RegisteredI18nKey, defaultValue?: string, params?: TranslateParams): string;
-  transform(key: RegisteredI18nKey, params?: TranslateParams): string;
-  transform(translations: Translation<L>): string;
-
-  transform(
-    keyOrTranslations: RegisteredI18nKey | Translation<L>,
-    defaultValueOrParams?: string | TranslateParams,
-    maybeParams?: TranslateParams,
-  ): string {
-    return this._i18n.translate(
-      keyOrTranslations as RegisteredI18nKey,
-      defaultValueOrParams as string,
-      maybeParams as TranslateParams,
-    );
-  }
-}
+export class RTranslatePipe<L extends string = string> extends RvTranslatePipe<L> {}
