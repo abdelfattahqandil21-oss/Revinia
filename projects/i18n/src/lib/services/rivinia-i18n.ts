@@ -34,7 +34,7 @@ import { jsonLoader } from '../models/loaders';
 import { createLoaderContext } from '../utils/loader-context';
 import { browserLanguages, detectBrowserLanguage, safeGetItem, safeSetItem } from '../utils/i18n-utils';
 import { parseCookie, serializeCookie, shouldSecureCookie } from '../utils/cookies';
-import { formatIcu } from '../utils/icu';
+import { MessageFormatter } from './message-formatter';
 import { ViewTransitionService } from './view-transition.service';
 
 /**
@@ -481,12 +481,12 @@ export class RiviniaI18n<L extends string = string> {
 
   /** Number formatting bound to the current language locale (cached Intl). */
   formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
-    return this.numberFormatter(options).format(value);
+    return this._messageFormatter.formatNumber(value, options);
   }
 
   /** Date/time formatting bound to the current language locale (cached Intl). */
   formatDate(value: Date | number, options?: Intl.DateTimeFormatOptions): string {
-    return this.dateTimeFormatter(options).format(value);
+    return this._messageFormatter.formatDate(value, options);
   }
 
   /** BCP-47 locale driving Intl + ICU plural rules (falls back to the id). */
@@ -494,27 +494,10 @@ export class RiviniaI18n<L extends string = string> {
     return this.currentLanguageObject().locale ?? this._currentLanguageId();
   });
 
-  private readonly _formatters = new Map<string, Intl.NumberFormat | Intl.DateTimeFormat>();
-
-  private numberFormatter(options?: Intl.NumberFormatOptions): Intl.NumberFormat {
-    const key = `n|${this.locale()}|${JSON.stringify(options ?? null)}`;
-    let formatter = this._formatters.get(key) as Intl.NumberFormat | undefined;
-    if (!formatter) {
-      formatter = new Intl.NumberFormat(this.locale(), options);
-      this._formatters.set(key, formatter);
-    }
-    return formatter;
-  }
-
-  private dateTimeFormatter(options?: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
-    const key = `d|${this.locale()}|${JSON.stringify(options ?? null)}`;
-    let formatter = this._formatters.get(key) as Intl.DateTimeFormat | undefined;
-    if (!formatter) {
-      formatter = new Intl.DateTimeFormat(this.locale(), options);
-      this._formatters.set(key, formatter);
-    }
-    return formatter;
-  }
+  private readonly _messageFormatter = new MessageFormatter({
+    locale: () => this.locale(),
+    onMissingParam: (key, name) => untracked(() => this._reportMissingParam(key, name)),
+  });
 
   private applyLanguage(id: L, opts?: { skipLoad?: boolean }): void {
     if (id === this._currentLanguageId()) return;
@@ -559,19 +542,7 @@ export class RiviniaI18n<L extends string = string> {
     locale: string,
     key: string,
   ): string {
-    // Apostrophe quoting is message syntax, so `''` collapses even when the
-    // caller passed no params; everything else keeps the no-params fast path
-    // (a plural template without values must stay raw, not pick `other`).
-    const quoting = template.includes("'");
-    if (params === undefined && !quoting) return template;
-    if (!quoting && !template.includes('{')) return template;
-    try {
-      return formatIcu(template, params ?? {}, locale, {
-        onMissingParam: (name) => untracked(() => this._reportMissingParam(key, name)),
-      });
-    } catch {
-      return template;
-    }
+    return this._messageFormatter.render(template, params, locale, key);
   }
 
   /**
