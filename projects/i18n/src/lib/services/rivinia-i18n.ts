@@ -5,7 +5,6 @@ import {
   Service,
   TransferState,
   computed,
-  effect,
   inject,
   isDevMode,
   makeStateKey,
@@ -32,6 +31,7 @@ import type { RegisteredI18nKey } from '../models/typed-keys';
 import { jsonLoader } from '../models/loaders';
 import { createLoaderContext } from '../utils/loader-context';
 import { browserLanguages } from '../utils/i18n-utils';
+import { DocumentDirectionApplier } from './document-direction-applier';
 import { LanguageStorage } from './language-storage';
 import { MissingKeyReporter } from './missing-key-reporter';
 import { MessageFormatter } from './message-formatter';
@@ -60,6 +60,12 @@ export class RiviniaI18n<L extends string = string> {
   /** Present only on the server: used for cookie reads + transfer writes. */
   private readonly _request = inject(REQUEST, { optional: true });
   private readonly _transfer = inject(TransferState, { optional: true });
+
+  private readonly _direction = new DocumentDirectionApplier<L>({
+    document: this._doc,
+    viewTransition: this._viewTransition,
+    config: this._config.viewTransition,
+  });
 
   /**
    * Platform facts for loaders, built once: `REQUEST` + `<base href>` on the
@@ -127,7 +133,6 @@ export class RiviniaI18n<L extends string = string> {
    * Everything else stays cached. (A monotonic request token used to guard
    * this, but it over-constrained legitimate same-language loads.)
    */
-  private _applyCount = 0;
   private _initialized = false;
   private readonly _tasks = inject(PendingTasks, { optional: true });
 
@@ -217,15 +222,7 @@ export class RiviniaI18n<L extends string = string> {
     }
 
     if (this._autoApplyDirection) {
-      effect(() => {
-        const lang = this.currentLanguageObject();
-        const root = this._doc.documentElement;
-        if (!root) return;
-        root.dir = lang.dir;
-        // A configured BCP-47 locale is more precise than the internal id
-        // (`ar` + locale `ar-EG`), and ids are not required to be valid tags.
-        root.lang = lang.locale ?? lang.id;
-      });
+      this._direction.install(() => this.currentLanguageObject());
     }
   }
 
@@ -510,21 +507,7 @@ export class RiviniaI18n<L extends string = string> {
     const lang = this._languages().find((l) => l.id === id);
     if (!lang) return;
 
-    this._applyCount++;
-
-    const apply = () => this._currentLanguageId.set(id);
-    const vt = this._config.viewTransition;
-    const useTransition =
-      vt?.enabled &&
-      (!vt.skipInitialTransition || this._applyCount > 1) &&
-      this._viewTransition != null;
-
-    if (useTransition) {
-      vt!.onViewTransitionCreated?.({ language: id, direction: lang.dir });
-      this._viewTransition!.run(apply);
-    } else {
-      apply();
-    }
+    this._direction.apply(lang, () => this._currentLanguageId.set(id));
 
     if (!opts?.skipLoad) {
       void this._loadTranslations(id);
