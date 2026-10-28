@@ -76,6 +76,14 @@
     <button type="button" data-testid="bump" (click)="bump()">+1</button>
   </section>
 
+  <section id="hardening">
+    <h2>Hardening</h2>
+    <p data-testid="flat-key">{{ flatKey() }}</p>
+    <p data-testid="quoted">{{ quoted() }}</p>
+    <p data-testid="iso-day">{{ isoDay() }}</p>
+    <p data-testid="missing-param">{{ missingParam() }}</p>
+  </section>
+
   <section id="missing">
     <h2>Missing keys</h2>
     <p data-testid="missing-count">{{ i18n.missingKeys().length }}</p>

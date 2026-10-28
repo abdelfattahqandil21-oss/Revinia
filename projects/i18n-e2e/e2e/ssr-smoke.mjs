@@ -17,7 +17,9 @@
  *      and the app is interactive afterwards.
  */
 import { spawn } from 'node:child_process';
-import { chromium } from '@playwright/test';
+import { chromium, firefox } from '@playwright/test';
+
+const ENGINE = process.env['SSR_BROWSER'] === 'firefox' ? firefox : chromium;
 
 const PORT = 4300;
 const ORIGIN = `http://127.0.0.1:${PORT}`;
@@ -80,7 +82,10 @@ try {
   check('SSR responds 200', response.status === 200, String(response.status));
   check('SSR HTML contains the Arabic hero', html.includes(AR_HERO));
   check('SSR HTML contains the Arabic title', html.includes(AR_TITLE));
-  check('SSR HTML sets lang="ar" dir="rtl"', /<html[^>]*lang="ar"[^>]*dir="rtl"/.test(html));
+  check(
+    'SSR HTML sets lang="ar-EG" dir="rtl" (locale, RIV-11)',
+    /<html[^>]*lang="ar-EG"[^>]*dir="rtl"/.test(html),
+  );
   check('SSR HTML has no raw key', !/\b(home\.hero|app\.title|icu\.items)\b/.test(html));
   check('SSR HTML has no [object Object]', !html.includes('[object Object]'));
   check('SSR HTML carries the TransferState payload', html.includes('ng-state'));
@@ -89,7 +94,7 @@ try {
   check('server log has no fetch failure', !/failed to load|Failed to parse URL|fetch failed/i.test(log));
   check('server log has no render error', !/SSR failed/.test(log), log.slice(0, 400));
 
-  browser = await chromium.launch();
+  browser = await ENGINE.launch();
   const page = await browser.newPage();
   const consoleErrors = [];
   const pageErrors = [];

@@ -21,5 +21,11 @@
   },
   "signal": {
     "count": "{count, plural, one {# live update} other {# live updates}}"
+  },
+  "flat.dotted": "Flat dotted key",
+  "hardening": {
+    "quoted": "It''s '{'literal'}'",
+    "iso": "{value, date, long}",
+    "missing": "Hello {name}"
   }
 }

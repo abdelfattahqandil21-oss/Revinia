@@ -18,5 +18,11 @@
   },
   "signal": {
     "count": "{count, plural, zero {لا تحديثات} one {تحديث واحد} two {تحديثان} few {# تحديثات} many {# تحديثًا} other {# تحديث}}"
+  },
+  "flat.dotted": "مفتاح بنقاط",
+  "hardening": {
+    "quoted": "إنه '{'حرفي'}'",
+    "iso": "{value, date, long}",
+    "missing": "مرحبا {name}"
   }
 }

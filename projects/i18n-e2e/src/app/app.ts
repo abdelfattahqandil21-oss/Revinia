@@ -56,6 +56,17 @@ export class App {
   /** Present in neither: renders the key and is reported once. */
   readonly missingText = computed(() => this.i18n.translate('missing.nowhere'));
 
+  /** RIV-12: a literal dotted key with no nested counterpart. */
+  readonly flatKey = computed(() => this.i18n.translate('flat.dotted'));
+  /** RIV-08: ICU apostrophe quoting. */
+  readonly quoted = computed(() => this.i18n.translate('hardening.quoted'));
+  /** RIV-10: a strict ISO-8601 date argument. */
+  readonly isoDay = computed(() =>
+    this.i18n.translate('hardening.iso', { value: '2026-10-28' }),
+  );
+  /** RIV-09: a needed argument is absent — the placeholder must stay. */
+  readonly missingParam = computed(() => this.i18n.translate('hardening.missing', {}));
+
   readonly live = signal(1);
   /** A `params` FUNCTION, so the signal it reads is tracked. */
   readonly liveText = this.i18n.t('signal.count', () => ({ count: this.live() }));
