@@ -1,4 +1,5 @@
 import type { LoaderContext, TranslationLoader } from '../models/loaders';
+import { RiviniaLoadError } from '../models/load-error';
 import { resolveLoaderUrl } from '../utils/loader-url';
 
 const DEFAULT_BASE_PATH = 'i18n';
@@ -11,7 +12,7 @@ export class JsonLoader<L extends string = string> implements TranslationLoader<
     const url = resolveLoaderUrl(`${basePath}/${language}.json`, context);
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`[rivinia/i18n] Failed to load "${url}": ${response.statusText}`);
+      throw new RiviniaLoadError(url, response.status, language);
     }
     return response.json();
   }

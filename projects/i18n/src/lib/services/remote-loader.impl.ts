@@ -1,4 +1,5 @@
 import type { LoaderContext, RemoteLoaderOptions, TranslationLoader } from '../models/loaders';
+import { RiviniaLoadError } from '../models/load-error';
 import { resolveLoaderUrl } from '../utils/loader-url';
 
 export class RemoteLoader<L extends string = string> implements TranslationLoader<L> {
@@ -8,7 +9,7 @@ export class RemoteLoader<L extends string = string> implements TranslationLoade
     const url = resolveLoaderUrl(this._options.url(language), context);
     const response = await fetch(url, { headers: this._options.headers });
     if (!response.ok) {
-      throw new Error(`[rivinia/i18n] Failed to load "${url}": ${response.statusText}`);
+      throw new RiviniaLoadError(url, response.status, language);
     }
     return response.json();
   }
