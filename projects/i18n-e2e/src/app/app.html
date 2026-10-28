@@ -1,0 +1,82 @@
+<header class="head">
+  <h1 data-testid="app-title">{{ title() }}</h1>
+  <p data-testid="hero">{{ hero() }}</p>
+
+  <div class="langs" role="group" [attr.aria-label]="switchLabel()">
+    <button
+      type="button"
+      data-testid="lang-ar"
+      [attr.aria-pressed]="i18n.currentLanguage() === 'ar'"
+      (click)="use('ar')"
+    >
+      العربية
+    </button>
+    <button
+      type="button"
+      data-testid="lang-en"
+      [attr.aria-pressed]="i18n.currentLanguage() === 'en'"
+      (click)="use('en')"
+    >
+      English
+    </button>
+  </div>
+
+  <p class="state" data-testid="state">
+    {{ i18n.currentLanguage() }} · {{ i18n.dir() }} · {{ i18n.loadingState() }}
+  </p>
+</header>
+
+<main>
+  <section id="icu">
+    <h2>ICU</h2>
+
+    <ul data-testid="plural" class="rows">
+      @for (row of pluralRows(); track row.count) {
+        <li [attr.data-count]="row.count">{{ row.text }}</li>
+      }
+    </ul>
+
+    <ul data-testid="ordinal" class="rows">
+      @for (row of ordinalRows(); track row.rank) {
+        <li [attr.data-rank]="row.rank">{{ row.text }}</li>
+      }
+    </ul>
+
+    <ul data-testid="guests" class="rows">
+      @for (row of guestRows(); track row.n) {
+        <li [attr.data-n]="row.n">{{ row.text }}</li>
+      }
+    </ul>
+
+    <dl class="pairs">
+      <dt>currency</dt>
+      <dd data-testid="amount">{{ amount() }}</dd>
+      <dt>percent</dt>
+      <dd data-testid="ratio">{{ ratio() }}</dd>
+      <dt>date</dt>
+      <dd data-testid="day">{{ day() }}</dd>
+    </dl>
+  </section>
+
+  <section id="fallback">
+    <h2>Fallback</h2>
+    <p data-testid="fallback-text">{{ fallbackText() }}</p>
+    <p data-testid="missing-text">{{ missingText() }}</p>
+  </section>
+
+  <section id="signal">
+    <h2>t()</h2>
+    <p data-testid="live">{{ liveText() }}</p>
+    <button type="button" data-testid="bump" (click)="bump()">+1</button>
+  </section>
+
+  <section id="missing">
+    <h2>Missing keys</h2>
+    <p data-testid="missing-count">{{ i18n.missingKeys().length }}</p>
+    <ul data-testid="missing-list" class="rows">
+      @for (key of i18n.missingKeys(); track key) {
+        <li>{{ key }}</li>
+      }
+    </ul>
+  </section>
+</main>

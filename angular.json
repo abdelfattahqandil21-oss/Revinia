@@ -245,17 +245,22 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "browser": "projects/menu-e2e/src/main.ts",
-            "tsConfig": "projects/menu-e2e/tsconfig.app.json",
+            "browser": "projects/i18n-e2e/src/main.ts",
+            "server": "projects/i18n-e2e/src/main.server.ts",
+            "tsConfig": "projects/i18n-e2e/tsconfig.app.json",
             "assets": [
               {
                 "glob": "**/*",
-                "input": "projects/menu-e2e/public"
+                "input": "projects/i18n-e2e/public"
               }
             ],
             "styles": [
-              "projects/menu-e2e/src/styles.css"
-            ]
+              "projects/i18n-e2e/src/styles.css"
+            ],
+            "outputMode": "server",
+            "ssr": {
+              "entry": "projects/i18n-e2e/src/server.ts"
+            }
           },
           "configurations": {
             "production": {
@@ -285,10 +290,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "menu-e2e:build:production"
+              "buildTarget": "i18n-e2e:build:production"
             },
             "development": {
-              "buildTarget": "menu-e2e:build:development"
+              "buildTarget": "i18n-e2e:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -373,6 +378,106 @@
               "../tests/**/*.spec.ts"
             ]
           }
+        }
+      }
+    },
+    "i18n-e2e": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:class": {
+          "skipTests": true
+        },
+        "@schematics/angular:component": {
+          "skipTests": true
+        },
+        "@schematics/angular:directive": {
+          "skipTests": true
+        },
+        "@schematics/angular:guard": {
+          "skipTests": true
+        },
+        "@schematics/angular:interceptor": {
+          "skipTests": true
+        },
+        "@schematics/angular:pipe": {
+          "skipTests": true
+        },
+        "@schematics/angular:resolver": {
+          "skipTests": true
+        },
+        "@schematics/angular:service": {
+          "skipTests": true
+        }
+      },
+      "root": "projects/i18n-e2e",
+      "sourceRoot": "projects/i18n-e2e/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "projects/i18n-e2e/src/main.ts",
+            "server": "projects/i18n-e2e/src/main.server.ts",
+            "tsConfig": "projects/i18n-e2e/tsconfig.app.json",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "projects/i18n-e2e/public"
+              }
+            ],
+            "styles": [
+              "projects/i18n-e2e/src/styles.css"
+            ],
+            "outputMode": "server",
+            "ssr": {
+              "entry": "projects/i18n-e2e/src/server.ts"
+            }
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            },
+            "csr": {
+              "outputPath": "dist/i18n-e2e-csr",
+              "outputMode": "static",
+              "server": false,
+              "ssr": false,
+              "optimization": true,
+              "extractLicenses": true,
+              "sourceMap": false,
+              "outputHashing": "all"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "i18n-e2e:build:production"
+            },
+            "development": {
+              "buildTarget": "i18n-e2e:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
         }
       }
     }
