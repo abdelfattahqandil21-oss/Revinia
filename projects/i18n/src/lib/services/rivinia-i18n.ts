@@ -329,7 +329,7 @@ export class RiviniaI18n<L extends string = string> {
     return params ? this.render(fallback, params, this.locale(), key) : fallback;
   }
 
-  loadedTranslations = this._store.visible;
+  readonly loadedTranslations = this._store.visible;
 
   /** Preload without switching (use in `APP_INITIALIZER` / route guards). */
   async loadTranslations(
