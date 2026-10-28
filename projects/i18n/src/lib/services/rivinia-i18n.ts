@@ -102,8 +102,10 @@ export class RiviniaI18n<L extends string = string> {
   private readonly _generations = new Map<L, number>();
   private readonly _inflight = new Map<
     L,
-    Promise<{ data: Record<string, unknown>; ok: boolean }>
+    Promise<{ data: Record<string, unknown>; ok: boolean; error?: unknown }>
   >();
+  /** Non-background loads in flight; `loadingState` follows this count. */
+  private _loadingCount = 0;
   /**
    * Out-of-order safety: a response reaches the visible signals only when it
    * belongs to the currently intended language (`_currentLanguageId()`).
@@ -604,10 +606,6 @@ export class RiviniaI18n<L extends string = string> {
     languageId: L,
     opts?: { silent?: boolean; background?: boolean; force?: boolean },
   ): Promise<{ data: Record<string, unknown>; ok: boolean }> {
-    // A dictionary only ever reaches the visible signals when it belongs to
-    // the currently intended language. Anything else (slow out-of-order
-    // responses, explicit preloads of other languages) stays cached.
-    const current = (): boolean => languageId === this._currentLanguageId();
     // Background loads (the fallback dictionary) must never drive
     // `loadingState`/`loadingError`: the visible language is what the UI needs.
     const background = opts?.background === true;
@@ -617,26 +615,72 @@ export class RiviniaI18n<L extends string = string> {
     if (!opts?.force) {
       const cached = this._translationsCache.get(languageId);
       if (cached) {
-        if (!opts?.silent && current()) {
-          this._loadedTranslations.set(cached);
-        }
-        if (languageId === this._fallbackId) {
-          this._fallbackDict.set(cached);
-        }
+        this._applyDictionary(languageId, cached);
         return { data: cached, ok: true };
       }
-
-      const inflight = this._inflight.get(languageId);
-      if (inflight) return inflight;
     }
 
-    if (!background) this._loadingState.set('loading');
+    // One FETCH is shared by every caller; the decision to APPLY is made by
+    // each caller after the await, against the state at resolution time. A
+    // caller must never inherit another caller's `silent`/`background` flags
+    // (RIV-02: a background fallback load joined by an explicit switch).
+    let task = opts?.force ? undefined : this._inflight.get(languageId);
+    if (!task) {
+      // Captured before the request: `reload()` bumps it, which makes this
+      // response stale even if it arrives later.
+      task = this._fetchDictionary(languageId, this._generationOf(languageId));
+      this._inflight.set(languageId, task);
+    }
 
-    // Captured before the request: `reload()` bumps it, which makes this
-    // response stale even if it arrives later.
-    const generation = this._generationOf(languageId);
+    if (!background) {
+      this._loadingCount++;
+      this._loadingState.set('loading');
+    }
 
-    let task!: Promise<{ data: Record<string, unknown>; ok: boolean }>;
+    try {
+      const result = await task;
+      if (result.ok) {
+        this._applyDictionary(languageId, result.data);
+      } else if (
+        !background &&
+        result.error !== undefined &&
+        languageId === this._currentLanguageId()
+      ) {
+        this._loadingError.set(result.error);
+        this._loadingState.set('error');
+      }
+      return { data: result.data, ok: result.ok };
+    } finally {
+      if (!background) {
+        this._loadingCount = Math.max(0, this._loadingCount - 1);
+        if (this._loadingCount === 0 && this._loadingState() === 'loading') {
+          this._loadingState.set('idle');
+        }
+      }
+    }
+  }
+
+  /**
+   * A dictionary reaches the visible signals only when its language is
+   * current at resolution time; a fallback dictionary fills the fallback slot.
+   * Everything else stays cached for the next switch.
+   */
+  private _applyDictionary(languageId: L, data: Record<string, unknown>): void {
+    if (languageId === this._currentLanguageId()) {
+      this._loadedTranslations.set(data);
+      this._loadingError.set(null);
+    }
+    if (languageId === this._fallbackId) {
+      this._fallbackDict.set(data);
+    }
+  }
+
+  /** Fetch + cache + transfer. Shared by every caller; never applies. */
+  private _fetchDictionary(
+    languageId: L,
+    generation: number,
+  ): Promise<{ data: Record<string, unknown>; ok: boolean; error?: unknown }> {
+    let task!: Promise<{ data: Record<string, unknown>; ok: boolean; error?: unknown }>;
     task = (async () => {
       const stale = (): boolean => this._generationOf(languageId) !== generation;
       try {
@@ -651,43 +695,20 @@ export class RiviniaI18n<L extends string = string> {
 
         this._translationsCache.set(languageId, translations);
         this.writeTransfer(languageId, translations);
-
-        if (languageId === this._fallbackId && !current()) {
-          this._fallbackDict.set(translations);
-        }
-
-        if (!opts?.silent && current()) {
-          this._loadedTranslations.set(translations);
-          this._loadingError.set(null);
-          this._loadingState.set('idle');
-        }
-
         return { data: translations, ok: true };
       } catch (error) {
         if (stale()) return { data: {}, ok: false };
-        if (!background && current()) {
-          this._loadingError.set(error);
-          this._loadingState.set('error');
-        }
+        // Once per failed fetch, however many callers joined it.
         this._config.onLoadError?.(languageId, error);
-        return { data: {}, ok: false };
+        return { data: {}, ok: false, error };
       } finally {
         // Only the owner of the in-flight slot may clear it (a reload may have
         // replaced this entry with a newer request).
         if (this._inflight.get(languageId) === task) {
           this._inflight.delete(languageId);
-          if (
-            !background &&
-            this._inflight.size === 0 &&
-            this._loadingState() === 'loading'
-          ) {
-            this._loadingState.set('idle');
-          }
         }
       }
     })();
-
-    this._inflight.set(languageId, task);
     return task;
   }
 
