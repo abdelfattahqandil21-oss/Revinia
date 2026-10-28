@@ -7,6 +7,7 @@ import {
   computed,
   effect,
   inject,
+  isDevMode,
   makeStateKey,
   signal,
   type StateKey,
@@ -25,6 +26,7 @@ import type { TranslateParams } from '../models/i18n-types';
 import type { Translation } from '../models/i18n-types';
 import type { TranslationLoader } from '../models/loaders';
 import type { LoaderContext } from '../models/loaders';
+import type { MissingKeyEvent } from '../models/missing-key';
 import { jsonLoader } from '../models/loaders';
 import { createLoaderContext } from '../utils/loader-context';
 import { browserLanguages, detectBrowserLanguage, safeGetItem, safeSetItem } from '../utils/i18n-utils';
@@ -132,6 +134,33 @@ export class RiviniaI18n<L extends string = string> {
    */
   readonly ready = this._ready.asReadonly();
 
+  /**
+   * Missing-key reporting. `warnOnMissingKey` defaults to dev-mode warnings
+   * unless the consumer supplied a handler (then the handler owns reporting).
+   */
+  private readonly _warnOnMissingKey: boolean =
+    this._config.warnOnMissingKey ??
+    (isDevMode() && this._config.onMissingKey === undefined);
+  private readonly _missingKeys = signal<readonly string[]>([]);
+  private readonly _reportedMissingKeys = new Set<string>();
+  private readonly _pendingMissingKeys: string[] = [];
+  private _missingFlushQueued = false;
+
+  /**
+   * Keys that could not be resolved from the current dictionary, the fallback
+   * dictionary, or a `defaultValue`, in the order they were first looked up.
+   * Published in a microtask because `t()` is a `computed` and Angular forbids
+   * signal writes inside a computation.
+   */
+  readonly missingKeys = this._missingKeys.asReadonly();
+
+  /** Resets the report (and the once-per-key dedupe), e.g. after a fix. */
+  clearMissingKeys(): void {
+    this._reportedMissingKeys.clear();
+    this._pendingMissingKeys.length = 0;
+    this._missingKeys.set([]);
+  }
+
   constructor() {
     if (this._config.languages.length === 0) {
       throw new Error(
@@ -237,6 +266,9 @@ export class RiviniaI18n<L extends string = string> {
       const resolved = this._lookupKey(keyOrTranslations);
       if (resolved !== undefined) {
         return this.render(resolved.text, params, resolved.locale);
+      }
+      if (defaultValue === undefined) {
+        this._reportMissingKey(keyOrTranslations);
       }
       const fallback = defaultValue ?? keyOrTranslations;
       return params ? this.render(fallback, params, this.locale()) : fallback;
@@ -415,6 +447,49 @@ export class RiviniaI18n<L extends string = string> {
       this._translationsCache.has(languageId) ||
       this._config.translations?.[languageId] !== undefined
     );
+  }
+
+  /**
+   * Records a key no dictionary could resolve. Once per key per session; the
+   * signal write is deferred to a microtask so `t()` can stay a pure
+   * `computed` (Angular forbids signal writes inside a computation).
+   */
+  private _reportMissingKey(key: string): void {
+    // Before the current language has a dictionary, every key would be a false
+    // positive — the load is still in flight, or it failed and there is
+    // nothing to look a key up in.
+    if (!this._hasDictionary(this._currentLanguageId())) return;
+    if (this._reportedMissingKeys.has(key)) return;
+    this._reportedMissingKeys.add(key);
+
+    const language = this._currentLanguageId();
+    const fallbackLanguage = this._fallbackId;
+    const event: MissingKeyEvent<L> =
+      fallbackLanguage === null ? { key, language } : { key, language, fallbackLanguage };
+
+    this._pendingMissingKeys.push(key);
+    this._queueMissingFlush();
+    this._config.onMissingKey?.(event);
+
+    if (this._warnOnMissingKey) {
+      console.warn(
+        `[rivinia/i18n] Missing key "${key}" for language "${language}"` +
+          (fallbackLanguage === null
+            ? '.'
+            : ` (fallback "${fallbackLanguage}" has no value either).`),
+      );
+    }
+  }
+
+  private _queueMissingFlush(): void {
+    if (this._missingFlushQueued) return;
+    this._missingFlushQueued = true;
+    queueMicrotask(() => {
+      this._missingFlushQueued = false;
+      const pending = this._pendingMissingKeys.splice(0);
+      if (pending.length === 0) return;
+      this._missingKeys.update((current) => [...current, ...pending]);
+    });
   }
 
   private async _loadTranslations(
