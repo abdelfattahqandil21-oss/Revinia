@@ -110,3 +110,33 @@ describe('resolveLoaderUrl', () => {
     );
   });
 });
+
+describe('createLoaderContext — a DOM that cannot report baseURI', () => {
+  /**
+   * Domino, the server DOM, throws `NotYetImplemented` on `baseURI` instead of
+   * returning `undefined`. Reading it unguarded crashed SSR bootstrap before a
+   * single byte was rendered (measured in projects/i18n-e2e), and jsdom cannot
+   * reproduce it — so the platform is simulated here.
+   */
+  function throwingDoc(baseHref?: string): Document {
+    return {
+      get baseURI(): string {
+        throw new Error('NotYetImplemented');
+      },
+      querySelector: (selector: string) =>
+        baseHref !== undefined && selector.includes('base')
+          ? { getAttribute: () => baseHref }
+          : null,
+    } as unknown as Document;
+  }
+
+  it('does not throw and falls back to "/"', () => {
+    const context = createLoaderContext(null, throwingDoc());
+    expect(context).toEqual({ baseUrl: '/', isServer: false });
+  });
+
+  it('still resolves the request origin through <base href>', () => {
+    const context = createLoaderContext(request('http://h:4300/'), throwingDoc('/'));
+    expect(context).toEqual({ baseUrl: 'http://h:4300/', isServer: true });
+  });
+});

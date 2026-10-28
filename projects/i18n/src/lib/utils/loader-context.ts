@@ -35,8 +35,19 @@ export function createLoaderContext(request: Request | null, doc: Document): Loa
 }
 
 function readBaseUri(doc: Document): string {
-  const uri = (doc as { baseURI?: string } | null)?.baseURI;
-  return typeof uri === 'string' && uri.length > 0 ? uri : '/';
+  // Domino (the SSR DOM) does not implement `baseURI` and THROWS
+  // `NotYetImplemented` on the property read rather than returning
+  // `undefined`. Reading it unguarded made constructing the service throw
+  // during server rendering, which killed the whole SSR bootstrap — jsdom
+  // implements `baseURI`, so no browser-environment test could see it
+  // (measured 2026-10-28, projects/i18n-e2e).
+  try {
+    const uri = (doc as { baseURI?: string } | null)?.baseURI;
+    if (typeof uri === 'string' && uri.length > 0) return uri;
+  } catch {
+    // No usable base URI on this platform; the request/base-href path wins.
+  }
+  return '/';
 }
 
 function readBaseHref(doc: Document): string | null {
