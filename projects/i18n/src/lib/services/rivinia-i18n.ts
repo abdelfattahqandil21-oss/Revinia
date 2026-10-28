@@ -34,6 +34,7 @@ import { jsonLoader } from '../models/loaders';
 import { createLoaderContext } from '../utils/loader-context';
 import { browserLanguages, detectBrowserLanguage, safeGetItem, safeSetItem } from '../utils/i18n-utils';
 import { parseCookie, serializeCookie, shouldSecureCookie } from '../utils/cookies';
+import { MissingKeyReporter } from './missing-key-reporter';
 import { MessageFormatter } from './message-formatter';
 import { ViewTransitionService } from './view-transition.service';
 
@@ -155,22 +156,19 @@ export class RiviniaI18n<L extends string = string> {
    * Missing-key reporting. `warnOnMissingKey` defaults to dev-mode warnings
    * unless the consumer supplied a handler (then the handler owns reporting).
    */
-  private readonly _warnOnMissingKey: boolean =
-    this._config.warnOnMissingKey ??
-    (isDevMode() && this._config.onMissingKey === undefined);
-  private readonly _missingKeys = signal<readonly string[]>([]);
-  private readonly _reportedMissingKeys = new Set<string>();
-  private readonly _pendingMissingKeys: string[] = [];
-  private readonly _pendingMissingEvents: MissingKeyEvent<L>[] = [];
-  private _missingFlushQueued = false;
-
-  private readonly _warnOnMissingParam: boolean =
-    this._config.warnOnMissingParam ??
-    (isDevMode() && this._config.onMissingParam === undefined);
-  /** Dedupe key: `key` + NUL + `param`, so neither part can collide. */
-  private readonly _reportedMissingParams = new Set<string>();
-  private readonly _pendingMissingParams: MissingParamEvent<L>[] = [];
-  private _missingParamsFlushQueued = false;
+  private readonly _missingKeyReporter = new MissingKeyReporter<L>({
+    language: () => this._currentLanguageId(),
+    fallbackLanguage: this._fallbackId,
+    hasDictionary: (language) => this._hasDictionary(language),
+    onMissingKey: this._config.onMissingKey,
+    onMissingParam: this._config.onMissingParam,
+    warnOnMissingKey:
+      this._config.warnOnMissingKey ??
+      (isDevMode() && this._config.onMissingKey === undefined),
+    warnOnMissingParam:
+      this._config.warnOnMissingParam ??
+      (isDevMode() && this._config.onMissingParam === undefined),
+  });
 
   /**
    * Keys that could not be resolved from the current dictionary, the fallback
@@ -178,20 +176,16 @@ export class RiviniaI18n<L extends string = string> {
    * Published in a microtask because `t()` is a `computed` and Angular forbids
    * signal writes inside a computation.
    */
-  readonly missingKeys = this._missingKeys.asReadonly();
+  readonly missingKeys = this._missingKeyReporter.missingKeys;
 
   /** Resets the report (and the once-per-key dedupe), e.g. after a fix. */
   clearMissingKeys(): void {
-    this._reportedMissingKeys.clear();
-    this._pendingMissingKeys.length = 0;
-    this._pendingMissingEvents.length = 0;
-    this._missingKeys.set([]);
+    this._missingKeyReporter.clearKeys();
   }
 
   /** Resets the missing-parameter dedupe, e.g. after adding the argument. */
   clearMissingParams(): void {
-    this._reportedMissingParams.clear();
-    this._pendingMissingParams.length = 0;
+    this._missingKeyReporter.clearParams();
   }
 
   constructor() {
@@ -586,49 +580,10 @@ export class RiviniaI18n<L extends string = string> {
 
   /**
    * Records a key no dictionary could resolve. Once per key per session; the
-   * signal write is deferred to a microtask so `t()` can stay a pure
-   * `computed` (Angular forbids signal writes inside a computation).
+   * reporter defers the signal write so `t()` can stay a pure `computed`.
    */
   private _reportMissingKey(key: string): void {
-    // Before the current language has a dictionary, every key would be a false
-    // positive — the load is still in flight, or it failed and there is
-    // nothing to look a key up in.
-    if (!this._hasDictionary(this._currentLanguageId())) return;
-    if (this._reportedMissingKeys.has(key)) return;
-    this._reportedMissingKeys.add(key);
-
-    const language = this._currentLanguageId();
-    const fallbackLanguage = this._fallbackId;
-    const event: MissingKeyEvent<L> =
-      fallbackLanguage === null ? { key, language } : { key, language, fallbackLanguage };
-
-    this._pendingMissingKeys.push(key);
-    this._pendingMissingEvents.push(event);
-    this._queueMissingFlush();
-
-    if (this._warnOnMissingKey) {
-      console.warn(
-        `[rivinia/i18n] Missing key "${key}" for language "${language}"` +
-          (fallbackLanguage === null
-            ? '.'
-            : ` (fallback "${fallbackLanguage}" has no value either).`),
-      );
-    }
-  }
-
-  private _queueMissingFlush(): void {
-    if (this._missingFlushQueued) return;
-    this._missingFlushQueued = true;
-    queueMicrotask(() => {
-      this._missingFlushQueued = false;
-      const pending = this._pendingMissingKeys.splice(0);
-      if (pending.length === 0) return;
-      this._missingKeys.update((current) => [...current, ...pending]);
-      // The handler runs here, not inside `t()`'s computation: it may write a
-      // signal, and a signal write inside a computed throws NG0600.
-      const events = this._pendingMissingEvents.splice(0);
-      for (const event of events) this._config.onMissingKey?.(event);
-    });
+    this._missingKeyReporter.reportKey(key);
   }
 
   /**
@@ -637,30 +592,7 @@ export class RiviniaI18n<L extends string = string> {
    * hook is deferred to a microtask for the same NG0600 reason.
    */
   private _reportMissingParam(key: string, param: string): void {
-    const dedupe = `${key}\u0000${param}`;
-    if (this._reportedMissingParams.has(dedupe)) return;
-    this._reportedMissingParams.add(dedupe);
-
-    const language = this._currentLanguageId();
-    this._pendingMissingParams.push({ key, param, language });
-    this._queueMissingParamsFlush();
-
-    if (this._warnOnMissingParam) {
-      console.warn(
-        `[rivinia/i18n] Missing parameter "${param}" for key "${key}" ` +
-          `and language "${language}"; the placeholder was kept.`,
-      );
-    }
-  }
-
-  private _queueMissingParamsFlush(): void {
-    if (this._missingParamsFlushQueued) return;
-    this._missingParamsFlushQueued = true;
-    queueMicrotask(() => {
-      this._missingParamsFlushQueued = false;
-      const events = this._pendingMissingParams.splice(0);
-      for (const event of events) this._config.onMissingParam?.(event);
-    });
+    this._missingKeyReporter.reportParam(key, param);
   }
 
   private async _loadTranslations(
