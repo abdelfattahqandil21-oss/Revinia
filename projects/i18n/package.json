@@ -11,6 +11,9 @@
     "typescript"
   ],
   "license": "MIT",
+  "bin": {
+    "rivinia-i18n-keys": "./cli/rivinia-i18n-keys.mjs"
+  },
   "peerDependencies": {
     "@angular-devkit/schematics": "^22.0.0",
     "@angular/core": "^22.0.0"

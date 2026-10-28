@@ -28,6 +28,7 @@ import type { Translation } from '../models/i18n-types';
 import type { TranslationLoader } from '../models/loaders';
 import type { LoaderContext } from '../models/loaders';
 import type { MissingKeyEvent } from '../models/missing-key';
+import type { RegisteredI18nKey } from '../models/typed-keys';
 import { jsonLoader } from '../models/loaders';
 import { createLoaderContext } from '../utils/loader-context';
 import { browserLanguages, detectBrowserLanguage, safeGetItem, safeSetItem } from '../utils/i18n-utils';
@@ -259,12 +260,12 @@ export class RiviniaI18n<L extends string = string> {
     }
   }
 
-  translate(key: string, defaultValue?: string, params?: TranslateParams): string;
-  translate(key: string, params?: TranslateParams): string;
+  translate(key: RegisteredI18nKey, defaultValue?: string, params?: TranslateParams): string;
+  translate(key: RegisteredI18nKey, params?: TranslateParams): string;
   translate(translations: Translation<L>): string;
 
   translate(
-    keyOrTranslations: string | Translation<L>,
+    keyOrTranslations: RegisteredI18nKey | Translation<L>,
     defaultValueOrParams?: string | TranslateParams,
     maybeParams?: TranslateParams,
   ): string {
@@ -290,15 +291,15 @@ export class RiviniaI18n<L extends string = string> {
    * A function `params` is invoked inside the computation, so the signals it
    * reads are tracked and a change re-renders the text.
    */
-  t(key: string): Signal<string>;
-  t(key: string, params: TranslateParams | (() => TranslateParams)): Signal<string>;
+  t(key: RegisteredI18nKey): Signal<string>;
+  t(key: RegisteredI18nKey, params: TranslateParams | (() => TranslateParams)): Signal<string>;
   t(
-    key: string,
+    key: RegisteredI18nKey,
     defaultValue: string,
     params?: TranslateParams | (() => TranslateParams),
   ): Signal<string>;
   t(
-    key: string,
+    key: RegisteredI18nKey,
     defaultValueOrParams?: string | TranslateParams | (() => TranslateParams),
     maybeParams?: TranslateParams | (() => TranslateParams),
   ): Signal<string> {
@@ -313,7 +314,7 @@ export class RiviniaI18n<L extends string = string> {
   }
 
   private _resolveKeyText(
-    key: string,
+    key: RegisteredI18nKey,
     defaultValue: string | undefined,
     params: TranslateParams | undefined,
   ): string {
