@@ -24,7 +24,9 @@ import type { StorageStrategy } from '../models/i18n-types';
 import type { TranslateParams } from '../models/i18n-types';
 import type { Translation } from '../models/i18n-types';
 import type { TranslationLoader } from '../models/loaders';
+import type { LoaderContext } from '../models/loaders';
 import { jsonLoader } from '../models/loaders';
+import { createLoaderContext } from '../utils/loader-context';
 import { browserLanguages, detectBrowserLanguage, safeGetItem, safeSetItem } from '../utils/i18n-utils';
 import { parseCookie, serializeCookie, shouldSecureCookie } from '../utils/cookies';
 import { formatIcu } from '../utils/icu';
@@ -55,6 +57,13 @@ export class RiviniaI18n<L extends string = string> {
   private readonly _request = inject(REQUEST, { optional: true });
   private readonly _transfer = inject(TransferState, { optional: true });
 
+  /**
+   * Platform facts for loaders, built once: `REQUEST` + `<base href>` on the
+   * server, `document.baseURI` in the browser. This is what makes the default
+   * loader work under SSR instead of fetching a relative URL Node cannot parse.
+   */
+  readonly loaderContext: LoaderContext = createLoaderContext(this._request ?? null, this._doc);
+
   private readonly _currentLanguageId = signal<L>(this._resolveInitialLanguage());
   private readonly _languages = signal<readonly Language<L>[]>(this._config.languages);
   private readonly _loadedTranslations = signal<Record<string, unknown>>({});
@@ -65,8 +74,12 @@ export class RiviniaI18n<L extends string = string> {
    * The descriptor still code-splits: the fetch implementation loads only on
    * first resolve.
    */
-  private readonly _getLoader: () => Promise<TranslationLoader<L>> =
-    this._config.loader?.resolve ?? (() => jsonLoader().resolve() as Promise<TranslationLoader<L>>);
+  private readonly _getLoader = (
+    context: LoaderContext,
+  ): Promise<TranslationLoader<L>> =>
+    this._config.loader
+      ? this._config.loader.resolve(context)
+      : (jsonLoader().resolve(context) as Promise<TranslationLoader<L>>);
   private _resolvedLoader: TranslationLoader<L> | null = null;
   private readonly _translationsCache = new Map<L, Record<string, unknown>>();
   private readonly _inflight = new Map<
@@ -351,9 +364,9 @@ export class RiviniaI18n<L extends string = string> {
     const task: Promise<{ data: Record<string, unknown>; ok: boolean }> = (async () => {
       try {
         if (!this._resolvedLoader) {
-          this._resolvedLoader = await this._getLoader!();
+          this._resolvedLoader = await this._getLoader(this.loaderContext);
         }
-        const translations = await this._resolvedLoader.load(languageId);
+        const translations = await this._resolvedLoader.load(languageId, this.loaderContext);
 
         this._translationsCache.set(languageId, translations);
         this.writeTransfer(languageId, translations);

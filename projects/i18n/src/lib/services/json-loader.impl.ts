@@ -1,13 +1,14 @@
-import type { TranslationLoader } from '../models/loaders';
+import type { LoaderContext, TranslationLoader } from '../models/loaders';
+import { resolveLoaderUrl } from '../utils/loader-url';
 
 const DEFAULT_BASE_PATH = 'i18n';
 
 export class JsonLoader<L extends string = string> implements TranslationLoader<L> {
   constructor(private readonly _options?: { path?: string }) {}
 
-  async load(language: L): Promise<Record<string, unknown>> {
+  async load(language: L, context?: LoaderContext): Promise<Record<string, unknown>> {
     const basePath = this._options?.path ?? DEFAULT_BASE_PATH;
-    const url = `${basePath}/${language}.json`;
+    const url = resolveLoaderUrl(`${basePath}/${language}.json`, context);
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`[rivinia/i18n] Failed to load "${url}": ${response.statusText}`);

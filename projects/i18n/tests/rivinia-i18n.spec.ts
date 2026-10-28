@@ -1,6 +1,6 @@
 import { ApplicationRef, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { TransferState, makeStateKey, provideAppInitializer } from '@angular/core';
+import { REQUEST, TransferState, makeStateKey, provideAppInitializer } from '@angular/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RiviniaI18nConfig } from '../src/lib/models/i18n-config';
 import { customLoader } from '../src/lib/models/loaders';
@@ -188,6 +188,42 @@ describe('RiviniaI18n default loader', () => {
       expect(fetchMock).not.toHaveBeenCalled();
       expect(i18n.translate({ ar: 'حفظ', en: 'Save' })).toBe('حفظ');
     } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('resolves the default loader against REQUEST + <base> on the server', async () => {
+    const seen: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        seen.push(url);
+        return { ok: true, statusText: 'OK', json: async () => ({ hello: 'مرحبا' }) } as Response;
+      }),
+    );
+    const base = document.createElement('base');
+    base.setAttribute('href', '/app/');
+    document.head.appendChild(base);
+    try {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          { provide: REQUEST, useValue: { url: 'http://h:4000/ar/page' } as Request },
+          provideRiviniaI18n({
+            defaultLanguage: 'ar',
+            languages: [AR, EN],
+            storageStrategy: 'none',
+            preload: false,
+          }),
+        ],
+      });
+      const i18n = TestBed.inject(RiviniaI18n<'ar' | 'en'>);
+      expect(i18n.loaderContext).toEqual({ baseUrl: 'http://h:4000/app/', isServer: true });
+      await i18n.loadTranslations('ar');
+      expect(seen).toEqual(['http://h:4000/app/i18n/ar.json']);
+      expect(i18n.translate('hello')).toBe('مرحبا');
+    } finally {
+      base.remove();
       vi.unstubAllGlobals();
     }
   });
