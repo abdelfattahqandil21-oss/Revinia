@@ -92,6 +92,12 @@ export class RiviniaI18n<L extends string = string> {
       : (jsonLoader().resolve(context) as Promise<TranslationLoader<L>>);
   private _resolvedLoader: TranslationLoader<L> | null = null;
   private readonly _translationsCache = new Map<L, Record<string, unknown>>();
+  /**
+   * Per-language generation, bumped by `reload()`. A load captures the
+   * generation before its request and discards the response when it moved:
+   * a stale dictionary can never reach the cache or the signals.
+   */
+  private readonly _generations = new Map<L, number>();
   private readonly _inflight = new Map<
     L,
     Promise<{ data: Record<string, unknown>; ok: boolean }>
@@ -291,6 +297,68 @@ export class RiviniaI18n<L extends string = string> {
     opts?: { silent?: boolean },
   ): Promise<Record<string, unknown>> {
     return (await this._loadTranslations(languageId, opts)).data;
+  }
+
+  /**
+   * Invalidates cached dictionaries and reloads them from the loader.
+   *
+   * - `reload()` — refreshes the current language (and the fallback, when
+   *   configured) and drops every OTHER cached dictionary, so the next switch
+   *   refetches. Resolves `true` when the current language loaded.
+   * - `reload(lang)` — refreshes one language. If it is the current one it is
+   *   applied; otherwise it is only re-cached (and refreshed in the fallback
+   *   slot when it is the fallback).
+   *
+   * The visible dictionary stays on screen until the fresh one arrives
+   * (stale-while-revalidate), so a reload never flashes raw keys.
+   *
+   * Never rejects: failures land on `loadingState`, `loadingError` and
+   * `onLoadError` exactly like `loadTranslations`.
+   */
+  reload(languageId?: L): Promise<boolean> {
+    if (languageId !== undefined) {
+      if (!this._languages().some((l) => l.id === languageId)) {
+        return Promise.resolve(false);
+      }
+      this._invalidate(languageId);
+      return this._reloadOne(languageId);
+    }
+
+    const currentId = this._currentLanguageId();
+    const fallbackId = this._fallbackId;
+
+    for (const cachedId of [...this._translationsCache.keys()]) {
+      if (cachedId !== currentId && cachedId !== fallbackId) {
+        this._translationsCache.delete(cachedId);
+      }
+    }
+    // Every language is superseded, so any response already in flight for a
+    // dictionary this reload does not refetch is dropped instead of cached.
+    for (const language of this._languages()) {
+      this._invalidate(language.id);
+    }
+
+    const currentLoad = this._reloadOne(currentId);
+    if (fallbackId !== null && fallbackId !== currentId) {
+      void this._reloadOne(fallbackId);
+    }
+    return currentLoad;
+  }
+
+  private _reloadOne(languageId: L): Promise<boolean> {
+    return this._loadTranslations(languageId, {
+      force: true,
+      // A dictionary that is not on screen must not drive loadingState.
+      background: languageId !== this._currentLanguageId(),
+    }).then((result) => result.ok);
+  }
+
+  private _generationOf(languageId: L): number {
+    return this._generations.get(languageId) ?? 0;
+  }
+
+  private _invalidate(languageId: L): void {
+    this._generations.set(languageId, this._generationOf(languageId) + 1);
   }
 
   toggle(): void {
@@ -494,7 +562,7 @@ export class RiviniaI18n<L extends string = string> {
 
   private async _loadTranslations(
     languageId: L,
-    opts?: { silent?: boolean; background?: boolean },
+    opts?: { silent?: boolean; background?: boolean; force?: boolean },
   ): Promise<{ data: Record<string, unknown>; ok: boolean }> {
     // A dictionary only ever reaches the visible signals when it belongs to
     // the currently intended language. Anything else (slow out-of-order
@@ -503,28 +571,43 @@ export class RiviniaI18n<L extends string = string> {
     // Background loads (the fallback dictionary) must never drive
     // `loadingState`/`loadingError`: the visible language is what the UI needs.
     const background = opts?.background === true;
-    const cached = this._translationsCache.get(languageId);
-    if (cached) {
-      if (!opts?.silent && current()) {
-        this._loadedTranslations.set(cached);
-      }
-      if (languageId === this._fallbackId) {
-        this._fallbackDict.set(cached);
-      }
-      return { data: cached, ok: true };
-    }
 
-    const inflight = this._inflight.get(languageId);
-    if (inflight) return inflight;
+    // `force` is the reload path: the cache must not answer it, and a load
+    // already in flight for the same language is superseded, not joined.
+    if (!opts?.force) {
+      const cached = this._translationsCache.get(languageId);
+      if (cached) {
+        if (!opts?.silent && current()) {
+          this._loadedTranslations.set(cached);
+        }
+        if (languageId === this._fallbackId) {
+          this._fallbackDict.set(cached);
+        }
+        return { data: cached, ok: true };
+      }
+
+      const inflight = this._inflight.get(languageId);
+      if (inflight) return inflight;
+    }
 
     if (!background) this._loadingState.set('loading');
 
-    const task: Promise<{ data: Record<string, unknown>; ok: boolean }> = (async () => {
+    // Captured before the request: `reload()` bumps it, which makes this
+    // response stale even if it arrives later.
+    const generation = this._generationOf(languageId);
+
+    let task!: Promise<{ data: Record<string, unknown>; ok: boolean }>;
+    task = (async () => {
+      const stale = (): boolean => this._generationOf(languageId) !== generation;
       try {
         if (!this._resolvedLoader) {
           this._resolvedLoader = await this._getLoader(this.loaderContext);
         }
         const translations = await this._resolvedLoader.load(languageId, this.loaderContext);
+
+        // A superseded response touches nothing: no cache, no transfer state,
+        // no signals, no error reporting.
+        if (stale()) return { data: {}, ok: false };
 
         this._translationsCache.set(languageId, translations);
         this.writeTransfer(languageId, translations);
@@ -541,6 +624,7 @@ export class RiviniaI18n<L extends string = string> {
 
         return { data: translations, ok: true };
       } catch (error) {
+        if (stale()) return { data: {}, ok: false };
         if (!background && current()) {
           this._loadingError.set(error);
           this._loadingState.set('error');
@@ -548,13 +632,17 @@ export class RiviniaI18n<L extends string = string> {
         this._config.onLoadError?.(languageId, error);
         return { data: {}, ok: false };
       } finally {
-        this._inflight.delete(languageId);
-        if (
-          !background &&
-          this._inflight.size === 0 &&
-          this._loadingState() === 'loading'
-        ) {
-          this._loadingState.set('idle');
+        // Only the owner of the in-flight slot may clear it (a reload may have
+        // replaced this entry with a newer request).
+        if (this._inflight.get(languageId) === task) {
+          this._inflight.delete(languageId);
+          if (
+            !background &&
+            this._inflight.size === 0 &&
+            this._loadingState() === 'loading'
+          ) {
+            this._loadingState.set('idle');
+          }
         }
       }
     })();
