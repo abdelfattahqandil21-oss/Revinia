@@ -10,6 +10,7 @@ import {
   isDevMode,
   makeStateKey,
   signal,
+  untracked,
   type Signal,
   type StateKey,
 } from '@angular/core';
@@ -154,6 +155,7 @@ export class RiviniaI18n<L extends string = string> {
   private readonly _missingKeys = signal<readonly string[]>([]);
   private readonly _reportedMissingKeys = new Set<string>();
   private readonly _pendingMissingKeys: string[] = [];
+  private readonly _pendingMissingEvents: MissingKeyEvent<L>[] = [];
   private _missingFlushQueued = false;
 
   /**
@@ -168,6 +170,7 @@ export class RiviniaI18n<L extends string = string> {
   clearMissingKeys(): void {
     this._reportedMissingKeys.clear();
     this._pendingMissingKeys.length = 0;
+    this._pendingMissingEvents.length = 0;
     this._missingKeys.set([]);
   }
 
@@ -325,7 +328,9 @@ export class RiviniaI18n<L extends string = string> {
       return this.render(resolved.text, params, resolved.locale);
     }
     if (defaultValue === undefined) {
-      this._reportMissingKey(key);
+      // Reporting reads language signals; keep those reads out of `t()`'s
+      // dependency set (the dictionary/locale reads above already track it).
+      untracked(() => this._reportMissingKey(key));
     }
     const fallback = defaultValue ?? key;
     return params ? this.render(fallback, params, this.locale()) : fallback;
@@ -578,8 +583,8 @@ export class RiviniaI18n<L extends string = string> {
       fallbackLanguage === null ? { key, language } : { key, language, fallbackLanguage };
 
     this._pendingMissingKeys.push(key);
+    this._pendingMissingEvents.push(event);
     this._queueMissingFlush();
-    this._config.onMissingKey?.(event);
 
     if (this._warnOnMissingKey) {
       console.warn(
@@ -599,6 +604,10 @@ export class RiviniaI18n<L extends string = string> {
       const pending = this._pendingMissingKeys.splice(0);
       if (pending.length === 0) return;
       this._missingKeys.update((current) => [...current, ...pending]);
+      // The handler runs here, not inside `t()`'s computation: it may write a
+      // signal, and a signal write inside a computed throws NG0600.
+      const events = this._pendingMissingEvents.splice(0);
+      for (const event of events) this._config.onMissingKey?.(event);
     });
   }
 
