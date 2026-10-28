@@ -36,6 +36,12 @@
       }
     </ul>
 
+    <ul data-testid="compact-plural" class="rows">
+      @for (row of compactRows(); track row.count) {
+        <li [attr.data-count]="row.count">{{ row.text }}</li>
+      }
+    </ul>
+
     <ul data-testid="ordinal" class="rows">
       @for (row of ordinalRows(); track row.rank) {
         <li [attr.data-rank]="row.rank">{{ row.text }}</li>
@@ -68,6 +74,14 @@
     <h2>t()</h2>
     <p data-testid="live">{{ liveText() }}</p>
     <button type="button" data-testid="bump" (click)="bump()">+1</button>
+  </section>
+
+  <section id="hardening">
+    <h2>Hardening</h2>
+    <p data-testid="flat-key">{{ flatKey() }}</p>
+    <p data-testid="quoted">{{ quoted() }}</p>
+    <p data-testid="iso-day">{{ isoDay() }}</p>
+    <p data-testid="missing-param">{{ missingParam() }}</p>
   </section>
 
   <section id="missing">

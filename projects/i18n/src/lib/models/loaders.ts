@@ -1,3 +1,11 @@
+import { JsonLoader } from '../services/json-loader.impl';
+import { RiviniaLoadError } from './load-error';
+import { resolveLoaderUrl } from '../utils/loader-url';
+
+function loadError(url: string, status: number, language: string): Error {
+  return new RiviniaLoadError(url, status, language);
+}
+
 /**
  * Platform facts a loader needs to build a fetchable URL.
  *
@@ -32,10 +40,15 @@ export interface LoaderDescriptor<L extends string = string> {
   resolve(context?: LoaderContext): Promise<TranslationLoader<L>>;
 }
 
+/**
+ * The conventional `i18n/{language}.json` loader, and the service's default.
+ * Deliberately NOT code-split: it runs in the app initializer, so a lazy chunk
+ * would add two script round-trips (loader + its URL helper) before the first
+ * dictionary fetch. `httpLoader`/`remoteLoader` stay lazy — they are opt-in.
+ */
 export function jsonLoader(options?: { path?: string }): LoaderDescriptor<string> {
   return {
     async resolve() {
-      const { JsonLoader } = await import('../services/json-loader.impl');
       return new JsonLoader(options);
     },
   };
@@ -51,7 +64,10 @@ export function httpLoader(options: HttpLoaderOptions): LoaderDescriptor<string>
   return {
     async resolve() {
       const { HttpLoader } = await import('../services/http-loader.impl');
-      return new HttpLoader(options);
+      // The runtime helpers travel as arguments so the lazy chunk imports no
+      // module the main bundle already has; a shared import would make the
+      // bundler emit an extra initial chunk.
+      return new HttpLoader(options, resolveLoaderUrl, loadError);
     },
   };
 }
@@ -65,7 +81,7 @@ export function remoteLoader(options: RemoteLoaderOptions): LoaderDescriptor<str
   return {
     async resolve() {
       const { RemoteLoader } = await import('../services/remote-loader.impl');
-      return new RemoteLoader(options);
+      return new RemoteLoader(options, resolveLoaderUrl, loadError);
     },
   };
 }

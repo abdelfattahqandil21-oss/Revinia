@@ -27,12 +27,14 @@ const AR = {
   title: 'ريفينيا للتعريب',
   hero: 'مدير لغات واحد لكل اللغات',
   plural: ['لا عناصر', 'عنصر واحد', 'عنصران', '٣ عناصر', '١١ عنصرًا', '١٠٠ عنصر'],
+  compact: ['لا عناصر', 'عنصر واحد', 'عنصران', '٣ عناصر', '١١ عنصرًا', '١٠٠ عنصر'],
 } as const;
 
 const EN = {
   title: 'Rivinia i18n',
   hero: 'One language manager, every locale',
   plural: ['No items', '1 item', '2 items', '3 items', '11 items', '100 items'],
+  compact: ['none', '1 item', '2 items', '3 items', '11 items', '100 items'],
   ordinal: ['1st', '2nd', '3rd', '4th', '11th', '21st'],
 } as const;
 
@@ -40,7 +42,7 @@ test.describe('first load', () => {
   test('renders Arabic, RTL, and not a single raw key', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ar-EG');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     await expect(page.getByTestId('app-title')).toHaveText(AR.title);
     await expect(page.getByTestId('hero')).toHaveText(AR.hero);
@@ -76,7 +78,7 @@ test.describe('language switch', () => {
     await page.goto('/');
     await page.getByTestId('lang-en').click();
 
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en-GB');
     await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
     await expect(page.getByTestId('app-title')).toHaveText(EN.title);
     await expect(page.getByTestId('hero')).toHaveText(EN.hero);
@@ -84,8 +86,18 @@ test.describe('language switch', () => {
     await expect(page.getByTestId('lang-ar')).toHaveAttribute('aria-pressed', 'false');
 
     await page.reload();
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en-GB');
     await expect(page.getByTestId('app-title')).toHaveText(EN.title);
+  });
+
+  test('writes storage only after an explicit switch (RIV-17)', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('app-title')).toHaveText(AR.title);
+    expect(await page.evaluate(() => localStorage.getItem('rivinia.i18n.language'))).toBeNull();
+
+    await page.getByTestId('lang-en').click();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en-GB');
+    expect(await page.evaluate(() => localStorage.getItem('rivinia.i18n.language'))).toBe('en');
   });
 
   test('switching back to Arabic restores RTL and the Arabic copy', async ({ page }) => {
@@ -111,6 +123,19 @@ test.describe('ICU in a real browser', () => {
     await page.goto('/');
     await page.getByTestId('lang-en').click();
     await expect(page.getByTestId('plural').locator('li')).toHaveText([...EN.plural]);
+  });
+
+  test('compact ICU from translation tools renders (no space before `{`)', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('lang-en').click();
+    await expect(page.getByTestId('compact-plural').locator('li')).toHaveText([
+      ...EN.compact,
+    ]);
+
+    await page.getByTestId('lang-ar').click();
+    await expect(page.getByTestId('compact-plural').locator('li')).toHaveText([
+      ...AR.compact,
+    ]);
   });
 
   test('ordinals use the locale ordinal rules', async ({ page }) => {
@@ -158,7 +183,7 @@ test.describe('fallback and missing keys', () => {
     page,
   }) => {
     await page.goto('/');
-    await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ar-EG');
     await expect(page.getByTestId('fallback-text')).toHaveText('English-only fallback text');
   });
 
@@ -196,5 +221,30 @@ test.describe('t() signal', () => {
 
     await page.getByTestId('lang-en').click();
     await expect(page.getByTestId('live')).toHaveText('3 live updates');
+  });
+});
+
+test.describe('hardening (0.5.0 items)', () => {
+  test('a literal dotted key resolves in both languages (RIV-12)', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('flat-key')).toHaveText('مفتاح بنقاط');
+
+    await page.getByTestId('lang-en').click();
+    await expect(page.getByTestId('flat-key')).toHaveText('Flat dotted key');
+  });
+
+  test('ICU quoting, ISO dates and missing params (RIV-08/09/10)', async ({ page }) => {
+    await page.goto('/');
+    // RIV-09: the absent argument leaves the placeholder untouched.
+    await expect(page.getByTestId('missing-param')).toHaveText('مرحبا {name}');
+    // RIV-10: the ISO string is parsed and localized (Arabic-Indic digits).
+    await expect(page.getByTestId('iso-day')).toHaveText(/٢٠٢٦/);
+
+    await page.getByTestId('lang-en').click();
+    // RIV-08: '' → one apostrophe, '{'…'}' → literal braces.
+    await expect(page.getByTestId('quoted')).toHaveText("It's {literal}");
+    // en-GB long date for the ISO input.
+    await expect(page.getByTestId('iso-day')).toHaveText('28 October 2026');
+    await expect(page.getByTestId('missing-param')).toHaveText('Hello {name}');
   });
 });

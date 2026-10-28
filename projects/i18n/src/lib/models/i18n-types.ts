@@ -31,11 +31,13 @@ export type StorageStrategy = 'local' | 'session' | 'none' | 'cookie';
  */
 export type TranslateParams = Record<string, string | number | boolean | Date>;
 
+/** @experimental The view-transition integration may change before 1.0. */
 export interface ViewTransitionInfo {
   readonly language: string;
   readonly direction: Direction;
 }
 
+/** @experimental The view-transition integration may change before 1.0. */
 export interface ViewTransitionConfig {
   readonly enabled?: boolean;
   readonly skipInitialTransition?: boolean;

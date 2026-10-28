@@ -120,6 +120,23 @@ describe('rivinia-i18n-keys — generation', () => {
       "readonly keys: 'hello';",
     );
   });
+
+  it('keeps literal dotted keys and lets them win over a nested collision', () => {
+    const dir = tempDir();
+    writeJson(dir, 'en.json', {
+      app: { title: 'Nested title' },
+      'app.title': 'Flat title',
+      deep: { x: 'D' },
+    });
+
+    const { code, stderr } = run(dir, ['--source', 'en.json', '--out', 'keys.d.ts']);
+    expect(code).toBe(0);
+    expect(readFileSync(join(dir, 'keys.d.ts'), 'utf8')).toContain(
+      "readonly keys: 'app.title' | 'deep.x';",
+    );
+    expect(stderr).toContain('collision');
+    expect(stderr).toContain('flat key wins');
+  });
 });
 
 describe('rivinia-i18n-keys — --check', () => {
@@ -149,6 +166,111 @@ describe('rivinia-i18n-keys — --check', () => {
     const dir = tempDir();
     writeJson(dir, 'en.json', { a: 'A' });
     expect(run(dir, ['--source', 'en.json', '--out', 'keys.d.ts', '--check']).code).toBe(1);
+  });
+});
+
+describe('rivinia-i18n-keys — --parity', () => {
+  it('reports a missing key, an extra key and a placeholder mismatch, then exits 1', () => {
+    const dir = tempDir();
+    writeJson(dir, 'dict/en.json', {
+      greeting: 'Hello {name}',
+      bye: 'Bye',
+    });
+    writeJson(dir, 'dict/ar.json', {
+      greeting: 'مرحبا {ism}',
+      extra: 'زائد',
+    });
+
+    const { code, stderr } = run(dir, ['--parity', '--dir', 'dict', '--base', 'en']);
+    expect(code).toBe(1);
+    expect(stderr).toContain('MISSING ar key "bye"');
+    expect(stderr).toContain('EXTRA ar key "extra"');
+    expect(stderr).toContain('PLACEHOLDER ar key "greeting"');
+    expect(stderr).toContain('{name}');
+    expect(stderr).toContain('3 parity problem(s)');
+
+    const lines = stderr.split('\n').filter((line) => line.includes('[rivinia/i18n] '));
+    expect(lines).toHaveLength(4); // three problems + the summary
+    expect(lines[0]).toContain('MISSING');
+    expect(lines[1]).toContain('PLACEHOLDER');
+    expect(lines[2]).toContain('EXTRA');
+  });
+
+  it('exits 0 for a clean set, across nested and flat shapes', () => {
+    const dir = tempDir();
+    writeJson(dir, 'dict/en.json', {
+      nav: { home: 'Home', about: 'About {company}' },
+      count: '{n, plural, one {# item} other {# items}}',
+    });
+    writeJson(dir, 'dict/ar.json', {
+      'nav.home': 'الرئيسية',
+      'nav.about': 'حول {company}',
+      count: '{n, plural, one {عنصر} other {عناصر}}',
+    });
+
+    const { code, stdout } = run(dir, ['--parity', '--dir', 'dict', '--base', 'en']);
+    expect(code).toBe(0);
+    expect(stdout).toContain('Parity OK (2 dictionaries, 3 keys in "en")');
+  });
+
+  it('honours a custom base language', () => {
+    const dir = tempDir();
+    writeJson(dir, 'dict/fr.json', { hello: 'Bonjour' });
+    writeJson(dir, 'dict/en.json', { hello: 'Hello', extra: 'Extra' });
+
+    const { code, stderr } = run(dir, ['--parity', '--dir', 'dict', '--base', 'fr']);
+    expect(code).toBe(1);
+    expect(stderr).toContain('EXTRA en key "extra" (absent in "fr")');
+  });
+
+  it('exits 1 when the base dictionary is missing', () => {
+    const dir = tempDir();
+    writeJson(dir, 'dict/en.json', { a: 'A' });
+    const { code, stderr } = run(dir, ['--parity', '--dir', 'dict', '--base', 'de']);
+    expect(code).toBe(1);
+    expect(stderr).toContain('Base dictionary "de.json" not found');
+  });
+
+  it('ignores quoted braces when comparing placeholders', () => {
+    const dir = tempDir();
+    writeJson(dir, 'dict/en.json', { literal: "It''s '{'not a param'}'" });
+    writeJson(dir, 'dict/ar.json', { literal: "إنه '{'ليس معاملاً'}'" });
+
+    expect(run(dir, ['--parity', '--dir', 'dict', '--base', 'en']).code).toBe(0);
+  });
+
+  it('does not read plural branch text as a parameter', () => {
+    const dir = tempDir();
+    writeJson(dir, 'dict/en.json', {
+      items: '{count, plural, =0 {No items} one {# item} other {# items}}',
+      guests: '{n, plural, offset:1 =0 {Nobody} =1 {Only you} other {You and # others}}',
+    });
+    writeJson(dir, 'dict/ar.json', {
+      items: '{count, plural, zero {لا عناصر} one {عنصر} other {عناصر}}',
+      guests: '{n, plural, offset:1 =0 {لا أحد} =1 {أنت فقط} other {أنت و# آخرين}}',
+    });
+
+    const { code, stdout } = run(dir, ['--parity', '--dir', 'dict', '--base', 'en']);
+    expect(code).toBe(0);
+    expect(stdout).toContain('Parity OK (2 dictionaries, 2 keys in "en")');
+  });
+
+  it('compares placeholders nested inside plural and select branches', () => {
+    const dir = tempDir();
+    writeJson(dir, 'dict/en.json', {
+      items: '{count, plural, one {{name} bought one} other {{name} bought #}}',
+      them: '{who, select, other {{topic} for {name}}}',
+    });
+    writeJson(dir, 'dict/ar.json', {
+      items: '{count, plural, one {{name} اشترى واحدًا} other {{name} اشترى #}}',
+      them: '{who, select, other {{topic} لـ {ism}}}',
+    });
+
+    const { code, stderr } = run(dir, ['--parity', '--dir', 'dict', '--base', 'en']);
+    expect(code).toBe(1);
+    expect(stderr).toContain('PLACEHOLDER ar key "them"');
+    expect(stderr).toContain('{name}');
+    expect(stderr).toContain('1 parity problem(s)');
   });
 });
 

@@ -9,6 +9,7 @@
   },
   "icu": {
     "items": "{count, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {# عناصر} many {# عنصرًا} other {# عنصر}}",
+    "compact": "{count, plural, zero{لا عناصر} one{عنصر واحد} two{عنصران} few{# عناصر} many{# عنصرًا} other{# عنصر}}",
     "ordinal": "{rank, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}",
     "guests": "{n, plural, offset:1 =0 {لا أحد} =1 {أنت فقط} one {أنت و# آخر} other {أنت و# آخرين}}",
     "amount": "{value, number, ::currency/USD}",
@@ -17,5 +18,11 @@
   },
   "signal": {
     "count": "{count, plural, zero {لا تحديثات} one {تحديث واحد} two {تحديثان} few {# تحديثات} many {# تحديثًا} other {# تحديث}}"
+  },
+  "flat.dotted": "مفتاح بنقاط",
+  "hardening": {
+    "quoted": "إنه '{'حرفي'}'",
+    "iso": "{value, date, long}",
+    "missing": "مرحبا {name}"
   }
 }

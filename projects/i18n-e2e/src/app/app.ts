@@ -32,6 +32,10 @@ export class App {
   readonly pluralRows = computed(() =>
     this.counts.map((count) => ({ count, text: this.i18n.translate('icu.items', { count }) })),
   );
+  /** RIV-01: translation-tool output with no space before `{`. */
+  readonly compactRows = computed(() =>
+    this.counts.map((count) => ({ count, text: this.i18n.translate('icu.compact', { count }) })),
+  );
   readonly ordinalRows = computed(() =>
     this.ordinals.map((rank) => ({ rank, text: this.i18n.translate('icu.ordinal', { rank }) })),
   );
@@ -51,6 +55,17 @@ export class App {
   readonly fallbackText = computed(() => this.i18n.translate('fallback.onlyEnglish'));
   /** Present in neither: renders the key and is reported once. */
   readonly missingText = computed(() => this.i18n.translate('missing.nowhere'));
+
+  /** RIV-12: a literal dotted key with no nested counterpart. */
+  readonly flatKey = computed(() => this.i18n.translate('flat.dotted'));
+  /** RIV-08: ICU apostrophe quoting. */
+  readonly quoted = computed(() => this.i18n.translate('hardening.quoted'));
+  /** RIV-10: a strict ISO-8601 date argument. */
+  readonly isoDay = computed(() =>
+    this.i18n.translate('hardening.iso', { value: '2026-10-28' }),
+  );
+  /** RIV-09: a needed argument is absent — the placeholder must stay. */
+  readonly missingParam = computed(() => this.i18n.translate('hardening.missing', {}));
 
   readonly live = signal(1);
   /** A `params` FUNCTION, so the signal it reads is tracked. */

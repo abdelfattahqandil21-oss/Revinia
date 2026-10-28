@@ -1,7 +1,7 @@
 import { InjectionToken } from '@angular/core';
 import type { Language, StorageStrategy, SwitchStrategy, ViewTransitionConfig } from './i18n-types';
 import type { LoaderDescriptor } from './loaders';
-import type { MissingKeyEvent } from './missing-key';
+import type { MissingKeyEvent, MissingParamEvent } from './missing-key';
 
 /**
  * Global configuration for `@rivinia/i18n`.
@@ -43,6 +43,25 @@ export interface RiviniaI18nConfig<T extends string = string> {
    * @default isDevMode() && !onMissingKey
    */
   readonly warnOnMissingKey?: boolean;
+  /**
+   * Called once per (key, param) pair when a message needs a named argument
+   * that `params` does not provide. The placeholder is still rendered
+   * unchanged. Delivered from a microtask, like `onMissingKey`.
+   */
+  readonly onMissingParam?: (event: MissingParamEvent<T>) => void;
+  /**
+   * Log a `console.warn` (once per key/param pair) for missing arguments.
+   * @default isDevMode() && !onMissingParam
+   */
+  readonly warnOnMissingParam?: boolean;
+  /**
+   * Persist the language to storage/cookie after a user-initiated switch
+   * (`setLanguage`, `toggle`, `next`, `previous`, `setLanguageAsync`). The
+   * initial language is never written, so a cookie is only set once the user
+   * actually chooses a language.
+   * @default true
+   */
+  readonly persist?: boolean;
   /**
    * Load the initial language during provider setup (before first paint).
    * SSR waits via `PendingTasks`. Set `false` to skip (e.g. fully inline apps

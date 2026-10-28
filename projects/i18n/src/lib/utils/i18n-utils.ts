@@ -40,6 +40,7 @@ export function safeSetItem(key: string, value: string, strategy: StorageStrateg
  * For each browser entry (highest preference first) tries the exact tag, then
  * its base subtag (`ar-EG` → `ar`). Returns the first hit, or `null`.
  * Pure and exported for testing — pass `navigator.languages` in app code.
+ * @internal May move to an `@rivinia/i18n/internal` entry point before 1.0.
  */
 export function detectBrowserLanguage<T extends string>(
   supportedIds: readonly T[],
@@ -61,7 +62,10 @@ export function detectBrowserLanguage<T extends string>(
   return null;
 }
 
-/** Browser language list, `undefined` off-browser (SSR-safe input for detection). */
+/**
+ * Browser language list, `undefined` off-browser (SSR-safe input for detection).
+ * @internal May move to an `@rivinia/i18n/internal` entry point before 1.0.
+ */
 export function browserLanguages(): readonly string[] | undefined {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') return undefined;
   try {

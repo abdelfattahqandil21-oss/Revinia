@@ -4,7 +4,11 @@
  * (browser); these functions only parse and serialize.
  */
 
-/** Extracts a cookie value by name from a `Cookie` header or `document.cookie`. */
+/**
+ * Extracts a cookie value by name from a `Cookie` header or `document.cookie`.
+ * @internal Exported for the package's own SSR tests; may move to an
+ * `@rivinia/i18n/internal` entry point before 1.0.
+ */
 export function parseCookie(header: string | null | undefined, name: string): string | null {
   if (!header) return null;
   const prefix = `${name}=`;
@@ -21,7 +25,11 @@ export function parseCookie(header: string | null | undefined, name: string): st
   return null;
 }
 
-/** Serializes a language cookie (Lax, root path, one year). */
+/**
+ * Serializes a language cookie (Lax, root path, one year).
+ * @internal Exported for the package's own SSR tests; may move to an
+ * `@rivinia/i18n/internal` entry point before 1.0.
+ */
 export function serializeCookie(
   name: string,
   value: string,
