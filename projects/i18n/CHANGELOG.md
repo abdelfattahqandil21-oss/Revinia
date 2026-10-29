@@ -24,6 +24,11 @@ documentation fix.
   an unknown id now throws at construction with a named message instead of letting
   `undefined` become the current language. Additive — existing configs that pass a valid
   id behave exactly as before.
+- **Duplicate or empty language ids now throw.** `languages` is validated once at
+  construction: the same id twice (`[AR, EN, AR]`) or an entry without a non-empty `id`
+  fails with a `[rivinia/i18n] …` error. Until now a duplicate passed silently and then
+  broke `find`, `next()`/`previous()` and every lookup by id, because only the first
+  matching entry is reachable.
 
 ## 0.7.0 - 2026-10-29
 

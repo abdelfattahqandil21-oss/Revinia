@@ -189,6 +189,11 @@ first content is available or initial loading has settled.
 | `persist`            | `boolean`                                     | `true`                           | Persist the language after an explicit switch. First load writes nothing.     |
 | `viewTransition`     | `ViewTransitionConfig`                        | none                             | Document view transition on language change.                                  |
 
+The config is validated once at construction: `languages` must be a non-empty array with a
+non-empty, **unique** `id` per entry, and `defaultLanguage` / `fallbackLanguage` (when
+provided) must name one of those ids. Anything else throws a `[rivinia/i18n] …` error at
+bootstrap instead of degrading into an undefined current language.
+
 ## Dictionaries
 
 The default loader fetches `i18n/{language}.json`. For a standard Angular app that
