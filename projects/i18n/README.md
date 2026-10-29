@@ -69,7 +69,6 @@ import {
   injectRiviniaI18n,
   RiviniaI18n,
   RvTranslatePipe,
-  RTranslatePipe, // deprecated alias for rTranslate
   jsonLoader,
   httpLoader,
   remoteLoader,
@@ -89,7 +88,6 @@ exist only so the package's own tests can import them; they may move to an
 | `RiviniaI18n`                                                                         | service          | Stable       |
 | `provideRiviniaI18n`, `defineRiviniaI18n`, `injectRiviniaI18n`                        | providers        | Stable       |
 | `RvTranslatePipe` (`rvTranslate`)                                                      | pipe             | Stable       |
-| `RTranslatePipe` (`rTranslate`)                                                        | pipe             | Deprecated   |
 | `RiviniaI18nConfig`                                                                   | type             | Stable       |
 | `Language`, `Direction`, `Translation`, `TranslateParams`, `StorageStrategy`, `SwitchStrategy` | types    | Stable       |
 | `RiviniaLoadError`                                                                    | class            | Stable       |
@@ -103,8 +101,6 @@ exist only so the package's own tests can import them; they may move to an
 | `ViewTransitionService`                                                               | service          | Internal     |
 | `parseCookie`, `serializeCookie`                                                      | cookie helpers   | Internal     |
 | `browserLanguages`, `detectBrowserLanguage`                                           | helpers          | Internal     |
-
-`languageChanged` is deprecated: `currentLanguage` is the same signal.
 
 ## Quick start
 
@@ -249,7 +245,6 @@ browser; `<base href>` resolved against the request on the server). `isServer` m
 | ----------------------- | ----------------------------------- | -------------------------------------------------------------- |
 | `currentLanguage`       | `Signal<L>`                         | Active language id.                                            |
 | `currentLanguageObject` | `Signal<Language<L>>`               | The active language entry.                                     |
-| `languageChanged`       | `Signal<L>`                         | **Deprecated** — same signal as `currentLanguage`.                     |
 | `languages`             | `Signal<readonly Language<L>[]>`    | Supported languages.                                           |
 | `dir` / `isRtl`         | `Signal<Direction>` / `Signal<boolean>` | Document direction.                                        |
 | `locale`                | `Signal<string>`                    | BCP-47 locale driving `Intl` and plural rules.                  |
@@ -270,7 +265,7 @@ browser; `<base href>` resolved against the request on the server). `isServer` m
 | `t(key, params?)`                             | `Signal<string>`      | Same chain as a `computed`; params may be a function of signals.       |
 | `setLanguage(id)` / `setLanguageAsync(id)`    | `void` / `Promise<void>` | Follows `switchStrategy`.                                          |
 | `toggle()` / `next()` / `previous()`          | `void`                | `toggle()` flips the first two languages (dev warning with more); `next()`/`previous()` cycle. |
-| `loadTranslations(id, { silent? })`           | `Promise<Record<…>>`  | Preload without switching.                                            |
+| `loadTranslations(id)`                         | `Promise<Record<…>>`  | Preload without switching.                                            |
 | `reload(language?)`                           | `Promise<boolean>`    | Invalidate + refetch; never rejects.                                  |
 | `formatNumber(value, options?)`               | `string`              | `Intl.NumberFormat` bound to `locale`.                                |
 | `formatDate(value, options?)`                 | `string`              | `Intl.DateTimeFormat` bound to `locale`.                              |
@@ -281,8 +276,7 @@ browser; `<base href>` resolved against the request on the server). `isServer` m
 
 `RvTranslatePipe` (`rvTranslate`) delegates to `translate()`. It is impure by necessity —
 the service reads signals on every call — so prefer `t()` or component code for long
-lists. `RTranslatePipe` (`rTranslate`) is the pre-0.6 name and still works; it is
-deprecated and goes away in 1.0.
+lists.
 
 ## ICU messages
 
@@ -487,13 +481,11 @@ server log, the transfer payload, the absence of a client refetch, and hydration
 
 ## Migration: 0.5.0 → 0.6.0
 
-The core split (RIV-18) is internal: no export was removed and no signature changed;
-the only addition to the emitted `.d.ts` is `RvTranslatePipe`. One thing to know:
+0.6.0 is a breaking minor (the pre-1.0 policy allows it). The core split (RIV-18) is
+internal — no signature changed — but three compatibility names are gone:
 
-1. **The pipe has the package prefix now.** `RvTranslatePipe` (`rvTranslate`) is the
-   documented name. `RTranslatePipe` (`rTranslate`) keeps working, is marked
-   `@deprecated`, and is removed in 1.0. Nothing breaks if you do not rename; rename
-   when convenient:
+1. **The pipe is `rvTranslate`.** `RTranslatePipe` (`rTranslate`) was removed; the
+   package prefix is `rv`, and there is no alias to keep:
 
    ```html
    <!-- before -->
@@ -501,6 +493,11 @@ the only addition to the emitted `.d.ts` is `RvTranslatePipe`. One thing to know
    <!-- after -->
    {{ 'booking.seats' | rvTranslate: { count: seats } }}
    ```
+
+2. **`languageChanged` is gone.** It was the same signal as `currentLanguage`; switch
+   your reads to `currentLanguage`.
+3. **`loadTranslations(id, { silent })` is now `loadTranslations(id)`.** `silent` never
+   did anything — background loads are an internal concern.
 
 ## Migration: 0.3.3 → 0.4.0
 

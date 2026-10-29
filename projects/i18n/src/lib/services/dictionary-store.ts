@@ -92,7 +92,7 @@ export class DictionaryStore<L extends string> {
 
   async load(
     languageId: L,
-    opts?: { silent?: boolean; background?: boolean; force?: boolean },
+    opts?: { background?: boolean; force?: boolean },
   ): Promise<{ data: Record<string, unknown>; ok: boolean }> {
     // Background loads (the fallback dictionary) must never drive
     // `loadingState`/`loadingError`: the visible language is what the UI needs.
@@ -110,7 +110,7 @@ export class DictionaryStore<L extends string> {
 
     // One FETCH is shared by every caller; the decision to APPLY is made by
     // each caller after the await, against the state at resolution time. A
-    // caller must never inherit another caller's `silent`/`background` flags
+    // caller must never inherit another caller's `background` flag
     // (RIV-02: a background fallback load joined by an explicit switch).
     let task = opts?.force ? undefined : this._inflight.get(languageId);
     if (!task) {
@@ -196,7 +196,7 @@ export class DictionaryStore<L extends string> {
     const fallbackId = this._deps.fallbackLanguage;
     if (fallbackId === null || fallbackId === this._deps.currentLanguage()) return;
     if (this.has(fallbackId)) return;
-    void this.load(fallbackId, { silent: true, background: true });
+    void this.load(fallbackId, { background: true });
   }
 
   private _reloadOne(languageId: L): Promise<boolean> {

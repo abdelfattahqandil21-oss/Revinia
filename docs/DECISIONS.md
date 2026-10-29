@@ -2146,8 +2146,9 @@ Three defects, all found by a consumer using the packages.
   name — the package prefix is already `rv` in `angular.json`. `RTranslatePipe`
   (`rTranslate`) keeps rendering as a deprecated empty subclass until 1.0. This is the
   only `.d.ts` delta (one added declaration, verified by diffing the filtered public
-  surface against the tag).
-- **Size.** FESM 44,234 B raw / 10,685 B gzip vs 40,551 / 10,026 at 0.5.0. A consumer
+  surface against the tag). **(Superseded by D66: the alias was removed before release.)**
+- **Size.** FESM 44,234 B raw / 10,685 B gzip vs 40,551 / 10,026 at 0.5.0 (measured
+  before the D66 cleanup; after it the FESM is 43,350 B / 10,612 B). A consumer
   production build went 239.26 kB → 242.01 kB raw (65.96 → 66.68 kB transfer); the
   delta includes the two extra pipe usages in the check component. The `Intl` memo is
   now a 40-entry LRU, so peak memory is bounded where it used to grow.
@@ -2156,3 +2157,32 @@ Three defects, all found by a consumer using the packages.
   claimed as a regression-free win.
 - **Not done.** No version bump, no tag, no publish: 0.6.0 stays unreleased until the
   owner approves gate 7. Part 2 (`@rivinia/i18n/ui`) has not started.
+
+## 2026-10-28 — D66: `@rivinia/i18n` pre-release cleanup — no compatibility aliases
+
+- **Rule.** `@rivinia/i18n` has no official release: the npm versions are experimental
+  and carry no backward-compatibility commitment. Transitional names are therefore
+  removed before 0.6.0 ships, not carried to 1.0. This supersedes the deprecation
+  window D65 planned for the pipe.
+- **Removed.** `RTranslatePipe` and the `rTranslate` selector (the alias had existed for
+  one unreleased commit); `RiviniaI18n.languageChanged` (the same signal as
+  `currentLanguage`); the `silent` option on `loadTranslations()` (declared, never read
+  — `background` is the internal flag that suppresses loading state).
+- **Kept, deliberately.** The `Translation<L>` object overload of `translate()`; all
+  three `t()` overloads; `defineRiviniaI18n()`; `toggle()`/`next()`/`previous()`;
+  `getLanguage()`; `clearMissingKeys()`/`clearMissingParams()`; the `formatIcu` caches;
+  the `@experimental` view-transition surface; the `@internal` helpers
+  (`ViewTransitionService`, cookie helpers, browser-language helpers) — internal is an
+  entry-point tier, not a deprecated one.
+- **Behaviour preserved.** `RvTranslatePipe` stays impure (`pure: false`): it must
+  re-evaluate when the language signal changes, and a pure pipe would freeze the text.
+  Fallback resolution, missing-key isolation, ICU rendering and transfer reuse are
+  untouched.
+- **Evidence.** Public `.d.ts` diffed against the 0.5.0 tag: `RTranslatePipe` →
+  `RvTranslatePipe`, `languageChanged` gone, `loadTranslations` lost its dead `opts`
+  parameter; no other declaration moved. Unit 276, schematics 40, Playwright 51 on
+  chromium/chrome/firefox, SSR smoke 21/21 on chromium and firefox, and a consumer
+  production build against the packed tarball that renders `rvTranslate` (key, ICU
+  params, translation object) in Chromium with zero page errors.
+- **Not done.** No version bump, tag or publish (gate 7); no change outside
+  `projects/i18n` except this decision entry.

@@ -123,8 +123,8 @@ describe('RIV-02 in-flight loads across callers', () => {
       onLoadError: (language) => failures.push(language),
     });
 
-    const first = i18n.loadTranslations('en', { silent: true });
-    const second = i18n.loadTranslations('en', { silent: true });
+    const first = i18n.loadTranslations('en');
+    const second = i18n.loadTranslations('en');
     await Promise.resolve();
     en.reject(new Error('offline'));
     await first;

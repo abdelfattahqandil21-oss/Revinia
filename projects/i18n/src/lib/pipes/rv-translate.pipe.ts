@@ -35,13 +35,3 @@ export class RvTranslatePipe<L extends string = string> {
     );
   }
 }
-
-/**
- * The pre-0.6 pipe name, kept so existing templates keep compiling.
- * @deprecated Use `RvTranslatePipe` (`rvTranslate`); this alias is removed in 1.0.
- */
-@Pipe({
-  name: 'rTranslate',
-  pure: false,
-})
-export class RTranslatePipe<L extends string = string> extends RvTranslatePipe<L> {}

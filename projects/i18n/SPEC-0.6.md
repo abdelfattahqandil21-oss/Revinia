@@ -1,9 +1,11 @@
 # @rivinia/i18n 0.6.0 — core split and the `/ui` entry point
 
 Status: **Part 1 implemented** (2026-10-28, branch `pkg/i18n/core-split` over `1f366f2`);
-Part 2 (`/ui`) has not started. The pipe rename (open question 2) was decided as
-"add `rvTranslate`, keep `rTranslate` as a deprecated alias until 1.0", so the `.d.ts`
-diff is one added declaration rather than empty — see D65.
+Part 2 (`/ui`) has not started. Open question 2 was resolved twice: first as "add
+`rvTranslate`, keep a deprecated alias", then — before any release — as "remove the
+alias outright" (D66), because the library has no released compatibility contract. The
+`.d.ts` diff against 0.5.0 is therefore a rename (`RTranslatePipe` → `RvTranslatePipe`)
+plus the removal of `languageChanged`, not an addition.
 Baseline: `main` at `68dd312`. Workspace version `0.5.0`, tagged `i18n/v0.5.0`
 (commit `23d5056`). npm `latest` is `0.4.0` (`npm view @rivinia/i18n`, 2026-10-28),
 so 0.5.0 is tagged but **not published**.
@@ -25,9 +27,10 @@ so 0.5.0 is tagged but **not published**.
    `0.6.0` unless the owner prefers `0.5.1` for the refactor alone (open question 3).
 3. **The `rv` prefix needs no migration.** `angular.json` already sets
    `prefix: "rv"` for every library project, and `@rivinia/i18n` today exports no
-   component or directive with a selector. The only published name outside the
-   convention is the pipe `rTranslate` (kept; open question 2). The prefix applies
-   to the new `/ui` components: `rv-*` elements, `[rvXxx]` attributes.
+   component or directive with a selector. At the time of writing the only published
+   name outside the convention was the pipe `rTranslate`; it is now `rvTranslate`
+   (open question 2, resolved by D66). The prefix applies to the new `/ui` components:
+   `rv-*` elements, `[rvXxx]` attributes.
 
 ## 2. Part 1 — split the `RiviniaI18n` God class (RIV-18)
 
@@ -97,10 +100,10 @@ Rules:
 
 ### 2.5 Acceptance
 
-Public `.d.ts` diff against the baseline is **empty**, except the one declaration the
-decided pipe rename adds (`RvTranslatePipe`). All AGENTS gates 1-6 pass.
-Benchmark is not regressed. Size delta reported. Chromium and Firefox suites pass,
-CSR and SSR.
+Public `.d.ts` diff against the baseline is **empty**, except the decided rename
+(`RTranslatePipe` → `RvTranslatePipe`) and the removed deprecated `languageChanged`.
+All AGENTS gates 1-6 pass. Benchmark is not regressed. Size delta reported. Chromium
+and Firefox suites pass, CSR and SSR.
 
 ## 3. Part 2 — `@rivinia/i18n/ui`
 
@@ -208,6 +211,7 @@ core. Public API tiers for every new export are added to the README table.
 
 - Publish-before-refactor ordering and the tag rule applied to 0.5.0. → **D64**
 - The collaborator split and the rule that specs stay unchanged. → **D65**
+- Pre-release removal of the deprecated names, with no alias. → **D66**
 - `/ui` contract: structural manager, native names, no popup, recipes for menus.
 
 ## 5. Open questions for the owner
@@ -215,7 +219,8 @@ core. Public API tiers for every new export are added to the README table.
 1. Publish 0.5.0 from the existing tag first (recommended) or skip 0.5.0 and
    release everything as 0.6.0 under a new tag? → **decided: publish 0.5.0 first** (D64).
 2. Keep the published pipe name `rTranslate`, or add an `rv`-style name later?
-   → **decided: add `rvTranslate`, keep `rTranslate` deprecated until 1.0** (D65).
+   → **decided: `rvTranslate` is the only pipe name; the `rTranslate` alias was
+   removed before release** (D65 → superseded by D66).
 3. Ship the refactor alone as `0.5.1`, or fold it into `0.6.0`?
    → **decided: fold it into `0.6.0`** (never published as 0.5.1).
 4. Add `rvLanguageOptions`, or keep menu support as recipes only?

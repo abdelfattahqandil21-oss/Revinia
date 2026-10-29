@@ -115,11 +115,6 @@ export class RiviniaI18n<L extends string = string> {
   private _initialized = false;
   private readonly _tasks = inject(PendingTasks, { optional: true });
 
-  /**
-   * @deprecated Use `currentLanguage`, which is the same signal.
-   * Scheduled for removal before 1.0.
-   */
-  readonly languageChanged = computed<L>(() => this._currentLanguageId());
   readonly languages = this._languages.asReadonly();
   readonly currentLanguage = this._currentLanguageId.asReadonly();
 
@@ -249,7 +244,7 @@ export class RiviniaI18n<L extends string = string> {
         loads.push(this._store.load(current));
       }
       if (hasFallback && !fallbackTransferred && preload) {
-        loads.push(this._store.load(fallback, { silent: true, background: true }));
+        loads.push(this._store.load(fallback, { background: true }));
       }
       await Promise.all(loads);
     } finally {
@@ -332,11 +327,8 @@ export class RiviniaI18n<L extends string = string> {
   readonly loadedTranslations = this._store.visible;
 
   /** Preload without switching (use in `APP_INITIALIZER` / route guards). */
-  async loadTranslations(
-    languageId: L,
-    opts?: { silent?: boolean },
-  ): Promise<Record<string, unknown>> {
-    return (await this._store.load(languageId, opts)).data;
+  async loadTranslations(languageId: L): Promise<Record<string, unknown>> {
+    return (await this._store.load(languageId)).data;
   }
 
   /**
@@ -408,7 +400,7 @@ export class RiviniaI18n<L extends string = string> {
   async setLanguageAsync(id: L): Promise<void> {
     if (id === this._currentLanguageId()) return;
     if (!this._languages().some((l) => l.id === id)) return;
-    const { ok } = await this._store.load(id, { silent: true });
+    const { ok } = await this._store.load(id);
     if (!ok) return;
     this.applyLanguage(id);
   }

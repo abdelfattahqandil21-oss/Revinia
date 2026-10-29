@@ -4,10 +4,9 @@ Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
 
 ## 0.6.0 (unreleased)
 
-The core split (RIV-18) plus the prefixed pipe name. No public signature changed and no
-export was removed; the only declaration delta is the added `RvTranslatePipe`. The
-emitted FESM is ~3.6 kB larger raw (0.64 kB gzip) because the collaborator classes carry
-their own wiring.
+The core split (RIV-18) and the pre-release API cleanup. Breaking, as a pre-1.0 minor
+may be: the library never had a released compatibility contract, so the transitional
+names were removed instead of carried to 1.0.
 
 - **RIV-18 (internal):** `RiviniaI18n` (915 lines, eight responsibilities) is now a
   facade over five plain collaborators: `MessageFormatter` (ICU render + bounded
@@ -17,10 +16,13 @@ their own wiring.
   `DictionaryStore` (cache, shared in-flight fetch, generations, TransferState,
   loading counter, fallback slot). None is exported; they take constructor
   arguments instead of DI tokens, and each has direct unit tests.
-- **`rvTranslate` (feature, deprecation):** `RvTranslatePipe` uses the package
-  prefix (`angular.json` already sets `prefix: "rv"`). `RTranslatePipe`
-  (`rTranslate`) still renders and is deprecated; it is removed in 1.0 and is now
-  an empty subclass of the new pipe.
+- **`rvTranslate` replaces `rTranslate` (breaking):** `RvTranslatePipe` keeps the
+  package prefix (`angular.json` already sets `prefix: "rv"`). `RTranslatePipe` and
+  the `rTranslate` selector were removed — no alias, no deprecation window.
+- **`languageChanged` removed (breaking):** it was the same signal as
+  `currentLanguage`.
+- **`loadTranslations(id, { silent })` → `loadTranslations(id)` (breaking):** the
+  option was declared but never read; background loads are internal.
 - **Unbounded map removed:** the `Intl` number/date memo is now a 40-entry LRU, the
   same ceiling as the `formatIcu` caches; the emitted output is unchanged.
 - **`loadedTranslations` is `readonly`:** a public `Signal` was assignable before;

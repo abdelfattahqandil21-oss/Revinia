@@ -22,4 +22,4 @@ export type { IcuFormatOptions } from './lib/utils/icu';
 export { defineRiviniaI18n, injectRiviniaI18n, provideRiviniaI18n } from './lib/providers/provide-i18n';
 export { RiviniaI18n } from './lib/services/rivinia-i18n';
 export { ViewTransitionService } from './lib/services/view-transition.service';
-export { RTranslatePipe, RvTranslatePipe } from './lib/pipes/rv-translate.pipe';
+export { RvTranslatePipe } from './lib/pipes/rv-translate.pipe';
