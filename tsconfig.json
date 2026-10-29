@@ -19,6 +19,7 @@
       "@rivinia/modal": ["./dist/modal"],
       "@rivinia/modal/ui": ["./dist/modal/ui"],
       "@rivinia/i18n": ["./dist/i18n"],
+      "@rivinia/i18n/ui": ["./dist/i18n/ui"],
       "@rivinia/env": ["./dist/env"],
       "@rivinia/menu": ["./dist/menu"],
       "@rivinia/menu/ui": ["./dist/menu/ui"],
