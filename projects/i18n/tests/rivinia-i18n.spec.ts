@@ -97,13 +97,24 @@ describe('RiviniaI18n defaultLanguage resolution', () => {
     );
   });
 
-  it('requires a usable id on the first language it defaults to', () => {
+  it('requires a non-empty id on every language', () => {
     expect(() =>
       setup({
         defaultLanguage: undefined,
         languages: [{ id: '', dir: 'ltr' }] as unknown as readonly (typeof AR)[],
       }),
-    ).toThrow('[rivinia/i18n] The first entry of `languages` needs a non-empty `id`.');
+    ).toThrow('[rivinia/i18n] language[0] needs a non-empty `id`.');
+    expect(() =>
+      setup({
+        languages: [AR, { id: '   ', dir: 'ltr' }, EN] as unknown as readonly (typeof AR)[],
+      }),
+    ).toThrow('[rivinia/i18n] language[1] needs a non-empty `id`.');
+  });
+
+  it('rejects duplicate language ids', () => {
+    expect(() => setup({ languages: [AR, EN, AR] })).toThrow(
+      '[rivinia/i18n] Duplicate language id "ar" in the languages array.',
+    );
   });
 });
 

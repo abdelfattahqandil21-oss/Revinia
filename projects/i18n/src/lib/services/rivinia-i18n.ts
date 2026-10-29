@@ -554,6 +554,8 @@ function normalizeKeyArgs(
  * still arrive as `undefined`, `null`, `''` or a non-string from plain JS or a
  * JSON-driven config. Resolve it once, loudly: an unknown or empty id would
  * otherwise become the current language and surface as a broken `dir`/locale.
+ * The same pass asserts that every id is usable and unique — a duplicate would
+ * silently break `find`, `next()`/`previous()` and dictionary lookup by id.
  */
 function resolveDefaultLanguage<L extends string>(config: RiviniaI18nConfig<L>): L {
   const languages = config.languages;
@@ -562,13 +564,21 @@ function resolveDefaultLanguage<L extends string>(config: RiviniaI18nConfig<L>):
       '[rivinia/i18n] At least one language must be provided in the languages array.',
     );
   }
+  const seen = new Set<string>();
+  languages.forEach((language, index) => {
+    const id: unknown = language?.id;
+    if (typeof id !== 'string' || id.trim().length === 0) {
+      throw new Error(`[rivinia/i18n] language[${index}] needs a non-empty \`id\`.`);
+    }
+    if (seen.has(id)) {
+      throw new Error(`[rivinia/i18n] Duplicate language id "${id}" in the languages array.`);
+    }
+    seen.add(id);
+  });
+
   const requested: unknown = config.defaultLanguage;
   if (requested === undefined) {
-    const first: unknown = languages[0]?.id;
-    if (typeof first !== 'string' || first.length === 0) {
-      throw new Error('[rivinia/i18n] The first entry of `languages` needs a non-empty `id`.');
-    }
-    return first as L;
+    return languages[0].id;
   }
   if (typeof requested !== 'string' || requested.trim().length === 0) {
     throw new Error(
