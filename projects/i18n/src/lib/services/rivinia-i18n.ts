@@ -76,11 +76,18 @@ export class RiviniaI18n<L extends string = string> {
   /** Declared before the storage collaborator: it reads this during setup. */
   private readonly _languages = signal<readonly Language<L>[]>(this._config.languages);
 
+  /**
+   * Resolved before the storage collaborator reads it: the explicit
+   * `defaultLanguage`, else the first configured language. A malformed value
+   * throws here instead of letting `undefined` become the current language.
+   */
+  private readonly _defaultLanguageId: L = resolveDefaultLanguage(this._config);
+
   private readonly _languageStorage = new LanguageStorage<L>({
     key: this._config.storageKey ?? DEFAULT_STORAGE_KEY,
     strategy: this._config.storageStrategy ?? DEFAULT_STORAGE_STRATEGY,
     languages: () => this._languages(),
-    defaultLanguage: this._config.defaultLanguage,
+    defaultLanguage: this._defaultLanguageId,
     detectBrowser: this._config.detectBrowser ?? false,
     document: this._doc,
     request: this._request ?? null,
@@ -200,16 +207,6 @@ export class RiviniaI18n<L extends string = string> {
   }
 
   constructor() {
-    if (this._config.languages.length === 0) {
-      throw new Error(
-        '[rivinia/i18n] At least one language must be provided in the languages array.',
-      );
-    }
-    if (!this._config.languages.some((l) => l.id === this._config.defaultLanguage)) {
-      throw new Error(
-        `[rivinia/i18n] defaultLanguage "${this._config.defaultLanguage}" must be one of the configured language IDs.`,
-      );
-    }
     if (this._fallbackId !== null && !this._config.languages.some((l) => l.id === this._fallbackId)) {
       throw new Error(
         `[rivinia/i18n] fallbackLanguage "${this._fallbackId}" must be one of the configured language IDs.`,
@@ -550,4 +547,40 @@ function normalizeKeyArgs(
     return { params: second };
   }
   return { defaultValue: second, params: third };
+}
+
+/**
+ * `defaultLanguage` is optional at the type level, so the runtime value can
+ * still arrive as `undefined`, `null`, `''` or a non-string from plain JS or a
+ * JSON-driven config. Resolve it once, loudly: an unknown or empty id would
+ * otherwise become the current language and surface as a broken `dir`/locale.
+ */
+function resolveDefaultLanguage<L extends string>(config: RiviniaI18nConfig<L>): L {
+  const languages = config.languages;
+  if (!Array.isArray(languages) || languages.length === 0) {
+    throw new Error(
+      '[rivinia/i18n] At least one language must be provided in the languages array.',
+    );
+  }
+  const requested: unknown = config.defaultLanguage;
+  if (requested === undefined) {
+    const first: unknown = languages[0]?.id;
+    if (typeof first !== 'string' || first.length === 0) {
+      throw new Error('[rivinia/i18n] The first entry of `languages` needs a non-empty `id`.');
+    }
+    return first as L;
+  }
+  if (typeof requested !== 'string' || requested.trim().length === 0) {
+    throw new Error(
+      `[rivinia/i18n] defaultLanguage must be a non-empty string (received ${
+        JSON.stringify(requested) ?? String(requested)
+      }).`,
+    );
+  }
+  if (!languages.some((language) => language.id === requested)) {
+    throw new Error(
+      `[rivinia/i18n] defaultLanguage "${requested}" must be one of the configured language IDs.`,
+    );
+  }
+  return requested as L;
 }

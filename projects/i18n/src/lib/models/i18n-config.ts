@@ -8,7 +8,13 @@ import type { MissingKeyEvent, MissingParamEvent } from './missing-key';
  */
 export interface RiviniaI18nConfig<T extends string = string> {
   readonly languages: readonly Language<T>[];
-  readonly defaultLanguage: T;
+  /**
+   * Language used on a first visit (no stored preference, detection off).
+   * Defaults to the first entry of `languages`. When provided it must be a
+   * non-empty id present in `languages` — anything else throws at construction
+   * instead of resolving to an undefined language.
+   */
+  readonly defaultLanguage?: T;
   /**
    * Language used when a key is absent from the current dictionary. Must be
    * one of `languages`. The fallback dictionary is loaded silently (it never
