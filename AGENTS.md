@@ -64,6 +64,7 @@ dynamic import()` pattern from i18n-egy, not speculative abstractions.
    Grep dist FESM for runtime imports — any import beyond declared
    peers/allowances (e.g. an actual `tslib` import) fails the release.
    (ng-packagr injects an unused `tslib` dep entry by default; see D20.)
+   For @rivinia/theme, also run `node scripts/check-theme-package.mjs <tarball>`; it must exit 0.
 4. Tarball installed in a clean consumer fixture; consumer production build succeeds.
 5. Public imports tested exactly as consumer uses them.
 6. Bundle sizes recorded (baseline → core-only → core+UI sync → UI lazy).
