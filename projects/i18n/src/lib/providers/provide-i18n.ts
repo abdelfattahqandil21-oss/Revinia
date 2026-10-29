@@ -25,9 +25,11 @@ import { RiviniaI18n } from '../services/rivinia-i18n';
  *
  * @example
  * ```ts
- * const AR = { id: 'ar', nativeName: 'العربية', dir: 'rtl' };
- * const EN = { id: 'en', nativeName: 'English', dir: 'ltr' };
- * provideRiviniaI18n({
+ * // `as const` keeps `id` and `dir` literal — hoisted objects would
+ * // otherwise widen to `string` and fail the `Language` check.
+ * const AR = { id: 'ar', nativeName: 'العربية', dir: 'rtl' } as const;
+ * const EN = { id: 'en', nativeName: 'English', dir: 'ltr' } as const;
+ * provideRiviniaI18n<'ar' | 'en'>({
  *   defaultLanguage: 'ar',
  *   languages: [AR, EN],
  * })
