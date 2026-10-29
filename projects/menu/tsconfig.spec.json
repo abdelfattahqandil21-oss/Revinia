@@ -4,7 +4,12 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "../../out-tsc/spec",
-    "types": ["vitest/globals"]
+    /*
+     * `node` is required by the CSS spec, which reads the component stylesheet
+     * from disk: a `@supports` prelude no engine can parse is dropped silently,
+     * so it is checked with `CSS.supports` instead of a browser.
+     */
+    "types": ["vitest/globals", "node"]
   },
   /*
    * The specs live in `<project>/tests`, OUTSIDE the source root: `src/`
