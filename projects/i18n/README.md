@@ -181,6 +181,7 @@ first content is available or initial loading has settled.
 | `switchStrategy`     | `'instant' \| 'preload-first'`                | `'instant'`                      | `'preload-first'` waits for the dictionary; a failure keeps the old language. |
 | `autoApplyDirection` | `boolean`                                     | `true`                           | Write `<html lang>` and `<html dir>`.                                         |
 | `onLoadError`        | `(language, error) => void`                   | none                             | Dictionary load failure. Initialization never rejects because of it.          |
+| `warnOnLoadError`    | `boolean`                                     | `isDevMode() && !onLoadError`    | `console.error` once per language when a dictionary fails to load.            |
 | `onMissingKey`       | `(event) => void`                             | none                             | Unresolved key; suppresses the default warning.                               |
 | `warnOnMissingKey`   | `boolean`                                     | `isDevMode() && !onMissingKey`   | `console.warn` once per key.                                                  |
 | `onMissingParam`     | `(event) => void`                             | none                             | Missing message argument; suppresses the default warning.                     |
@@ -378,6 +379,26 @@ fallback failure reaches `onLoadError` but never sets `loadingState` to `'error'
 the current dictionary is what the UI needs. It is transferred with the rest of the state,
 so hydration does not fetch it again. With `preload: false`, the fallback works from
 cache/inline dictionaries only.
+
+## Load failures
+
+A dictionary that fails to load leaves **every** key unresolved, so the page renders raw
+key names. Initialization never rejects: the failure lands on `loadingState` and
+`loadingError`, and with the default `switchStrategy: 'instant'` the language has already
+flipped — use `'preload-first'` if you want a failed load to abort the switch instead.
+
+```ts
+provideRiviniaI18n({
+  defaultLanguage: 'ar',
+  languages: […],
+  onLoadError: (language, error) => report(error, { language }),
+});
+```
+
+Without `onLoadError`, a `console.error` is logged **once per language per session** in
+dev mode, so a retry loop cannot flood the console. Set `warnOnLoadError: false` to
+silence it, or `true` to keep it in production. A failing fallback dictionary is reported
+the same way but never flips `loadingState` (see [Fallback language](#fallback-language)).
 
 ## Reloading a dictionary
 
