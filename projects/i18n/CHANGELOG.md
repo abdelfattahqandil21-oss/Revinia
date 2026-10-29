@@ -2,6 +2,34 @@
 
 Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
 
+## 0.6.0 (unreleased)
+
+The core split (RIV-18) and the pre-release API cleanup. Breaking, as a pre-1.0 minor
+may be: the library never had a released compatibility contract, so the transitional
+names were removed instead of carried to 1.0.
+
+- **RIV-18 (internal):** `RiviniaI18n` (915 lines, eight responsibilities) is now a
+  facade over five plain collaborators: `MessageFormatter` (ICU render + bounded
+  `Intl` memo), `MissingKeyReporter` (dedupe, microtask flush, `missingKeys`),
+  `LanguageStorage` (local/session/cookie, persist-after-switch, initial language),
+  `DocumentDirectionApplier` (`<html dir/lang>`, view transition) and
+  `DictionaryStore` (cache, shared in-flight fetch, generations, TransferState,
+  loading counter, fallback slot). None is exported; they take constructor
+  arguments instead of DI tokens, and each has direct unit tests.
+- **`rvTranslate` replaces `rTranslate` (breaking):** `RvTranslatePipe` keeps the
+  package prefix (`angular.json` already sets `prefix: "rv"`). `RTranslatePipe` and
+  the `rTranslate` selector were removed — no alias, no deprecation window.
+- **`languageChanged` removed (breaking):** it was the same signal as
+  `currentLanguage`.
+- **`loadTranslations(id, { silent })` → `loadTranslations(id)` (breaking):** the
+  option was declared but never read; background loads are internal.
+- **Unbounded map removed:** the `Intl` number/date memo is now a 40-entry LRU, the
+  same ceiling as the `formatIcu` caches; the emitted output is unchanged.
+- **`loadedTranslations` is `readonly`:** a public `Signal` was assignable before;
+  no consumer can reasonably depend on writing it.
+- **Behaviour:** none intended. The characterization test (`fallback-after-init`)
+  and the SSR smoke suite were added before the split and pass unchanged after it.
+
 ## 0.5.0
 
 The 0.4.0 code-review set. 0.4.1 was never published, so its fixes ship here;

@@ -2084,3 +2084,105 @@ Three defects, all found by a consumer using the packages.
 - Not run, therefore not claimed: WebKit (cannot launch in this environment),
   system Firefox 158 (Playwright does not drive it), screen-reader behaviour,
   and SSR in any engine other than Chromium.
+
+## 2026-10-28 — D64: `@rivinia/i18n@0.5.0` LIVE — publish from the tag, and npm "Validating"
+
+- **Order (owner correction).** `i18n/v0.5.0` was already tagged and merged
+  (`23d5056`) while npm `latest` was still 0.4.0. Tags are immutable (D17), so
+  the refactor cannot land on top of the tag: 0.5.0 had to be published first.
+  RIV-18 (core split) and `/ui` start only after this publish.
+- **Artifact.** Built in a worktree at the tag (`git worktree add --detach …
+  i18n/v0.5.0`, `pnpm install --frozen-lockfile`, `pnpm build:i18n`), not from
+  `HEAD`: `git diff i18n/v0.5.0..HEAD -- projects/i18n` is empty, but the
+  published bytes still come from the tag's own build. 14 files, 67,151 B,
+  `shasum cea589a8c28f3d164d2980563e8eb4e14693f28e`, sha256
+  `3d0a77d05dda6cc6fbc8043d3a25ea97e9623569a5f43095edd8316570aa3c6b`.
+  Compared file-by-file with the earlier `pack/rivinia-i18n-0.5.0.tgz`:
+  identical except one TypeScript declaration-emit union-order line in
+  `types/rivinia-i18n.d.ts` (`loadingState`) — same union, not a source change.
+- **2FA.** npm answered `EOTP`; a 2FA-bypass token cannot publish, so the
+  web-auth flow runs: open the printed URL, approve, npm exchanges it through
+  `GET /-/v1/done?authId=…`. It needs a TTY — non-interactively npm exits
+  `EOTP` without polling, and at "Press ENTER to open in the browser…" it waits
+  forever, so the newline has to be fed.
+- **202 is not a failure.** The final `PUT` returned `202 Accepted` and npm
+  printed success, yet the registry answered 404 for a while: the npm UI showed
+  `0.5.0 Validating`. A 202 plus "Validating" means the upload landed and is
+  being processed — do not re-publish, and do not call a version live until
+  `dist-tags` says so (the owner's UI flipped to Published, then
+  `dist-tags = { latest: '0.5.0' }`).
+- **Registry proof.** `dist.shasum` matches the artifact, `dist.fileCount` 14,
+  `dist.unpackedSize` 238,082; `npm pack @rivinia/i18n@0.5.0` from the registry
+  is byte-identical (sha256 above) to the inspected build. FESM imports
+  `@angular/core` only.
+- **Gate 4 on the registry version** (clean directory, no `file:` link, `npm
+  install` from the registry): `tsc -p tsconfig.app.json --noEmit` exit 0,
+  production build 239.26 kB raw / 65.96 kB transfer, lazy loader chunks
+  400 / 352 B, `node_modules/.bin/rivinia-i18n-keys` linked, and `--parity`
+  over the e2e dictionaries exits 1 with exactly the one real report
+  (`MISSING ar key "fallback.onlyEnglish"`).
+- npm normalizes `bin` on publish (`./cli/…` → `cli/…`) and prints a misleading
+  "invalid and removed" warning; the entry survives (packument, same as 0.4.0).
+  Tag, source and `.d.ts` surface untouched.
+- Not run: npm provenance (no CI), yarn, WebKit.
+
+## 2026-10-28 — D65: `@rivinia/i18n` RIV-18 core split on `pkg/i18n/core-split`
+
+- **Shape.** `RiviniaI18n` (915 lines, eight responsibilities) is a facade over five
+  plain collaborators in `src/lib/services/`: `MessageFormatter`, `MissingKeyReporter`,
+  `LanguageStorage`, `DocumentDirectionApplier`, `DictionaryStore`. They are **not**
+  exported, take constructor deps instead of DI tokens, and the facade keeps every
+  `inject()` call — so no provider or token changed for consumers.
+- **Why plain classes, not services.** The public `.d.ts` stays still, each collaborator
+  is constructible in a unit test without `TestBed` (except `DocumentDirectionApplier.
+  install`, which needs an injection context for `effect()`), and the wiring order is
+  visible in one constructor instead of being resolved by the injector.
+- **Specs stay unchanged.** The characterization test (`fallback-after-init`, unit +
+  SSR) was written and green *before* the first extraction; the 0.4/0.5 specs were not
+  touched. Each extraction adds a direct spec for the extracted class. Evidence:
+  274 unit tests, Playwright 51/51 on chromium/chrome/firefox, SSR smoke 21/21 on
+  chromium and firefox.
+- **Pipe rename (open question 2).** `RvTranslatePipe` (`rvTranslate`) is the documented
+  name — the package prefix is already `rv` in `angular.json`. `RTranslatePipe`
+  (`rTranslate`) keeps rendering as a deprecated empty subclass until 1.0. This is the
+  only `.d.ts` delta (one added declaration, verified by diffing the filtered public
+  surface against the tag). **(Superseded by D66: the alias was removed before release.)**
+- **Size.** FESM 44,234 B raw / 10,685 B gzip vs 40,551 / 10,026 at 0.5.0 (measured
+  before the D66 cleanup; after it the FESM is 43,350 B / 10,612 B). A consumer
+  production build went 239.26 kB → 242.01 kB raw (65.96 → 66.68 kB transfer); the
+  delta includes the two extra pipe usages in the check component. The `Intl` memo is
+  now a 40-entry LRU, so peak memory is bounded where it used to grow.
+- **Benchmark.** Median 20.1 ms vs 15.8 ms baseline, with overlapping spreads
+  (baseline 15.0–23.6 ms) — the split adds a call hop, no algorithmic change; not
+  claimed as a regression-free win.
+- **Not done.** No version bump, no tag, no publish: 0.6.0 stays unreleased until the
+  owner approves gate 7. Part 2 (`@rivinia/i18n/ui`) has not started.
+
+## 2026-10-28 — D66: `@rivinia/i18n` pre-release cleanup — no compatibility aliases
+
+- **Rule.** `@rivinia/i18n` has no official release: the npm versions are experimental
+  and carry no backward-compatibility commitment. Transitional names are therefore
+  removed before 0.6.0 ships, not carried to 1.0. This supersedes the deprecation
+  window D65 planned for the pipe.
+- **Removed.** `RTranslatePipe` and the `rTranslate` selector (the alias had existed for
+  one unreleased commit); `RiviniaI18n.languageChanged` (the same signal as
+  `currentLanguage`); the `silent` option on `loadTranslations()` (declared, never read
+  — `background` is the internal flag that suppresses loading state).
+- **Kept, deliberately.** The `Translation<L>` object overload of `translate()`; all
+  three `t()` overloads; `defineRiviniaI18n()`; `toggle()`/`next()`/`previous()`;
+  `getLanguage()`; `clearMissingKeys()`/`clearMissingParams()`; the `formatIcu` caches;
+  the `@experimental` view-transition surface; the `@internal` helpers
+  (`ViewTransitionService`, cookie helpers, browser-language helpers) — internal is an
+  entry-point tier, not a deprecated one.
+- **Behaviour preserved.** `RvTranslatePipe` stays impure (`pure: false`): it must
+  re-evaluate when the language signal changes, and a pure pipe would freeze the text.
+  Fallback resolution, missing-key isolation, ICU rendering and transfer reuse are
+  untouched.
+- **Evidence.** Public `.d.ts` diffed against the 0.5.0 tag: `RTranslatePipe` →
+  `RvTranslatePipe`, `languageChanged` gone, `loadTranslations` lost its dead `opts`
+  parameter; no other declaration moved. Unit 276, schematics 40, Playwright 51 on
+  chromium/chrome/firefox, SSR smoke 21/21 on chromium and firefox, and a consumer
+  production build against the packed tarball that renders `rvTranslate` (key, ICU
+  params, translation object) in Chromium with zero page errors.
+- **Not done.** No version bump, tag or publish (gate 7); no change outside
+  `projects/i18n` except this decision entry.

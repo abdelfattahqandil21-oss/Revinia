@@ -13,10 +13,10 @@ import type { RegisteredI18nKey } from '../models/typed-keys';
  * signal a template can read without re-running the pipe.
  */
 @Pipe({
-  name: 'rTranslate',
+  name: 'rvTranslate',
   pure: false,
 })
-export class RTranslatePipe<L extends string = string> {
+export class RvTranslatePipe<L extends string = string> {
   private readonly _i18n = inject(RiviniaI18n<L>);
 
   transform(key: RegisteredI18nKey, defaultValue?: string, params?: TranslateParams): string;
