@@ -11,7 +11,8 @@ Angular.
 
 - Package version: **0.6.0**
 - Peer dependency: **`@angular/core` `^22.0.0`** (plus `@angular-devkit/schematics` for `ng add`)
-- Entry point: **`@rivinia/i18n`** (single public entry point)
+- Entry points: **`@rivinia/i18n`** (headless core) and **`@rivinia/i18n/ui`**
+  (the standalone language toggle)
 - `sideEffects: false`; no runtime import beyond `@angular/core`; loaders are lazy chunks
 - No `HttpClient` peer — the built-in loaders use `fetch`
 
@@ -101,6 +102,8 @@ exist only so the package's own tests can import them; they may move to an
 | `ViewTransitionService`                                                               | service          | Internal     |
 | `parseCookie`, `serializeCookie`                                                      | cookie helpers   | Internal     |
 | `browserLanguages`, `detectBrowserLanguage`                                           | helpers          | Internal     |
+| `RiviniaLanguageToggle` (`rv-language-toggle`), `RiviniaLanguageTrigger` (`rvLanguageTrigger`) | `/ui` components | Experimental |
+| `RiviniaLanguageManager`, `LanguageLike`, `RiviniaLanguageTriggerContext`              | `/ui` types      | Experimental |
 
 ## Quick start
 

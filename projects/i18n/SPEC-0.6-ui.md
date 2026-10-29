@@ -1,7 +1,9 @@
 # @rivinia/i18n/ui — the language toggle and the trigger template
 
-Status: **revision 3 (approved by owner), 2026-10-29**. Specification only — no
-component code in this commit.
+Status: **revision 4 (implementation clarifications), 2026-10-29**. Revision 3 was
+approved by the owner; revision 4 changes only §6 (naming mechanism), §7 (the
+internal `languageName` signature), §11.1 (a note on the outvoted case) and §13
+(decision 5 closed).
 Target release: **0.7.0** (pre-1.0: a minor may break). Nothing here is published.
 Baseline: `main` at `928300f`; `@rivinia/i18n` 0.6.0 published from tag `i18n/v0.6.0`
 (`b976cc5`, untouched).
@@ -153,7 +155,7 @@ export class RiviniaLanguageToggle {
   readonly current    = input<string>();
   readonly label      = input<string>();       // "Switch language" fragment
   readonly busy       = input(false);          // presentational mode only
-  readonly disabled   = input(false);          // proposed, see §13 decision 5
+  readonly disabled   = input(false);          // §13 decision 5: closed, shipped
 
   readonly languageChange = output<string>();
 }
@@ -294,7 +296,7 @@ of alternating with a transient busy state — a control that sometimes ignores 
 click because it is loading and sometimes because the data is wrong is impossible
 to diagnose from the outside.
 
-The contrast with the proposed `[disabled]` input (§13 decision 5) is deliberate:
+The contrast with the `[disabled]` input (§13 decision 5, closed) is deliberate:
 `[disabled]` is the app saying "this control is unavailable" and sets the real
 `disabled` attribute (out of the tab order); ≥ 3 is the component saying "this
 shape is wrong for your data" and keeps the control reachable.
@@ -369,9 +371,13 @@ text, otherwise voice-control users cannot say what they see.
 > failure: the user says "العربية" and nothing matches.
 > Consequences the README must state:
 > 1. `label` is required with a custom template (a dev warning fires without it).
-> 2. The computed name is `${targetName}, ${label}`; a consumer who renders
->    different text must override the naming themselves (e.g. `aria-label` on the
->    host) rather than relying on `label` alone.
+> 2. The composed name is set as `aria-label` on the **inner button**, the element
+>    that owns the name (§7) — never on the host, and there is no `aria-label`
+>    input. It is `${targetName}` or `${targetName}, ${label}`. Visible text a
+>    template renders must therefore be a prefix of that string: render the target
+>    language's own name and pass `label` only for the action words that follow it.
+>    `label` is appended, so it cannot repair a template whose visible text
+>    precedes the target name — such a template must be changed, not the name.
 > 3. Icon-only triggers are safe: with no visible text there is no prefix to
 >    violate, and the name is still non-empty.
 
@@ -392,6 +398,12 @@ ICU, so step 2 normally succeeds on the server too.
 The computed name is rendered with `lang="<id>"` and the entry's `dir`
 (`dir="auto"` when the entry omits it) on the **inner button** — the element that
 owns the accessible name.
+
+The lookup lives in `ui/src/lib/utils/language-name.ts` as
+`languageName(entry: LanguageLike): string`. It is **internal**: neither entry point
+exports it. Its cache is keyed per (locale, id), and the unit suite measures it by
+counting `Intl.DisplayNames` constructions — two calls for the same pair construct
+one, a new locale constructs another.
 
 **Design, to be confirmed by the e2e matrix: `lang`/`dir` live on the inner
 `<button>`, not on the host `<rv-language-toggle>` and never on `<html>`.** The host
@@ -508,6 +520,12 @@ The ≥ 3 state uses `aria-disabled`, so it is styled off
 | `language-name.spec.ts` | `nativeName` wins; `DisplayNames` used when absent; `id` when `Intl.DisplayNames` is absent or throws; result cached per (locale, id) |
 | `ui-surface.spec.ts` | every export in `ui/src/public-api.ts` appears in the README tier table; source grep finds no `from '@rivinia/i18n'` other than `import type` |
 
+The "outvoted overlapping call" row covers an **edge case, not the normal path**:
+§5.4 ignores activation while busy, so a second activation only exists when the
+manager reports a state other than `'loading'` while a request is pending (a
+preload-first manager). The spec pins the post-await check; it does not ask for a
+queue.
+
 ### 11.2 Browser (`projects/i18n-e2e/`)
 
 - New route rendering the toggle twice: managed, and presentational with a
@@ -569,7 +587,7 @@ above.
 | 2 | API tier | all `/ui` exports **Experimental** in 0.7.0 | Stable |
 | 3 | `label` | optional; required-with-warning only with a trigger template | always required |
 | 4 | Busy activation | ignore (no queue) | queue the last activation |
-| 5 | `disabled` input | ship it (native `disabled`) | defer |
+| 5 | `disabled` input | **closed 2026-10-29 — A: ship it** (native `disabled`) | — |
 | 7 | Directive location | inside `components/language-toggle/` (no new D50 layer) | new `ui/src/lib/directives/` layer + D50 amendment |
 | 8 | Switch call | `setLanguageAsync` only | add optional `setLanguage(id): void` to the manager and prefer it |
 
