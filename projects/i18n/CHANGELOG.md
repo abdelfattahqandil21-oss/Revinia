@@ -2,7 +2,7 @@
 
 Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
 
-## 0.6.0 (unreleased)
+## 0.6.0
 
 The core split (RIV-18) and the pre-release API cleanup. Breaking, as a pre-1.0 minor
 may be: the library never had a released compatibility contract, so the transitional

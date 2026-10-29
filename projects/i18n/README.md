@@ -9,7 +9,7 @@ ICU plural/select messages, browser-language detection, and `Intl` number/date
 formatting — with SSR that actually works and no runtime dependency beyond
 Angular.
 
-- Package version: **0.4.0**
+- Package version: **0.6.0**
 - Peer dependency: **`@angular/core` `^22.0.0`** (plus `@angular-devkit/schematics` for `ng add`)
 - Entry point: **`@rivinia/i18n`** (single public entry point)
 - `sideEffects: false`; no runtime import beyond `@angular/core`; loaders are lazy chunks
