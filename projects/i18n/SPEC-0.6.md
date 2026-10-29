@@ -6,9 +6,9 @@ Part 2 (`/ui`) has not started. Open question 2 was resolved twice: first as "ad
 alias outright" (D66), because the library has no released compatibility contract. The
 `.d.ts` diff against 0.5.0 is therefore a rename (`RTranslatePipe` → `RvTranslatePipe`)
 plus the removal of `languageChanged`, not an addition.
-Baseline: `main` at `68dd312`. Workspace version `0.5.0`, tagged `i18n/v0.5.0`
-(commit `23d5056`). npm `latest` is `0.4.0` (`npm view @rivinia/i18n`, 2026-10-28),
-so 0.5.0 is tagged but **not published**.
+Baseline: `main` at `68dd312`. Workspace version `0.5.0`, tagged and published as
+`i18n/v0.5.0` (commit `23d5056`, D64); that tag is what the `.d.ts` diff above is
+measured against.
 
 ## 1. Process first (read before touching code)
 
