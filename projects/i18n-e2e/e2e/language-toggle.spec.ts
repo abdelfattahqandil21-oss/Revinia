@@ -312,4 +312,32 @@ test.describe('feedback', () => {
     const delta = Math.max(...hover.map((channel, index) => Math.abs(channel - pressed[index])));
     expect(delta, `hover ${hover.join(',')} vs pressed ${pressed.join(',')}`).toBeGreaterThan(10);
   });
+
+  test('hover keeps the base fill, so a dark button does not turn see-through', async ({
+    page,
+  }) => {
+    await page.goto('/toggle');
+    await page.evaluate(() =>
+      document.documentElement.style.setProperty('--rv-bg', 'rgb(20, 20, 24)'),
+    );
+
+    const button = toggle(page, 'presentational-toggle');
+    const read = () =>
+      button.evaluate((element) => {
+        const css = getComputedStyle(element).backgroundColor;
+        const numbers = (css.match(/[\d.]+/g) ?? []).map(Number);
+        return { css, alpha: numbers.length >= 4 ? numbers[3] : 1 };
+      });
+
+    const base = await read();
+    await button.hover();
+    const hovered = await read();
+
+    // The default hover fill is 8% ink mixed OVER the base colour. Left as ink
+    // alone — or applied with the `background` shorthand, which drops the base
+    // fill — the hovered button is 8% opaque and the page shows through.
+    expect(base.alpha).toBe(1);
+    expect(hovered.alpha, `hover ${hovered.css} over base ${base.css}`).toBe(1);
+    expect(hovered.css).not.toBe(base.css);
+  });
 });

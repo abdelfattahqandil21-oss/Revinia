@@ -661,13 +661,19 @@ The border and font tokens are a **colour** and a **font family**, not shorthand
 declaration supplies `1px solid` and `font-family`, so `--rv-border` and `--rv-font` from
 `@rivinia/theme` flow through unchanged instead of producing an invalid shorthand.
 
+Hover and active default to 8% and 16% of `currentColor` mixed **over** the button's own
+background, so a dark `--rv-bg` keeps its fill instead of turning see-through. A value
+you set for `--rv-i18n-toggle-hover-bg` or `--rv-i18n-toggle-active-bg` replaces the whole
+fill, not just the tint.
+
 The hooks that are safe to depend on:
 
 - the host `rv-language-toggle` — with `[data-busy]`, `[data-disabled]` and
   `[data-languages="2" | "many"]`; `data-disabled` mirrors the `[disabled]` input only,
   so a stylesheet can tell "the app disabled this" apart from "this shape is wrong for
   the data" (which is `data-languages="many"` plus `aria-disabled="true"`);
-- `rv-language-toggle__button` and `rv-language-toggle__name` on the inner elements.
+- `rv-language-toggle__button`, `rv-language-toggle__icon` and
+  `rv-language-toggle__name` on the inner elements.
 
 With 0 or 1 languages the host is empty and carries no `data-*` attribute at all, so a
 `[data-languages]` selector has nothing to match by design. There is no error state to

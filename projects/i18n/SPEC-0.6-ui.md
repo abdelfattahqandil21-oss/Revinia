@@ -473,11 +473,27 @@ no eye reads as a separate state. Measured 2026-10-29 in Chrome, Firefox and
 WebKit on `/toggle`; the e2e suite now fails if the two fills drift back inside
 10/255.
 
+Those percentages are mixed **over the button's own background**, not left as
+translucent ink and not applied with the `background` shorthand:
+
+```css
+background-color: var(--rv-i18n-toggle-bg, var(--rv-bg, transparent));          /* base */
+background-color: var(--rv-i18n-toggle-hover-bg,
+  color-mix(in srgb, currentColor 8%, var(--rv-i18n-toggle-bg, var(--rv-bg, transparent))));
+```
+
+Ink alone is indistinguishable on a light page and wrong on a dark one, and the
+shorthand also reset the base fill, so a dark button became see-through on hover
+(alpha 0.08 measured in Chrome, 2026-10-29). The e2e suite asserts the hovered fill is
+fully opaque over a dark `--rv-bg`. A consumer value for `--rv-i18n-toggle-hover-bg`
+or `-active-bg` still replaces the whole fill, as the token name promises.
+
 Stable override surface, documented in the README:
 
 - host element `rv-language-toggle` — the only element a consumer writes;
-- class `rv-language-toggle__button` on the inner `<button>`, and
-  `rv-language-toggle__name` on the default name span;
+- class `rv-language-toggle__button` on the inner `<button>`,
+  `rv-language-toggle__icon` on the icon box, and `rv-language-toggle__name` on the
+  default name span;
 - on the **host**: `[data-busy]`, `[data-disabled]`,
   `[data-languages="2" | "many"]`.
 
