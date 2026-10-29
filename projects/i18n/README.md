@@ -568,6 +568,13 @@ language.
 > prefix to violate, and the name is still non-empty. `label` is required with a custom
 > template; a dev-mode warning fires without it.
 
+A text suffix is bidi-fragile, so it belongs to the name's run. When the template adds
+words after the name — ", Switch language", a count, a code — put the punctuation inside
+the element that holds the name and keep the whole label in one element. As the first
+character of an LTR fragment a comma is pushed to the far edge of an RTL button, far from
+the name it closes, and the button's `gap` then separates it from that name in both
+directions. The proof page under `projects/i18n-e2e` renders exactly this case.
+
 ### Inputs and output
 
 | Input       | Type                      | Default | Meaning                                                                     |

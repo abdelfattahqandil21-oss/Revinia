@@ -196,8 +196,66 @@ test.describe('trigger template', () => {
     await expect(button).toHaveCSS('direction', 'rtl');
     await expect(hint).toHaveAttribute('lang', 'en');
     await expect(hint).toHaveCSS('direction', 'ltr');
-    await expect(hint).toHaveText(', Switch language');
+    await expect(hint).toHaveText('Switch language');
     // The visible text is exactly the accessible name (§6).
     await expect(button).toHaveAttribute('aria-label', 'العربية, Switch language');
+
+    // The comma belongs to the name's run. If it led the English fragment it
+    // would be the first character of an LTR run — bidi pushes it to the far
+    // edge of the button — and the flex `gap` would separate it from the name.
+    const label = await button.evaluate((element) => {
+      const name = element.querySelector('.toggle-name');
+      const badge = element.querySelector('.toggle-badge');
+      if (name === null || badge === null) {
+        throw new Error('the trigger template must render .toggle-name and .toggle-badge');
+      }
+
+      // Everything in the name element that comes before the badge.
+      const nodes = Array.from(name.childNodes);
+      const before = nodes.slice(0, nodes.indexOf(badge));
+      const run = before.map((node) => node.textContent ?? '').join('');
+
+      // Where the comma is, and where the last name glyph ends.
+      const texts = before.filter(
+        (node): node is Text =>
+          node.nodeType === Node.TEXT_NODE && (node.textContent ?? '').trim() !== '',
+      );
+      const commaNode = texts.at(-1);
+      if (commaNode === undefined) {
+        throw new Error('the name element must hold text before the badge');
+      }
+      const commaIndex = (commaNode.textContent ?? '').trimEnd().length - 1;
+      const firstText = texts[0];
+
+      const commaRange = document.createRange();
+      commaRange.setStart(commaNode, commaIndex);
+      commaRange.setEnd(commaNode, commaIndex + 1);
+      const beforeRange = document.createRange();
+      beforeRange.setStart(firstText, 0);
+      beforeRange.setEnd(commaNode, commaIndex);
+
+      const commaBox = commaRange.getBoundingClientRect();
+      const nameBox = beforeRange.getBoundingClientRect();
+      const badgeBox = badge.getBoundingClientRect();
+      // Horizontal distance between two boxes in the inline direction,
+      // whichever way the button runs.
+      const distance = (a: DOMRect, b: DOMRect): number =>
+        Math.min(Math.abs(a.left - b.right), Math.abs(a.right - b.left));
+
+      return {
+        commaInName: run.trimEnd().endsWith(','),
+        badgeInsideName: name.contains(badge),
+        commaTouchesName: distance(commaBox, nameBox),
+        commaTouchesBadge: distance(commaBox, badgeBox),
+        replacesName: element.querySelector('.rv-language-toggle__name') === null,
+      };
+    });
+    expect(label.commaInName).toBe(true);
+    expect(label.badgeInsideName).toBe(true);
+    expect(label.replacesName).toBe(true);
+    // No flex item boundary (and so no `gap`) may fall between the name, its
+    // comma and the badge in either direction.
+    expect(label.commaTouchesName, 'the comma must sit against the name').toBeLessThan(3);
+    expect(label.commaTouchesBadge, 'the comma must sit against the badge').toBeLessThan(3);
   });
 });
