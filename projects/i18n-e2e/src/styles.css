@@ -113,3 +113,39 @@ section {
   margin: 0;
   font-variant-numeric: tabular-nums;
 }
+
+.toggle-page {
+  max-inline-size: 60rem;
+  margin: 0 auto;
+}
+
+.toggle-page h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+}
+
+.toggle-page section {
+  margin-block-start: 1.25rem;
+}
+
+/*
+ * The direction matrix needs an asymmetric inline padding. With the symmetric
+ * default, `padding-inline-start` and `padding-inline-end` resolve to the same
+ * length, so "the start side is the right side in RTL" could not fail. A
+ * consumer would set `--rv-i18n-toggle-padding`; that token feeds the physical
+ * `padding` shorthand and cannot express a logical asymmetry, so the proof page
+ * sets the longhands on its own element.
+ */
+#direction-matrix .rv-language-toggle__button {
+  padding-inline-start: 2.5rem;
+  padding-inline-end: 0.5rem;
+}
+
+.toggle-name {
+  white-space: nowrap;
+}
+
+.toggle-badge {
+  font-size: 0.75rem;
+  opacity: 0.75;
+}

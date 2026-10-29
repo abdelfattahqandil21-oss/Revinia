@@ -3,7 +3,7 @@
 Status: **revision 4 (implementation clarifications), 2026-10-29**. Revision 3 was
 approved by the owner; revision 4 changes only §6 (naming mechanism), §7 (the
 internal `languageName` signature), §11.1 (a note on the outvoted case) and §13
-(decision 5 closed).
+(decisions 2 and 5 closed).
 Target release: **0.7.0** (pre-1.0: a minor may break). Nothing here is published.
 Baseline: `main` at `928300f`; `@rivinia/i18n` 0.6.0 published from tag `i18n/v0.6.0`
 (`b976cc5`, untouched).
@@ -584,7 +584,7 @@ above.
 | # | Question | A (proposed) | B |
 | --- | --- | --- | --- |
 | 1 | Trigger rendering | `ViewContainerRef.createEmbeddedView` — no new peer | `NgTemplateOutlet` + `@angular/common` peer |
-| 2 | API tier | all `/ui` exports **Experimental** in 0.7.0 | Stable |
+| 2 | API tier | **closed 2026-10-29 — A: every `/ui` export is Experimental** | — |
 | 3 | `label` | optional; required-with-warning only with a trigger template | always required |
 | 4 | Busy activation | ignore (no queue) | queue the last activation |
 | 5 | `disabled` input | **closed 2026-10-29 — A: ship it** (native `disabled`) | — |

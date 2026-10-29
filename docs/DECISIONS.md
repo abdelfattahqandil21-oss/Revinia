@@ -2333,6 +2333,11 @@ Three defects, all found by a consumer using the packages.
   tells consumers to set `lang` on any text that is not in the target language. No
   flags: W3C i18n guidance, and imagery is consumer-provided through the trigger
   template.
+- **API tier.** Every export of `@rivinia/i18n/ui` is **Experimental** in 0.7.0
+  (SPEC-0.6-ui.md decision 2, closed 2026-10-29). The five symbols may change —
+  or lose members — without a deprecation cycle until the entry point is promoted
+  to Stable, which requires the e2e matrix and one release of consumer use first.
+  The core entry point keeps its own tiers; this decision does not move any of them.
 - **Versioning.** 0.7.0 — a pre-1.0 minor.
 - **Not done.** No version bump, tag or publish; no change outside `projects/i18n`
   except the `@rivinia/i18n/ui` path mapping in `tsconfig.json` and this entry.

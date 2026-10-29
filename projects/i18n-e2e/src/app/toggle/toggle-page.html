@@ -1,0 +1,41 @@
+<main class="toggle-page">
+  <h1 data-testid="toggle-title">{{ title() }}</h1>
+  <p class="state" data-testid="toggle-state">{{ i18n.currentLanguage() }} · {{ i18n.dir() }}</p>
+
+  <section id="direction-matrix">
+    <h2>managed — RiviniaI18n as the manager</h2>
+    <rv-language-toggle
+      data-testid="managed-toggle"
+      [manager]="i18n"
+      [label]="label()"
+      (languageChange)="onManagedChange($event)"
+    />
+    <p class="state" data-testid="managed-event">{{ managedEvent() ?? '—' }}</p>
+  </section>
+
+  <section id="presentational">
+    <h2>presentational — rvLanguageTrigger template</h2>
+    <rv-language-toggle
+      data-testid="presentational-toggle"
+      [languages]="presentationalLanguages"
+      [current]="presentationalCurrent()"
+      label="Switch language"
+      (languageChange)="onPresentationalChange($event)"
+    >
+      <!--
+        The consumer owns this markup. The name is in the target language; the
+        badge is English and carries its own `lang` plus `dir="auto"`, so its
+        bidi follows its own text instead of the button's Arabic. `Switch
+        language` is a literal in the same language as the badge, so the visible
+        text stays exactly the accessible name ("<name>, Switch language").
+      -->
+      <ng-template rvLanguageTrigger let-language>
+        <span class="toggle-name">{{ language.nativeName }}</span>
+        <span class="toggle-badge" lang="en" dir="auto" data-testid="foreign-hint"
+          >, Switch language</span
+        >
+      </ng-template>
+    </rv-language-toggle>
+    <p class="state" data-testid="presentational-event">{{ presentationalEvent() ?? '—' }}</p>
+  </section>
+</main>
