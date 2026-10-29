@@ -62,6 +62,27 @@ class ManagedHost {
   }
 }
 
+@Component({
+  imports: [RiviniaLanguageToggle],
+  template: `
+    <ng-template #consumerIcon>
+      <svg data-testid="consumer-icon" viewBox="0 0 10 10" aria-hidden="true">
+        <path d="M0 0h10v10H0z" />
+      </svg>
+    </ng-template>
+    <rv-language-toggle
+      [languages]="languages"
+      [current]="current"
+      [icon]="consumerIcon"
+      label="Switch language"
+    />
+  `,
+})
+class IconHost {
+  languages: readonly LanguageLike[] = [AR, EN];
+  current = 'ar';
+}
+
 const attached: HTMLElement[] = [];
 
 function attach<T>(type: Type<T>): ComponentFixture<T> {
@@ -133,6 +154,75 @@ describe('RiviniaLanguageToggle — shape', () => {
     fixture.detectChanges();
 
     expect(button(fixture)?.getAttribute('aria-label')).toBe('English, Switch language');
+  });
+});
+
+function iconBox(fixture: ComponentFixture<unknown>): HTMLElement | null {
+  return (fixture.nativeElement as HTMLElement).querySelector('.rv-language-toggle__icon');
+}
+
+describe('RiviniaLanguageToggle — icon', () => {
+  it('renders the default globe inside the icon box', () => {
+    const fixture = attach(PresentationalHost);
+    fixture.detectChanges();
+    const box = iconBox(fixture);
+    const svg = box?.querySelector('svg');
+
+    expect(svg).not.toBeNull();
+    expect(svg?.getAttribute('viewBox')).toBe('0 0 64 64');
+  });
+
+  it('hides the default globe from assistive tech', () => {
+    const fixture = attach(PresentationalHost);
+    fixture.detectChanges();
+    const svg = iconBox(fixture)?.querySelector('svg');
+
+    expect([svg?.getAttribute('aria-hidden'), svg?.getAttribute('focusable')]).toEqual([
+      'true',
+      'false',
+    ]);
+  });
+
+  it('replaces the default globe with the consumer template', () => {
+    const fixture = attach(IconHost);
+    fixture.detectChanges();
+    const box = iconBox(fixture);
+
+    expect(box?.querySelector('[data-testid="consumer-icon"]')).not.toBeNull();
+    expect(box?.querySelector('svg:not([data-testid])')).toBeNull();
+  });
+
+  it('stretches the box so a consumer icon fills it', () => {
+    const fixture = attach(IconHost);
+    fixture.detectChanges();
+    const box = iconBox(fixture);
+    if (box === null) {
+      throw new Error('no icon box');
+    }
+
+    // WebKit sizes a bare <svg> inside a flex item to 0, and a descendant rule
+    // cannot reach consumer nodes, so the box itself must stretch its child.
+    expect(getComputedStyle(box).display).toBe('grid');
+  });
+
+  it('keeps the accessible name free of the icon', () => {
+    const withIcon = attach(IconHost);
+    withIcon.detectChanges();
+    const plain = attach(PresentationalHost);
+    plain.detectChanges();
+
+    expect(button(withIcon)?.getAttribute('aria-label')).toBe('English, Switch language');
+    expect(button(plain)?.getAttribute('aria-label')).toBe('English, Switch language');
+  });
+
+  it('instantiates no icon when the toggle renders nothing', () => {
+    const fixture = attach(IconHost);
+    fixture.componentInstance.languages = [AR];
+    fixture.detectChanges();
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[data-testid="consumer-icon"]'),
+    ).toBeNull();
   });
 });
 

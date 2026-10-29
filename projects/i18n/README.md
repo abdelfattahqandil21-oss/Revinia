@@ -511,6 +511,9 @@ rendered as:
   dir="rtl"
   aria-label="العربية, Switch language"
 >
+  <span class="rv-language-toggle__icon">
+    <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><!-- globe --></svg>
+  </span>
   <span class="rv-language-toggle__name">العربية</span>
 </button>
 ```
@@ -533,6 +536,48 @@ app passes an already translated string (a `t()` signal re-renders on a language
 With no manager, `languages` + `current` describe the state, `busy` supplies the loading
 state, and `languageChange` is the only side effect. Presentational mode is synchronous:
 there is nothing to await, so the event fires on activation.
+
+### The icon
+
+The button leads with a mark: a globe drawn in `currentColor`, so it inherits the
+button's colour, hover, active and disabled states without extra styling. It is
+`aria-hidden` and `focusable="false"`, and it contributes nothing to the accessible
+name — `aria-label` on the button supplies that (D57).
+
+`[icon]` replaces it with a template. The template is rendered as-is inside a
+`1.5em` square box that stretches it on both axes, so an `<svg>` needs no `width` or
+`height` of its own:
+
+```ts
+@Component({
+  imports: [RiviniaLanguageToggle],
+  template: `
+    <ng-template #swapIcon>
+      <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M10 24h36M38 16l8 8-8 8M54 40H18M26 32l-8 8 8 8" />
+      </svg>
+    </ng-template>
+    <rv-language-toggle [manager]="i18n" [icon]="swapIcon" [label]="switchLabel()" />
+  `,
+})
+export class Header {
+  readonly i18n = inject(RiviniaI18n<'ar' | 'en'>);
+  readonly switchLabel = this.i18n.t('common.switchLanguage');
+}
+```
+
+Two constraints come from that box:
+
+- **Draw in `currentColor`.** A hard-coded fill ignores the hover and disabled states.
+- **Design at the painted size.** The default is `1.5em` — 21px at the shipped
+  `0.875rem` type — and the mark is drawn at `stroke-width="4.4"` on a 64-unit viewBox
+  so it lands at ~1.4px. Artwork authored for a 16px or 24px grid is usually too dense
+  here: fine latitudes and extra meridians fill in below roughly 22px. Resize with
+  `--rv-i18n-toggle-icon-size` rather than by hand, and a consumer icon follows the same
+  token.
+
+A consumer icon drawn inside `rvLanguageTrigger` instead of `[icon]` sits after the
+button's own mark, so pass `[icon]` when replacing it.
 
 ### With a trigger template
 
@@ -585,6 +630,7 @@ directions. The proof page under `projects/i18n-e2e` renders exactly this case.
 | `label`     | `string`                  | none    | Action fragment appended to the name; required with a template.             |
 | `busy`      | `boolean`                 | `false` | Presentational loading state; ignored with a manager.                       |
 | `disabled`  | `boolean`                 | `false` | The app's own switch: sets the native `disabled` attribute.                 |
+| `icon`      | `TemplateRef \| null`     | `null`  | Replaces the default globe; the template fills the icon box.                |
 
 `languageChange` emits the id that is now current — see the contract below.
 
@@ -651,6 +697,7 @@ semantic value. Override the custom property, not the declaration:
 | `--rv-i18n-toggle-padding`          | —             | `0.5rem 0.75rem`                                    |
 | `--rv-i18n-toggle-gap`              | —             | `0.5rem`                                            |
 | `--rv-i18n-toggle-size`             | —             | `0.875rem`                                          |
+| `--rv-i18n-toggle-icon-size`        | —             | `1.5em`                                             |
 | `--rv-i18n-toggle-hover-bg`         | —             | `color-mix(in srgb, currentColor 8%, transparent)`  |
 | `--rv-i18n-toggle-active-bg`        | —             | `color-mix(in srgb, currentColor 16%, transparent)` |
 | `--rv-i18n-toggle-focus-ring`       | —             | `2px solid currentColor`                            |
@@ -705,9 +752,11 @@ supported shape for three or more languages, not something the toggle turns into
 
 ### No flags
 
-The library ships no imagery. Flag icons for languages are politically ambiguous and the
-W3C i18n guidance recommends against them; if an app wants an icon, it supplies it
-through `rvLanguageTrigger`, and icon-only triggers keep a non-empty accessible name.
+The library ships one neutral mark — a globe — and no flag imagery. Flag icons for
+languages are politically ambiguous and the W3C i18n guidance recommends against them.
+A globe does not name a language it cannot represent, and it says "switch language"
+without saying which. An app that wants its own mark passes `[icon]`, or draws one
+inside `rvLanguageTrigger`; either way the accessible name is unaffected.
 
 ## SSR
 

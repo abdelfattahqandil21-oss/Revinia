@@ -38,12 +38,15 @@ export class RiviniaLanguageToggle {
   readonly label = input<string>();
   readonly busy = input(false);
   readonly disabled = input(false);
+  /** Replaces the default globe. Rendered as-is, so size it with the icon box. */
+  readonly icon = input<TemplateRef<unknown> | null>(null);
 
   readonly languageChange = output<string>();
 
   readonly template = contentChild(RiviniaLanguageTrigger, { read: TemplateRef });
 
   private readonly slot = viewChild('slot', { read: ViewContainerRef });
+  private readonly iconSlot = viewChild('iconSlot', { read: ViewContainerRef });
 
   private readonly sourceLanguages = computed<readonly LanguageLike[]>(
     () => this.manager()?.languages() ?? this.languages(),
@@ -94,11 +97,13 @@ export class RiviniaLanguageToggle {
   private rendered:
     | { template: TemplateRef<unknown>; target: LanguageLike; busy: boolean }
     | undefined;
+  private renderedIcon: TemplateRef<unknown> | null = null;
   private warnedMany = false;
   private warnedLabel = false;
 
   ngAfterViewChecked(): void {
     this.warn();
+    this.renderIcon();
     this.renderTrigger();
   }
 
@@ -145,6 +150,23 @@ export class RiviniaLanguageToggle {
    * template is in the DOM by the end of the same change-detection pass
    * (and during server rendering, where render hooks never run).
    */
+  private renderIcon(): void {
+    const slot = this.iconSlot();
+    if (!slot) {
+      this.renderedIcon = null;
+      return;
+    }
+    const template = this.icon();
+    if (template === this.renderedIcon) {
+      return;
+    }
+    slot.clear();
+    if (template) {
+      slot.createEmbeddedView(template);
+    }
+    this.renderedIcon = template;
+  }
+
   private renderTrigger(): void {
     const slot = this.slot();
     const template = this.template();

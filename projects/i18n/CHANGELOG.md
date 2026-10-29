@@ -24,6 +24,16 @@ time.
   not a peer and `<ng-content>` is never used.
 - **`RiviniaLanguageManager`, `LanguageLike`.** The four-member structural contract
   the toggle drives, and the language entry it renders (`dir` optional).
+- **The default icon.** The button leads with a globe drawn in `currentColor`,
+  `aria-hidden` and outside the accessible name. It is sized by
+  `--rv-i18n-toggle-icon-size` (`1.5em` — 21px at the shipped `0.875rem` type) inside a
+  stretched grid box, so the mark and a consumer icon are sized by layout rather than by
+  a descendant rule that view encapsulation cannot apply to consumer nodes. The artwork
+  is retuned for 21px: the source's latitudes are dropped and its meridian narrowed,
+  because they fill in below ~22px at a legible stroke weight.
+- **`[icon]`.** A `TemplateRef` that replaces the default globe. Rendered through a view
+  container in a view hook — the same path as the trigger template — so the nodes stay
+  consumer-owned and `@angular/common` stays out of the peer list.
 - **Behaviour.** Three or more languages: `aria-disabled="true"` plus one dev-mode
   warning per instance, never silent cycling through the first two. Busy:
   `aria-busy="true"` only, a `progress` cursor, activation ignored in the handler and
@@ -31,16 +41,22 @@ time.
   the manager's current language is the target; a failed load emits nothing and leaves
   the UI untouched. `[disabled]` sets the native attribute.
 - **Styling.** `--rv-i18n-toggle-*` tokens falling back to the `--rv-*` semantics,
-  logical properties and `rem` only; `data-busy`, `data-disabled` and
-  `data-languages="2" | "many"` on the host, plus the documented class hooks.
+  logical properties and `rem` only, plus `--rv-i18n-toggle-icon-size`; `data-busy`,
+  `data-disabled` and `data-languages="2" | "many"` on the host, plus the documented
+  class hooks. Hover and active are 8% and 16% of `currentColor` mixed **over** the
+  button's own fill — as bare ink the pressed state was invisible (4/255 from hover),
+  and as a `background` shorthand the base fill was dropped, which made a dark button
+  turn see-through.
 - **Experimental tier.** Every export of `@rivinia/i18n/ui` is Experimental in this
   release (decision 2 of `SPEC-0.6-ui.md`, closed 2026-10-29): members may change
   without a deprecation cycle until the entry point is promoted to Stable.
 - **Tested.** Unit specs for the component, the manager contract, the trigger
-  template, the name lookup and the export surface; Playwright on chromium, chrome
-  and firefox (no WebKit, D39) for keyboard activation, focus retention, the
-  direction matrix and a trigger template's foreign-language fragment; SSR smoke for
-  the server HTML and clean hydration.
+  template, the icon surface, the name lookup and the export surface; Playwright on
+  chromium, chrome and firefox (no WebKit, D39) for keyboard activation, focus
+  retention, the direction matrix, the painted icon size and the token, and a trigger
+  template's foreign-language fragment; SSR smoke for the server HTML and clean
+  hydration. WebKit 27.2 was driven by hand for the icon pass, which is what found the
+  consumer-icon sizing defect; it is not part of the recorded matrix.
 - **Docs.** README section for the entry point, including the WCAG 2.5.3 warning for
   trigger templates and the `switchStrategy` caveat: the toggle always calls
   `setLanguageAsync()`, which preloads first even in an `'instant'` app.

@@ -2328,11 +2328,18 @@ Three defects, all found by a consumer using the packages.
   `direction`, the side `padding-inline-start` resolves on, and the `dir="auto"`
   case; a browser that disagrees reopens the decision rather than moving the
   attributes silently.
-- **Names and flags.** `nativeName` → `Intl.DisplayNames` → `id`, guarded. The name
-  carries its own `lang`/`dir`, and a trigger template inherits them — the README
-  tells consumers to set `lang` on any text that is not in the target language. No
-  flags: W3C i18n guidance, and imagery is consumer-provided through the trigger
-  template.
+- **Names, the mark and flags.** `nativeName` → `Intl.DisplayNames` → `id`, guarded.
+  The name carries its own `lang`/`dir`, and a trigger template inherits them — the
+  README tells consumers to set `lang` on any text that is not in the target language.
+  Each button leads with a decorative `currentColor` globe (`aria-hidden`,
+  `focusable="false"`) that contributes nothing to the name; the `[icon]` input replaces
+  it with a consumer `TemplateRef`, rendered through the same `ViewContainerRef` path as
+  the trigger. The mark is sized **by layout, not by a descendant rule**: view
+  encapsulation cannot apply `.icon[_ngcontent] > *[_ngcontent]` to consumer nodes, and
+  a bare outer `<svg>` in a flex item measures 0×0 in WebKit while Chrome and Firefox
+  stretch it by UA behaviour (measured 2026-10-29 on all three engines; the box is a
+  stretched grid, 21×21 at the default `1.5em`). No flags: W3C i18n guidance, and a globe
+  names no language it cannot represent.
 - **API tier.** Every export of `@rivinia/i18n/ui` is **Experimental** in 0.7.0
   (SPEC-0.6-ui.md decision 2, closed 2026-10-29). The five symbols may change —
   or lose members — without a deprecation cycle until the entry point is promoted

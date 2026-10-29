@@ -14,11 +14,37 @@
   </section>
 
   <section id="presentational">
-    <h2>presentational — rvLanguageTrigger template</h2>
+    <h2>presentational — rvLanguageTrigger template and a consumer icon</h2>
+
+    <!--
+      A consumer icon: static, so a template reference is enough. It is sized
+      by the component's icon box and drawn in `currentColor`, so it inherits
+      the button's colour, hover and disabled states without extra styling.
+    -->
+    <ng-template #swapIcon>
+      <svg
+        viewBox="0 0 64 64"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="5.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+        focusable="false"
+        data-testid="custom-icon"
+      >
+        <path d="M10 24h36" />
+        <path d="m38 16 8 8-8 8" />
+        <path d="M54 40H18" />
+        <path d="m26 32-8 8 8 8" />
+      </svg>
+    </ng-template>
+
     <rv-language-toggle
       data-testid="presentational-toggle"
       [languages]="presentationalLanguages"
       [current]="presentationalCurrent()"
+      [icon]="swapIcon"
       label="Switch language"
       (languageChange)="onPresentationalChange($event)"
     >
@@ -28,18 +54,16 @@
         bidi follows its own text instead of the button's Arabic.
 
         The whole visible label is one element, and the comma sits in the name's
-        run: as the first character of an LTR badge it would be pushed to the
-        far edge of an RTL button, and the flex gap would separate it from the
-        name in both directions. `Switch language` + the name, comma included,
-        stay exactly the accessible name ("<name>, Switch language").
+        run with its space: as the first character of an LTR badge the comma
+        would be pushed to the far edge of an RTL button, and the flex gap would
+        separate it from the name in both directions. `Switch language` + the
+        name, comma and space included, stay exactly the accessible name
+        ("<name>, Switch language").
       -->
       <ng-template rvLanguageTrigger let-language>
         <span class="toggle-name"
-          >{{ language.nativeName }},<span
-            class="toggle-badge"
-            lang="en"
-            dir="auto"
-            data-testid="foreign-hint"
+          >{{ language.nativeName }},
+          <span class="toggle-badge" lang="en" dir="auto" data-testid="foreign-hint"
             >Switch language</span
           ></span
         >

@@ -60,6 +60,20 @@
   cursor: not-allowed;
 }
 
+/*
+ * A grid, not a flex box, so the single child is stretched to the box on both
+ * axes by layout alone: a descendant rule cannot reach a consumer template,
+ * whose nodes carry no _ngcontent attribute. A bare outer <svg> inside a
+ * stretched flex item resolves to 0x0 in WebKit.
+ */
+.rv-language-toggle__icon {
+  display: grid;
+  place-items: stretch;
+  flex: none;
+  width: var(--rv-i18n-toggle-icon-size, 1.5em);
+  height: var(--rv-i18n-toggle-icon-size, 1.5em);
+}
+
 .rv-language-toggle__name {
   white-space: nowrap;
 }

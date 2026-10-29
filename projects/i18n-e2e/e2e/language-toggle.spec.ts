@@ -38,12 +38,12 @@ function toggle(page: Page, testId: string) {
  */
 async function expectInlineStartPadding(page: Page, testId: string): Promise<void> {
   const measured = await toggle(page, testId).evaluate((button) => {
-    const name = button.querySelector('.rv-language-toggle__name');
-    if (name === null) {
-      throw new Error('the button renders no visible name element');
+    const first = button.firstElementChild;
+    if (first === null) {
+      throw new Error('the button renders no inline content');
     }
     const box = button.getBoundingClientRect();
-    const text = name.getBoundingClientRect();
+    const content = first.getBoundingClientRect();
     const style = getComputedStyle(button);
     const border = button.clientLeft;
     return {
@@ -51,7 +51,9 @@ async function expectInlineStartPadding(page: Page, testId: string): Promise<voi
       paddingInlineStart: Number.parseFloat(style.paddingInlineStart),
       paddingInlineEnd: Number.parseFloat(style.paddingInlineEnd),
       gapStart:
-        style.direction === 'rtl' ? box.right - text.right - border : text.left - box.left - border,
+        style.direction === 'rtl'
+          ? box.right - content.right - border
+          : content.left - box.left - border,
     };
   });
 
@@ -177,6 +179,117 @@ test.describe('theme tokens', () => {
   });
 });
 
+test.describe('icon', () => {
+  interface IconFacts {
+    size: [number, number];
+    box: [number, number];
+    direction: string;
+    /** The icon sits on the button's start side, next to the name. */
+    leads: boolean;
+  }
+
+  const facts = (page: Page, testId: string): Promise<IconFacts> =>
+    page.evaluate((id) => {
+      const button = document.querySelector(`[data-testid="${id}"] button`);
+      if (button === null) {
+        throw new Error(`no button in ${id}`);
+      }
+      const box = button.querySelector('.rv-language-toggle__icon');
+      const svg = box?.querySelector('svg');
+      const name = button.querySelector('.rv-language-toggle__name, .toggle-name');
+      if (!box || !svg || !name) {
+        throw new Error(`${id} must render an icon, an svg and a name`);
+      }
+      const i = svg.getBoundingClientRect();
+      const n = name.getBoundingClientRect();
+      const direction = getComputedStyle(button).direction;
+      return {
+        size: [+i.width.toFixed(2), +i.height.toFixed(2)],
+        box: [
+          +box.getBoundingClientRect().width.toFixed(2),
+          +box.getBoundingClientRect().height.toFixed(2),
+        ],
+        direction,
+        leads: direction === 'rtl' ? i.left >= n.right : i.right <= n.left,
+      };
+    }, testId);
+
+  test('the default globe is decorative and leads the name in both directions', async ({
+    page,
+  }) => {
+    await page.goto('/toggle');
+    const button = toggle(page, 'managed-toggle');
+    const globe = page
+      .getByTestId('managed-toggle')
+      .locator('.rv-language-toggle__icon svg:not([data-testid])');
+
+    await expect(globe).toHaveCount(1);
+    await expect(globe).toHaveAttribute('aria-hidden', 'true');
+    await expect(globe).toHaveAttribute('focusable', 'false');
+    // The label is the accessible name; the mark contributes nothing to it.
+    await expect(button).toHaveAttribute('aria-label', 'English, تغيير اللغة');
+
+    // The page is RTL, but the button follows its target — English — so it is
+    // an LTR island and the icon leads on the left.
+    const ltr = await facts(page, 'managed-toggle');
+    expect(ltr.direction).toBe('ltr');
+    expect(ltr.leads, 'the icon leads in LTR').toBe(true);
+    expect(ltr.size).toEqual(ltr.box);
+
+    await button.click();
+    // The click resolves before the zoneless app renders the new target.
+    await expect(button).toHaveText('العربية');
+
+    // One click moves the target to Arabic: the button is RTL, so "leading" is
+    // the right-hand side.
+    const rtl = await facts(page, 'managed-toggle');
+    expect(rtl.direction).toBe('rtl');
+    expect(rtl.leads, 'the icon leads in RTL').toBe(true);
+    expect(rtl.size).toEqual(rtl.box);
+  });
+
+  test('a consumer template replaces the mark and is painted at the same size', async ({
+    page,
+  }) => {
+    await page.goto('/toggle');
+    const host = page.getByTestId('presentational-toggle');
+    const custom = host.getByTestId('custom-icon');
+
+    await expect(custom).toHaveCount(1);
+    // Exactly one icon: the default mark is gone, not merely hidden.
+    await expect(host.locator('.rv-language-toggle__icon svg')).toHaveCount(1);
+    await expect(custom).toHaveAttribute('aria-hidden', 'true');
+
+    // A consumer node carries no _ngcontent attribute, so no descendant rule
+    // can size it; the stretched box is what makes it fill. WebKit resolves a
+    // bare <svg> inside a flex item to 0x0, which is why this asserts the
+    // painted box, not just the wrapper (WebKit is not in this config — D39 —
+    // so the engines here prove the sizes agree, not the WebKit fix itself).
+    const before = await facts(page, 'presentational-toggle');
+    expect(before.size[0]).toBeGreaterThan(0);
+    expect(before.size).toEqual(before.box);
+    expect(before.leads).toBe(true);
+
+    await host.locator('button').click();
+    await expect(host.locator('button')).toContainText('العربية');
+    const after = await facts(page, 'presentational-toggle');
+    expect(after.size).toEqual(after.box);
+    expect(after.leads, 'the icon leads after the direction flips').toBe(true);
+  });
+
+  test('the icon token resizes the box and the painted icon', async ({ page }) => {
+    await page.goto('/toggle');
+    await page.evaluate(() =>
+      document.documentElement.style.setProperty('--rv-i18n-toggle-icon-size', '32px'),
+    );
+
+    for (const id of ['managed-toggle', 'presentational-toggle']) {
+      await expect.poll(async () => (await facts(page, id)).size).toEqual([32, 32]);
+      expect((await facts(page, id)).box).toEqual([32, 32]);
+    }
+  });
+});
+
 test.describe('trigger template', () => {
   test('a third-language fragment keeps its own lang and direction', async ({ page }) => {
     await page.goto('/toggle');
@@ -254,9 +367,10 @@ test.describe('trigger template', () => {
     expect(label.badgeInsideName).toBe(true);
     expect(label.replacesName).toBe(true);
     // No flex item boundary (and so no `gap`) may fall between the name, its
-    // comma and the badge in either direction.
+    // comma and the badge in either direction. The badge is one word space
+    // after the comma, never the 8px gap.
     expect(label.commaTouchesName, 'the comma must sit against the name').toBeLessThan(3);
-    expect(label.commaTouchesBadge, 'the comma must sit against the badge').toBeLessThan(3);
+    expect(label.commaTouchesBadge, 'only the word space may follow the comma').toBeLessThan(6);
   });
 });
 

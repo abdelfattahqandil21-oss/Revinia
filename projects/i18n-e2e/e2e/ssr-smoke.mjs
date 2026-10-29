@@ -194,6 +194,18 @@ try {
     presentationalHtml.slice(0, 400),
   );
 
+  const svgCount = (html) => (html.match(/<svg/g) ?? []).length;
+  check(
+    'SSR managed button carries the default globe, decorative',
+    svgCount(managedHtml) === 1 && /<svg[^>]*aria-hidden="true"/.test(managedHtml),
+    managedHtml.slice(0, 400),
+  );
+  check(
+    'SSR presentational button carries the consumer icon and not the default one',
+    svgCount(presentationalHtml) === 1 && presentationalHtml.includes('data-testid="custom-icon"'),
+    presentationalHtml.slice(0, 400),
+  );
+
   await page.goto(`${ORIGIN}/toggle`, { waitUntil: 'networkidle' });
   await page.waitForSelector('html[data-hydrated="true"]');
 
@@ -203,6 +215,11 @@ try {
     (await managedButton.textContent()) === 'English',
     String(await managedButton.textContent()),
   );
+  const hydratedIcon = await page
+    .getByTestId('presentational-toggle')
+    .getByTestId('custom-icon')
+    .evaluate((svg) => svg.getBoundingClientRect().width);
+  check('hydration keeps the consumer icon painted', hydratedIcon > 0, String(hydratedIcon));
   check(
     'zero console errors on the hydrated /toggle',
     consoleErrors.length === 0,

@@ -156,6 +156,7 @@ export class RiviniaLanguageToggle {
   readonly label      = input<string>();       // "Switch language" fragment
   readonly busy       = input(false);          // presentational mode only
   readonly disabled   = input(false);          // §13 decision 5: closed, shipped
+  readonly icon       = input<TemplateRef<unknown> | null>(null);  // §4.4
 
   readonly languageChange = output<string>();
 }
@@ -174,6 +175,9 @@ Rules:
   describe the state, and `languageChange` is the only side effect.
 - `label` is the *action* fragment ("Switch language"), not the language name.
   See §6 for how the full accessible name is composed.
+- Every instance leads with a mark unless `[icon]` replaces it (§4.4). The mark is
+  decorative: `aria-hidden`, `focusable="false"`, and it never contributes to the
+  name.
 
 ### 4.3 Trigger directive
 
@@ -206,6 +210,38 @@ bindings eagerly.
 
 Rendering uses `ViewContainerRef.createEmbeddedView(tpl, ctx)` in the component,
 which keeps `@angular/common` out of the peer list (decision 1 in §13).
+
+### 4.4 Icon
+
+The button opens with a 21px mark inside `.rv-language-toggle__icon`. With no `[icon]`
+the component draws its own: a globe with two exchange arrows, `stroke="currentColor"`,
+`aria-hidden="true"`, `focusable="false"`.
+
+```html
+<ng-template #swapIcon>
+  <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" aria-hidden="true">…</svg>
+</ng-template>
+<rv-language-toggle [manager]="i18n" [icon]="swapIcon" label="Switch language" />
+```
+
+- **Same rendering path as the trigger.** `contentChild` is not involved: `[icon]` is a
+  plain input of type `TemplateRef`, captured by the consumer with a template reference
+  variable and rendered with `ViewContainerRef.createEmbeddedView` in
+  `ngAfterViewChecked`. Server rendering therefore emits the consumer icon in the HTML,
+  not only after hydration.
+- **The box does the sizing.** The slot is `display: grid; place-items: stretch` at
+  `--rv-i18n-toggle-icon-size`. No descendant rule may size the icon: a consumer node
+  carries no `_ngcontent` attribute, so `.icon[_ngcontent] > *[_ngcontent]` never
+  matches it — and Chrome/Firefox stretch an auto-sized outer `<svg>` inside a flex item
+  by UA behaviour while **WebKit resolves it to 0×0** (measured 2026-10-29). The grid
+  box makes the size a layout product in all three engines (decision 9 in §13).
+- **The default mark is tuned for the painted size, not for a 24px grid.** Its stroke is
+  `4.4` on a 64-unit viewBox (~1.4px at 21px), and the source artwork's latitudes and
+  second meridian are dropped because they fill in below roughly 22px. A denser mark
+  cannot be fixed with `--rv-i18n-toggle-icon-size` alone: at 32px it is legible, at 21px
+  it is a blob.
+- **The consumer owns `currentColor`.** A hard-coded `fill`/`stroke` does not follow the
+  button's hover, active or disabled state; that is documented, not enforced.
 
 ---
 
@@ -426,9 +462,9 @@ In a custom trigger template the consumer's markup owns its own `lang`, as the
 §4.3 example shows.
 
 **No flags.** The W3C i18n guidance against flag icons is explicit, and
-`RESEARCH-ui.md` §3 records it. If an app wants imagery (the §4.3 example does,
-purely as a consumer-side illustration), it supplies it through
-`rvLanguageTrigger`; the library ships no assets.
+`RESEARCH-ui.md` §3 records it. The default mark is a neutral globe — it names no
+language, so it cannot misname one — and the library ships no flag artwork. An app that
+wants its own imagery supplies it with `[icon]` (or inside `rvLanguageTrigger`).
 
 ---
 
@@ -455,6 +491,7 @@ properties only.
 | `--rv-i18n-toggle-padding` | — | `0.5rem 0.75rem` |
 | `--rv-i18n-toggle-gap` | — | `0.5rem` |
 | `--rv-i18n-toggle-size` | — | `0.875rem` |
+| `--rv-i18n-toggle-icon-size` | — | `1.5em` (21px at the shipped type size) |
 | `--rv-i18n-toggle-hover-bg` | — | `color-mix(in srgb, currentColor 8%, transparent)` |
 | `--rv-i18n-toggle-active-bg` | — | `color-mix(in srgb, currentColor 16%, transparent)` |
 | `--rv-i18n-toggle-focus-ring` | — | `2px solid currentColor` |
@@ -465,7 +502,8 @@ Names follow the menu/select trigger vocabulary (`bg/fg/border/radius/shadow/fon
 `-hover-bg`, `-active-bg`, `-focus-ring`, `-focus-offset`, `-disabled-opacity`,
 `-padding`, `-gap`, `-size`) so a consumer who themed the menu trigger recognises
 this one. All `--rv-i18n-toggle-*` names are new — no `--rv-i18n` token exists
-today.
+today. `--rv-i18n-toggle-icon-size` has no semantic source to fall back to: no
+`--rv-*` token describes an icon box.
 
 Hover and active are 8% and 16% of the ink on purpose: at 8% vs 10% the pressed
 fill differed from the hover fill by ~4/255 per channel (contrast 1.03), which
@@ -546,7 +584,7 @@ The ≥ 3 state uses `aria-disabled`, so it is styled off
 
 | File | Asserts |
 | --- | --- |
-| `language-toggle.spec.ts` | two languages → the visible name is the *other* one; `lang`/`dir` on the inner button; `aria-busy` while loading and `cursor: progress` with it; activation ignored while busy; `[disabled]` sets the native attribute and blocks activation; 0/1 languages → host empty and no `data-*` attribute; 3 → `aria-disabled="true"` on the inner button, **no** native `disabled`, still focusable, one dev warning per instance; 3 languages **while `loadingState() === 'loading'`** → still no `setLanguageAsync` call (≥3 wins over busy) |
+| `language-toggle.spec.ts` | two languages → the visible name is the *other* one; `lang`/`dir` on the inner button; `aria-busy` while loading and `cursor: progress` with it; activation ignored while busy; `[disabled]` sets the native attribute and blocks activation; 0/1 languages → host empty and no `data-*` attribute; 3 → `aria-disabled="true"` on the inner button, **no** native `disabled`, still focusable, one dev warning per instance; 3 languages **while `loadingState() === 'loading'`** → still no `setLanguageAsync` call (≥3 wins over busy); **icon**: the default globe renders with `aria-hidden`/`focusable="false"`, `[icon]` replaces it (one `<svg>`, the consumer's), the box computes `display: grid` (the stretching that sizes a consumer node), the accessible name is byte-identical with and without an icon, and no icon is instantiated when nothing renders |
 | `language-toggle-manager.spec.ts` | `FakeManager implements RiviniaLanguageManager`; manager beats `[languages]`/`[current]`; `setLanguageAsync` called exactly once with the target id; activation on the current language calls nothing; **emit only when `currentLanguage()` became the target after the await**; no emit when the manager leaves the language unchanged (simulated failure); no emit for an outvoted overlapping call |
 | `language-trigger.spec.ts` | `[rvLanguageTrigger]` receives `{ $implicit: target, busy }`; the template is not instantiated before first render and not at all when the button is not rendered; without a template the default name span renders; missing `label` with a template → dev warning, name still non-empty |
 | `language-name.spec.ts` | `nativeName` wins; `DisplayNames` used when absent; `id` when `Intl.DisplayNames` is absent or throws; result cached per (locale, id) |
@@ -581,15 +619,28 @@ queue.
 
   A browser that disagrees with §7 reopens the decision; it does **not** silently
   move the attributes to the host.
+- **Icon.** The managed toggle renders the default globe, decorative; the
+  presentational one renders the consumer's `[icon]` and exactly one `<svg>`; in both,
+  the painted `<svg>` box equals the icon box and the icon sits on the button's start
+  side after each direction flip; setting
+  `--rv-i18n-toggle-icon-size: 32px` on `<html>` resizes both instances to 32×32. The
+  size assertion reads the painted `getBoundingClientRect()`, not the wrapper — the
+  WebKit defect was a wrapper of the right size around a 0×0 svg.
+- **Fill states.** Hovering and pressing change the composited fill by more than
+  10/255, and over a dark `--rv-bg` the hovered fill stays fully opaque (§8).
 - No console errors after hydration.
 - Chromium and Firefox (`playwright.config.ts`); Chrome when the local binary
-  exists. **No WebKit** — D39, and the config does not include it.
+  exists. **No WebKit** — D39, and the config does not include it. WebKit 27.2 was
+  driven by hand for the icon pass (that is how the 0×0 defect was found); those
+  measurements are not part of the recorded matrix.
 
 ### 11.3 SSR
 
 Extend `projects/i18n-e2e/e2e/ssr-smoke.mjs` with the toggle route: server HTML
-contains the button with the target language's name and its `lang`/`dir`, and
-hydration produces zero console errors.
+contains the button with the target language's name and its `lang`/`dir`, the managed
+button carries the default globe (one `<svg>`, `aria-hidden`), the presentational button
+carries the consumer icon and not the default one, and hydration produces zero console
+errors and a painted (non-zero) consumer icon.
 
 Not included: `@axe-core/playwright`. It is a devDependency with zero imports
 today; wiring it is its own change, and it does not replace the keyboard matrix
@@ -606,7 +657,7 @@ above.
 | `rvLanguageOption` template | no option list ships in 0.7.0 | with the select |
 | Any custom popup | second popup implementation + full APG listbox model | needs its own decision entry |
 | Menu / user-menu recipes | `@rivinia/menu/ui` and `@rivinia/select/ui` already ship the primitives | README recipes, no code |
-| Flags / icon assets | W3C guidance; political ambiguity | never; consumer-provided via the trigger template |
+| Flag assets | W3C guidance; political ambiguity | never; the shipped mark is a neutral globe, the consumer's own via `[icon]` |
 | `axe` in e2e | new infrastructure | separate change |
 
 ---
@@ -622,6 +673,7 @@ above.
 | 5 | `disabled` input | **closed 2026-10-29 — A: ship it** (native `disabled`) | — |
 | 7 | Directive location | inside `components/language-toggle/` (no new D50 layer) | new `ui/src/lib/directives/` layer + D50 amendment |
 | 8 | Switch call | `setLanguageAsync` only | add optional `setLanguage(id): void` to the manager and prefer it |
+| 9 | Default icon | **closed 2026-10-29 — A: a default globe plus `[icon]`.** The mark is decorative and sized by a stretched grid box, not a descendant rule; the artwork is tuned at the painted 21px, not authored for 24px | — |
 
 Decision 6 (language count) is **closed** by the owner (§5.3).
 
@@ -671,9 +723,13 @@ configuration but grows the D30-shaped interface to five members.
 >   accessible name is computed from the target language and not from the
 >   template's DOM, any visible text a template renders must remain a prefix of the
 >   accessible name (WCAG 2.5.3 / D57).
-> - **Names and flags.** `nativeName` → `Intl.DisplayNames` → `id`, guarded.
->   The name carries its own `lang`/`dir`. No flags: W3C i18n guidance, and
->   imagery is consumer-provided through the trigger template.
+> - **Names, the mark and flags.** `nativeName` → `Intl.DisplayNames` → `id`, guarded.
+>   The name carries its own `lang`/`dir`. Each button leads with a decorative
+>   `currentColor` globe that contributes nothing to the name; `[icon]` replaces it
+>   through the same view-container path as the trigger template. The mark is sized
+>   by a stretched grid box, not a descendant rule: view encapsulation cannot apply
+>   such a rule to consumer nodes, and WebKit resolves an auto-sized outer `<svg>`
+>   inside a flex item to 0×0 (measured 2026-10-29). No flags: W3C i18n guidance.
 > - **Versioning.** 0.7.0 — a pre-1.0 minor.
 > - **Not done.** No version bump, tag or publish; no change outside
 >   `projects/i18n` except the `@rivinia/i18n/ui` path mapping in `tsconfig.json`
@@ -700,3 +756,7 @@ AGENTS gates 1–6, plus:
    including the new route.
 6. README: entry points (replace "single public entry point"), tier table rows for
    the four new exports, usage example with and without a trigger template.
+7. Icon surface: the default globe, the `[icon]` input and
+   `--rv-i18n-toggle-icon-size` documented in the README, covered by the unit, e2e and
+   SSR suites; WebKit's consumer-icon sizing proven by a manual probe and reported as
+   outside the recorded matrix (D39).
