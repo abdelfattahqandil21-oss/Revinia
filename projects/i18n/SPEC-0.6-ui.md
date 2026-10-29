@@ -453,7 +453,7 @@ properties only.
 | `--rv-i18n-toggle-gap` | — | `0.5rem` |
 | `--rv-i18n-toggle-size` | — | `0.875rem` |
 | `--rv-i18n-toggle-hover-bg` | — | `color-mix(in srgb, currentColor 8%, transparent)` |
-| `--rv-i18n-toggle-active-bg` | — | `color-mix(in srgb, currentColor 10%, transparent)` |
+| `--rv-i18n-toggle-active-bg` | — | `color-mix(in srgb, currentColor 16%, transparent)` |
 | `--rv-i18n-toggle-focus-ring` | — | `2px solid currentColor` |
 | `--rv-i18n-toggle-focus-offset` | — | `0.125rem` |
 | `--rv-i18n-toggle-disabled-opacity` | — | `0.45` |
@@ -463,6 +463,12 @@ Names follow the menu/select trigger vocabulary (`bg/fg/border/radius/shadow/fon
 `-padding`, `-gap`, `-size`) so a consumer who themed the menu trigger recognises
 this one. All `--rv-i18n-toggle-*` names are new — no `--rv-i18n` token exists
 today.
+
+Hover and active are 8% and 16% of the ink on purpose: at 8% vs 10% the pressed
+fill differed from the hover fill by ~4/255 per channel (contrast 1.03), which
+no eye reads as a separate state. Measured 2026-10-29 in Chrome, Firefox and
+WebKit on `/toggle`; the e2e suite now fails if the two fills drift back inside
+10/255.
 
 Stable override surface, documented in the README:
 

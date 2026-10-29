@@ -29,7 +29,7 @@
 .rv-language-toggle__button:active {
   background: var(
     --rv-i18n-toggle-active-bg,
-    color-mix(in srgb, currentColor 10%, transparent)
+    color-mix(in srgb, currentColor 16%, transparent)
   );
 }
 

@@ -259,3 +259,57 @@ test.describe('trigger template', () => {
     expect(label.commaTouchesBadge, 'the comma must sit against the badge').toBeLessThan(3);
   });
 });
+
+test.describe('feedback', () => {
+  test('pressing changes the fill more than hovering does', async ({ page }) => {
+    await page.goto('/toggle');
+
+    // `color-mix(… transparent)` changes the fill's ALPHA, so the raw channel
+    // values are identical in both states. What the eye sees is the fill
+    // composited over the card, which is what this reads.
+    const fill = (element: Element): number[] => {
+      const parse = (colour: string) => {
+        const numbers = (colour.match(/[\d.]+/g) ?? []).map(Number);
+        if (numbers.length < 3) {
+          throw new Error(`unparseable colour: ${colour}`);
+        }
+        const unit = colour.startsWith('color(') ? 255 : 1;
+        return { rgb: numbers.slice(0, 3).map((value) => value * unit), alpha: numbers[3] ?? 1 };
+      };
+      let backdrop: number[] | null = null;
+      for (let node = element.parentElement; node !== null; node = node.parentElement) {
+        const { rgb, alpha } = parse(getComputedStyle(node).backgroundColor);
+        if (alpha === 1) {
+          backdrop = rgb;
+          break;
+        }
+      }
+      if (backdrop === null) {
+        throw new Error('no opaque backdrop behind the toggle');
+      }
+      const { rgb, alpha } = parse(getComputedStyle(element).backgroundColor);
+      return rgb.map((channel, index) => channel * alpha + backdrop[index] * (1 - alpha));
+    };
+
+    const button = toggle(page, 'presentational-toggle');
+    await button.hover();
+    const hover = await button.evaluate(fill);
+
+    const box = await button.boundingBox();
+    if (box === null) {
+      throw new Error('the toggle has no box');
+    }
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    const pressed = await button.evaluate(fill);
+    await page.mouse.up();
+
+    expect(hover).toHaveLength(3);
+    expect(pressed).toHaveLength(3);
+
+    // 8% -> 10% of the ink composites to ~4/255: present in the DOM, invisible
+    // on screen. The press must read as a separate state.
+    const delta = Math.max(...hover.map((channel, index) => Math.abs(channel - pressed[index])));
+    expect(delta, `hover ${hover.join(',')} vs pressed ${pressed.join(',')}`).toBeGreaterThan(10);
+  });
+});

@@ -650,7 +650,7 @@ semantic value. Override the custom property, not the declaration:
 | `--rv-i18n-toggle-gap`              | —             | `0.5rem`                                            |
 | `--rv-i18n-toggle-size`             | —             | `0.875rem`                                          |
 | `--rv-i18n-toggle-hover-bg`         | —             | `color-mix(in srgb, currentColor 8%, transparent)`  |
-| `--rv-i18n-toggle-active-bg`        | —             | `color-mix(in srgb, currentColor 10%, transparent)` |
+| `--rv-i18n-toggle-active-bg`        | —             | `color-mix(in srgb, currentColor 16%, transparent)` |
 | `--rv-i18n-toggle-focus-ring`       | —             | `2px solid currentColor`                            |
 | `--rv-i18n-toggle-focus-offset`     | —             | `0.125rem`                                          |
 | `--rv-i18n-toggle-disabled-opacity` | —             | `0.45`                                              |
