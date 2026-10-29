@@ -6,7 +6,8 @@
     "./styles/tailwind.css",
     "./styles/bootstrap.css",
     "./styles/_index.scss",
-    "./README.md"
+    "./README.md",
+    "./CHANGELOG.md"
   ],
   "lib": {
     "entryFile": "src/public-api.ts"
