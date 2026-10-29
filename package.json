@@ -22,7 +22,9 @@
     "build:theme": "ng build theme",
     "build:datepicker": "ng build datepicker",
     "test:schematics": "vitest run projects/http/schematics projects/toast/schematics projects/i18n/schematics projects/modal/schematics projects/env/schematics",
-    "check:docs": "node scripts/check-docs.mjs"
+    "test:theme": "vitest run projects/theme/tests",
+    "check:docs": "node scripts/check-docs.mjs",
+    "check:theme": "node scripts/check-theme-package.mjs"
   },
   "private": true,
   "packageManager": "pnpm@12.8.1",
