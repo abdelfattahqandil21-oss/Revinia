@@ -427,6 +427,10 @@ export class SelectPopupComponent {
         this.positioned.set(true);
         return;
       }
+      // The JS positioning path is used where CSS anchor placement is not
+      // enabled. Keep the select popup trigger-sized in that path as well.
+      root.style.width = `${trigger.width}px`;
+      root.style.minWidth = '0';
       const at = computeSelectPopupPosition(
         { left: trigger.left, top: trigger.top, width: trigger.width, height: trigger.height },
         { width: root.offsetWidth, height: root.offsetHeight },

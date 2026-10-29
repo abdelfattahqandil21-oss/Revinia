@@ -144,7 +144,23 @@ rv-select-popup {
  * descendant of its trigger, so scoping it here makes the anchor
  * unreachable (measured: panel jumped 686px away).
  */
-@supports (anchor-name: --a) and (position-area: block-end span-inline-end) {
+/*
+ * The prelude must stay a condition a browser can PARSE: an invalid one is
+ * dropped together with the whole block, silently (measured — no engine warns,
+ * and lightningcss passes it through). `not` is only legal at the START of a
+ * condition, so `(a) and not (b)` kills the block in EVERY browser; the
+ * parenthesised `and (not (b))` is the valid form. Guarded by tests/popup-css.spec.ts and e2e/select/select.spec.ts.
+ *
+ * WHY Firefox is excluded: with this block live, Firefox places an RTL
+ * panel at the NEGATIVE of the correct x (measured: trigger 895..960,
+ * panel -690..-420 for `bottom-end`, while Chromium gives 690..960).
+ * `justify-self` inside a span position-area is the broken part — every
+ * keyword (`end`, `self-end`, `flex-end`, `right`) misses in Firefox RTL.
+ * Firefox therefore keeps the JS positioning path, which is measured
+ * correct in both directions. `-moz-appearance` is the narrowest reliable
+ * Firefox-only probe; remove the clause when Firefox fixes the area maths.
+ */
+@supports (anchor-name: --a) and (position-area: block-end span-inline-end) and (not (-moz-appearance: none)) {
   /*
    * ESSENTIAL: without this every panel anchors to the LAST trigger in
    * the document, because the spec resolves a duplicate anchor-name to
