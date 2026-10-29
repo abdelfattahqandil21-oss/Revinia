@@ -27,8 +27,8 @@ import type { RiviniaLanguageTriggerContext } from './language-trigger.directive
   styleUrl: './language-toggle.css',
   host: {
     '[attr.data-languages]': 'dataLanguages()',
-    '[attr.data-busy]': 'isBusy() ? "" : null',
-    '[attr.data-disabled]': 'disabled() ? "" : null',
+    '[attr.data-busy]': 'languageCount() >= 2 && isBusy() ? "" : null',
+    '[attr.data-disabled]': 'languageCount() >= 2 && disabled() ? "" : null',
   },
 })
 export class RiviniaLanguageToggle {

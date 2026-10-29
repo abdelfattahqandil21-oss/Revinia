@@ -106,7 +106,8 @@ describe('RiviniaLanguageToggle — shape', () => {
     fixture.detectChanges();
 
     expect(
-      (fixture.nativeElement as HTMLElement).querySelector('.rv-language-toggle__name')
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('.rv-language-toggle__name')
         ?.textContent?.trim(),
     ).toBe('English');
   });
@@ -196,6 +197,8 @@ describe('RiviniaLanguageToggle — language count', () => {
   it('renders nothing with zero languages and carries no data-* attribute', () => {
     const fixture = attach(PresentationalHost);
     fixture.componentInstance.languages = [];
+    fixture.componentInstance.busy = true;
+    fixture.componentInstance.disabled = true;
     fixture.detectChanges();
 
     expect(button(fixture)).toBeNull();
@@ -205,6 +208,8 @@ describe('RiviniaLanguageToggle — language count', () => {
   it('renders nothing with one language and carries no data-* attribute', () => {
     const fixture = attach(PresentationalHost);
     fixture.componentInstance.languages = [AR];
+    fixture.componentInstance.busy = true;
+    fixture.componentInstance.disabled = true;
     fixture.detectChanges();
 
     expect(button(fixture)).toBeNull();
