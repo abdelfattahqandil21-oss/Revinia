@@ -2,6 +2,49 @@
 
 Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
 
+## 0.7.0 - 2026-10-29
+
+The first UI in the package: a two-language toggle from the secondary entry point
+`@rivinia/i18n/ui`. Additive — no core signature changed, so nothing is breaking this
+time.
+
+- **`@rivinia/i18n/ui` entry point.** Own FESM and types chunk, exported as
+  `exports["./ui"]`. No new peer dependencies: the UI imports `@angular/core` at
+  runtime and core **types only** (`import type { Direction }`) from `@rivinia/i18n`.
+- **`RiviniaLanguageToggle` (`rv-language-toggle`).** One inner `<button>` that
+  switches to the other of exactly two languages. The button — not the host and not
+  `<html>` — carries the target's `lang` and `dir` (`dir="auto"` when the entry omits
+  it), so the accessible name is pronounced and laid out in the destination language.
+  Managed (`[manager]`, structurally satisfied by `RiviniaI18n`) or presentational
+  (`[languages]` + `[current]` + `[busy]`); a manager wins over the presentational
+  inputs.
+- **`RiviniaLanguageTrigger` (`rvLanguageTrigger`).** An `<ng-template>` rendered
+  inside the button in place of the default name span, receiving
+  `{ $implicit, busy }`. Rendered through the view container, so `@angular/common` is
+  not a peer and `<ng-content>` is never used.
+- **`RiviniaLanguageManager`, `LanguageLike`.** The four-member structural contract
+  the toggle drives, and the language entry it renders (`dir` optional).
+- **Behaviour.** Three or more languages: `aria-disabled="true"` plus one dev-mode
+  warning per instance, never silent cycling through the first two. Busy:
+  `aria-busy="true"` only, activation ignored in the handler and never queued.
+  `languageChange` fires only after `setLanguageAsync` resolves **and** the manager's
+  current language is the target; a failed load emits nothing and leaves the UI
+  untouched. `[disabled]` sets the native attribute.
+- **Styling.** `--rv-i18n-toggle-*` tokens falling back to the `--rv-*` semantics,
+  logical properties and `rem` only; `data-busy`, `data-disabled` and
+  `data-languages="2" | "many"` on the host, plus the documented class hooks.
+- **Experimental tier.** Every export of `@rivinia/i18n/ui` is Experimental in this
+  release (decision 2 of `SPEC-0.6-ui.md`, closed 2026-10-29): members may change
+  without a deprecation cycle until the entry point is promoted to Stable.
+- **Tested.** Unit specs for the component, the manager contract, the trigger
+  template, the name lookup and the export surface; Playwright on chromium, chrome
+  and firefox (no WebKit, D39) for keyboard activation, focus retention, the
+  direction matrix and a trigger template's foreign-language fragment; SSR smoke for
+  the server HTML and clean hydration.
+- **Docs.** README section for the entry point, including the WCAG 2.5.3 warning for
+  trigger templates and the `switchStrategy` caveat: the toggle always calls
+  `setLanguageAsync()`, which preloads first even in an `'instant'` app.
+
 ## 0.6.0
 
 The core split (RIV-18) and the pre-release API cleanup. Breaking, as a pre-1.0 minor
