@@ -7,6 +7,10 @@
     "hero": "مدير لغات واحد لكل اللغات",
     "switch": "اللغة"
   },
+  "toggle": {
+    "title": "مفتاح اللغة",
+    "label": "تغيير اللغة"
+  },
   "icu": {
     "items": "{count, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {# عناصر} many {# عنصرًا} other {# عنصر}}",
     "compact": "{count, plural, zero{لا عناصر} one{عنصر واحد} two{عنصران} few{# عناصر} many{# عنصرًا} other{# عنصر}}",

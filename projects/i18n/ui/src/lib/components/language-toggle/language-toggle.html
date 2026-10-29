@@ -1,0 +1,48 @@
+@if (target(); as target) {
+  <button
+    type="button"
+    class="rv-language-toggle__button"
+    [attr.lang]="target.id"
+    [attr.dir]="target.dir ?? 'auto'"
+    [attr.aria-label]="accessibleName()"
+    [attr.aria-busy]="isBusy() ? 'true' : null"
+    [attr.aria-disabled]="manyLanguages() ? 'true' : null"
+    [disabled]="disabled()"
+    (click)="activate(target.id)"
+  >
+    <span class="rv-language-toggle__icon">
+      <ng-container #iconSlot />
+      @if (!icon()) {
+        <!--
+          The default mark: a globe with the two exchange arrows. The latitudes
+          of the source artwork are dropped and the meridian narrowed, because
+          below ~22px the original drawing fills in at this stroke weight.
+        -->
+        <svg
+          viewBox="0 0 64 64"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="4.4"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <circle cx="32" cy="32" r="18" />
+          <ellipse cx="32" cy="32" rx="7.6" ry="18" />
+          <path d="M14 32h36" />
+          <path d="M19 9.5A25 25 0 0 1 49 13" />
+          <path d="m42.5 13.5 6.8-.5-.5-6.5" />
+          <path d="M45 54.5A25 25 0 0 1 15 51" />
+          <path d="m21.5 50.5-6.8.5.5 6.5" />
+        </svg>
+      }
+    </span>
+
+    @if (template()) {
+      <ng-container #slot />
+    } @else {
+      <span class="rv-language-toggle__name">{{ visibleName() }}</span>
+    }
+  </button>
+}

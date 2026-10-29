@@ -1,0 +1,79 @@
+:host {
+  display: inline-block;
+  font-family: var(--rv-i18n-toggle-font, var(--rv-font, inherit));
+}
+
+.rv-language-toggle__button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rv-i18n-toggle-gap, 0.5rem);
+  padding: var(--rv-i18n-toggle-padding, 0.5rem 0.75rem);
+  font: inherit;
+  font-size: var(--rv-i18n-toggle-size, 0.875rem);
+  line-height: 1.2;
+  color: var(--rv-i18n-toggle-fg, var(--rv-fg, currentColor));
+  /* `background-color`, not the `background` shorthand: the hover and active
+     rules change the colour alone and must not reset anything else. */
+  background-color: var(--rv-i18n-toggle-bg, var(--rv-bg, transparent));
+  border: 1px solid var(--rv-i18n-toggle-border, var(--rv-border, currentColor));
+  border-radius: var(--rv-i18n-toggle-radius, var(--rv-radius, 0.5rem));
+  box-shadow: var(--rv-i18n-toggle-shadow, var(--rv-shadow, none));
+  cursor: pointer;
+}
+
+/*
+ * The default state is a tint mixed OVER the base colour, not a replacement:
+ * `currentColor 8%` alone is translucent ink that only looks right over a light
+ * page, and as a `background` shorthand it also dropped the base fill, which
+ * made a dark button turn see-through on hover. A consumer value for the token
+ * still replaces the whole colour, as documented.
+ */
+.rv-language-toggle__button:hover {
+  background-color: var(
+    --rv-i18n-toggle-hover-bg,
+    color-mix(in srgb, currentColor 8%, var(--rv-i18n-toggle-bg, var(--rv-bg, transparent)))
+  );
+}
+
+.rv-language-toggle__button:active {
+  background-color: var(
+    --rv-i18n-toggle-active-bg,
+    color-mix(in srgb, currentColor 16%, var(--rv-i18n-toggle-bg, var(--rv-bg, transparent)))
+  );
+}
+
+.rv-language-toggle__button:focus-visible {
+  outline: var(--rv-i18n-toggle-focus-ring, 2px solid currentColor);
+  outline-offset: var(--rv-i18n-toggle-focus-offset, 0.125rem);
+}
+
+:host([data-busy]) .rv-language-toggle__button {
+  cursor: progress;
+}
+
+:host([data-disabled]) .rv-language-toggle__button {
+  opacity: var(--rv-i18n-toggle-disabled-opacity, 0.45);
+  cursor: not-allowed;
+}
+
+:host([data-languages='many']) .rv-language-toggle__button[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+/*
+ * A grid, not a flex box, so the single child is stretched to the box on both
+ * axes by layout alone: a descendant rule cannot reach a consumer template,
+ * whose nodes carry no _ngcontent attribute. A bare outer <svg> inside a
+ * stretched flex item resolves to 0x0 in WebKit.
+ */
+.rv-language-toggle__icon {
+  display: grid;
+  place-items: stretch;
+  flex: none;
+  width: var(--rv-i18n-toggle-icon-size, 1.5em);
+  height: var(--rv-i18n-toggle-icon-size, 1.5em);
+}
+
+.rv-language-toggle__name {
+  white-space: nowrap;
+}

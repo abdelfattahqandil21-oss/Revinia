@@ -3,7 +3,7 @@ import { renderApplication } from '@angular/platform-server';
 import { readFile } from 'node:fs/promises';
 import { createServer, type ServerResponse } from 'node:http';
 import { extname, join, normalize } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import bootstrap from './main.server';
 
 /**
@@ -16,6 +16,14 @@ import bootstrap from './main.server';
  */
 const BROWSER_DIR = fileURLToPath(new URL('../browser/', import.meta.url));
 const PORT = Number(process.env['PORT'] ?? 4300);
+
+/**
+ * Paths the router owns, so they are rendered by the server. Everything else is
+ * a static asset (the JS bundles and `i18n/*.json`) — including the
+ * prerendered `toggle/index.html`, which would otherwise mask what the server
+ * actually renders.
+ */
+const PAGES = new Set(['/', '/index.html', '/toggle', '/toggle/']);
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -60,7 +68,7 @@ async function serveStatic(path: string, res: ServerResponse): Promise<void> {
 
 const server = createServer(async (req, res) => {
   const path = decodeURIComponent((req.url ?? '/').split('?')[0]);
-  if (path !== '/' && path !== '/index.html') {
+  if (!PAGES.has(path)) {
     await serveStatic(path, res);
     return;
   }
@@ -86,6 +94,18 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`[i18n-e2e] SSR listening on http://127.0.0.1:${PORT}`);
-});
+/**
+ * `@angular/build` imports this module from memory while prerendering, in one
+ * Piscina worker per batch. Listening on import made every worker race for port
+ * 4300 — harmless with a single route, `EADDRINUSE` as soon as `/toggle` joined
+ * it (measured 2026-10-29). The socket opens only when this file is the process
+ * entry point, which is how the smoke test runs it.
+ */
+const isEntryPoint =
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isEntryPoint) {
+  server.listen(PORT, '127.0.0.1', () => {
+    console.log(`[i18n-e2e] SSR listening on http://127.0.0.1:${PORT}`);
+  });
+}

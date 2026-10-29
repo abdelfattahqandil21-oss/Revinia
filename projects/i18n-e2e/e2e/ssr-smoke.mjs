@@ -14,7 +14,10 @@
  *   3. the HTML carries the TransferState payload, so the client does not
  *      refetch the dictionary;
  *   4. Chromium hydrates that HTML with zero console errors and the same text,
- *      and the app is interactive afterwards.
+ *      and the app is interactive afterwards;
+ *   5. the same, for `/toggle`: the server HTML already carries the inner
+ *      button's name, `lang`, `dir` and `aria-label`, the trigger template is
+ *      rendered, and hydration reports nothing.
  */
 import { spawn } from 'node:child_process';
 import { chromium, firefox } from '@playwright/test';
@@ -151,6 +154,88 @@ try {
     dictionaryRequests.length === 0,
     dictionaryRequests.join(', '),
   );
+
+  // --- /toggle: the @rivinia/i18n/ui proof, rendered by the same server ---
+  const toggleResponse = await fetch(`${ORIGIN}/toggle`);
+  const toggleHtml = await toggleResponse.text();
+  const managedHtml =
+    /<rv-language-toggle[^>]*data-testid="managed-toggle"[^>]*>[\s\S]*?<\/button>/.exec(
+      toggleHtml,
+    )?.[0] ?? '';
+  const presentationalHtml =
+    /<rv-language-toggle[^>]*data-testid="presentational-toggle"[^>]*>[\s\S]*?<\/button>/.exec(
+      toggleHtml,
+    )?.[0] ?? '';
+
+  check('SSR /toggle responds 200', toggleResponse.status === 200, String(toggleResponse.status));
+  check('SSR /toggle renders the page title from the dictionary', toggleHtml.includes('مفتاح اللغة'));
+  check('SSR /toggle renders the managed button', managedHtml !== '');
+  check(
+    'SSR managed button carries the target name',
+    managedHtml.includes('>English<'),
+    managedHtml.slice(0, 240),
+  );
+  check(
+    'SSR managed button carries lang and dir of the target',
+    /lang="en"/.test(managedHtml) && /dir="ltr"/.test(managedHtml),
+    managedHtml.slice(0, 240),
+  );
+  check(
+    'SSR managed button carries the composed aria-label',
+    managedHtml.includes('aria-label="English, تغيير اللغة"'),
+    managedHtml.slice(0, 240),
+  );
+  check(
+    'SSR presents a trigger template: dir="auto" entry, English fragment with its own lang',
+    /lang="fr"/.test(presentationalHtml) &&
+      /dir="auto"/.test(presentationalHtml) &&
+      presentationalHtml.includes('data-testid="foreign-hint"') &&
+      presentationalHtml.includes('lang="en"'),
+    presentationalHtml.slice(0, 400),
+  );
+
+  const svgCount = (html) => (html.match(/<svg/g) ?? []).length;
+  check(
+    'SSR managed button carries the default globe, decorative',
+    svgCount(managedHtml) === 1 && /<svg[^>]*aria-hidden="true"/.test(managedHtml),
+    managedHtml.slice(0, 400),
+  );
+  check(
+    'SSR presentational button carries the consumer icon and not the default one',
+    svgCount(presentationalHtml) === 1 && presentationalHtml.includes('data-testid="custom-icon"'),
+    presentationalHtml.slice(0, 400),
+  );
+
+  await page.goto(`${ORIGIN}/toggle`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('html[data-hydrated="true"]');
+
+  const managedButton = page.locator('[data-testid="managed-toggle"] button');
+  check(
+    'hydration keeps the toggle name',
+    (await managedButton.textContent()) === 'English',
+    String(await managedButton.textContent()),
+  );
+  const hydratedIcon = await page
+    .getByTestId('presentational-toggle')
+    .getByTestId('custom-icon')
+    .evaluate((svg) => svg.getBoundingClientRect().width);
+  check('hydration keeps the consumer icon painted', hydratedIcon > 0, String(hydratedIcon));
+  check(
+    'zero console errors on the hydrated /toggle',
+    consoleErrors.length === 0,
+    consoleErrors.join(' | '),
+  );
+  check(
+    'zero uncaught page errors on the hydrated /toggle',
+    pageErrors.length === 0,
+    pageErrors.join(' | '),
+  );
+
+  await managedButton.click();
+  const toggleDir = await until(() => page.locator('html').getAttribute('dir'), 'ltr');
+  check('the hydrated toggle flips dir', toggleDir === 'ltr', toggleDir);
+  const toggleName = await until(() => managedButton.textContent(), 'العربية');
+  check('the hydrated toggle shows the new target name', toggleName === 'العربية', toggleName);
 
   check('zero console errors in the hydrated page', consoleErrors.length === 0, consoleErrors.join(' | '));
   check('zero uncaught page errors in the hydrated page', pageErrors.length === 0, pageErrors.join(' | '));
