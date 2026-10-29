@@ -71,4 +71,24 @@ describe('languageName', () => {
     expect(languageName({ id: 'qac', locale: 'qac-locale' })).toBe('Counted');
     expect(constructed).toBe(1);
   });
+
+  it('a new locale for the same id constructs a second lookup', () => {
+    let constructed = 0;
+    replaceDisplayNames(
+      class {
+        constructor() {
+          constructed += 1;
+        }
+        of(): string {
+          return 'Counted';
+        }
+      },
+    );
+
+    languageName({ id: 'qae', locale: 'qae-a' });
+    languageName({ id: 'qae', locale: 'qae-b' });
+
+    // A cache keyed on the id alone would answer the second call and stay at 1.
+    expect(constructed).toBe(2);
+  });
 });

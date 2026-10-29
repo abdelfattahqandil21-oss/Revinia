@@ -37,26 +37,29 @@ function typescriptFiles(dir: string): string[] {
 }
 
 describe('@rivinia/i18n/ui — public surface', () => {
-  it('lists every public export in the README tier table', () => {
+  it('lists every public export in a README table row', () => {
     const names = exportedNames(readFileSync(PUBLIC_API, 'utf8'));
-    const readme = readFileSync(README, 'utf8');
+    const rows = readFileSync(README, 'utf8')
+      .split('\n')
+      .filter((line) => line.trimStart().startsWith('|'))
+      .map((line) => line.split('|')[1] ?? '');
 
     expect(names.length).toBeGreaterThan(0);
     for (const name of names) {
-      expect(readme.includes(name), `${name} is missing from the README tier table`).toBe(true);
+      const listed = rows.some((cell) => new RegExp(`\`[^\`]*\\b${name}\\b[^\`]*\``).test(cell));
+      expect(listed, `${name} has no README table row`).toBe(true);
     }
   });
 
   it('imports only types from @rivinia/i18n', () => {
     const offenders: string[] = [];
     for (const file of typescriptFiles(UI_SRC)) {
-      for (const line of readFileSync(file, 'utf8').split('\n')) {
-        if (!line.includes("from '@rivinia/i18n'")) {
-          continue;
-        }
-        if (!/^\s*import\s+type\b/.test(line)) {
-          offenders.push(`${file}: ${line.trim()}`);
-        }
+      const source = readFileSync(file, 'utf8');
+      // Drop the legal `import type { … } from '@rivinia/i18n'` statements
+      // first, so a multi-line one is not mistaken for a runtime import.
+      const runtime = source.replace(/import\s+type\b[^;]*?from\s*['"]@rivinia\/i18n['"]\s*;/g, '');
+      if (/(?:from|import)\s*\(?\s*['"]@rivinia\/i18n['"]/.test(runtime)) {
+        offenders.push(file);
       }
     }
 
