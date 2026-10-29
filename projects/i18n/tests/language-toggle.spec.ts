@@ -159,6 +159,21 @@ describe('RiviniaLanguageToggle — busy', () => {
     expect(manager.calls).toEqual([]);
   });
 
+  it('replaces the pointer with a progress cursor while loading', () => {
+    const fixture = attach(ManagedHost);
+    fixture.detectChanges();
+    const inner = button(fixture);
+    if (inner === null) {
+      throw new Error('no button');
+    }
+    expect(getComputedStyle(inner).cursor).toBe('pointer');
+
+    fixture.componentInstance.manager.loadingState.set('loading');
+    fixture.detectChanges();
+
+    expect(getComputedStyle(inner).cursor).toBe('progress');
+  });
+
   it('ignores activation while [busy] is set (presentational)', () => {
     const fixture = attach(PresentationalHost);
     fixture.componentInstance.busy = true;

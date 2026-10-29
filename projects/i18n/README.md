@@ -609,8 +609,10 @@ or your own control for three or more languages.
 
 - **Busy is announced, not asserted away.** While the manager reports
   `loadingState() === 'loading'` (or `[busy]` is true, presentational) the button carries
-  `aria-busy="true"` and nothing else, and activation is ignored in the handler rather
-  than queued. Focus stays where it is; the component never moves it.
+  `aria-busy="true"` and nothing else, its cursor turns to `progress`, and activation is
+  ignored in the handler rather than queued. The label, the fill and the colours do not
+  move: a switch is a plain wait, and the spinner belongs to the product's template.
+  Focus stays where it is; the component never moves it.
 - **`languageChange` confirms, it does not intend.** In managed mode the event fires only
   after `setLanguageAsync(target)` resolves **and** `currentLanguage() === target`.
   Activating the current language emits nothing. An overlapping switch that loses the

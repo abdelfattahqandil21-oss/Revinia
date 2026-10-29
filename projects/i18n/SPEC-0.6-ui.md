@@ -317,6 +317,9 @@ member of the same name would shadow it.)
   `aria-disabled`, and the native `disabled` attribute is never set for busy: the
   user just activated this control, so dropping it out of the tab order (or
   announcing it as unavailable) would be the worst possible moment.
+- The only busy styling is `cursor: progress`. The button keeps its name, its
+  colours and its fill: the switch is an ordinary wait, and the spinner belongs to
+  the product's `rvLanguageTrigger`.
 - Activation is **ignored in the handler**, not queued. A queue would replay a
   click after an arbitrary delay and, because the core has no supersede token, could
   stack overlapping switches.
@@ -527,7 +530,7 @@ The ≥ 3 state uses `aria-disabled`, so it is styled off
 
 | File | Asserts |
 | --- | --- |
-| `language-toggle.spec.ts` | two languages → the visible name is the *other* one; `lang`/`dir` on the inner button; `aria-busy` while loading; activation ignored while busy; `[disabled]` sets the native attribute and blocks activation; 0/1 languages → host empty and no `data-*` attribute; 3 → `aria-disabled="true"` on the inner button, **no** native `disabled`, still focusable, one dev warning per instance; 3 languages **while `loadingState() === 'loading'`** → still no `setLanguageAsync` call (≥3 wins over busy) |
+| `language-toggle.spec.ts` | two languages → the visible name is the *other* one; `lang`/`dir` on the inner button; `aria-busy` while loading and `cursor: progress` with it; activation ignored while busy; `[disabled]` sets the native attribute and blocks activation; 0/1 languages → host empty and no `data-*` attribute; 3 → `aria-disabled="true"` on the inner button, **no** native `disabled`, still focusable, one dev warning per instance; 3 languages **while `loadingState() === 'loading'`** → still no `setLanguageAsync` call (≥3 wins over busy) |
 | `language-toggle-manager.spec.ts` | `FakeManager implements RiviniaLanguageManager`; manager beats `[languages]`/`[current]`; `setLanguageAsync` called exactly once with the target id; activation on the current language calls nothing; **emit only when `currentLanguage()` became the target after the await**; no emit when the manager leaves the language unchanged (simulated failure); no emit for an outvoted overlapping call |
 | `language-trigger.spec.ts` | `[rvLanguageTrigger]` receives `{ $implicit: target, busy }`; the template is not instantiated before first render and not at all when the button is not rendered; without a template the default name span renders; missing `label` with a template → dev warning, name still non-empty |
 | `language-name.spec.ts` | `nativeName` wins; `DisplayNames` used when absent; `id` when `Intl.DisplayNames` is absent or throws; result cached per (locale, id) |

@@ -26,10 +26,10 @@ time.
   the toggle drives, and the language entry it renders (`dir` optional).
 - **Behaviour.** Three or more languages: `aria-disabled="true"` plus one dev-mode
   warning per instance, never silent cycling through the first two. Busy:
-  `aria-busy="true"` only, activation ignored in the handler and never queued.
-  `languageChange` fires only after `setLanguageAsync` resolves **and** the manager's
-  current language is the target; a failed load emits nothing and leaves the UI
-  untouched. `[disabled]` sets the native attribute.
+  `aria-busy="true"` only, a `progress` cursor, activation ignored in the handler and
+  never queued. `languageChange` fires only after `setLanguageAsync` resolves **and**
+  the manager's current language is the target; a failed load emits nothing and leaves
+  the UI untouched. `[disabled]` sets the native attribute.
 - **Styling.** `--rv-i18n-toggle-*` tokens falling back to the `--rv-*` semantics,
   logical properties and `rem` only; `data-busy`, `data-disabled` and
   `data-languages="2" | "many"` on the host, plus the documented class hooks.

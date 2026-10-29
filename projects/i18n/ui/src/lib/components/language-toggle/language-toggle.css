@@ -38,6 +38,10 @@
   outline-offset: var(--rv-i18n-toggle-focus-offset, 0.125rem);
 }
 
+:host([data-busy]) .rv-language-toggle__button {
+  cursor: progress;
+}
+
 :host([data-disabled]) .rv-language-toggle__button {
   opacity: var(--rv-i18n-toggle-disabled-opacity, 0.45);
   cursor: not-allowed;
