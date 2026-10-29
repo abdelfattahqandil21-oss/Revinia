@@ -93,6 +93,30 @@ export class RiviniaI18n<L extends string = string> {
     this._languageStorage.resolveInitialLanguage(),
   );
 
+  /** Languages already reported by the default load-error warning. */
+  private readonly _warnedLoadErrors = new Set<L>();
+
+  /**
+   * Routes every dictionary load failure to the consumer handler, or — when
+   * none is configured — to the dev-mode warning. Warnings are deduped per
+   * language because a retry loop would otherwise flood the console; the
+   * consumer handler keeps firing per failure for telemetry.
+   */
+  private readonly _onDictionaryLoadError = (language: L, error: unknown): void => {
+    if (this._config.onLoadError) {
+      this._config.onLoadError(language, error);
+      return;
+    }
+    if (!(this._config.warnOnLoadError ?? isDevMode())) return;
+    if (this._warnedLoadErrors.has(language)) return;
+    this._warnedLoadErrors.add(language);
+    console.error(
+      `[rivinia/i18n] Failed to load the "${language}" dictionary — every key will ` +
+        'render as its raw name. Pass `onLoadError` to handle load failures yourself.',
+      error,
+    );
+  };
+
   private readonly _store = new DictionaryStore<L>({
     // Explicit loader wins; otherwise the conventional JSON layout
     // (`i18n/{language}.json`, served from the site root) unless the consumer
@@ -105,7 +129,7 @@ export class RiviniaI18n<L extends string = string> {
     loaderContext: this.loaderContext,
     request: this._request ?? null,
     transfer: this._transfer,
-    onLoadError: this._config.onLoadError,
+    onLoadError: this._onDictionaryLoadError,
     currentLanguage: () => this._currentLanguageId(),
     fallbackLanguage: this._fallbackId,
     languageIds: () => this._languages().map((l) => l.id),

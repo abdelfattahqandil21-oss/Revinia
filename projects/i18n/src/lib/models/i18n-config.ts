@@ -32,6 +32,13 @@ export interface RiviniaI18nConfig<T extends string = string> {
   /** Called when a dictionary load fails. The service still falls back safely. */
   readonly onLoadError?: (language: T, error: unknown) => void;
   /**
+   * Log a `console.error` when a dictionary fails to load and no `onLoadError`
+   * handler is configured. A failed load leaves every key unresolved, so the
+   * page renders raw key names; the warning fires once per language per session.
+   * @default isDevMode() && !onLoadError
+   */
+  readonly warnOnLoadError?: boolean;
+  /**
    * Called when `translate()` cannot resolve a key (absent from the current
    * dictionary, from the fallback dictionary, and with no `defaultValue`).
    * Fires once per key per session. When set, the default console warning is
