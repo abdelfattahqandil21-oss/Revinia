@@ -2,19 +2,15 @@
 //
 //   @use '@rivinia/theme/scss';
 //
-// Dart Sass can load a plain `.css` file, but the extension must be OMITTED
-// for `@use` to treat it as a module rather than as a plain CSS `@import`.
-// That is why this file exists: it gives `@use` a name it can resolve, and it
-// forwards the stylesheet's CSS verbatim.
+// This file exists to give `@use` a stable module specifier: it forwards the
+// stylesheet's CSS verbatim. The extension is optional — `@use
+// '@rivinia/theme/theme.css'` compiles to the same CSS — so the short one is
+// the documented one.
 //
-//   @use '@rivinia/theme/scss';
-//   .my-scope { --rv-bg: #161616; }   // overrides the layer for this subtree
+// Less: do NOT import the package root — `@import (less) '@rivinia/theme';`
+// compiles to nothing, because Less ignores `exports` and inlines the empty
+// ESM entry instead of the stylesheet. Use the explicit file:
 //
-// If you prefer plain CSS, skip this file and use `@import '@rivinia/theme';`.
-//
-// Less: Less passes CSS custom properties through untouched, so
-// `@import (less) '@rivinia/theme/theme.css';` works as-is. Less VARIABLES
-// (`@color: ...`) are a different mechanism and do not interoperate with CSS
-// custom properties — use `var(--rv-*)` in Less files.
+//   @import (less) '@rivinia/theme/theme.css';
 
 @use './theme.css';

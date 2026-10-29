@@ -18,15 +18,25 @@
  *                     point at the global variable and a container-scoped
  *                     override would be ignored.)
  *
- * So: your palette in `@theme`, and the Rivinia surface pointing at it.
- * This file wires the two together in both directions — Rivinia reads your
- * palette, and your Tailwind utilities can read Rivinia's.
+ * Both blocks below are `inline`, because every token in them references
+ * another variable. That is what connects the two directions: your Tailwind
+ * utilities can read Rivinia's tokens, and a subtree override of `--rv-*`
+ * reaches `bg-rv-bg` on that subtree.
+ *
+ * To change a colour, set `--rv-*` — globally on `:root` or on a subtree.
+ * `--color-rv-*` is only the name Tailwind generates a utility from: with
+ * `inline` the utility reads `var(--rv-bg)` itself, so re-declaring
+ * `--color-rv-bg` on an element, or in an ordinary rule, repaints nothing.
+ *
+ * One measured exception: a LATER `@theme { --color-rv-bg: … }` still wins,
+ * because `@theme` emits at `:root`. It replaces the alias, so from then on
+ * the utility follows `--color-rv-bg` and a subtree `--rv-bg` stops reaching
+ * it. That is why the migration note says to set `--rv-*`.
  */
 
 @import './theme.css';
 
-@theme {
-  /* Your palette. Replace the values; the wiring below stays. */
+@theme inline {
   --color-rv-bg: var(--rv-bg);
   --color-rv-fg: var(--rv-fg);
   --color-rv-muted: var(--rv-muted);
