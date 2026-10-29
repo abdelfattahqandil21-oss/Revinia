@@ -29,6 +29,15 @@ documentation fix.
   fails with a `[rivinia/i18n] …` error. Until now a duplicate passed silently and then
   broke `find`, `next()`/`previous()` and every lookup by id, because only the first
   matching entry is reachable.
+- **New `init` command: languages are collected once, not typed as objects.**
+  `npx rivinia-i18n-keys init` asks for each language (id, native name, direction), asks
+  which one is the default, then writes `src/app/i18n/languages.ts` (a
+  `defineRiviniaI18n` module that also exports a typed `injectI18n`) and an empty
+  `public/i18n/<id>.json` per language. Ids, directions and duplicates are validated
+  before anything is written, existing dictionaries are kept, and a hand-written
+  `languages.ts` is never replaced without `--force`.
+  `--languages ar:العربية:rtl,en:English:ltr` runs the same thing non-interactively.
+  Additive: the binary keeps its key-generation and parity flags.
 - **A duplicate id in an inline `languages` list is now a compile error too.**
   `provideRiviniaI18n` / `defineRiviniaI18n` gained a conditional type parameter that scans
   the literal tuple and demands a `duplicateLanguageId` property, so the same mistake is
