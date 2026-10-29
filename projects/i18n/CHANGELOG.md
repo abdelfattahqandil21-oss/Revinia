@@ -18,6 +18,12 @@ documentation fix.
   not type-check — without an annotation the literals widen to `string` and fail the
   `Language` check. The example now uses `as const`, the form the package's own tests use.
   Documentation only.
+- **`defaultLanguage` is now optional.** Omitted, it resolves to the first entry of
+  `languages`, so the common config only lists the languages. An explicitly provided value
+  must be a non-empty id present in `languages`: `''`, whitespace, `null`, a non-string or
+  an unknown id now throws at construction with a named message instead of letting
+  `undefined` become the current language. Additive — existing configs that pass a valid
+  id behave exactly as before.
 
 ## 0.7.0 - 2026-10-29
 

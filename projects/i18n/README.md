@@ -170,7 +170,7 @@ first content is available or initial loading has settled.
 | Option               | Type                                          | Default                          | Meaning                                                                       |
 | -------------------- | --------------------------------------------- | -------------------------------- | ----------------------------------------------------------------------------- |
 | `languages`          | `readonly Language<T>[]`                      | —                                | Supported languages (`id`, `nativeName`, `dir`, optional `locale`).           |
-| `defaultLanguage`    | `T`                                           | —                                | Must be one of `languages`; validated at construction.                        |
+| `defaultLanguage`    | `T`                                           | first of `languages`             | Initial language on a first visit; must be a non-empty configured id.         |
 | `fallbackLanguage`   | `T`                                           | none                             | Second lookup dictionary; must be one of `languages`.                         |
 | `loader`             | `LoaderDescriptor<T>`                         | `jsonLoader()`                   | Dictionary source.                                                            |
 | `translations`       | `Partial<Record<T, Record<string, unknown>>>` | none                             | Inline seeds, painted before any network load; a loader response still wins.  |
