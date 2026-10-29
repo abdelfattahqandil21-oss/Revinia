@@ -1,0 +1,52 @@
+:host {
+  display: inline-block;
+  font: var(--rv-i18n-toggle-font, var(--rv-font, inherit));
+}
+
+.rv-language-toggle__button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rv-i18n-toggle-gap, 0.5rem);
+  padding: var(--rv-i18n-toggle-padding, 0.5rem 0.75rem);
+  font: inherit;
+  font-size: var(--rv-i18n-toggle-size, 0.875rem);
+  line-height: 1.2;
+  color: var(--rv-i18n-toggle-fg, var(--rv-fg, currentColor));
+  background: var(--rv-i18n-toggle-bg, var(--rv-bg, transparent));
+  border: var(--rv-i18n-toggle-border, var(--rv-border, 1px solid currentColor));
+  border-radius: var(--rv-i18n-toggle-radius, var(--rv-radius, 0.5rem));
+  box-shadow: var(--rv-i18n-toggle-shadow, var(--rv-shadow, none));
+  cursor: pointer;
+}
+
+.rv-language-toggle__button:hover {
+  background: var(
+    --rv-i18n-toggle-hover-bg,
+    color-mix(in srgb, currentColor 8%, transparent)
+  );
+}
+
+.rv-language-toggle__button:active {
+  background: var(
+    --rv-i18n-toggle-active-bg,
+    color-mix(in srgb, currentColor 10%, transparent)
+  );
+}
+
+.rv-language-toggle__button:focus-visible {
+  outline: var(--rv-i18n-toggle-focus-ring, 2px solid currentColor);
+  outline-offset: var(--rv-i18n-toggle-focus-offset, 0.125rem);
+}
+
+:host([data-disabled]) .rv-language-toggle__button {
+  opacity: var(--rv-i18n-toggle-disabled-opacity, 0.45);
+  cursor: not-allowed;
+}
+
+:host([data-languages='many']) .rv-language-toggle__button[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+.rv-language-toggle__name {
+  white-space: nowrap;
+}

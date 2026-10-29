@@ -1,0 +1,19 @@
+@if (target(); as target) {
+  <button
+    type="button"
+    class="rv-language-toggle__button"
+    [attr.lang]="target.id"
+    [attr.dir]="target.dir ?? 'auto'"
+    [attr.aria-label]="accessibleName()"
+    [attr.aria-busy]="isBusy() ? 'true' : null"
+    [attr.aria-disabled]="manyLanguages() ? 'true' : null"
+    [disabled]="disabled()"
+    (click)="activate(target.id)"
+  >
+    @if (template()) {
+      <ng-container #slot />
+    } @else {
+      <span class="rv-language-toggle__name">{{ visibleName() }}</span>
+    }
+  </button>
+}

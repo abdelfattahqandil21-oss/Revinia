@@ -75,8 +75,16 @@ function button(fixture: ComponentFixture<unknown>): HTMLButtonElement | null {
   return (fixture.nativeElement as HTMLElement).querySelector('button');
 }
 
+function componentHost(fixture: ComponentFixture<unknown>): HTMLElement {
+  const host = (fixture.nativeElement as HTMLElement).querySelector('rv-language-toggle');
+  if (host === null) {
+    throw new Error('rv-language-toggle is not in the fixture DOM');
+  }
+  return host as HTMLElement;
+}
+
 function dataAttrs(fixture: ComponentFixture<unknown>): string[] {
-  return Array.from((fixture.nativeElement as HTMLElement).attributes)
+  return Array.from(componentHost(fixture).attributes)
     .map((attribute) => attribute.name)
     .filter((name) => name.startsWith('data-'));
 }
@@ -109,14 +117,14 @@ describe('RiviniaLanguageToggle — shape', () => {
     const inner = button(fixture);
 
     expect([inner?.getAttribute('lang'), inner?.getAttribute('dir')]).toEqual(['en', 'ltr']);
-    expect((fixture.nativeElement as HTMLElement).hasAttribute('dir')).toBe(false);
+    expect(componentHost(fixture).hasAttribute('dir')).toBe(false);
   });
 
   it('marks the two-language shape on the host', () => {
     const fixture = attach(PresentationalHost);
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).getAttribute('data-languages')).toBe('2');
+    expect(componentHost(fixture).getAttribute('data-languages')).toBe('2');
   });
 
   it('composes the accessible name from the visible name and the label', () => {
@@ -179,8 +187,8 @@ describe('RiviniaLanguageToggle — disabled', () => {
     fixture.componentInstance.disabled = true;
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).hasAttribute('data-disabled')).toBe(true);
-    expect((fixture.nativeElement as HTMLElement).getAttribute('data-languages')).toBe('2');
+    expect(componentHost(fixture).hasAttribute('data-disabled')).toBe(true);
+    expect(componentHost(fixture).getAttribute('data-languages')).toBe('2');
   });
 });
 
@@ -228,7 +236,7 @@ describe('RiviniaLanguageToggle — language count', () => {
     const fixture = attach(PresentationalHost);
     fixture.componentInstance.languages = [AR, EN, FR];
     fixture.detectChanges();
-    const host = fixture.nativeElement as HTMLElement;
+    const host = componentHost(fixture);
 
     expect(host.getAttribute('data-languages')).toBe('many');
     expect(host.hasAttribute('data-disabled')).toBe(false);
