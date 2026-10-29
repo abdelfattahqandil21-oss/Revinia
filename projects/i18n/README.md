@@ -635,7 +635,7 @@ semantic value. Override the custom property, not the declaration:
 | ----------------------------------- | ------------- | --------------------------------------------------- |
 | `--rv-i18n-toggle-bg`               | `--rv-bg`     | `transparent`                                       |
 | `--rv-i18n-toggle-fg`               | `--rv-fg`     | `currentColor`                                      |
-| `--rv-i18n-toggle-border`           | `--rv-border` | `1px solid currentColor`                            |
+| `--rv-i18n-toggle-border`           | `--rv-border` | `currentColor`                                      |
 | `--rv-i18n-toggle-radius`           | `--rv-radius` | `0.5rem`                                            |
 | `--rv-i18n-toggle-shadow`           | `--rv-shadow` | `none`                                              |
 | `--rv-i18n-toggle-font`             | `--rv-font`   | `inherit`                                           |
@@ -647,6 +647,10 @@ semantic value. Override the custom property, not the declaration:
 | `--rv-i18n-toggle-focus-ring`       | —             | `2px solid currentColor`                            |
 | `--rv-i18n-toggle-focus-offset`     | —             | `0.125rem`                                          |
 | `--rv-i18n-toggle-disabled-opacity` | —             | `0.45`                                              |
+
+The border and font tokens are a **colour** and a **font family**, not shorthands: the
+declaration supplies `1px solid` and `font-family`, so `--rv-border` and `--rv-font` from
+`@rivinia/theme` flow through unchanged instead of producing an invalid shorthand.
 
 The hooks that are safe to depend on:
 

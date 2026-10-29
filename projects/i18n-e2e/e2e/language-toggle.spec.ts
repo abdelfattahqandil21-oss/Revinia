@@ -51,9 +51,7 @@ async function expectInlineStartPadding(page: Page, testId: string): Promise<voi
       paddingInlineStart: Number.parseFloat(style.paddingInlineStart),
       paddingInlineEnd: Number.parseFloat(style.paddingInlineEnd),
       gapStart:
-        style.direction === 'rtl'
-          ? box.right - text.right - border
-          : text.left - box.left - border,
+        style.direction === 'rtl' ? box.right - text.right - border : text.left - box.left - border,
     };
   });
 
@@ -119,10 +117,12 @@ test.describe('direction matrix', () => {
     await page.goto('/toggle');
 
     const html = page.locator('html');
+    const host = page.getByTestId('managed-toggle');
     const button = toggle(page, 'managed-toggle');
 
     // Page RTL, target English: the button is an LTR island.
     await expect(html).toHaveAttribute('dir', 'rtl');
+    await expect(host).toHaveCSS('direction', 'rtl');
     await expect(button).toHaveAttribute('lang', 'en');
     await expect(button).toHaveAttribute('dir', 'ltr');
     await expect(button).toHaveCSS('direction', 'ltr');
@@ -132,6 +132,7 @@ test.describe('direction matrix', () => {
 
     // Page LTR, target Arabic: the button is an RTL island.
     await expect(html).toHaveAttribute('dir', 'ltr');
+    await expect(host).toHaveCSS('direction', 'ltr');
     await expect(button).toHaveAttribute('lang', 'ar');
     await expect(button).toHaveAttribute('dir', 'rtl');
     await expect(button).toHaveCSS('direction', 'rtl');
@@ -150,6 +151,29 @@ test.describe('direction matrix', () => {
     await expect(button).toHaveAttribute('dir', 'auto');
     await expect(button).toHaveCSS('direction', 'ltr');
     await expect(button).toContainText('Français');
+  });
+});
+
+test.describe('theme tokens', () => {
+  test('the semantic border colour and font family flow through the toggle', async ({ page }) => {
+    await page.goto('/toggle');
+
+    // `--rv-border` is a colour (D42): the declaration supplies `1px solid`.
+    // Passing it straight to `border` would reset the style to `none`, and
+    // `--rv-font` passed to the `font` shorthand would drop the declaration.
+    await page.evaluate(() => {
+      document.documentElement.style.setProperty('--rv-border', 'rgb(1, 2, 3)');
+      document.documentElement.style.setProperty('--rv-font', 'monospace');
+    });
+
+    await expect
+      .poll(() =>
+        toggle(page, 'managed-toggle').evaluate((button) => {
+          const style = getComputedStyle(button);
+          return `${style.borderTopStyle} ${style.borderTopColor} ${style.fontFamily}`;
+        }),
+      )
+      .toBe('solid rgb(1, 2, 3) monospace');
   });
 });
 

@@ -1,9 +1,9 @@
 # @rivinia/i18n/ui — the language toggle and the trigger template
 
-Status: **revision 4 (implementation clarifications), 2026-10-29**. Revision 3 was
-approved by the owner; revision 4 changes only §6 (naming mechanism), §7 (the
-internal `languageName` signature), §11.1 (a note on the outvoted case) and §13
-(decisions 2 and 5 closed).
+Status: **revision 5 (implementation fix), 2026-10-29**. Revision 4 changed §6, §7,
+§11.1 and §13 only. Revision 5 changes §8 only: the border and font tokens are a
+colour and a font family under a `1px solid var(--…)` / `font-family: var(--…)`
+declaration (D42), not shorthands. Revision 3 was approved by the owner.
 Target release: **0.7.0** (pre-1.0: a minor may break). Nothing here is published.
 Baseline: `main` at `928300f`; `@rivinia/i18n` 0.6.0 published from tag `i18n/v0.6.0`
 (`b976cc5`, untouched).
@@ -431,14 +431,21 @@ purely as a consumer-side illustration), it supplies it through
 
 ## 8. Styling (D42 / D44 / D67)
 
-The token chain is `var(--rv-i18n-toggle-<x>, var(--rv-<semantic>, <default>))`,
-all sizes in `rem`, logical properties only.
+The token chain is `var(--rv-i18n-toggle-<x>, var(--rv-<semantic>, <default>))`, with one
+type rule from D42: **a semantic token must be the same value kind as the package token.**
+`--rv-border` is a colour and `--rv-font` is a font family, so the border and font
+declarations supply the shorthand themselves —
+`border: 1px solid var(--rv-i18n-toggle-border, var(--rv-border, currentColor))` and
+`font-family: var(--rv-i18n-toggle-font, var(--rv-font, inherit))` — instead of passing a
+colour where a shorthand is expected (which drops the border entirely) or a family stack
+where `font` is expected (which drops the declaration). All sizes in `rem`, logical
+properties only.
 
 | Token | Falls back to | Default |
 | --- | --- | --- |
 | `--rv-i18n-toggle-bg` | `--rv-bg` | `transparent` |
 | `--rv-i18n-toggle-fg` | `--rv-fg` | `currentColor` |
-| `--rv-i18n-toggle-border` | `--rv-border` | `1px solid currentColor` |
+| `--rv-i18n-toggle-border` | `--rv-border` | `currentColor` (with `1px solid` from the declaration) |
 | `--rv-i18n-toggle-radius` | `--rv-radius` | `0.5rem` |
 | `--rv-i18n-toggle-shadow` | `--rv-shadow` | `none` |
 | `--rv-i18n-toggle-font` | `--rv-font` | `inherit` |

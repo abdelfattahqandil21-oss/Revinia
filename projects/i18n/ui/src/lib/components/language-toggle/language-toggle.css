@@ -1,6 +1,6 @@
 :host {
   display: inline-block;
-  font: var(--rv-i18n-toggle-font, var(--rv-font, inherit));
+  font-family: var(--rv-i18n-toggle-font, var(--rv-font, inherit));
 }
 
 .rv-language-toggle__button {
@@ -13,7 +13,7 @@
   line-height: 1.2;
   color: var(--rv-i18n-toggle-fg, var(--rv-fg, currentColor));
   background: var(--rv-i18n-toggle-bg, var(--rv-bg, transparent));
-  border: var(--rv-i18n-toggle-border, var(--rv-border, 1px solid currentColor));
+  border: 1px solid var(--rv-i18n-toggle-border, var(--rv-border, currentColor));
   border-radius: var(--rv-i18n-toggle-radius, var(--rv-radius, 0.5rem));
   box-shadow: var(--rv-i18n-toggle-shadow, var(--rv-shadow, none));
   cursor: pointer;
