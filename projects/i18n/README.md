@@ -9,7 +9,7 @@ ICU plural/select messages, browser-language detection, and `Intl` number/date
 formatting — with SSR that actually works and no runtime dependency beyond
 Angular.
 
-- Package version: **0.7.0**
+- Package version: **0.7.1**
 - Peer dependency: **`@angular/core` `^22.0.0`** (plus `@angular-devkit/schematics` for `ng add`)
 - Entry points: **`@rivinia/i18n`** (headless core) and **`@rivinia/i18n/ui`**
   (the standalone language toggle)
@@ -486,7 +486,7 @@ default label:
 import { RiviniaLanguageToggle, RiviniaLanguageTrigger } from '@rivinia/i18n/ui';
 ```
 
-**Every export of this entry point is Experimental in 0.7.0** (D68):
+**Every export of this entry point is Experimental in 0.7.1** (D68):
 `RiviniaLanguageToggle`, `RiviniaLanguageTrigger`, `RiviniaLanguageTriggerContext`,
 `RiviniaLanguageManager` and `LanguageLike`. The five symbols may change — or lose
 members — without a deprecation cycle until the entry point is promoted to Stable, which

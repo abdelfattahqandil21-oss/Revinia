@@ -2,6 +2,23 @@
 
 Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
 
+## 0.7.1 - 2026-10-29
+
+0.7.0 was never published; this release ships it unchanged and adds one option and one
+documentation fix.
+
+- **New `warnOnLoadError` option.** A dictionary that fails to load leaves every key
+  unresolved, so the page renders raw key names — until now in complete silence unless the
+  consumer configured `onLoadError`. The default now logs a `console.error` **once per
+  language per session** in dev mode (`isDevMode() && !onLoadError`), matching
+  `warnOnMissingKey`/`warnOnMissingParam`; `false` silences it, `true` keeps it in
+  production. A consumer `onLoadError` keeps owning reporting and still fires on every
+  failure (the warning is deduped, the handler is not). Additive — no signature changed.
+- **Fixed:** the `provideRiviniaI18n` JSDoc example that hoisted `const AR`/`const EN` did
+  not type-check — without an annotation the literals widen to `string` and fail the
+  `Language` check. The example now uses `as const`, the form the package's own tests use.
+  Documentation only.
+
 ## 0.7.0 - 2026-10-29
 
 The first UI in the package: a two-language toggle from the secondary entry point
