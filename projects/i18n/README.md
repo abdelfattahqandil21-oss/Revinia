@@ -194,6 +194,12 @@ non-empty, **unique** `id` per entry, and `defaultLanguage` / `fallbackLanguage`
 provided) must name one of those ids. Anything else throws a `[rivinia/i18n] …` error at
 bootstrap instead of degrading into an undefined current language.
 
+A repeated id written inline (`languages: [AR, EN, AR]`) is also a **compile error**:
+`provideRiviniaI18n` and `defineRiviniaI18n` require the property `duplicateLanguageId`,
+which only the type checker sees. The check reads the array literal, so it does not fire
+when the union is supplied explicitly (`provideRiviniaI18n<'ar' | 'en'>(…)`) or the list is
+hoisted into a variable — both forms still throw the runtime error above.
+
 ## Dictionaries
 
 The default loader fetches `i18n/{language}.json`. For a standard Angular app that

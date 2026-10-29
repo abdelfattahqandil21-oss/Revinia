@@ -29,6 +29,13 @@ documentation fix.
   fails with a `[rivinia/i18n] …` error. Until now a duplicate passed silently and then
   broke `find`, `next()`/`previous()` and every lookup by id, because only the first
   matching entry is reachable.
+- **A duplicate id in an inline `languages` list is now a compile error too.**
+  `provideRiviniaI18n` / `defineRiviniaI18n` gained a conditional type parameter that scans
+  the literal tuple and demands a `duplicateLanguageId` property, so the same mistake is
+  caught while typing instead of at bootstrap. The scan needs the array literal: an
+  explicit `<L>` union or a hoisted list still compiles and is caught by the runtime check.
+  Call sites that already compiled are unaffected — the extra parameter is `const` and
+  defaulted, so inference is unchanged.
 
 ## 0.7.0 - 2026-10-29
 
