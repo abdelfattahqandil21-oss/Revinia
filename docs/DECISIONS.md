@@ -2550,13 +2550,20 @@ Three defects, all found by a consumer using the packages.
   LTR there too. It reads the component's computed direction now.
 - **Coverage.** 78 unit tests (the new contracts in `tests/panel-metrics.spec.ts`
   pin the width ownership, the span-variable swap and the placement wiring);
-  13/13 repo e2e cases × Chromium 156, Firefox 157, WebKit 27.2 (39/39) —
-  including three new sizing cases at 480px, 160px and 120px; and the tarball
-  matrix, 138/138 (46 cases × 3 engines), installed in the consumer fixture on
-  a scratch port. WebKit runs headed here: the headless WPE build in the local
-  Playwright cache fails to load `libavif.so.16`, while the GTK build used
-  headed starts fine. That is an environment limitation, surfaced as not-green
-  rather than hidden.
+  15/15 repo e2e cases × Chromium 156, Firefox 157, WebKit 27.2 (45/45) —
+  including three sizing cases at 480px, 160px and 120px, and two
+  virtualised-list cases; and the tarball matrix, 138/138 (46 cases × 3
+  engines), installed in the consumer fixture on a scratch port. WebKit runs
+  headed here: the headless WPE build in the local Playwright cache fails to
+  load `libavif.so.16`, while the GTK build used headed starts fine. That is an
+  environment limitation, surfaced as not-green rather than hidden.
+- **Virtualised list, measured.** The README recipe (`listTemplate` + the panel
+  from `panelReady`) now has a fixture: 500 options, a 36px-row window and the
+  panel as scroll element. Open renders 19 rows (`scrollHeight` 18,012 against
+  a 318px `clientHeight`), scrolling to the end renders rows 487–500 and the
+  panel stays 224px — the trigger's width — with no horizontal scroll. The
+  recipe needed no product change after the metrics work; this pins it so it
+  cannot regress silently.
 
 ## 2026-10-30 — D74: `@rivinia/i18n@0.7.1` LIVE — 0.7.0 folded in, and web auth instead of `--otp`
 

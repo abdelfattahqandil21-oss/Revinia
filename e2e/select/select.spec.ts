@@ -208,6 +208,56 @@ test.describe('select: responsive width', () => {
   });
 });
 
+test.describe('select: virtualised list', () => {
+  test('renders a window of 500 rows and scrolls the panel to the last one', async ({ page }) => {
+    await page.goto('/select');
+    const trigger = page.locator('#virtual-select .rv-select-trigger');
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.click();
+    const panel = page.locator('#virtual-select .rv-select-popup-panel');
+    await expect(panel).toBeVisible();
+
+    // `listTemplate` replaces the list and only the window is in the DOM.
+    const windowed = await panel.locator('.virtual-row').count();
+    expect(windowed).toBeGreaterThan(0);
+    expect(windowed).toBeLessThan(40);
+
+    const scroller = await panel.evaluate((el) => ({
+      scrollHeight: el.scrollHeight,
+      clientHeight: el.clientHeight,
+      horizontal: el.scrollWidth > el.clientWidth,
+    }));
+    // The panel is the scroll container the consumer virtualiser needs.
+    expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight * 10);
+    expect(scroller.horizontal).toBe(false);
+
+    await panel.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    await expect(panel.locator('.virtual-row', { hasText: 'Row 500' })).toHaveCount(1);
+  });
+
+  test('keeps the panel as wide as the trigger with the virtual list', async ({ page }) => {
+    await page.goto('/select');
+    const trigger = page.locator('#virtual-select .rv-select-trigger');
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.click();
+    const panel = page.locator('#virtual-select .rv-select-popup-panel');
+    await expect(panel).toBeVisible();
+    await panel.evaluate(async (el) => {
+      await Promise.all(
+        el.getAnimations().map((animation) => animation.finished.catch(() => undefined)),
+      );
+    });
+
+    const triggerWidth = (await trigger.boundingBox())!.width;
+    const panelWidth = (await panel.boundingBox())!.width;
+    expect(Math.abs(panelWidth - triggerWidth)).toBeLessThanOrEqual(1);
+    const horizontal = await panel.evaluate((el) => el.scrollWidth > el.clientWidth);
+    expect(horizontal).toBe(false);
+  });
+});
+
 test.describe('select: RTL placement', () => {
   test('aligns the panel to the trigger\'s leading (right) edge', async ({ page }) => {
     await page.goto('/select');

@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { RiviniaSelect } from '@rivinia/select';
 import { RiviniaSelectComponent } from '@rivinia/select/ui';
 import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
@@ -37,6 +37,25 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
       }
       .size-cell--120 {
         width: 120px;
+      }
+      /*
+       * Virtual-list fixture: a 500-row list where only the window around the
+       * panel's scroll offset is in the DOM, exactly as the README recipe
+       * describes. The panel is the scroll container, so the panelReady output
+       * is what tells this fixture how tall the window is.
+       */
+      .virtual-list {
+        position: relative;
+      }
+      .virtual-row {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: center;
+        height: 36px;
+        padding: 0 0.625rem;
       }
     `,
   ],
@@ -102,6 +121,23 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
     <div class="size-cell size-cell--120">
       <rv-select id="size-120" [options]="longOptions" />
     </div>
+
+    <h2>Virtual list</h2>
+    <rv-select
+      id="virtual-select"
+      [options]="virtualOptions"
+      [listTemplate]="virtualList"
+      (panelReady)="onPanelReady($event)"
+    />
+    <ng-template #virtualList>
+      <div class="virtual-list" [style.height.px]="virtualTotalHeight">
+        @for (row of virtualRows(); track row.id) {
+          <div class="virtual-row" [style.transform]="'translateY(' + row.top + 'px)'">
+            {{ row.label }}
+          </div>
+        }
+      </div>
+    </ng-template>
   `,
 })
 export class SelectPage {
@@ -125,4 +161,35 @@ export class SelectPage {
   readonly shortOptions = [{ id: 'paid', label: 'Paid' }];
   readonly longOptions = [{ id: 'outstanding', label: 'Outstanding invoices' }];
   readonly unusedController = new RiviniaSelect('single');
+
+  // Virtualised list: 500 options, a window rendered inside the panel.
+  readonly virtualOptions = Array.from({ length: 500 }, (_, index) => ({
+    id: `v${index}`,
+    label: `Row ${index + 1}`,
+  }));
+  readonly virtualRowHeight = 36;
+  readonly virtualTotalHeight = this.virtualOptions.length * this.virtualRowHeight;
+  private readonly virtualScrollTop = signal(0);
+  private readonly virtualViewport = signal(288);
+  readonly virtualRows = computed(() => {
+    const overscan = 5;
+    const first = Math.max(
+      0,
+      Math.floor(this.virtualScrollTop() / this.virtualRowHeight) - overscan,
+    );
+    const count = Math.ceil(this.virtualViewport() / this.virtualRowHeight) + overscan * 2;
+    return this.virtualOptions.slice(first, first + count).map((option, offset) => ({
+      ...option,
+      top: (first + offset) * this.virtualRowHeight,
+    }));
+  });
+  readonly virtualPanel = signal<HTMLElement | null>(null);
+
+  onPanelReady(panel: HTMLElement): void {
+    this.virtualPanel.set(panel);
+    this.virtualViewport.set(panel.clientHeight);
+    if (panel.dataset['virtualBound']) return;
+    panel.dataset['virtualBound'] = 'true';
+    panel.addEventListener('scroll', () => this.virtualScrollTop.set(panel.scrollTop));
+  }
 }
