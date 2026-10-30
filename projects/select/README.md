@@ -3,6 +3,10 @@
 [![npm version](https://img.shields.io/npm/v/@rivinia/select.svg)](https://www.npmjs.com/package/@rivinia/select)
 [![license](https://img.shields.io/npm/l/@rivinia/select.svg)](https://www.npmjs.com/package/@rivinia/select)
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/main/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
+</p>
+
 Headless select behaviour for Angular 22+: an option registry, an
 accent-insensitive search filter, and a single/multi value — no DOM, no
 styling. Rendering lives in `@rivinia/select/ui` or in your own UI.

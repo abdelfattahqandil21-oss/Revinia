@@ -3,6 +3,10 @@
 [![npm version](https://img.shields.io/npm/v/@rivinia/table.svg)](https://www.npmjs.com/package/@rivinia/table)
 [![license](https://img.shields.io/npm/l/@rivinia/table.svg)](https://www.npmjs.com/package/@rivinia/table)
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/main/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
+</p>
+
 A headless Angular table with typed columns, real row and column spans,
 sorting, filtering, selection and paging — plus an optional ready-made grid.
 The core owns the data and the geometry; it never renders a cell, never knows

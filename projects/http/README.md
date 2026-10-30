@@ -3,6 +3,10 @@
 [![npm version](https://img.shields.io/npm/v/@rivinia/http.svg)](https://www.npmjs.com/package/@rivinia/http)
 [![license](https://img.shields.io/npm/l/@rivinia/http.svg)](https://www.npmjs.com/package/@rivinia/http)
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/main/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
+</p>
+
 `@rivinia/http` is a thin, typed Angular HTTP client for plain `Observable`
 requests and reactive `httpResource` requests. It leaves URLs, backend
 contracts, and interceptors under app control. Response bodies pass through

@@ -3,6 +3,10 @@
 [![npm version](https://img.shields.io/npm/v/@rivinia/toast.svg)](https://www.npmjs.com/package/@rivinia/toast)
 [![license](https://img.shields.io/npm/l/@rivinia/toast.svg)](https://www.npmjs.com/package/@rivinia/toast)
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/main/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
+</p>
+
 An Angular signal-based toast queue with timers, actions, deduplication, and
 overflow handling. Core is headless; an optional standalone UI is available at
 `@rivinia/toast/ui`.

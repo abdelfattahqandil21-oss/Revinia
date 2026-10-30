@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200" fill="none">
+  <title>Rivinia — Abstract Component Mark</title>
+  <desc>A distinctive four-part architectural emblem inspired by modular components coming together around a shared core.</desc>
+  <defs>
+    <linearGradient id="gold" x1="355" y1="250" x2="845" y2="850" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E8D2A0"/>
+      <stop offset=".52" stop-color="#C4A16A"/>
+      <stop offset="1" stop-color="#967044"/>
+    </linearGradient>
+    <linearGradient id="violet" x1="380" y1="280" x2="820" y2="820" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B18AFF"/>
+      <stop offset=".55" stop-color="#8050DB"/>
+      <stop offset="1" stop-color="#56309A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Four independent modules orbit a shared center.
+       The negative space is intentional: the mark stays legible when reduced. -->
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <!-- North module -->
+    <path d="M600 190
+             C535 252 475 313 475 390
+             C475 444 520 478 600 516
+             C680 478 725 444 725 390
+             C725 313 665 252 600 190Z"
+          stroke="url(#gold)" stroke-width="17"/>
+    <path d="M600 252
+             C560 300 536 338 536 385
+             C536 421 559 445 600 467
+             C641 445 664 421 664 385
+             C664 338 640 300 600 252Z"
+          stroke="url(#violet)" stroke-width="8"/>
+
+    <!-- East module -->
+    <path d="M1010 600
+             C948 535 887 475 810 475
+             C756 475 722 520 684 600
+             C722 680 756 725 810 725
+             C887 725 948 665 1010 600Z"
+          stroke="url(#gold)" stroke-width="17"/>
+    <path d="M948 600
+             C908 560 870 536 815 536
+             C779 536 755 559 733 600
+             C755 641 779 664 815 664
+             C870 664 908 640 948 600Z"
+          stroke="url(#violet)" stroke-width="8"/>
+
+    <!-- South module -->
+    <path d="M600 1010
+             C665 948 725 887 725 810
+             C725 756 680 722 600 684
+             C520 722 475 756 475 810
+             C475 887 535 948 600 1010Z"
+          stroke="url(#gold)" stroke-width="17"/>
+    <path d="M600 948
+             C640 908 664 870 664 815
+             C664 779 641 755 600 733
+             C559 755 536 779 536 815
+             C536 870 560 908 600 948Z"
+          stroke="url(#violet)" stroke-width="8"/>
+
+    <!-- West module -->
+    <path d="M190 600
+             C252 665 313 725 390 725
+             C444 725 478 680 516 600
+             C478 520 444 475 390 475
+             C313 475 252 535 190 600Z"
+          stroke="url(#gold)" stroke-width="17"/>
+    <path d="M252 600
+             C292 640 330 664 385 664
+             C421 664 445 641 467 600
+             C445 559 421 536 385 536
+             C330 536 292 560 252 600Z"
+          stroke="url(#violet)" stroke-width="8"/>
+  </g>
+
+  <!-- Shared core: a crisp, stable center rather than a decorative flourish -->
+  <path d="M600 500L700 600L600 700L500 600L600 500Z"
+        fill="#0B0813" stroke="url(#gold)" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M600 535L665 600L600 665L535 600L600 535Z"
+        fill="url(#violet)" opacity=".95"/>
+  <path d="M600 559L641 600L600 641L559 600L600 559Z"
+        fill="#0B0813"/>
+  <circle cx="600" cy="600" r="11" fill="#E8D2A0"/>
+
+  <!-- Wordmark -->
+  <text x="600" y="1100" text-anchor="middle"
+        fill="url(#gold)"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="82" font-weight="600" letter-spacing="17">RIVINIA</text>
+  <path d="M360 1144H840" stroke="url(#gold)" stroke-width="3" opacity=".75"/>
+  <circle cx="600" cy="1144" r="6" fill="#9564E6"/>
+</svg>

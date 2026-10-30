@@ -1,3 +1,11 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/rivinia-abstract-mark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="./assets/rivinia-abstract-mark-light.svg" />
+    <img src="./assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="190" />
+  </picture>
+</p>
+
 # Rivinia
 
 Rivinia is a workspace of independently versioned Angular libraries for

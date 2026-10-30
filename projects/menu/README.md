@@ -3,6 +3,10 @@
 [![npm version](https://img.shields.io/npm/v/@rivinia/menu.svg)](https://www.npmjs.com/package/@rivinia/menu)
 [![license](https://img.shields.io/npm/l/@rivinia/menu.svg)](https://www.npmjs.com/package/@rivinia/menu)
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/main/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
+</p>
+
 Angular dropdown menus: a headless controller and an optional ready-made UI.
 The menu follows the WAI-ARIA menu-button pattern; it is for **actions**, not
 for a menubar or a general-purpose listbox.

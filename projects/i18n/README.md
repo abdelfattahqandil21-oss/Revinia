@@ -3,6 +3,10 @@
 [![npm version](https://img.shields.io/npm/v/@rivinia/i18n.svg)](https://www.npmjs.com/package/@rivinia/i18n)
 [![license](https://img.shields.io/npm/l/@rivinia/i18n.svg)](https://www.npmjs.com/package/@rivinia/i18n)
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/main/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
+</p>
+
 A headless Angular language manager built on signals. Key-based JSON
 dictionaries, inline translations, RTL/LTR document attributes, lazy loaders,
 ICU plural/select messages, browser-language detection, and `Intl` number/date

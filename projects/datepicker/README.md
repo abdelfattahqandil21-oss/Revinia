@@ -3,6 +3,10 @@
 [![npm version](https://img.shields.io/npm/v/@rivinia/datepicker.svg)](https://www.npmjs.com/package/@rivinia/datepicker)
 [![license](https://img.shields.io/npm/l/@rivinia/datepicker.svg)](https://www.npmjs.com/package/@rivinia/datepicker)
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/main/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
+</p>
+
 Headless Gregorian calendar behaviour for Angular 22+: integer date math, a
 locale-aware month grid, keyboard intents and RTL as a first-class rule — no
 DOM, no styling. Rendering lives in `@rivinia/datepicker/ui` or in your own UI.

@@ -1,5 +1,9 @@
 # @rivinia/modal
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/main/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
+</p>
+
 An Angular modal manager with typed results, stack/queue admission, dismissal
 policies, async guards, and optional ready-made UI. The core package owns
 modal state and lifecycle but does not render or style dialogs.

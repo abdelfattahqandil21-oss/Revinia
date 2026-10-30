@@ -3,6 +3,10 @@
 [![npm version](https://img.shields.io/npm/v/@rivinia/env.svg)](https://www.npmjs.com/package/@rivinia/env)
 [![license](https://img.shields.io/npm/l/@rivinia/env.svg)](https://www.npmjs.com/package/@rivinia/env)
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/main/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
+</p>
+
 `@rivinia/env` provides the `BaseEnvironment` TypeScript contract and an
 Angular CLI `ng add` schematic. It does not read environment values at
 runtime: Angular's build file replacements select a statically imported
