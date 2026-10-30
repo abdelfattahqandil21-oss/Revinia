@@ -237,8 +237,6 @@ export class SelectPopupComponent {
   protected readonly panelId = `rv-select-popup-panel-${++nextPanelId}`;
   /** Deferred initial focus: set on open paths, consumed after render. */
   private focusPending = false;
-  /** True between an open and the first row registered for it. */
-  private pendingActivation = false;
   /**
    * Manual popover support (top-layer). Feature-detected: modern browsers
    * escape clipping ancestors; older ones keep the absolute fallback.
@@ -289,17 +287,11 @@ export class SelectPopupComponent {
 
   /** Called by {@link SelectPopupItem} directives. */
   registerItem(item: { id: string; disabled: boolean }): void {
-    const c = this.controller();
-    c.register(item);
-    // Rows can register AFTER the panel opened — the declarative `[items]`
-    // path only renders them once `open()` is true, so at open time the
-    // registry was still empty and `openMenu('first')` had nothing to
-    // activate (measured: `activeId` stayed null, ArrowDown could not move,
-    // and the highlight never appeared).
-    if (this.pendingActivation && c.open() && c.activeId() === null && !item.disabled) {
-      c.activateFirst();
-      this.pendingActivation = false;
-    }
+    // The controller owns the activation policy: a value requested before its
+    // row rendered (a reopen) is honoured when that row registers, and the
+    // first row otherwise claims the open. Splitting the two here is what
+    // made a reopen land on the first option instead of the selection.
+    this.controller().register(item);
   }
 
   /** Called by {@link SelectPopupItem} directives. */
@@ -499,9 +491,6 @@ export class SelectPopupComponent {
    */
   private markOpening(): void {
     this.focusPending = true;
-    // Set on every open so rows that register after the panel rendered can
-    // claim the initial activation exactly once.
-    this.pendingActivation = true;
     this.flipped.set(false);
     this.positioned.set(false);
   }
@@ -728,6 +717,27 @@ export class SelectPopupComponent {
       target?.focus({ preventScroll: true });
     } catch {
       // Focus is best-effort.
+    }
+    if (id !== null) this.revealActive(target);
+  }
+
+  /**
+   * Bring the active row into view. Focus is moved with `preventScroll` so the
+   * panel never jumps, which also meant nothing ever scrolled: a reopen on a
+   * deep value (measured: always `scrollTop` 0) and Home/End/typeahead left
+   * the cursor active but off-screen.
+   *
+   * `nearest` scrolls only when the row is outside the scrollport, and the
+   * scrollport's `scroll-padding-top` keeps it clear of the pinned search bar.
+   * A virtualised list that does not render the active row has no element to
+   * reveal — the consumer owns scrolling there.
+   */
+  private revealActive(target: HTMLElement | null): void {
+    if (!target || !this.controller().open()) return;
+    try {
+      target.scrollIntoView({ block: 'nearest' });
+    } catch {
+      // Revealing is best-effort.
     }
   }
 
