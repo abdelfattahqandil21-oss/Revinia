@@ -84,6 +84,18 @@ typed as the exported `RiviniaSelectMode`. Twelve tests pin the DI contract,
 the mode precedence, the supported shared-controller configuration, and the
 restore half of `setValue` / `setValues`.
 
+- **The search scrolled away with the list.** The panel is the scrollport, so
+  a plain first-child input left the viewport as soon as the list moved
+  (measured: top 7px → −154px after a 300px scroll). The input now sits in a
+  `position: sticky` bar that paints the panel surface. Pinning the input
+  itself does not work — it paints transparent by design, so a sticky input
+  lets rows slide visibly underneath (measured on the consumer override that
+  did exactly that: `position: sticky` applied while the background computed
+  to `rgba(0, 0, 0, 0)`). The bar owns the gap below the input and the panel
+  declares `scroll-padding-top`, so a keyboard-scrolled row is not hidden
+  under the bar. No new API: `--rv-select-search-bg`,
+  `--rv-select-search-gap` and `--rv-select-search-offset` tune it.
+
 ### @rivinia/i18n 0.5.0
 
 The 0.4.0 code-review set. 0.4.1 was never published, so its patch set ships
