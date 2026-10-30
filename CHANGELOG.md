@@ -5,11 +5,21 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ## Prepared releases (unpublished)
 
-### @rivinia/select 0.6.2
+### @rivinia/select 0.7.0
 
 Eleven defects, all found by running the packed tarball in real browsers: the
-first seven in a visible Chromium/Firefox/WebKit matrix against the published
-0.6.1 bytes, the rest in a consumer playground.
+first seven in a visible Chromium/Firefox/WebKit matrix against the packed
+0.6.1 build, the rest in a consumer playground. It also adds a public feature
+(`variant`), which makes it a minor under the rule above. 0.6.1 was prepared
+and never published; its packaging changes ship here.
+
+- **Packaging: the layered layout.** The package moved to
+  `src/lib/{models,services,utils,providers,pipes}` with its specs in `tests/`,
+  outside the source it ships, and it now declares `@angular/common` in its
+  `peerDependencies` — the UI imports `NgComponentOutlet` /
+  `NgTemplateOutlet` at runtime and the peer was undeclared. The public API,
+  the entry points and the `exports` map are unchanged. The rest of that
+  workspace batch is still prepared for the other five packages.
 
 - **The panel scrolled sideways.** `overflow-y: auto` computes `overflow-x` to
   `auto`, and every row was `width: 100%` with its padding outside that 100%
@@ -126,15 +136,15 @@ restore half of `setValue` / `setValues`.
   doing its job). A virtualised list that does not render the active row has
   nothing to reveal; its consumer owns scrolling, as the README now says.
 - **Feature: `variant` on `<rv-select>`, forwarded to the panel it builds.**
-  `'simple'`
-  (the default) is byte-for-byte the 0.6.1 skin, so nothing changes unless you
-  ask for it. `'premium'` adds a 250ms entrance on the standard dropdown
-  curve, a layered panel shadow, a 1px trigger shadow, a hover/active row
-  wash, a thinner search field, a styled scrollbar, and a shimmering skeleton
-  in the loading row. The value is reflected as `data-variant` and everything
-  downstream is CSS — no branch in the component logic, no runtime cost when
-  unused. Measured cost of shipping both skins: **+801 B brotli / +1,292 B
-  gzip** on the UI chunk, 0 B on `@rivinia/select` headless.
+  `'simple'` (the default) is byte-for-byte the pre-variant skin, so the
+  default look does not change unless you ask for it. `'premium'` adds a 250ms
+  entrance on the standard dropdown curve, a layered panel shadow, a 1px
+  trigger shadow, a hover/active row wash, a thinner search field, a styled
+  scrollbar, and a shimmering skeleton in the loading row. The value is
+  reflected as `data-variant` and everything downstream is CSS — no branch in
+  the component logic, no runtime cost when unused. Measured cost of shipping
+  both skins: **+801 B brotli / +1,292 B gzip** on the UI chunk, 0 B on
+  `@rivinia/select` headless.
 - **The premium skin does not animate on close, on purpose.** The panel is a
   real top-layer element; holding it open to fade it out would swallow clicks
   aimed at whatever is underneath, hand `panelReady` a node that is about to
@@ -222,7 +232,7 @@ Playwright Firefox 157) against a production CSR build, and 16 SSR checks
 against a real `renderApplication` host (Arabic HTML, transfer payload, no
 client refetch, hydration, post-hydration language switch).
 
-### @rivinia/env 0.3.4 · @rivinia/http 0.5.4 · @rivinia/modal 0.6.2 · @rivinia/toast 0.5.2 · @rivinia/menu 0.3.6 · @rivinia/select 0.6.1
+### @rivinia/env 0.3.4 · @rivinia/http 0.5.4 · @rivinia/modal 0.6.2 · @rivinia/toast 0.5.2 · @rivinia/menu 0.3.6
 
 - **The packages are organised into layers.** Every package used to keep its
   types, its controller, its helpers, its provider and its pipe in one flat
@@ -250,10 +260,6 @@ client refetch, hydration, post-hydration language switch).
 - **The dead references are gone.** The workspace root pointed at two
   `proof-*` projects that no longer exist, which broke the build of every
   package that loaded the root tsconfig.
-- `@rivinia/select` now declares `"@angular/common": "^22.0.0"` in its
-  `peerDependencies`. The select's UI imports `NgComponentOutlet` /
-  `NgTemplateOutlet` from `@angular/common` at runtime, and the FESM grep
-  confirms the import — it was undeclared.
 - `@rivinia/env` gained a test. It ships no runtime code — its public API
   is the `BaseEnvironment` type and everything it does happens in the
   schematic — so the test covers the seam between the two: the environment

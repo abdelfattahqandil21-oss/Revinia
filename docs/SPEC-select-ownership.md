@@ -214,7 +214,7 @@ pnpm check:docs               # docs link/format check
 ```
 
 `npm pack` (gate 3), the consumer fixture (gate 4) and publishing (gate 7) belong
-to the 0.6.2 release, not to this change.
+to the 0.7.0 release, not to this change.
 
 ## 10. Contradictions found
 

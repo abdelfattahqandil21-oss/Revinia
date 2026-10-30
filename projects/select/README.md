@@ -908,7 +908,7 @@ controller, same keyboard contract, same ARIA.
 
 | Value       | What you get                                                                                              |
 | ----------- | --------------------------------------------------------------------------------------------------------- |
-| `'simple'`  | The default. The 0.6.1 skin, unchanged — including its 160ms entrance. Upgrading changes nothing.         |
+| `'simple'`  | The default. The pre-variant skin, unchanged — including its 160ms entrance. The flag changes nothing.     |
 | `'premium'` | A slower, softer entrance, layered shadow, thin styled scrollbar, hover/active wash, loading skeleton.    |
 
 `<rv-select>` forwards its own value to the panel it builds, so a custom

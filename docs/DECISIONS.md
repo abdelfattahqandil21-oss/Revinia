@@ -2494,7 +2494,7 @@ Three defects, all found by a consumer using the packages.
 
 ## 2026-10-30 — D75: select panel metrics, and `position-area` resolves against the ICB
 
-- **What shipped.** `@rivinia/select` 0.6.2 (prepared, unpublished): the panel
+- **What shipped.** `@rivinia/select` 0.7.0 (prepared, unpublished): the panel
   no longer scrolls horizontally, the panel and its trigger are one width,
   `*-end` placements sit on the trigger button, RTL panels align in a
   mixed-direction page, and the README's ARIA section was rewritten from the
@@ -2621,7 +2621,7 @@ Three defects, all found by a consumer using the packages.
 
 ## 2026-10-30 — D76: the select's search is pinned to the panel, and the bar owns the paint
 
-- **What shipped.** `@rivinia/select` 0.6.2 (prepared, unpublished): a
+- **What shipped.** `@rivinia/select` 0.7.0 (prepared, unpublished): a
   searchable panel keeps its filter input in view while the list scrolls. The
   input sits inside a `position: sticky` bar that paints the panel surface, and
   a searchable panel declares `scroll-padding-top` so a keyboard-focused row
@@ -2681,7 +2681,7 @@ Three defects, all found by a consumer using the packages.
 
 ## 2026-10-30 — D77: reopening a select lands on the selection, and the active row is always revealed
 
-- **What shipped.** `@rivinia/select` 0.6.2 (prepared, unpublished): the inner
+- **What shipped.** `@rivinia/select` 0.7.0 (prepared, unpublished): the inner
   navigation controller holds an activation requested before its row exists,
   and the popup reveals the active row with
   `scrollIntoView({ block: 'nearest' })` after every change of the active row.
@@ -2737,7 +2737,7 @@ Three defects, all found by a consumer using the packages.
 
 ## 2026-10-30 — D78: a `variant` flag, styled entirely in CSS, and why close never animates
 
-- **What shipped.** `@rivinia/select` 0.6.2 (prepared, unpublished): a `variant`
+- **What shipped.** `@rivinia/select` 0.7.0 (prepared, unpublished): a `variant`
   input on `<rv-select>` (`'simple' | 'premium'`, default `'simple'`), reflected
   as `data-variant` on the select and on the `<rv-select-popup>` it builds.
   `RiviniaSelectVariant` is exported from `@rivinia/select/ui`. The popup
