@@ -2618,3 +2618,119 @@ Three defects, all found by a consumer using the packages.
   Chromium only; the repo's Playwright suites ran against the branch build.
 - **Still local at the time of writing:** `main` (31 commits ahead of `origin/main`)
   and the tag `i18n/v0.7.1` had not been pushed.
+
+## 2026-10-30 — D76: the select's search is pinned to the panel, and the bar owns the paint
+
+- **What shipped.** `@rivinia/select` 0.6.2 (prepared, unpublished): a
+  searchable panel keeps its filter input in view while the list scrolls. The
+  input sits inside a `position: sticky` bar that paints the panel surface, and
+  a searchable panel declares `scroll-padding-top` so a keyboard-focused row
+  is not covered by the bar.
+- **Why it had to move into the component.** The panel is the scrollport
+  (`overflow-y: auto`), and the input was a plain first child of it — measured
+  in Chromium on the packed tarball: input top 7px before scrolling, −154px
+  after a 300px scroll (the panel stops at `scrollTop` 161). Consumers did try
+  to pin it from the outside: the hosted governorate demo carried
+  `.rv-select-search { position: sticky; …; background: var(…) }`, and it only
+  half-worked — `position: sticky` applied while the background lost the
+  cascade to the component's own `background: transparent` (same specificity,
+  and Angular injects component styles after the app stylesheet). Measured in
+  that build: `position: sticky`, computed background `rgba(0, 0, 0, 0)`, rows
+  on screen through the input. A consumer-side fix therefore needs a
+  specificity bump (`rv-select .rv-select-search`) and repeats per project;
+  the component owns this one.
+- **Why a bar, not `position: sticky` on the input.** The input paints
+  transparent so the panel shows through; sticky keeps its box in the flow and
+  makes it scroll over the rows, so the box must paint. The wrapper also owns
+  the 4px gap below the input, which would otherwise stay transparent and let
+  rows peek through while scrolling. The input's own rule is unchanged apart
+  from a removed `margin-bottom`.
+- **Overrides stay token-driven.** `--rv-select-search-bg` (defaults to the
+  panel surface token), `--rv-select-search-gap` (0.25rem) and
+  `--rv-select-search-offset` (3rem, the panel's `scroll-padding-top`) are
+  read with fallbacks, so an ancestor theme still wins — same boundary as
+  every other select token.
+- **The pinned bar left a strip of the list above it.** Found on the owner's
+  dark-mode demo: a sliver of the previous row (its count, half a label)
+  stayed visible between the panel's top edge and the search. The scrollport's
+  `padding: var(--rv-select-popup-pad)` sits outside the bar's containing
+  block, and a sticky box is clamped to that block, so `top: 0` stopped at the
+  content edge — measured 7px = 6px padding + 1px border, at every scroll
+  offset (40/80/120/160). Searchable panels now drop the top padding and the
+  bar carries it (`padding-top: var(--rv-select-popup-pad)`), so the bar's top
+  edge is the scrollport's content edge. Measured after: band 1px (the border
+  itself), input top 328.9 unchanged, first row unchanged, bottom and inline
+  padding 6px unchanged, `scroll-padding-top` 48px unchanged. The alternative
+  (a negative `top`) cannot work: the same clamp keeps the bar inside its
+  containing block.
+- **No new API, no DOM contract change for rows.** `.rv-select-search` keeps
+  its class and its position in the panel's first slot; the bar is a wrapper
+  around it. `reachEnd` reads `scrollHeight`/`scrollTop`/`clientHeight`, which
+  `scroll-padding` does not touch.
+- **Tests.** `projects/select/tests/select-search-sticky.spec.ts` (5 cases):
+  the CSS contract (sticky, `top: 0`, surface-backed background, transparent
+  input), `scroll-padding-top` on the searchable panel, the padding handover
+  (`padding-top: 0` on the scrollport, the bar carrying
+  `var(--rv-select-popup-pad)`), the input living inside the bar, and no bar on
+  a non-searchable select. Mutation-checked: removing the `position: sticky`
+  line fails the first case; removing the bar's `padding-top` fails the third;
+  the structure cases fail against the pre-fix template.
+- **Not covered.** No engine here measures sticky repaint cost on very long
+  virtual lists; the bar is one composited layer and `reachEnd` was re-run in
+  the consumer page after the change.
+
+## 2026-10-30 — D77: reopening a select lands on the selection, and the active row is always revealed
+
+- **What shipped.** `@rivinia/select` 0.6.2 (prepared, unpublished): the inner
+  navigation controller holds an activation requested before its row exists,
+  and the popup reveals the active row with
+  `scrollIntoView({ block: 'nearest' })` after every change of the active row.
+- **The race.** `(opened)` calls `activate(value)` while the declarative rows
+  have not rendered, so the call returned `false` and the first row that
+  registered won the open — the highlight sat on the first option while the
+  trigger showed the chosen one. Rows register after the open, which is why
+  the plain `activateFirst()` fallback existed at all; it lived in the popup
+  component, so it could not know that a specific row had been requested.
+  `SelectPopupControllerImpl.activate()` now stores the id while the menu is
+  open and applies it when that row registers; a row that is not the
+  requested one no longer claims the open, and any explicit navigation
+  (`openMenu`, `activateFirst/Last/Next/Previous`, a successful `activate`)
+  drops the request, as does `closePopup()`.
+- **Why `scrollIntoView` and not `focus({ preventScroll: false })`.** Focus was
+  deliberately moved with `preventScroll` so the panel never jumped under the
+  pointer, and nothing else ever scrolled: measured in Chromium on the packed
+  tarball, a reopen on the last governorate left `scrollTop` at 0 with the
+  active row below the fold, and ArrowUp/ArrowDown/Home/End moved the active
+  row without scrolling either — the `scroll-padding-top` D76 added had no
+  consumer. `nearest` scrolls only when the row is outside the viewport, so
+  typing, hovering and small arrow moves do not shift the list. Measured
+  after, in the consumer page: reopen on the last governorate → `scrollTop`
+  131, active row `kafr-elsheikh` at 600.9–640.9 inside a panel of
+  321.9–641.9; `End` → same row back in view; `ArrowDown` past the end wraps to
+  `cairo` and scrolls to `scrollTop` 1 with the row top at 371.9, exactly at
+  the pinned bar's bottom edge.
+- **A registration write must not be a dependency.** `register()` now reads the
+  registry to tell a new row from a re-register. Called from the row
+  directive's own effect, that read made the effect depend on the array it
+  wrote — every registration re-ran every row's effect forever (the test run
+  hung at 100% CPU on seven workers). Registration, unregistration and the
+  navigation commands are `untracked()`; the select's query effect, which used
+  to re-run `activateFirst()` on every registration, is now untracked around
+  that call too — the last registration was overwriting the requested value.
+- **Trade-off, documented.** When the requested option never registers (a
+  value that is not in `[options]`, or a paginated page that has not loaded),
+  nothing is active until the user navigates; the first arrow then enters the
+  list at its first row. Highlighting a different option was the bug. A
+  virtualised list that drops the active row from the DOM has no element to
+  reveal — the consumer owns scrolling there.
+- **Tests.** `projects/select/tests/select-active-reveal.spec.ts` (6 cases):
+  the controller contract (a requested id activates when it registers; a
+  request is not resurrected across opens; an explicit move drops it; an
+  unresolvable request does not activate another row) and two DOM cases that
+  spy on `Element.prototype.scrollIntoView` and expect
+  `{ block: 'nearest' }` on the selected row after opening and on the next row
+  after an ArrowDown. Mutation-checked: dropping the stored request fails the
+  controller cases; removing the `revealActive` call fails both DOM cases.
+- **Not covered.** Firefox and WebKit were not re-run for this change; the
+  reveal relies on each engine's `scrollIntoView` honouring `scroll-padding`,
+  which is the reason D76 put the padding there.

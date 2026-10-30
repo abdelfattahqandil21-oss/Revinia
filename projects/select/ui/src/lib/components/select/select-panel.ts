@@ -14,6 +14,7 @@ import {
   output,
   signal,
   TemplateRef,
+  untracked,
 } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { SelectPopupControllerImpl } from '../../services/select-popup';
@@ -260,9 +261,12 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
       this.controller().syncOptions(this.options());
     });
     // Typing re-aims keyboard focus at the top match, so Enter just works.
+    // Untracked: only a QUERY change resets the active row. Letting this
+    // depend on the registry made every row registration re-run it, and the
+    // reopen's requested value was overwritten by the first row.
     effect(() => {
       this.controller().query();
-      this.popup.activateFirst();
+      untracked(() => this.popup.activateFirst());
     });
 
     // ── FormValueControl sync: form value → controller ──

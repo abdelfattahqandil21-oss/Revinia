@@ -39,17 +39,19 @@
     </button>
     <div rv-select-popup-panel class="rv-select-panel">
       @if (searchable()) {
-        <input
-          class="rv-select-search"
-          type="text"
-          role="searchbox"
-          [attr.aria-label]="searchLabel()"
-          autocomplete="off"
-          [value]="controller().query()"
-          [placeholder]="searchPlaceholder()"
-          (input)="controller().setQuery($any($event.target).value)"
-          (keydown)="onSearchKey($event)"
-        />
+        <div class="rv-select-search-bar">
+          <input
+            class="rv-select-search"
+            type="text"
+            role="searchbox"
+            [attr.aria-label]="searchLabel()"
+            autocomplete="off"
+            [value]="controller().query()"
+            [placeholder]="searchPlaceholder()"
+            (input)="controller().setQuery($any($event.target).value)"
+            (keydown)="onSearchKey($event)"
+          />
+        </div>
       }
       @if (listTemplate(); as list) {
         <!-- The consumer's own list — a virtualised one, typically. -->

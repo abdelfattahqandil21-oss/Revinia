@@ -797,6 +797,13 @@ if (last && last.index >= this.options().length - 1) this.loadMore();
 `@tanstack/angular-virtual` is the usual choice, but any virtualizer works —
 it only needs the scroll element and the row count.
 
+Keyboard navigation reveals the active row with
+`scrollIntoView({ block: 'nearest' })`. A virtualiser owns the other half: when
+the active row is not mounted (it is outside the rendered window), there is no
+element to reveal, so scroll to it yourself — `virtualizer.scrollToIndex()` in
+an effect keyed on your selected value — and let the component reveal rows
+within the rendered window.
+
 The panel is destroyed on close and built again on the next open, so
 `panelReady` fires **once per open with a new element**. Keep it in a signal
 and rebind your scroll listener when it changes; caching the first element
