@@ -9,6 +9,10 @@ ICU plural/select messages, browser-language detection, and `Intl` number/date
 formatting — with SSR that actually works and no runtime dependency beyond
 Angular.
 
+Concretely: the text lives in JSON files, components ask for a key, and the whole
+app — text, direction, dates, numbers — follows the language the user picked.
+Arabic is a first-class target, not an afterthought of an English layout.
+
 - Package version: **0.7.1**
 - Peer dependency: **`@angular/core` `^22.0.0`** (plus `@angular-devkit/schematics` for `ng add`)
 - Entry points: **`@rivinia/i18n`** (headless core) and **`@rivinia/i18n/ui`**
@@ -16,7 +20,7 @@ Angular.
 - `sideEffects: false`; no runtime import beyond `@angular/core`; loaders are lazy chunks
 - No `HttpClient` peer — the built-in loaders use `fetch`
 
-## Quick features
+## What you get
 
 - **Signal-first state.** `currentLanguage`, `dir`, `loadingState`, `missingKeys` and
   `locale` are readonly signals; changes only via methods.
@@ -41,7 +45,21 @@ Angular.
 - **Persistence + detection.** local/session/cookie storage, `navigator.languages` match,
   `<html lang>` and `<html dir>` kept in sync.
 
-## Install
+## Contents
+
+Three levels. Stop at the one that answers your question.
+
+| Tier                   | What it covers                                                      | Start at                              |
+| ---------------------- | ------------------------------------------------------------------- | ------------------------------------- |
+| **Start here** (5 min) | install, generate the language list, render a first translation     | [Quick start](#quick-start)           |
+| **Everyday use**       | translating, plurals, switching, dictionaries, the toggle, SSR      | [Translating text](#translating-text) |
+| **Reference**          | every option, loader, ICU rule, UI input, export tier and migration | [Configuration](#configuration)       |
+
+## Start here
+
+These three sections are everything needed to run an app. The rest can wait.
+
+### Install
 
 ```bash
 npm install @rivinia/i18n
@@ -61,51 +79,76 @@ whether to detect the browser language. It only inserts an import and a
 `provideRiviniaI18n({…})` call, is idempotent, and skips with a warning — never an
 error — when it does not recognize the workspace.
 
-## Imports
+### Quick start
 
-```ts
-import {
-  provideRiviniaI18n,
-  defineRiviniaI18n,
-  injectRiviniaI18n,
-  RiviniaI18n,
-  RvTranslatePipe,
-  jsonLoader,
-  httpLoader,
-  remoteLoader,
-  customLoader,
-  formatIcu,
-} from '@rivinia/i18n';
+#### 1. Generate the language list
+
+```bash
+npx rivinia-i18n-keys init
 ```
 
-## API stability
+It asks for each language (id, native name, direction) and the default one, then
+writes `src/app/i18n/languages.ts` plus one empty dictionary per language under
+`public/i18n/`. Without a terminal:
 
-Every export is classified so the 1.0 freeze is predictable. **Internal** symbols
-exist only so the package's own tests can import them; they may move to an
-`@rivinia/i18n/internal` entry point (or disappear) before 1.0.
+```bash
+npx rivinia-i18n-keys init --languages ar:العربية:rtl,en:English:ltr --default en
+```
 
-| Export                                                                                         | Kind             | Tier         |
-| ---------------------------------------------------------------------------------------------- | ---------------- | ------------ |
-| `RiviniaI18n`                                                                                  | service          | Stable       |
-| `provideRiviniaI18n`, `defineRiviniaI18n`, `injectRiviniaI18n`                                 | providers        | Stable       |
-| `RvTranslatePipe` (`rvTranslate`)                                                              | pipe             | Stable       |
-| `RiviniaI18nConfig`                                                                            | type             | Stable       |
-| `Language`, `Direction`, `Translation`, `TranslateParams`, `StorageStrategy`, `SwitchStrategy` | types            | Stable       |
-| `RiviniaLoadError`                                                                             | class            | Stable       |
-| `MissingKeyEvent`, `MissingParamEvent`                                                         | types            | Stable       |
-| `TranslationLoader`, `LoaderDescriptor`, `LoaderContext`                                       | types            | Stable       |
-| `jsonLoader`, `httpLoader`, `remoteLoader`, `customLoader`                                     | loader factories | Stable       |
-| `HttpLoaderOptions`, `RemoteLoaderOptions`                                                     | types            | Stable       |
-| `formatIcu`, `IcuFormatOptions`                                                                | ICU API          | Stable       |
-| `RegisteredI18nKey`, `RiviniaI18nKeyRegistry`                                                  | typed-keys types | Stable       |
-| `ViewTransitionConfig`, `ViewTransitionInfo`                                                   | types            | Experimental |
-| `ViewTransitionService`                                                                        | service          | Internal     |
-| `parseCookie`, `serializeCookie`                                                               | cookie helpers   | Internal     |
-| `browserLanguages`, `detectBrowserLanguage`                                                    | helpers          | Internal     |
-| `RiviniaLanguageToggle` (`rv-language-toggle`), `RiviniaLanguageTrigger` (`rvLanguageTrigger`) | `/ui` components | Experimental |
-| `RiviniaLanguageManager`, `LanguageLike`, `RiviniaLanguageTriggerContext`                      | `/ui` types      | Experimental |
+#### 2. Register it once, at bootstrap
 
-## Quick start
+```ts
+// src/app/app.config.ts
+import type { ApplicationConfig } from '@angular/core';
+import { i18n } from './i18n/languages';
+
+export const appConfig: ApplicationConfig = {
+  providers: [i18n.provide()],
+};
+```
+
+#### 3. Translate
+
+```ts
+// src/app/header.ts
+import { Component } from '@angular/core';
+import { RvTranslatePipe } from '@rivinia/i18n';
+import { injectI18n } from './i18n/languages';
+
+@Component({
+  selector: 'app-header',
+  imports: [RvTranslatePipe],
+  template: `
+    <h1>{{ title() }}</h1>
+    <p>{{ 'booking.seats' | rvTranslate }}</p>
+    <button type="button" (click)="i18n.setLanguage('en')">English</button>
+  `,
+})
+export class Header {
+  readonly i18n = injectI18n();
+  readonly title = this.i18n.t('app.title');
+}
+```
+
+Then the two dictionaries, same keys in both:
+
+```jsonc
+// public/i18n/ar.json
+{ "app": { "title": "الحجوزات" }, "booking": { "seats": "المقاعد" } }
+```
+
+```jsonc
+// public/i18n/en.json
+{ "app": { "title": "Bookings" }, "booking": { "seats": "Seats" } }
+```
+
+Both `title()` and the pipe update on the click, and the direction of the page flips
+with the language — nothing else is wired by hand.
+
+#### Without the terminal
+
+The same setup, written by hand: `provideRiviniaI18n(config)` and
+`injectRiviniaI18n<'ar' | 'en'>()` are the primitives the generated module wraps.
 
 ```ts
 // src/app/i18n.config.ts
@@ -165,42 +208,159 @@ wrapper.
 before first paint (SSR waits through `PendingTasks`). `ready()` becomes true when the
 first content is available or initial loading has settled.
 
-## Configuration
+### What you just configured
 
-| Option               | Type                                          | Default                          | Meaning                                                                       |
-| -------------------- | --------------------------------------------- | -------------------------------- | ----------------------------------------------------------------------------- |
-| `languages`          | `readonly Language<T>[]`                      | —                                | Supported languages (`id`, `nativeName`, `dir`, optional `locale`).           |
-| `defaultLanguage`    | `T`                                           | first of `languages`             | Initial language on a first visit; must be a non-empty configured id.         |
-| `fallbackLanguage`   | `T`                                           | none                             | Second lookup dictionary; must be one of `languages`.                         |
-| `loader`             | `LoaderDescriptor<T>`                         | `jsonLoader()`                   | Dictionary source.                                                            |
-| `translations`       | `Partial<Record<T, Record<string, unknown>>>` | none                             | Inline seeds, painted before any network load; a loader response still wins.  |
-| `preload`            | `boolean`                                     | `true`                           | Load the initial language during provider setup.                              |
-| `detectBrowser`      | `boolean`                                     | `false`                          | Match `navigator.languages` on first visit (a stored choice wins).            |
-| `storageStrategy`    | `'local' \| 'session' \| 'cookie' \| 'none'`  | `'local'`                        | Persistence; `'cookie'` also works on the server through `REQUEST`.           |
-| `storageKey`         | `string`                                      | `'rivinia.i18n.language'`        | Storage key.                                                                  |
-| `switchStrategy`     | `'instant' \| 'preload-first'`                | `'instant'`                      | `'preload-first'` waits for the dictionary; a failure keeps the old language. |
-| `autoApplyDirection` | `boolean`                                     | `true`                           | Write `<html lang>` and `<html dir>`.                                         |
-| `onLoadError`        | `(language, error) => void`                   | none                             | Dictionary load failure. Initialization never rejects because of it.          |
-| `warnOnLoadError`    | `boolean`                                     | `isDevMode() && !onLoadError`    | `console.error` once per language when a dictionary fails to load.            |
-| `onMissingKey`       | `(event) => void`                             | none                             | Unresolved key; suppresses the default warning.                               |
-| `warnOnMissingKey`   | `boolean`                                     | `isDevMode() && !onMissingKey`   | `console.warn` once per key.                                                  |
-| `onMissingParam`     | `(event) => void`                             | none                             | Missing message argument; suppresses the default warning.                     |
-| `warnOnMissingParam` | `boolean`                                     | `isDevMode() && !onMissingParam` | `console.warn` once per (key, param).                                         |
-| `persist`            | `boolean`                                     | `true`                           | Persist the language after an explicit switch. First load writes nothing.     |
-| `viewTransition`     | `ViewTransitionConfig`                        | none                             | Document view transition on language change.                                  |
+Each entry of `languages` answers four questions:
 
-The config is validated once at construction: `languages` must be a non-empty array with a
-non-empty, **unique** `id` per entry, and `defaultLanguage` / `fallbackLanguage` (when
-provided) must name one of those ids. Anything else throws a `[rivinia/i18n] …` error at
-bootstrap instead of degrading into an undefined current language.
+| Field        | Answers                                                                                                              | Required |
+| ------------ | -------------------------------------------------------------------------------------------------------------------- | -------- |
+| `id`         | The key everything else uses: JSON filename, stored preference, `currentLanguage()`, `setLanguage('…')`.             | yes      |
+| `nativeName` | How the language calls itself in a switcher (`العربية`, not "Arabic"). Falls back to `Intl.DisplayNames`, then `id`. | no       |
+| `dir`        | The document direction while this language is active. Explicit, not guessed — `he` and `ur` exist.                   | yes      |
+| `locale`     | BCP-47 locale for `Intl` and plural rules. Defaults to `id`.                                                         | no       |
 
-A repeated id written inline (`languages: [AR, EN, AR]`) is also a **compile error**:
-`provideRiviniaI18n` and `defineRiviniaI18n` require the property `duplicateLanguageId`,
-which only the type checker sees. The check reads the array literal, so it does not fire
-when the union is supplied explicitly (`provideRiviniaI18n<'ar' | 'en'>(…)`) or the list is
-hoisted into a variable — both forms still throw the runtime error above.
+`locale` is the one that surprises people: a bare `ar` formats Latin digits (`3`),
+while `ar-EG` formats Arabic-Indic ones (`٣`). When the dictionary is read by Arabic
+readers, pass `ar-EG`.
 
-## Dictionaries
+The generated module keeps the union literal, so the type of `id` is `'ar' | 'en'` and
+`setLanguage('fr')` does not compile. Registering the provider also installs an app
+initializer that loads the first dictionary before the first paint — `ready()` turns
+true when that initial load has settled, which is the signal to gate skeletons on.
+
+## Everyday use
+
+The patterns a real app needs, with the smallest correct example for each.
+
+### Translating text
+
+Keys are dot paths into the JSON file: `{"booking": {"seats": "Seats"}}` becomes
+`booking.seats`. Three ways to read one:
+
+```html
+<!-- template: the pipe -->
+<p>{{ 'booking.seats' | rvTranslate: { count: seats } }}</p>
+```
+
+```ts
+// component field: a signal that re-renders on a language switch
+readonly title = this.i18n.t('app.title');
+// params may be a function of signals — the text follows both language and count
+readonly seats = this.i18n.t('booking.seats', () => ({ count: this.count() }));
+```
+
+```ts
+// plain TypeScript
+this.i18n.translate('app.save');
+this.i18n.translate('app.title', 'Untitled'); // defaultValue: never reported as missing
+this.i18n.translate({ en: 'Hello', ar: 'أهلاً' }); // inline map
+```
+
+`t()` is a `computed`, so it is the right tool for component fields. The pipe is impure
+by necessity and re-runs on every change-detection pass: fine for a page, wasteful for
+a thousand rows. A key that resolves nowhere renders as the key itself and is reported
+— see [Missing keys](#missing-keys).
+
+### Plurals that survive translation
+
+"1 item / 2 items" looks like a single `if`:
+
+```ts
+const label = count === 1 ? `${count} item` : `${count} items`;
+```
+
+That line is already wrong in Arabic. English has two plural forms; Arabic has six, and
+which one applies is decided by the number in a way English never trained you for:
+
+| count | English category | Arabic category | Arabic text    |
+| ----- | ---------------- | --------------- | -------------- |
+| 0     | `other`          | `zero`          | سلتك فارغة     |
+| 1     | `one`            | `one`           | لديك عنصر واحد |
+| 2     | `other`          | `two`           | لديك عنصران    |
+| 3     | `other`          | `few`           | لديك 3 عناصر   |
+| 11    | `other`          | `many`          | لديك 11 عنصرًا |
+| 100   | `other`          | `other`         | لديك 100 عنصر  |
+
+The words around the number also change — gender, case, the shape of the noun — so
+gluing `count + ' items'` together cannot produce a correct Arabic sentence.
+
+ICU MessageFormat puts the decision inside the message:
+
+```text
+{count, plural,
+  =0 {Your cart is empty}
+  one {You have one item in your cart}
+  other {You have # items in your cart}
+}
+```
+
+- `count` is the parameter you pass: `translate('cart.items', { count: 3 })`.
+- `plural` picks a branch from that number.
+- `=0` matches the value **exactly**, in every language.
+- `one` and `other` are plural **categories**, selected by `Intl.PluralRules(locale)`.
+  English only ever selects `one` and `other`.
+- `#` is the number, formatted for the locale — `٣` under `ar-EG`, `3` under `ar`.
+
+The same message in Arabic names the categories Arabic actually has:
+
+```text
+{count, plural,
+  =0 {سلتك فارغة}
+  one {لديك عنصر واحد}
+  two {لديك عنصران}
+  few {لديك # عناصر}
+  many {لديك # عنصرًا}
+  other {لديك # عنصر}
+}
+```
+
+`zero`, `one`, `two`, `few`, `many` and `other` are the six CLDR categories for Arabic.
+They are not `if` branches you can reorder: the category is computed from the number and
+the locale, so one message yields six Arabic forms and two English ones with no code
+change. In Arabic, 3–10 select `few`, 11–99 select `many`, and 100 selects `other`.
+
+Note the difference between `=0` and `zero`. `=0` is an exact-value rule that works
+everywhere; `zero` is a category only some languages select — an English message with a
+`zero {…}` branch never shows it, because English at 0 resolves to `other`. For an empty
+state, use `=0`.
+
+`select`, `selectordinal`, `offset:` and the number/date styles are in the
+[ICU reference](#icu-messages).
+
+### Switching the language
+
+```ts
+this.i18n.setLanguage('ar'); // flips now; the dictionary follows (default strategy)
+await this.i18n.setLanguageAsync('ar'); // resolves once the dictionary is in place
+this.i18n.toggle(); // flips the first two configured languages
+```
+
+`setLanguage()` is synchronous and obeys `switchStrategy`; `setLanguageAsync()` always
+waits for the dictionary, which is why the toggle uses it — a failed load leaves the
+previous language in place instead of an empty page.
+
+Everything visual is a signal, so nothing needs wiring:
+
+```ts
+readonly language = this.i18n.currentLanguage; // Signal<'ar' | 'en'>
+readonly direction = this.i18n.dir; // Signal<'rtl' | 'ltr'> — also written on <html dir>
+readonly locale = this.i18n.locale; // Signal<string>
+readonly ready = this.i18n.ready; // gate skeletons on this
+```
+
+Numbers and dates follow the same locale:
+
+```ts
+this.i18n.formatNumber(1234.5); // ar-EG → ١٬٢٣٤٫٥
+this.i18n.formatDate(Date.now(), { dateStyle: 'long' });
+```
+
+The choice survives a reload in `localStorage` under `rivinia.i18n.language`, and is only
+written after the user actually switches (`persist`). On a first visit,
+`detectBrowser: true` matches `navigator.languages` (`ar-EG` → `ar`); a stored choice
+always wins. All of it is configurable — [Configuration](#configuration).
+
+### Where translations live
 
 The default loader fetches `i18n/{language}.json`. For a standard Angular app that
 means `public/i18n/en.json` served as `/i18n/en.json`. An existing
@@ -255,7 +415,7 @@ const filesystem: LoaderDescriptor<'ar' | 'en'> = {
 browser; `<base href>` resolved against the request on the server). `isServer` means
 "there is a server request context", which is what makes relative URLs fetchable.
 
-## Generating the language module
+### Generating the language module
 
 Writing the language list by hand is the one boilerplate this package still asked for.
 `init` collects it once and writes the module plus one empty dictionary per language:
@@ -320,9 +480,107 @@ anything is written; `--languages ar:العربية:rtl,en:English:ltr` skips th
 CI, `--dry-run` prints the files, and a `languages.ts` that was not written by this
 command is only replaced with `--force`.
 
-## Translation API
+### Typed keys
 
-### Signals
+Every key is a plain `string` until you generate the declaration. One command turns the
+dictionary into a union type, so a typo fails the build instead of reaching the screen:
+
+```bash
+npx rivinia-i18n-keys # public/i18n/en.json → src/i18n-keys.d.ts
+```
+
+Re-run it when keys change, or let CI run `--check`. The flags, the flattening rules and
+`--parity` are in the [typed-keys reference](#typed-keys-reference).
+
+### The language toggle
+
+The second entry point ships a two-language switch:
+
+```ts
+import { RiviniaLanguageToggle } from '@rivinia/i18n/ui';
+// <rv-language-toggle [manager]="i18n" label="Switch language" />
+```
+
+The button shows the language it switches **to**, carries `lang` and `dir` on its own
+button, and works with the service (`[manager]`) or without it (`[languages]` +
+`[current]` + `(languageChange)`). **Experimental in 0.7.1** — custom icons, trigger
+templates, presentational mode, styling hooks and the accessibility contract are in the
+[toggle reference](#toggle-reference).
+
+### Server-side rendering
+
+The default loader works on the server: `REQUEST` plus `<base href>` produce an absolute
+URL, and the rendered dictionaries travel in `TransferState`, so the client does not
+fetch them twice. A custom host has to provide `REQUEST`, serialize the app-level
+`TransferState` and use the CSR shell as the template — all three, with the reasons, are
+in the [SSR reference](#ssr-reference).
+
+## Reference
+
+The complete surface. Ordered by API, not by learning path.
+
+### Configuration
+
+Every option, its default and what it does.
+
+#### The options that change behaviour
+
+- **`loader`** — where dictionaries come from. The default `jsonLoader()` reads
+  `/i18n/{language}.json`. Use a path for an `assets/` layout, `httpLoader` for an API,
+  `customLoader` for in-memory data. `httpLoader`/`remoteLoader` are lazy chunks; the
+  default stays in the main bundle because it runs before first paint.
+- **`switchStrategy`** — `'instant'` (default) flips the id immediately and the
+  dictionary follows; `'preload-first'` waits for the dictionary and keeps the old
+  language when loading fails. Choose `'preload-first'` when a flash of raw keys is worse
+  than a slower switch.
+- **`preload`** — `true` (default) loads the initial language during provider setup, and
+  SSR waits for it. `false` for apps that ship inline dictionaries or load by hand with
+  `loadTranslations()`.
+- **`fallbackLanguage`** — the second dictionary for keys missing from the current one.
+  It loads silently and its text is rendered with its own locale.
+- **`detectBrowser`** — `true` matches `navigator.languages` on the first visit; a stored
+  preference always wins.
+- **`persist` / `storageStrategy`** — whether and where an explicit switch is remembered.
+  `'cookie'` also works on the server, so the first paint matches the user's choice.
+- **`translations`** — inline seeds painted before any network load; a loader response
+  still wins.
+
+| Option               | Type                                          | Default                          | Meaning                                                                       |
+| -------------------- | --------------------------------------------- | -------------------------------- | ----------------------------------------------------------------------------- |
+| `languages`          | `readonly Language<T>[]`                      | —                                | Supported languages (`id`, `nativeName`, `dir`, optional `locale`).           |
+| `defaultLanguage`    | `T`                                           | first of `languages`             | Initial language on a first visit; must be a non-empty configured id.         |
+| `fallbackLanguage`   | `T`                                           | none                             | Second lookup dictionary; must be one of `languages`.                         |
+| `loader`             | `LoaderDescriptor<T>`                         | `jsonLoader()`                   | Dictionary source.                                                            |
+| `translations`       | `Partial<Record<T, Record<string, unknown>>>` | none                             | Inline seeds, painted before any network load; a loader response still wins.  |
+| `preload`            | `boolean`                                     | `true`                           | Load the initial language during provider setup.                              |
+| `detectBrowser`      | `boolean`                                     | `false`                          | Match `navigator.languages` on first visit (a stored choice wins).            |
+| `storageStrategy`    | `'local' \| 'session' \| 'cookie' \| 'none'`  | `'local'`                        | Persistence; `'cookie'` also works on the server through `REQUEST`.           |
+| `storageKey`         | `string`                                      | `'rivinia.i18n.language'`        | Storage key.                                                                  |
+| `switchStrategy`     | `'instant' \| 'preload-first'`                | `'instant'`                      | `'preload-first'` waits for the dictionary; a failure keeps the old language. |
+| `autoApplyDirection` | `boolean`                                     | `true`                           | Write `<html lang>` and `<html dir>`.                                         |
+| `onLoadError`        | `(language, error) => void`                   | none                             | Dictionary load failure. Initialization never rejects because of it.          |
+| `warnOnLoadError`    | `boolean`                                     | `isDevMode() && !onLoadError`    | `console.error` once per language when a dictionary fails to load.            |
+| `onMissingKey`       | `(event) => void`                             | none                             | Unresolved key; suppresses the default warning.                               |
+| `warnOnMissingKey`   | `boolean`                                     | `isDevMode() && !onMissingKey`   | `console.warn` once per key.                                                  |
+| `onMissingParam`     | `(event) => void`                             | none                             | Missing message argument; suppresses the default warning.                     |
+| `warnOnMissingParam` | `boolean`                                     | `isDevMode() && !onMissingParam` | `console.warn` once per (key, param).                                         |
+| `persist`            | `boolean`                                     | `true`                           | Persist the language after an explicit switch. First load writes nothing.     |
+| `viewTransition`     | `ViewTransitionConfig`                        | none                             | Document view transition on language change.                                  |
+
+The config is validated once at construction: `languages` must be a non-empty array with a
+non-empty, **unique** `id` per entry, and `defaultLanguage` / `fallbackLanguage` (when
+provided) must name one of those ids. Anything else throws a `[rivinia/i18n] …` error at
+bootstrap instead of degrading into an undefined current language.
+
+A repeated id written inline (`languages: [AR, EN, AR]`) is also a **compile error**:
+`provideRiviniaI18n` and `defineRiviniaI18n` require the property `duplicateLanguageId`,
+which only the type checker sees. The check reads the array literal, so it does not fire
+when the union is supplied explicitly (`provideRiviniaI18n<'ar' | 'en'>(…)`) or the list is
+hoisted into a variable — both forms still throw the runtime error above.
+
+### Translation API
+
+#### Signals
 
 | Signal                  | Type                                     | Meaning                                                 |
 | ----------------------- | ---------------------------------------- | ------------------------------------------------------- |
@@ -338,13 +596,13 @@ command is only replaced with `--force`.
 | `loadedTranslations`    | `Signal<Record<string, unknown>>`        | The active dictionary.                                  |
 | `missingKeys`           | `Signal<readonly string[]>`              | Unresolved keys, insertion order, deduplicated.         |
 
-### Methods
+#### Methods
 
 | Method                                     | Result                     | Notes                                                                                          |
 | ------------------------------------------ | -------------------------- | ---------------------------------------------------------------------------------------------- |
 | `translate(key, params?)`                  | `string`                   | Key lookup + ICU rendering.                                                                    |
 | `translate(key, defaultValue, params?)`    | `string`                   | A supplied `defaultValue` is not reported as missing.                                          |
-| `translate({ en: 'Hi', ar: 'أهلاً' })`     | `string`                   | Inline map: current → fallback → first value.                                                  |
+| `translate({ en: 'Hi', ar: 'أهلاً' })`     | `string`                   | Inline map: current → fallback → first value → `''`.                                           |
 | `t(key, params?)`                          | `Signal<string>`           | Same chain as a `computed`; params may be a function of signals.                               |
 | `setLanguage(id)` / `setLanguageAsync(id)` | `void` / `Promise<void>`   | Follows `switchStrategy`.                                                                      |
 | `toggle()` / `next()` / `previous()`       | `void`                     | `toggle()` flips the first two languages (dev warning with more); `next()`/`previous()` cycle. |
@@ -361,7 +619,7 @@ command is only replaced with `--force`.
 the service reads signals on every call — so prefer `t()` or component code for long
 lists.
 
-## ICU messages
+### ICU messages
 
 Supported subset (MF1): `{name}` interpolation, `{n, plural, …}` (with `offset:`),
 `{n, selectordinal, …}`, `{x, select, …}`, `#`, `{n, number[, style]}`,
@@ -396,7 +654,7 @@ Supported subset (MF1): `{name}` interpolation, `{n, plural, …}` (with `offset
 - Templates are compiled once into a cached AST, so a message rendered on every
   change-detection pass is not re-parsed.
 
-## Missing keys
+### Missing keys
 
 A key is missing only when it is absent from the current dictionary, absent from the
 fallback dictionary, and no `defaultValue` was supplied. It is reported **once per key
@@ -422,7 +680,7 @@ provideRiviniaI18n({
 Without `onMissingKey`, a `console.warn` is logged once per key in dev mode. Set
 `warnOnMissingKey: false` to silence it, or `true` to keep it in production.
 
-## Missing parameters
+### Missing parameters
 
 A message that needs `{name}` but receives no `name` keeps the placeholder — it is
 never replaced with `undefined`. Report it the same way as missing keys:
@@ -438,7 +696,7 @@ Without `onMissingParam`, dev mode logs one warning per (key, param) pair. Set
 `warnOnMissingParam: false` to silence it. The hook is delivered from a microtask,
 so it may write signals, and `i18n.clearMissingParams()` resets the dedupe.
 
-## Fallback language
+### Fallback language
 
 Lookup order for `translate(key)`:
 
@@ -456,7 +714,7 @@ the current dictionary is what the UI needs. It is transferred with the rest of 
 so hydration does not fetch it again. With `preload: false`, the fallback works from
 cache/inline dictionaries only.
 
-## Load failures
+### Load failures
 
 A dictionary that fails to load leaves **every** key unresolved, so the page renders raw
 key names. Initialization never rejects: the failure lands on `loadingState` and
@@ -476,7 +734,7 @@ dev mode, so a retry loop cannot flood the console. Set `warnOnLoadError: false`
 silence it, or `true` to keep it in production. A failing fallback dictionary is reported
 the same way but never flips `loadingState` (see [Fallback language](#fallback-language)).
 
-## Reloading a dictionary
+### Reloading a dictionary
 
 ```ts
 await i18n.reload(); // current + fallback; drops every other cached language
@@ -495,7 +753,7 @@ A typical deploy hook:
 window.addEventListener('focus', () => void i18n.reload());
 ```
 
-## `t()` signals
+### `t()` signals
 
 ```ts
 readonly title = this.i18n.t('app.title');
@@ -510,7 +768,7 @@ in a microtask because Angular forbids signal writes inside a `computed`.
 Use it for component fields. For a template expression that runs on every change
 detection, `translate()` or the pipe is cheaper.
 
-## Typed keys
+### Typed keys reference
 
 The registry is empty by default, so `RegisteredI18nKey` resolves to `string` and nothing
 breaks. Generate the declaration from a dictionary to make a typo a compile error:
@@ -553,10 +811,10 @@ the base string but absent from the translation. Placeholders inside plural/sele
 branches are compared too; branch text itself is never read as a parameter. Any
 mismatch exits 1, so CI fails on the common "added to `en.json`, forgot `ar.json`" bug.
 
-## The language toggle — `@rivinia/i18n/ui`
+### Toggle reference
 
-A second entry point ships a two-language toggle and the template that replaces its
-default label:
+The `@rivinia/i18n/ui` entry point ships a two-language toggle and the template that
+replaces its default label:
 
 ```ts
 import { RiviniaLanguageToggle, RiviniaLanguageTrigger } from '@rivinia/i18n/ui';
@@ -575,7 +833,7 @@ accessible name, `lang` and `dir`, so the name is pronounced and laid out in its
 language even when the page runs the other direction. The host element is the API: write
 `<rv-language-toggle>`, style through the hooks below, and never reach for the button.
 
-### Managed, with `RiviniaI18n`
+#### Managed, with `RiviniaI18n`
 
 `RiviniaI18n` satisfies `RiviniaLanguageManager` structurally, so pass the service
 directly. Managed state wins: `[languages]`, `[current]` and `[busy]` are ignored while
@@ -618,7 +876,7 @@ rendered as:
 `label` is never translated for you — the UI entry point imports core types only, so the
 app passes an already translated string (a `t()` signal re-renders on a language switch).
 
-### Presentational, without a manager
+#### Presentational, without a manager
 
 ```html
 <rv-language-toggle
@@ -634,7 +892,7 @@ With no manager, `languages` + `current` describe the state, `busy` supplies the
 state, and `languageChange` is the only side effect. Presentational mode is synchronous:
 there is nothing to await, so the event fires on activation.
 
-### The icon
+#### The icon
 
 The button leads with a mark: a globe drawn in `currentColor`, so it inherits the
 button's colour, hover, active and disabled states without extra styling. It is
@@ -676,7 +934,7 @@ Two constraints come from that box:
 A consumer icon drawn inside `rvLanguageTrigger` instead of `[icon]` sits after the
 button's own mark, so pass `[icon]` when replacing it.
 
-### With a trigger template
+#### With a trigger template
 
 `rvLanguageTrigger` replaces the default name span inside the button. The template
 receives the target entry as `$implicit` and `busy`, and inherits the button's `lang` and
@@ -717,7 +975,7 @@ character of an LTR fragment a comma is pushed to the far edge of an RTL button,
 the name it closes, and the button's `gap` then separates it from that name in both
 directions. The proof page under `projects/i18n-e2e` renders exactly this case.
 
-### Inputs and output
+#### Inputs and output
 
 | Input       | Type                      | Default | Meaning                                                                     |
 | ----------- | ------------------------- | ------- | --------------------------------------------------------------------------- |
@@ -734,7 +992,7 @@ directions. The proof page under `projects/i18n-e2e` renders exactly this case.
 `LanguageLike` is `{ id, nativeName?, dir?, locale? }`: `dir` absent renders `dir="auto"`,
 and `locale` is what Intl.DisplayNames uses when `nativeName` is missing.
 
-### Two languages exactly
+#### Two languages exactly
 
 | `languages().length` | Renders                                                          |
 | -------------------- | ---------------------------------------------------------------- |
@@ -748,7 +1006,7 @@ user can reach it and learn that the shape is wrong for the data; the count guar
 wins over a transient busy state, so the verdict does not alternate. Use a select, a menu,
 or your own control for three or more languages.
 
-### Busy, failure and the emission contract
+#### Busy, failure and the emission contract
 
 - **Busy is announced, not asserted away.** While the manager reports
   `loadingState() === 'loading'` (or `[busy]` is true, presentational) the button carries
@@ -770,7 +1028,7 @@ or your own control for three or more languages.
   with `'instant'` still gets the preload-first path through this control — that is what
   makes the confirmation above meaningful.
 
-### SSR and the language name
+#### SSR and the language name
 
 The component renders the same markup on the server and touches no browser global. The
 name resolves as `nativeName` → Intl.DisplayNames → the raw id, cached per
@@ -778,7 +1036,7 @@ name resolves as `nativeName` → Intl.DisplayNames → the raw id, cached per
 browser's: it short-circuits the lookup, so the server HTML and the first client render
 cannot disagree.
 
-### Styling
+#### Styling
 
 Sizes are `rem`, properties are logical, and every token falls back to a `--rv-*`
 semantic value. Override the custom property, not the declaration:
@@ -823,7 +1081,7 @@ With 0 or 1 languages the host is empty and carries no `data-*` attribute at all
 `[data-languages]` selector has nothing to match by design. There is no error state to
 style.
 
-### Recipes: inside a menu or beside a select (Experimental, untested)
+#### Recipes: inside a menu or beside a select (Experimental, untested)
 
 Neither recipe is covered by this release's test matrix; the select in particular is the
 supported shape for three or more languages, not something the toggle turns into.
@@ -847,7 +1105,7 @@ supported shape for three or more languages, not something the toggle turns into
   `@rivinia/select/ui` ships a richer popup if the native control is not enough; using it
   with this service is **untested**.
 
-### No flags
+#### No flags
 
 The library ships one neutral mark — a globe — and no flag imagery. Flag icons for
 languages are politically ambiguous and the W3C i18n guidance recommends against them.
@@ -855,7 +1113,7 @@ A globe does not name a language it cannot represent, and it says "switch langua
 without saying which. An app that wants its own mark passes `[icon]`, or draws one
 inside `rvLanguageTrigger`; either way the accessible name is unaffected.
 
-## SSR
+### SSR reference
 
 The default loader works on the server: `REQUEST` plus `<base href>` produce an absolute
 URL, so Node's `fetch` never sees a relative path. The rendered dictionaries go into the
@@ -884,7 +1142,51 @@ A complete, runnable host lives in `projects/i18n-e2e` (`node:http` +
 `renderApplication`, no Express), with `e2e/ssr-smoke.mjs` asserting the raw HTML, the
 server log, the transfer payload, the absence of a client refetch, and hydration.
 
-## Migration: 0.5.0 → 0.6.0
+### Imports
+
+```ts
+import {
+  provideRiviniaI18n,
+  defineRiviniaI18n,
+  injectRiviniaI18n,
+  RiviniaI18n,
+  RvTranslatePipe,
+  jsonLoader,
+  httpLoader,
+  remoteLoader,
+  customLoader,
+  formatIcu,
+} from '@rivinia/i18n';
+```
+
+### API stability
+
+Every export is classified so the 1.0 freeze is predictable. **Internal** symbols
+exist only so the package's own tests can import them; they may move to an
+`@rivinia/i18n/internal` entry point (or disappear) before 1.0.
+
+| Export                                                                                         | Kind             | Tier         |
+| ---------------------------------------------------------------------------------------------- | ---------------- | ------------ |
+| `RiviniaI18n`                                                                                  | service          | Stable       |
+| `provideRiviniaI18n`, `defineRiviniaI18n`, `injectRiviniaI18n`                                 | providers        | Stable       |
+| `RvTranslatePipe` (`rvTranslate`)                                                              | pipe             | Stable       |
+| `RiviniaI18nConfig`                                                                            | type             | Stable       |
+| `Language`, `Direction`, `Translation`, `TranslateParams`, `StorageStrategy`, `SwitchStrategy` | types            | Stable       |
+| `RiviniaLoadError`                                                                             | class            | Stable       |
+| `MissingKeyEvent`, `MissingParamEvent`                                                         | types            | Stable       |
+| `TranslationLoader`, `LoaderDescriptor`, `LoaderContext`                                       | types            | Stable       |
+| `jsonLoader`, `httpLoader`, `remoteLoader`, `customLoader`                                     | loader factories | Stable       |
+| `HttpLoaderOptions`, `RemoteLoaderOptions`                                                     | types            | Stable       |
+| `formatIcu`, `IcuFormatOptions`                                                                | ICU API          | Stable       |
+| `RegisteredI18nKey`, `RiviniaI18nKeyRegistry`                                                  | typed-keys types | Stable       |
+| `ViewTransitionConfig`, `ViewTransitionInfo`                                                   | types            | Experimental |
+| `ViewTransitionService`                                                                        | service          | Internal     |
+| `parseCookie`, `serializeCookie`                                                               | cookie helpers   | Internal     |
+| `browserLanguages`, `detectBrowserLanguage`                                                    | helpers          | Internal     |
+| `RiviniaLanguageToggle` (`rv-language-toggle`), `RiviniaLanguageTrigger` (`rvLanguageTrigger`) | `/ui` components | Experimental |
+| `RiviniaLanguageManager`, `LanguageLike`, `RiviniaLanguageTriggerContext`                      | `/ui` types      | Experimental |
+
+### Migration 0.5.0 to 0.6.0
 
 0.6.0 is a breaking minor (the pre-1.0 policy allows it). The core split (RIV-18) is
 internal — no signature changed — but three compatibility names are gone:
@@ -904,7 +1206,7 @@ internal — no signature changed — but three compatibility names are gone:
 3. **`loadTranslations(id, { silent })` is now `loadTranslations(id)`.** `silent` never
    did anything — background loads are an internal concern.
 
-## Migration: 0.3.3 → 0.4.0
+### Migration 0.3.3 to 0.4.0
 
 Everything below is additive; no export was removed and no import path changed. Two
 behaviour changes are worth reading:
@@ -925,6 +1227,6 @@ New in 0.4.0: `fallbackLanguage`, `onMissingKey`, `warnOnMissingKey`, `missingKe
 moved (models/services/utils/providers/pipes) but nothing under `src/` was ever
 exported.
 
-## License
+### License
 
 MIT.

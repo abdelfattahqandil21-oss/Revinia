@@ -45,6 +45,12 @@ documentation fix.
   explicit `<L>` union or a hoisted list still compiles and is caught by the runtime check.
   Call sites that already compiled are unaffected — the extra parameter is `const` and
   defaulted, so inference is unchanged.
+- **The README is organized in three levels.** _Start here_ (install, generate the list,
+  first translation), _Everyday use_ (translating, plurals, switching, dictionaries,
+  toggle, SSR) and _Reference_ (every option, loader, ICU rule, UI input, export tier and
+  migration). The new part teaches ICU pluralization from a wrong `count === 1` check
+  through the six Arabic categories and the difference between `=0` and `zero`; no
+  previous detail was dropped. Documentation only.
 
 ## 0.7.0 - 2026-10-29
 
