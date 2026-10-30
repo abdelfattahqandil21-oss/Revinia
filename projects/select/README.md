@@ -386,21 +386,31 @@ selection, set `mode="multi"` and use a `readonly string[]` model/control value.
 `new RiviniaSelect('multi')` is opaque to Angular: it cannot be overridden in
 a test and it is invisible to the injector graph. A root singleton would be
 wrong — the controller is per-select state — so the provider form is used
-instead:
+instead. The provider **creates** the controller in its injector; `rv-select`
+never looks it up, so you bind it explicitly with `[select]`:
 
 ```ts
 import { Component, inject, signal } from '@angular/core';
-import { injectRiviniaSelect, provideRiviniaSelect } from '@rivinia/select';
+import {
+  injectRiviniaSelect,
+  provideRiviniaSelect,
+  type RiviniaSelectOption,
+} from '@rivinia/select';
 
 @Component({
   providers: [provideRiviniaSelect('multi')],
-  template: `<rv-select [options]="options()" />`,
+  template: `<rv-select [select]="controller" [options]="options()" />`,
 })
 export class TagPicker {
   readonly controller = injectRiviniaSelect();
   readonly options = signal<readonly RiviniaSelectOption[]>([]);
 }
 ```
+
+One provider is one controller per injector. Two independent selects need two
+injectors (component-level `providers`) or the constructor — that is also why
+`rv-select` does not inject the token itself: an implicit lookup would hand the
+same instance to every select below the provider.
 
 A test replaces it without touching the component:
 
@@ -412,6 +422,19 @@ TestBed.configureTestingModule({
 
 `injectRiviniaSelect()` throws when nothing is provided, rather than handing
 back `undefined` and failing much later somewhere unrelated.
+
+### Ownership rules
+
+- **No `[select]`** — the component owns a controller and `mode` selects it.
+  Independent selects have independent state.
+- **`[select]`** — the external controller is authoritative, including its
+  `mode`; the `mode` input is ignored. Bind the injected controller with
+  `[select]="controller"`.
+- **Sharing one controller** across components is supported when they represent
+  one logical value (usually both binding the same `[(value)]`). They then share
+  selection and query, keep their own panels, and share one option registry —
+  the last component to mirror `options` wins. Unrelated selects with different
+  lists need separate controllers.
 
 **Registered options are frozen.** `readonly` on `RiviniaSelectOption` is a
 compile-time promise only; an option that could be mutated after registration
