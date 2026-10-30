@@ -20,6 +20,24 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
         --rv-select-border: rgb(56, 189, 248);
         --rv-select-radius: 4px;
       }
+      /*
+       * Sizing fixtures. The design minimum is 10rem (160px): the floor is
+       * capped by the container, so below it the container wins. Each cell
+       * pins one side of that claim — comfortable, at the minimum, and below
+       * it — and none of them may overflow.
+       */
+      .size-cell {
+        margin-bottom: 1rem;
+      }
+      .size-cell--wide {
+        width: 480px;
+      }
+      .size-cell--160 {
+        width: 160px;
+      }
+      .size-cell--120 {
+        width: 120px;
+      }
     `,
   ],
   template: `
@@ -73,6 +91,17 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
       </div>
     </div>
     <p data-testid="rtl-value">value={{ rtlValue() }}</p>
+
+    <h2>Sizing</h2>
+    <div class="size-cell size-cell--wide">
+      <rv-select id="size-wide" [options]="shortOptions" />
+    </div>
+    <div class="size-cell size-cell--160">
+      <rv-select id="size-160" [options]="shortOptions" />
+    </div>
+    <div class="size-cell size-cell--120">
+      <rv-select id="size-120" [options]="longOptions" />
+    </div>
   `,
 })
 export class SelectPage {
@@ -93,5 +122,7 @@ export class SelectPage {
     { id: 'member', label: 'Member' },
   ];
   readonly rtlValue = signal<string | null>(null);
+  readonly shortOptions = [{ id: 'paid', label: 'Paid' }];
+  readonly longOptions = [{ id: 'outstanding', label: 'Outstanding invoices' }];
   readonly unusedController = new RiviniaSelect('single');
 }

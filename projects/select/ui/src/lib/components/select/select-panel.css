@@ -91,8 +91,11 @@ rv-select {
   /*
    * Fill the select. The floor lives on the host (see the rule above); the
    * button must stay its width or the panel, which follows the trigger, would
-   * be narrower than the control the user clicked.
+   * be narrower than the control the user clicked. `border-box` is part of
+   * that claim: with the default content-box the 1px borders made the button
+   * wider than the select, and the panel followed the button.
    */
+  box-sizing: border-box;
   width: 100%;
   max-width: 100%;
   padding: var(--rv-select-trigger-padding, 0.5rem 0.75rem);

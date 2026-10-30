@@ -2519,9 +2519,19 @@ Three defects, all found by a consumer using the packages.
   an indefinite width and collapsed to 0 — measured 103px where 14rem was
   documented, and only a select in a grid cell (a definite width) honoured it.
   The host's containing block is the consumer's layout, where the percentage is
-  a real width. A container narrower than the floor shrinks both together and
-  the labels wrap — the "narrow panel" is now intended behaviour, which is why
-  the e2e asserts equality instead of a minimum.
+  a real width. The trigger is `border-box`: `width: 100%` with content-box
+  borders made it 2px wider than the select, and the panel followed. A
+  container narrower than the floor shrinks both together and the labels wrap
+  — the "narrow panel" is now intended behaviour, which is why the e2e asserts
+  equality instead of a minimum.
+- **Design minimum: 10rem.** Measured on the packed tarball, rows stay on one
+  line down to a 160px container (40px rows) and start wrapping below it —
+  55px at 128, 94px at 112, 114px at 96 — while the trigger value truncates
+  with an ellipsis. So 160px is the width where the shape holds; below it the
+  container wins. Deliberately no hard floor: a fixed minimum would overflow a
+  narrower cell and bring back the page-level horizontal scroll this release
+  removed. The control's own intrinsic minimum is ~103px (padding, gap and
+  chevron), and even there the panel matches it and the page does not scroll.
 - **The platform finding: `position-area` is ICB-relative.** Span keywords
   (`span-inline-start`/`-end`) resolve against the containing block, and a
   top-layer popover's containing block is the ICB — `<html>`'s direction, not
@@ -2539,9 +2549,14 @@ Three defects, all found by a consumer using the packages.
   over computed direction, so an LTR document with an RTL section was placed as
   LTR there too. It reads the component's computed direction now.
 - **Coverage.** 78 unit tests (the new contracts in `tests/panel-metrics.spec.ts`
-  pin the width ownership, the span-variable swap and the placement wiring) and
-  138/138 e2e — 46 cases × Chromium 156, Firefox 157, WebKit 27.2 — against the
-  packed tarball installed in the consumer fixture, on a scratch port.
+  pin the width ownership, the span-variable swap and the placement wiring);
+  13/13 repo e2e cases × Chromium 156, Firefox 157, WebKit 27.2 (39/39) —
+  including three new sizing cases at 480px, 160px and 120px; and the tarball
+  matrix, 138/138 (46 cases × 3 engines), installed in the consumer fixture on
+  a scratch port. WebKit runs headed here: the headless WPE build in the local
+  Playwright cache fails to load `libavif.so.16`, while the GTK build used
+  headed starts fine. That is an environment limitation, surfaced as not-green
+  rather than hidden.
 
 ## 2026-10-30 — D74: `@rivinia/i18n@0.7.1` LIVE — 0.7.0 folded in, and web auth instead of `--otp`
 

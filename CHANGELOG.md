@@ -25,9 +25,15 @@ Firefox and WebKit against the published 0.6.1 bytes.
   the trigger's width in every path — the anchor path already did that with
   `anchor-size(inline)` and the primitive's floor was overriding it. A
   container narrower than the floor shrinks both together and the labels wrap.
+  The floor is capped by the container on purpose: 10rem (160px) is the
+  smallest width that still fits a row on one line, and below it the select
+  shrinks with its cell (measured 55–114px rows between 128px and 96px)
+  instead of overflowing. The README now states that minimum.
   The panel is also `border-box` in every engine now — Firefox used to be 14px
   wider than the trigger it was aligned to — and the JS path no longer writes
-  `min-width: 0` inline.
+  `min-width: 0` inline. The trigger is `border-box` for the same reason:
+  `width: 100%` plus its 1px borders had made the button 2px wider than the
+  select it fills, and the panel followed the button.
 - **The width floor never applied off the grid.** The trigger's `min-width` was
   `min(--rv-select-width, 100%)`, but its containing block is a chain of
   shrink-to-fit boxes, so the percentage collapsed and the button sized itself

@@ -1046,6 +1046,14 @@ string wraps instead of widening the panel), and the panel never scrolls
 sideways: long lists scroll **vertically** only. In a container narrower than
 the floor both shrink together and the labels wrap.
 
+**The smallest width that keeps the shape is 10rem (160px).** At 160px a row
+still fits on one line; below that the container wins and labels wrap to two
+or three lines (measured 55–114px rows between 128px and 96px) while the
+trigger value truncates with an ellipsis. The trigger stops shrinking around
+103px — width of the padding, the gap and the chevron — so that is the hard
+floor of the control itself. Nothing ever overflows its container: if the
+cell is narrower than the padding, the page stays put.
+
 **No forced dark mode** — there is no `prefers-color-scheme` block anywhere in
 the package, so a component can never override your explicit choice.
 

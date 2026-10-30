@@ -64,6 +64,9 @@ describe('select panel metrics', () => {
       'min(var(--rv-select-width, 14rem), 100%)',
     );
     expect(declaration(select, '.rv-select-trigger', 'width')).toBe('100%');
+    // `width: 100%` and a 1px border only add up to the select in border-box;
+    // in content-box the button overflowed it by 2px and the panel followed.
+    expect(declaration(select, '.rv-select-trigger', 'box-sizing')).toBe('border-box');
 
     // A standalone popup has no trigger to follow, so it keeps its own floor.
     const topLayer = declaration(
