@@ -421,6 +421,7 @@ export class SelectPopupComponent {
         this.positioned.set(true);
         return;
       }
+      this.mirrorAnchorInline(root);
       popover.showPopover();
       const trigger = this.triggerEl()?.getBoundingClientRect();
       if (!trigger) {
@@ -428,9 +429,10 @@ export class SelectPopupComponent {
         return;
       }
       // The JS positioning path is used where CSS anchor placement is not
-      // enabled. Keep the select popup trigger-sized in that path as well.
+      // enabled. Keep the select popup trigger-sized in that path as well; the
+      // stylesheet's min-width still sets the floor, so `offsetWidth` below is
+      // measured after that floor has been applied.
       root.style.width = `${trigger.width}px`;
-      root.style.minWidth = '0';
       const at = computeSelectPopupPosition(
         { left: trigger.left, top: trigger.top, width: trigger.width, height: trigger.height },
         { width: root.offsetWidth, height: root.offsetHeight },
@@ -447,11 +449,37 @@ export class SelectPopupComponent {
     }
   }
 
+  /**
+   * Flags a direction mismatch between the component and the document root.
+   *
+   * `position-area` span keywords resolve against the element's containing
+   * block, and a top-layer popover's containing block is the ICB — the root
+   * element's direction. A `dir="rtl"` select inside an LTR document therefore
+   * gets a mirrored area (measured: panel 649..905 with its trigger at
+   * 649..752, left edges aligned, where right-edge alignment 496..752 is
+   * correct). The stylesheet swaps the inline span keyword when this attribute
+   * is present.
+   *
+   * `:dir()` cannot express this: it follows the HTML `dir` attribute, so a
+   * wrapper styled with the `direction` PROPERTY leaves `:dir()` reporting the
+   * inherited directionality (measured in Chromium and WebKit).
+   */
+  private mirrorAnchorInline(root: HTMLElement): void {
+    try {
+      const rootDir = getComputedStyle(document.documentElement).direction;
+      const selfDir = getComputedStyle(this.self.nativeElement).direction;
+      if (rootDir === selfDir) root.removeAttribute('data-inline-mirror');
+      else root.setAttribute('data-inline-mirror', '');
+    } catch {
+      root.removeAttribute('data-inline-mirror');
+    }
+  }
+
   private isRtl(): boolean {
     try {
-      const doc = typeof document === 'undefined' ? null : document.documentElement;
-      if (doc?.dir === 'rtl') return true;
-      if (doc?.dir === 'ltr') return false;
+      // Computed, not `document.documentElement.dir`: a select can sit in an
+      // opposite-direction subtree (`dir="rtl"` form inside an LTR app), and
+      // `-start`/`-end` must follow the select, not the document.
       return getComputedStyle(this.self.nativeElement).direction === 'rtl';
     } catch {
       return false;

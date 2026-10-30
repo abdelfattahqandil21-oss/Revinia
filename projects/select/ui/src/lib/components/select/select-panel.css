@@ -2,6 +2,20 @@ rv-select {
   display: inline-block;
 }
 /*
+ * SEL-01: the CSS anchor path used to anchor to `.rv-select-popup-trigger`,
+ * the full-width hit area (`width: 100%`), while the JS path measures the
+ * button inside it. In a cell wider than the button the two disagree by the
+ * leftover width — measured 128px on a 352px cell with a 224px button — so
+ * `*-end` panels sat off the button. Anchor the element that is visible and
+ * take the name off the wrapper.
+ */
+.rv-select .rv-select-popup-trigger {
+  anchor-name: none;
+}
+.rv-select .rv-select-trigger {
+  anchor-name: --rv-select-popup-anchor;
+}
+/*
  * Theming boundary.
  *
  * The opened panel is rendered by the vendored popup primitives, whose surface paints
@@ -108,6 +122,17 @@ rv-select {
   height: 16px;
   flex: none;
   margin-inline-start: auto;
+}
+/*
+ * The row label is the only part of a row allowed to give. `min-width: 0` is
+ * what lets a flex item shrink below its longest word; `overflow-wrap` then
+ * breaks a word that cannot fit. Together they keep every row inside the
+ * panel, which is what stops the panel from scrolling sideways.
+ */
+.rv-select-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .rv-select-hint {
   flex: none;

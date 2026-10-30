@@ -2492,6 +2492,43 @@ Three defects, all found by a consumer using the packages.
 - **Versioning.** 0.7.1 — additive command; `--source`/`--out`/`--check`/`--parity` are
   unchanged.
 
+## 2026-10-30 — D75: select panel metrics, and `position-area` resolves against the ICB
+
+- **What shipped.** `@rivinia/select` 0.6.2 (prepared, unpublished): the panel
+  no longer scrolls horizontally, a narrow trigger no longer collapses the panel
+  below its width floor, `*-end` placements sit on the trigger button, RTL
+  panels align in a mixed-direction page, and the README's ARIA section was
+  rewritten from the measured DOM.
+- **Panel metrics.** Rows were `width: 100%` in a content box, so padding pushed
+  every row past the panel: `scrollWidth` 105–118 against `clientWidth` 101, and
+  `overflow-y: auto` turned that into a horizontal scrollbar. Rows are
+  `border-box` with `min-width: 0` and `overflow-wrap: anywhere`; the panel is
+  `overflow-x: hidden` with a `border-box` of its own. The top-layer panel sets
+  `min-width: min(var(--rv-select-popup-width, 16rem), calc(100dvw - 2rem))`
+  (a 103px trigger used to open a 103px panel) and the JS path stopped writing
+  `min-width: 0` inline. Everything measured identical in Chromium 156, Firefox
+  157 and WebKit 27.2 after the fix.
+- **The platform finding: `position-area` is ICB-relative.** Span keywords
+  (`span-inline-start`/`-end`) resolve against the containing block, and a
+  top-layer popover's containing block is the ICB — `<html>`'s direction, not
+  the panel's. A `dir="rtl"` select inside an LTR document opened at 649..905
+  (left edges aligned to a 649..752 trigger) where 496..752 is correct;
+  `flip-inline` does not help because nothing overflows. The component compares
+  its own computed direction with `document.documentElement`'s and sets
+  `data-inline-mirror`, which swaps a pair of custom properties the four
+  placement rules read. `:dir()` cannot do this: it follows the HTML `dir`
+  attribute, so a `direction: rtl` wrapper leaves `:dir()` reporting `ltr`
+  (measured in Chromium and WebKit). Physical keywords would sidestep it but
+  `CSS.supports('position-area', 'block-end span-right')` is false in both
+  engines, and an unsupported value is dropped silently.
+- **Same finding in the JS path.** `isRtl()` preferred `document.documentElement.dir`
+  over computed direction, so an LTR document with an RTL section was placed as
+  LTR there too. It reads the component's computed direction now.
+- **Coverage.** 78 unit tests (two new contracts in `tests/panel-metrics.spec.ts`
+  pin the span-variable swap and the placement wiring) and 138/138 e2e —
+  46 cases × Chromium, Firefox, WebKit — against the packed tarball installed in
+  the consumer fixture, on a scratch port.
+
 ## 2026-10-30 — D74: `@rivinia/i18n@0.7.1` LIVE — 0.7.0 folded in, and web auth instead of `--otp`
 
 - **What shipped.** 0.7.0 was merged (`70b1ad6`) but never published; with no users
