@@ -13,7 +13,7 @@ import {
   signal,
 } from '@angular/core';
 import type { SelectPopupController, SelectPopupItemData } from '../../models/select-popup.types';
-import type { SelectPopupUiPlacement } from '../../models/select-popup.ui-types';
+import type { RiviniaSelectVariant, SelectPopupUiPlacement } from '../../models/select-popup.ui-types';
 import { SelectPopupControllerImpl } from '../../services/select-popup';
 import { computeSelectPopupPosition } from '../../utils/select-popup-position';
 
@@ -164,6 +164,9 @@ export class SelectPopupItem {
   imports: [SelectPopupItem],
   templateUrl: './select-popup.html',
   styleUrl: './select-popup.css',
+  host: {
+    '[attr.data-variant]': 'variant()',
+  },
 })
 export class SelectPopupComponent {
   /**
@@ -171,6 +174,13 @@ export class SelectPopupComponent {
    * a private one (simplest embedding).
    */
   readonly popup = input<SelectPopupController | null>(null);
+  /**
+   * Appearance skin, reflected as `data-variant` on this host. `simple` is the
+   * original look; `premium` restyles the panel, its rows and its scrollbar.
+   * The select passes its own value down, so one flag skins both surfaces.
+   * @default 'simple'
+   */
+  readonly variant = input<RiviniaSelectVariant>('simple');
   /** Panel placement relative to the trigger. @default 'bottom-start' */
   readonly placement = input<SelectPopupUiPlacement>('bottom-start');
   /**

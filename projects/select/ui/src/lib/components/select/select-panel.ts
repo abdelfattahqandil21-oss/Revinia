@@ -18,7 +18,10 @@ import {
 } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { SelectPopupControllerImpl } from '../../services/select-popup';
-import type { SelectPopupUiPlacement } from '../../models/select-popup.ui-types';
+import type {
+  RiviniaSelectVariant,
+  SelectPopupUiPlacement,
+} from '../../models/select-popup.ui-types';
 import { SelectPopupComponent, SelectPopupItem } from '../popup/select-popup';
 import { RiviniaSelect } from '@rivinia/select';
 import type { RiviniaSelectController, RiviniaSelectMode, RiviniaSelectOption } from '@rivinia/select';
@@ -69,6 +72,9 @@ class SelectLabelIdGenerator {
   encapsulation: ViewEncapsulation.None,
   templateUrl: './select-panel.html',
   styleUrl: './select-panel.css',
+  host: {
+    '[attr.data-variant]': 'variant()',
+  },
 })
 export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
   /**
@@ -83,6 +89,14 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
    * external controller is authoritative for its own mode. @default 'single'
    */
   readonly mode = input<RiviniaSelectMode>('single');
+  /**
+   * Appearance skin. `simple` is the original look; `premium` adds the lifted
+   * trigger, the longer origin-aware open, the styled scrollbar and the loading
+   * skeleton. Reflected as `data-variant` on this host and passed to the panel,
+   * so one flag skins both surfaces.
+   * @default 'simple'
+   */
+  readonly variant = input<RiviniaSelectVariant>('simple');
   /** Option data; labels double as the search index. */
   readonly options = input<readonly RiviniaSelectOption[]>([]);
   /** Show the filter box. @default false */

@@ -331,10 +331,74 @@ rv-select-popup {
   .rv-select-popup-panel {
     animation: none;
   }
+  .rv-select-popup-panel [rvselectpopupitem] {
+    transition: none;
+  }
 }
 @keyframes rv-select-popup-in {
   from {
     opacity: 0;
-    transform: translateY(var(--rv-select-popup-from-y, -0.375rem)) scale(0.96);
+    transform: translateY(var(--rv-select-popup-from-y, -0.375rem))
+      scale(var(--rv-select-popup-from-scale, 0.96));
   }
+}
+/*
+ * PREMIUM — all of it behind the flag; `simple` matches none of these.
+ *
+ * Every value is a var() fallback, so a consumer's --rv-select-popup-* /
+ * --rv-border and a select's own --rv-select-* mapping (declared on this panel
+ * in select-panel.css) still win, and the two skins can never fight: exactly
+ * one selector matches.
+ *
+ * Motion is the dropdown pair from the design token scale — 250ms, ease
+ * 0.22/1/0.36/1, scale 0.97, 4px — not the simple skin's 160ms / 0.96 / 6px.
+ * Origin still follows data-placement above. Deliberately no close animation
+ * (SPEC §4): a leaving panel would stay a top-layer box swallowing clicks, and
+ * a quick reopen could pick the leaving element up again.
+ */
+rv-select-popup[data-variant='premium'] .rv-select-popup-panel {
+  --rv-select-popup-duration: 250ms;
+  --rv-select-popup-easing: cubic-bezier(0.22, 1, 0.36, 1);
+  --rv-select-popup-from-scale: 0.97;
+  --rv-select-popup-from-y: -0.25rem;
+  border-radius: var(--rv-select-popup-radius, var(--rv-select-radius, var(--rv-radius, 0.875rem)));
+  border-color: var(
+    --rv-select-popup-border,
+    var(--rv-select-border, var(--rv-border, color-mix(in srgb, currentColor 10%, transparent)))
+  );
+  /* Ambient + contact layer, both offset: depth without the simple skin's
+     single heavy drop. */
+  box-shadow: var(
+    --rv-select-popup-shadow,
+    var(
+      --rv-select-shadow,
+      var(--rv-shadow, 0 12px 32px -8px rgba(16, 24, 40, 0.18), 0 4px 8px -4px rgba(16, 24, 40, 0.1))
+    )
+  );
+  padding: var(--rv-select-popup-pad, 0.3125rem);
+  max-height: var(--rv-select-popup-max-height, min(22rem, calc(100dvh - 2rem)));
+  /* Standard properties only: Chromium ignores ::-webkit-scrollbar once
+     scrollbar-color is set; macOS overlay bars ignore both. */
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, currentColor 22%, transparent) transparent;
+}
+rv-select-popup[data-variant='premium'] .rv-select-popup-panel[data-placement='top-start'],
+rv-select-popup[data-variant='premium'] .rv-select-popup-panel[data-placement='top-end'] {
+  /* Opens upward: starts 4px below rest, same distance. */
+  --rv-select-popup-from-y: 0.25rem;
+}
+/* Hover in fast (150ms), out slow (250ms): the row settles, no JS. */
+rv-select-popup[data-variant='premium'] .rv-select-popup-panel [rvselectpopupitem] {
+  transition: background-color 250ms var(--rv-select-popup-easing, cubic-bezier(0.22, 1, 0.36, 1));
+}
+rv-select-popup[data-variant='premium'] .rv-select-popup-panel [rvselectpopupitem]:hover {
+  background: var(--rv-select-item-hover-bg, color-mix(in srgb, currentColor 5%, transparent));
+  transition-duration: 150ms;
+}
+rv-select-popup[data-variant='premium'] .rv-select-popup-panel [rvselectpopupitem][data-active='true'] {
+  background: var(--rv-select-item-active-bg, color-mix(in srgb, currentColor 7%, transparent));
+}
+rv-select-popup[data-variant='premium'] .rv-select-popup-panel [rvselectpopupitem]:focus-visible {
+  outline: var(--rv-select-focus-ring, 2px solid color-mix(in srgb, currentColor 55%, transparent));
+  outline-offset: -2px;
 }

@@ -59,6 +59,23 @@ rv-select {
   --rv-select-popup-font: var(--rv-select-font, system-ui, -apple-system, 'Segoe UI', sans-serif);
 }
 /*
+ * PREMIUM panel defaults — the select side of the theming boundary. Declared
+ * here because inside a select these tokens exist, and a declared value beats
+ * the popup's fallback; every consumer token still wins through the chain.
+ */
+rv-select[data-variant='premium'] .rv-select-popup-panel {
+  --rv-select-popup-radius: var(--rv-select-radius, var(--rv-radius, 0.875rem));
+  --rv-select-popup-border: var(
+    --rv-select-border,
+    var(--rv-border, color-mix(in srgb, var(--rv-select-fg, #111111) 10%, transparent))
+  );
+  --rv-select-popup-shadow: var(
+    --rv-select-shadow,
+    var(--rv-shadow, 0 12px 32px -8px rgba(16, 24, 40, 0.18), 0 4px 8px -4px rgba(16, 24, 40, 0.1))
+  );
+  --rv-select-popup-pad: var(--rv-select-panel-padding, 0.3125rem);
+}
+/*
  * One control, one width.
  *
  * Every path already gives the panel the trigger's width: `anchor-size(inline)`
@@ -114,6 +131,36 @@ rv-select {
 .rv-select-trigger[aria-invalid='true'] {
   border-color: var(--rv-select-error, var(--rv-danger, #dc2626));
 }
+/*
+ * PREMIUM trigger. A 1px drop shadow is the whole lift: it separates the field
+ * from a white page without competing with the open panel's shadow. Hover
+ * deepens it and moves the border toward the text. 250ms out / 150ms in — the
+ * same asymmetry the rows use.
+ */
+rv-select[data-variant='premium'] .rv-select-trigger {
+  padding: var(--rv-select-trigger-padding, 0.5625rem 0.8125rem);
+  border-radius: var(--rv-select-radius, var(--rv-radius, 0.75rem));
+  border-color: var(--rv-select-border, var(--rv-border, color-mix(in srgb, currentColor 14%, transparent)));
+  box-shadow: var(--rv-select-trigger-shadow, 0 1px 2px rgba(16, 24, 40, 0.06));
+  transition:
+    box-shadow 250ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 250ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+rv-select[data-variant='premium'] .rv-select-trigger:not([disabled]):hover,
+rv-select[data-variant='premium'] .rv-select-trigger[data-open='true'] {
+  border-color: var(--rv-select-border, var(--rv-border, color-mix(in srgb, currentColor 22%, transparent)));
+  box-shadow: var(--rv-select-trigger-shadow, 0 2px 4px rgba(16, 24, 40, 0.08));
+  transition-duration: 150ms;
+}
+/* Restated: the premium hover rule outranks the shared invalid rule above. */
+rv-select[data-variant='premium'] .rv-select-trigger[aria-invalid='true'] {
+  border-color: var(--rv-select-error, var(--rv-danger, #dc2626));
+}
+/* The trigger had no visible focus ring of its own. */
+rv-select[data-variant='premium'] .rv-select-trigger:focus-visible {
+  outline: var(--rv-select-focus-ring, 2px solid color-mix(in srgb, currentColor 55%, transparent));
+  outline-offset: var(--rv-select-focus-offset, 2px);
+}
 .rv-select-value {
   flex: 1;
   overflow: hidden;
@@ -131,6 +178,9 @@ rv-select {
 }
 .rv-select-trigger[data-open='true'] .rv-select-chevron {
   transform: rotate(180deg);
+}
+rv-select[data-variant='premium'] .rv-select-chevron {
+  transition: transform 250ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 /*
  * The panel is the scrollport, so a plain first-child input scrolled away with
@@ -196,6 +246,30 @@ rv-select {
 .rv-select-search::placeholder {
   color: var(--rv-select-muted, var(--rv-muted, #555555));
 }
+/*
+ * PREMIUM search: a filled well, not a second bordered box inside a bordered
+ * panel. 4% of the foreground tints to the theme instead of assuming a light
+ * page; focus restores the surface colour and grows the ring. The placeholder
+ * is 55%, not the 45% that looks right — 45% is ~4.0:1 on white, below the
+ * 4.5:1 floor for body-sized text.
+ */
+rv-select[data-variant='premium'] .rv-select-search {
+  padding: var(--rv-select-search-padding, 0.5625rem 0.625rem);
+  border-color: transparent;
+  background: color-mix(in srgb, currentColor 4%, transparent);
+  transition:
+    background-color 150ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+rv-select[data-variant='premium'] .rv-select-search::placeholder {
+  color: color-mix(in srgb, currentColor 55%, transparent);
+}
+rv-select[data-variant='premium'] .rv-select-search:focus {
+  background: var(--rv-select-popup-bg, var(--rv-select-bg, var(--rv-bg, #ffffff)));
+  border-color: var(--rv-select-border, var(--rv-border, color-mix(in srgb, currentColor 22%, transparent)));
+  outline: var(--rv-select-focus-ring, 2px solid color-mix(in srgb, currentColor 55%, transparent));
+  outline-offset: -1px;
+}
 .rv-select-check {
   width: 16px;
   height: 16px;
@@ -239,8 +313,61 @@ rv-select {
   font-size: var(--rv-select-empty-size, 0.8125rem);
   color: var(--rv-select-muted, var(--rv-muted, #555555));
 }
+/* The skeleton markup is in the loading row in every skin; only premium paints
+   it. This rule is what keeps `simple` the row it was before the feature. */
+.rv-select-skeleton {
+  display: none;
+}
+rv-select[data-variant='premium'] .rv-select-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  padding: var(--rv-select-loading-padding, 0.625rem);
+}
+rv-select[data-variant='premium'] .rv-select-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+/* Unequal widths read as text that has not arrived; equal ones read as a table.
+   1.6s is a loop, not a token — the scale covers entrances. */
+rv-select[data-variant='premium'] .rv-select-skeleton > i {
+  display: block;
+  height: 0.625rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, currentColor 6%, transparent) 25%,
+    color-mix(in srgb, currentColor 12%, transparent) 37%,
+    color-mix(in srgb, currentColor 6%, transparent) 63%
+  );
+  background-size: 400% 100%;
+  animation: rv-select-shimmer 1.6s linear infinite;
+}
+rv-select[data-variant='premium'] .rv-select-skeleton > i:nth-child(2) {
+  width: 64%;
+}
+rv-select[data-variant='premium'] .rv-select-skeleton > i:nth-child(3) {
+  width: 73%;
+}
+@keyframes rv-select-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .rv-select-chevron {
     transition: none;
+  }
+  rv-select[data-variant='premium'] .rv-select-trigger,
+  rv-select[data-variant='premium'] .rv-select-search {
+    transition: none;
+  }
+  rv-select[data-variant='premium'] .rv-select-skeleton > i {
+    animation: none;
   }
 }
