@@ -2348,3 +2348,146 @@ Three defects, all found by a consumer using the packages.
 - **Versioning.** 0.7.0 — a pre-1.0 minor.
 - **Not done.** No version bump, tag or publish; no change outside `projects/i18n`
   except the `@rivinia/i18n/ui` path mapping in `tsconfig.json` and this entry.
+
+## 2026-10-29 — D69: a failed dictionary load is loud in dev, once per language
+
+- **The gap.** `warnOnMissingKey` and `warnOnMissingParam` both default to
+  `isDevMode() && !handler`, but a *dictionary* load failure — the case that leaves every
+  key unresolved and paints raw key names — had no default output at all: the error
+  reached `onLoadError` only when the consumer had configured it. The quietest failure was
+  the most severe one.
+- **Default.** New `warnOnLoadError?: boolean`, `@default isDevMode() && !onLoadError`.
+  `false` silences it, `true` keeps it in production. It mirrors the two existing flags
+  rather than introducing a third pattern; if the package ever prefers silence by default,
+  all three move together.
+- **Deduped per language, not per failure.** The warning is keyed on the language id in a
+  `Set` for the lifetime of the service, so `reload()` and retry loops cannot flood the
+  console. `onLoadError` keeps firing on every failure — telemetry wants the count, the
+  warning does not.
+- **Not a rejection.** `initialize()` still never rejects and an `'instant'` switch is
+  still not rolled back: the warning reports a failure, it does not change behaviour.
+- **The JSDoc example.** The hoisted `const AR`/`const EN` example on
+  `provideRiviniaI18n` did not type-check (unannotated literals widen to `string` and fail
+  `Language`). It now uses `as const`, the form `projects/i18n/tests` already uses.
+- **Versioning.** 0.7.1 — a patch: additive, optional, dev-only by default. 0.7.0 was
+  never published, so its `/ui` work ships inside this release.
+
+## 2026-10-29 — D70: `defaultLanguage` defaults to the first language
+
+- **Default.** `defaultLanguage?: T` — omitted, it resolves to `languages[0].id`. A config
+  that only lists languages is now complete; the initial language is the first one
+  declared, which is also the order the toggle/`next()`/`previous()` already walk.
+- **Loud resolution, once.** `resolveDefaultLanguage()` runs as a field initializer above
+  `LanguageStorage` and throws a named message for an empty `languages` array, a first
+  entry without a non-empty `id`, and an explicit `defaultLanguage` that is `''`,
+  whitespace, `null`, a non-string, or an id not in `languages`. The alternative — falling
+  back silently — turned a typo into `currentLanguage() === undefined` and a `dir`/locale
+  read against the wrong entry, which only surfaces much later. Only `undefined` means
+  "use the default"; JS/JSON callers that pass `null` get the error, not a guess.
+- **Already defaults, nothing to change.** `storageStrategy` (`'local'`) and `loader`
+  (`jsonLoader()` with `i18n/{language}.json`) were defaults before this entry; the README
+  now names the loader path explicitly so the "customize the folder" hop is one option
+  away.
+- **`fallbackLanguage` stays explicit.** Defaulting it to the last language id would make
+  array order load-bearing for correctness, not just ordering: a key counts as missing
+  only when absent from the current *and* the fallback dictionary, so a silent fallback
+  suppresses `missingKeys`/warnings for every language that happens to share keys with the
+  last one. That is a behaviour change, not a convenience default — it would need its own
+  minor.
+- **Versioning.** 0.7.1 — additive; every config that passed a valid id behaves identically.
+
+## 2026-10-29 — D71: language ids are asserted once and must be unique
+
+- **The gap.** The only checks were "at least one language" and "`defaultLanguage` is one
+  of the ids". `languages: [AR, EN, AR]` passed validation, and every consumer of the list
+  then resolves the duplicate to the **first** entry — `currentLanguageObject()`,
+  `getLanguage()`, dictionary lookup by id — while `next()`/`previous()`/`toggle()` walk
+  three entries and land on the same language twice. The `/ui` toggle counted three
+  languages as "many" although there were two. Nothing said a word.
+- **Unique, non-empty, every entry.** The same construction-time pass validates each entry
+  (`language[i] needs a non-empty \`id\``) and rejects a repeated id
+  (`Duplicate language id "ar" in the languages array.`). It runs for every config — not
+  only when `defaultLanguage` is derived — because a duplicate breaks switching regardless
+  of which language starts.
+- **Throws in production too.** Like the other config checks, this is a programming error,
+  not a load failure: it fails at bootstrap with a named message instead of degrading at
+  runtime.
+- **Not covered here.** Ids are compared exactly, so `ar` and `ar ` remain two ids; id
+  shape (BCP-47), `dir` presence, and unknown keys in `translations` are separate
+  questions.
+- **Versioning.** 0.7.1 — a config that was already valid is untouched.
+
+## 2026-10-29 — D72: a duplicate language id is also rejected at compile time
+
+- **Why both.** D71 throws at bootstrap, but the mistake is written at the call site and
+  the owner asked for the error while typing, not at runtime. The runtime check stays: it
+  is the only guarantee for JS callers, for hoisted lists and for anything built at runtime.
+- **Mechanism.** `DuplicateLanguageId<T>` walks the `languages` tuple recursively and
+  yields the repeated id (or `never`); `AssertUniqueLanguageIds` turns that into either
+  `unknown` or `{ readonly duplicateLanguageId: Duplicate }`, and both
+  `provideRiviniaI18n` and `defineRiviniaI18n` take
+  `C & AssertUniqueLanguageIds<C['languages']> & RiviniaI18nConfig<L>`. A duplicate then
+  fails with `Property 'duplicateLanguageId' is missing …`, and the required type names
+  the offending id (`{ readonly duplicateLanguageId: "ar"; }`).
+- **`const C`, not overloads.** The scan needs the literal type, so the config parameter
+  gained `const C extends RiviniaI18nConfig<L> = RiviniaI18nConfig<L>`. Overloads were
+  tried first and did not work: TypeScript picked the permissive second overload
+  (`<L extends string>`) and the duplicate compiled — the spec proved code 0, not 2. A
+  single defaulted-`const` signature rejects it.
+- **The trailing `& RiviniaI18nConfig<L>` is load-bearing.** Without it, `L` cannot be
+  inferred when the config object is assembled with a spread
+  (`{ options, ...partial }`): `C` falls back to its default and `L` to its constraint,
+  `string`, so every such call became a `TS2345` on `onLoadError`'s contravariance. The
+  extra conjunct gives `L` an independent inference site without weakening the guard —
+  the same spread form with a duplicate still errors.
+- **What it does not see.** Two forms widen the argument before the scan, so `C` takes its
+  default and `DuplicateLanguageId` resolves to `never`: passing the union explicitly
+  (`provideRiviniaI18n<'ar' | 'en'>(…)`) and hoisting the list
+  (`const LANGS: readonly Language<L>[] = […]`). Both still hit D71's runtime error at
+  bootstrap, and both are pinned by tests (`language-ids-types.spec.ts`) rather than left
+  as folklore.
+- **Public surface.** No new export: the helper types stay module-private, so the check is
+  a compiler constraint on the existing signatures, not API consumers must name. The
+  `const` parameter and the extra property are erased; declaration output keeps the same
+  call shape.
+- **Versioning.** 0.7.1 — additive. Valid configs that compiled before still compile; the
+  new parameter is defaulted so inference is unchanged.
+
+## 2026-10-29 — D73: `init` collects languages in the terminal and writes the module
+
+- **The gap.** `provideRiviniaI18n` needs `id`, `nativeName` and `dir` per language, so
+  every app re-types the same object list. The owner asked for the terminal to collect it
+  and for the files to be generated: "نشيل من عليه التعريفات الكتابية الكتيرة".
+- **Prompts live in the CLI, not in `ng add`.** A schematic's `x-prompt` entries are a
+  fixed list evaluated once by the CLI's prompt provider
+  (`@angular/cli/.../json-schema.js`), so a variable number of per-language questions is
+  not expressible without depending on CLI internals. `rivinia-i18n-keys init` already
+  ships as the package's own binary and can loop, validate and re-ask with
+  `node:readline` — no new dependency, no internals.
+- **One writer, no drift.** The generator lives in the binary. The schematic is not
+  taught to generate the same module from a second copy of the rules; the module is
+  emitted once, by `init`, and `app.config.ts` only imports it.
+- **Generated shape.** `languages.ts` holds `defineRiviniaI18n` with the list and the
+  default, plus `export const injectI18n = i18n.inject`. `defaultLanguage` is written
+  explicitly rather than left to the first-entry default: the file is generated, and
+  reordering the list must not silently change the starting language. The `injectI18n`
+  alias is what components import — `i18n.inject()` keeps working and is the primitive
+  (`inject()` cannot infer `L` at the call site, see D70); the alias is just a name users
+  are used to (`injectRouter()`), not a second DI mechanism.
+- **`dir` is asked, not derived.** The prompt offers the known direction for the id as
+  the default, but the value is written literally, so an Urdu/Hebrew/… dictionary cannot
+  end up left-to-right by guess.
+- **Nothing is half-written.** Ids (shape, duplicates), the direction and the default id
+  are validated before the first `writeFileSync`. An existing dictionary is kept, a
+  `languages.ts` without the generated banner is only replaced with `--force`, and
+  `--dry-run` prints the plan.
+- **Pipes are a second adapter.** A TTY answers through `readline.question`; a pipe
+  cannot, because all lines arrive before the next question is asked — those answers are
+  queued from the `line` event instead. Non-interactive runs and the tests use
+  `--languages <list>`; an empty stdin exits 1 with a message naming the flag instead of
+  looping on EOF.
+- **No `lang.json` source of truth.** A JSON language list read at runtime would type `L`
+  as `string`, losing the compile-time checks (D72) and letting `dir` go unverified;
+  dictionaries stay JSON, the language list stays TypeScript.
+- **Versioning.** 0.7.1 — additive command; `--source`/`--out`/`--check`/`--parity` are
+  unchanged.

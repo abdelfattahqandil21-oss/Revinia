@@ -8,7 +8,13 @@ import type { MissingKeyEvent, MissingParamEvent } from './missing-key';
  */
 export interface RiviniaI18nConfig<T extends string = string> {
   readonly languages: readonly Language<T>[];
-  readonly defaultLanguage: T;
+  /**
+   * Language used on a first visit (no stored preference, detection off).
+   * Defaults to the first entry of `languages`. When provided it must be a
+   * non-empty id present in `languages` — anything else throws at construction
+   * instead of resolving to an undefined language.
+   */
+  readonly defaultLanguage?: T;
   /**
    * Language used when a key is absent from the current dictionary. Must be
    * one of `languages`. The fallback dictionary is loaded silently (it never
@@ -31,6 +37,13 @@ export interface RiviniaI18nConfig<T extends string = string> {
   readonly switchStrategy?: SwitchStrategy;
   /** Called when a dictionary load fails. The service still falls back safely. */
   readonly onLoadError?: (language: T, error: unknown) => void;
+  /**
+   * Log a `console.error` when a dictionary fails to load and no `onLoadError`
+   * handler is configured. A failed load leaves every key unresolved, so the
+   * page renders raw key names; the warning fires once per language per session.
+   * @default isDevMode() && !onLoadError
+   */
+  readonly warnOnLoadError?: boolean;
   /**
    * Called when `translate()` cannot resolve a key (absent from the current
    * dictionary, from the fallback dictionary, and with no `defaultValue`).

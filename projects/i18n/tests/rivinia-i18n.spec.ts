@@ -47,8 +47,10 @@ describe('RiviniaI18n init and validation', () => {
   it('throws on empty languages and unknown default', () => {
     expect(() =>
       setup({ languages: [], defaultLanguage: 'ar' } as unknown as RiviniaI18nConfig<'ar' | 'en'>),
-    ).toThrow();
-    expect(() => setup({ defaultLanguage: 'fr' as 'ar' })).toThrow();
+    ).toThrow('[rivinia/i18n] At least one language must be provided in the languages array.');
+    expect(() => setup({ defaultLanguage: 'fr' as 'ar' })).toThrow(
+      '[rivinia/i18n] defaultLanguage "fr" must be one of the configured language IDs.',
+    );
   });
 
   it('restores the stored language; detection fills the gap only when enabled', () => {
@@ -66,6 +68,53 @@ describe('RiviniaI18n init and validation', () => {
 
     const off = setup({ storageStrategy: 'none' });
     expect(off.currentLanguage()).toBe('ar');
+  });
+});
+
+describe('RiviniaI18n defaultLanguage resolution', () => {
+  it('defaults to the first configured language when omitted', () => {
+    const i18n = setup({
+      defaultLanguage: undefined,
+      languages: [EN, AR],
+      storageStrategy: 'local',
+    });
+    expect(i18n.currentLanguage()).toBe('en');
+    expect(i18n.currentLanguageObject().nativeName).toBe('English');
+    expect(i18n.dir()).toBe('ltr');
+  });
+
+  it('rejects an empty or non-string defaultLanguage instead of resolving to undefined', () => {
+    const nonEmpty = '[rivinia/i18n] defaultLanguage must be a non-empty string';
+
+    expect(() => setup({ defaultLanguage: '' as 'ar' })).toThrow(nonEmpty);
+    expect(() => setup({ defaultLanguage: '   ' as 'ar' })).toThrow(nonEmpty);
+    expect(() => setup({ defaultLanguage: [] as unknown as 'ar' })).toThrow(nonEmpty);
+    expect(() => setup({ defaultLanguage: null as unknown as 'ar' })).toThrow(
+      `${nonEmpty} (received null).`,
+    );
+    expect(() => setup({ defaultLanguage: 7 as unknown as 'ar' })).toThrow(
+      `${nonEmpty} (received 7).`,
+    );
+  });
+
+  it('requires a non-empty id on every language', () => {
+    expect(() =>
+      setup({
+        defaultLanguage: undefined,
+        languages: [{ id: '', dir: 'ltr' }] as unknown as readonly (typeof AR)[],
+      }),
+    ).toThrow('[rivinia/i18n] language[0] needs a non-empty `id`.');
+    expect(() =>
+      setup({
+        languages: [AR, { id: '   ', dir: 'ltr' }, EN] as unknown as readonly (typeof AR)[],
+      }),
+    ).toThrow('[rivinia/i18n] language[1] needs a non-empty `id`.');
+  });
+
+  it('rejects duplicate language ids', () => {
+    expect(() => setup({ languages: [AR, EN, AR] })).toThrow(
+      '[rivinia/i18n] Duplicate language id "ar" in the languages array.',
+    );
   });
 });
 
@@ -357,7 +406,7 @@ describe('RiviniaI18n language typing', () => {
     expect(preset.config.defaultLanguage).toBe('ar');
     // The lines below are compile-time assertions (tsc --strict over specs):
     // @ts-expect-error 'fr' is not a configured language
-    preset.config.defaultLanguage satisfies 'fr';
+    preset.config.defaultLanguage! satisfies 'fr';
     void preset;
   });
 

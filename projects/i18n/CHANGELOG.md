@@ -2,6 +2,56 @@
 
 Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
 
+## 0.7.1 - 2026-10-29
+
+0.7.0 was never published; this release ships it unchanged and adds one option and one
+documentation fix.
+
+- **New `warnOnLoadError` option.** A dictionary that fails to load leaves every key
+  unresolved, so the page renders raw key names — until now in complete silence unless the
+  consumer configured `onLoadError`. The default now logs a `console.error` **once per
+  language per session** in dev mode (`isDevMode() && !onLoadError`), matching
+  `warnOnMissingKey`/`warnOnMissingParam`; `false` silences it, `true` keeps it in
+  production. A consumer `onLoadError` keeps owning reporting and still fires on every
+  failure (the warning is deduped, the handler is not). Additive — no signature changed.
+- **Fixed:** the `provideRiviniaI18n` JSDoc example that hoisted `const AR`/`const EN` did
+  not type-check — without an annotation the literals widen to `string` and fail the
+  `Language` check. The example now uses `as const`, the form the package's own tests use.
+  Documentation only.
+- **`defaultLanguage` is now optional.** Omitted, it resolves to the first entry of
+  `languages`, so the common config only lists the languages. An explicitly provided value
+  must be a non-empty id present in `languages`: `''`, whitespace, `null`, a non-string or
+  an unknown id now throws at construction with a named message instead of letting
+  `undefined` become the current language. Additive — existing configs that pass a valid
+  id behave exactly as before.
+- **Duplicate or empty language ids now throw.** `languages` is validated once at
+  construction: the same id twice (`[AR, EN, AR]`) or an entry without a non-empty `id`
+  fails with a `[rivinia/i18n] …` error. Until now a duplicate passed silently and then
+  broke `find`, `next()`/`previous()` and every lookup by id, because only the first
+  matching entry is reachable.
+- **New `init` command: languages are collected once, not typed as objects.**
+  `npx rivinia-i18n-keys init` asks for each language (id, native name, direction), asks
+  which one is the default, then writes `src/app/i18n/languages.ts` (a
+  `defineRiviniaI18n` module that also exports a typed `injectI18n`) and an empty
+  `public/i18n/<id>.json` per language. Ids, directions and duplicates are validated
+  before anything is written, existing dictionaries are kept, and a hand-written
+  `languages.ts` is never replaced without `--force`.
+  `--languages ar:العربية:rtl,en:English:ltr` runs the same thing non-interactively.
+  Additive: the binary keeps its key-generation and parity flags.
+- **A duplicate id in an inline `languages` list is now a compile error too.**
+  `provideRiviniaI18n` / `defineRiviniaI18n` gained a conditional type parameter that scans
+  the literal tuple and demands a `duplicateLanguageId` property, so the same mistake is
+  caught while typing instead of at bootstrap. The scan needs the array literal: an
+  explicit `<L>` union or a hoisted list still compiles and is caught by the runtime check.
+  Call sites that already compiled are unaffected — the extra parameter is `const` and
+  defaulted, so inference is unchanged.
+- **The README is organized in three levels.** _Start here_ (install, generate the list,
+  first translation), _Everyday use_ (translating, plurals, switching, dictionaries,
+  toggle, SSR) and _Reference_ (every option, loader, ICU rule, UI input, export tier and
+  migration). The new part teaches ICU pluralization from a wrong `count === 1` check
+  through the six Arabic categories and the difference between `=0` and `zero`; no
+  previous detail was dropped. Documentation only.
+
 ## 0.7.0 - 2026-10-29
 
 The first UI in the package: a two-language toggle from the secondary entry point

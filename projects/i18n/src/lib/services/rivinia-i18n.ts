@@ -76,11 +76,18 @@ export class RiviniaI18n<L extends string = string> {
   /** Declared before the storage collaborator: it reads this during setup. */
   private readonly _languages = signal<readonly Language<L>[]>(this._config.languages);
 
+  /**
+   * Resolved before the storage collaborator reads it: the explicit
+   * `defaultLanguage`, else the first configured language. A malformed value
+   * throws here instead of letting `undefined` become the current language.
+   */
+  private readonly _defaultLanguageId: L = resolveDefaultLanguage(this._config);
+
   private readonly _languageStorage = new LanguageStorage<L>({
     key: this._config.storageKey ?? DEFAULT_STORAGE_KEY,
     strategy: this._config.storageStrategy ?? DEFAULT_STORAGE_STRATEGY,
     languages: () => this._languages(),
-    defaultLanguage: this._config.defaultLanguage,
+    defaultLanguage: this._defaultLanguageId,
     detectBrowser: this._config.detectBrowser ?? false,
     document: this._doc,
     request: this._request ?? null,
@@ -92,6 +99,30 @@ export class RiviniaI18n<L extends string = string> {
   private readonly _currentLanguageId = signal<L>(
     this._languageStorage.resolveInitialLanguage(),
   );
+
+  /** Languages already reported by the default load-error warning. */
+  private readonly _warnedLoadErrors = new Set<L>();
+
+  /**
+   * Routes every dictionary load failure to the consumer handler, or — when
+   * none is configured — to the dev-mode warning. Warnings are deduped per
+   * language because a retry loop would otherwise flood the console; the
+   * consumer handler keeps firing per failure for telemetry.
+   */
+  private readonly _onDictionaryLoadError = (language: L, error: unknown): void => {
+    if (this._config.onLoadError) {
+      this._config.onLoadError(language, error);
+      return;
+    }
+    if (!(this._config.warnOnLoadError ?? isDevMode())) return;
+    if (this._warnedLoadErrors.has(language)) return;
+    this._warnedLoadErrors.add(language);
+    console.error(
+      `[rivinia/i18n] Failed to load the "${language}" dictionary — every key will ` +
+        'render as its raw name. Pass `onLoadError` to handle load failures yourself.',
+      error,
+    );
+  };
 
   private readonly _store = new DictionaryStore<L>({
     // Explicit loader wins; otherwise the conventional JSON layout
@@ -105,7 +136,7 @@ export class RiviniaI18n<L extends string = string> {
     loaderContext: this.loaderContext,
     request: this._request ?? null,
     transfer: this._transfer,
-    onLoadError: this._config.onLoadError,
+    onLoadError: this._onDictionaryLoadError,
     currentLanguage: () => this._currentLanguageId(),
     fallbackLanguage: this._fallbackId,
     languageIds: () => this._languages().map((l) => l.id),
@@ -176,16 +207,6 @@ export class RiviniaI18n<L extends string = string> {
   }
 
   constructor() {
-    if (this._config.languages.length === 0) {
-      throw new Error(
-        '[rivinia/i18n] At least one language must be provided in the languages array.',
-      );
-    }
-    if (!this._config.languages.some((l) => l.id === this._config.defaultLanguage)) {
-      throw new Error(
-        `[rivinia/i18n] defaultLanguage "${this._config.defaultLanguage}" must be one of the configured language IDs.`,
-      );
-    }
     if (this._fallbackId !== null && !this._config.languages.some((l) => l.id === this._fallbackId)) {
       throw new Error(
         `[rivinia/i18n] fallbackLanguage "${this._fallbackId}" must be one of the configured language IDs.`,
@@ -526,4 +547,50 @@ function normalizeKeyArgs(
     return { params: second };
   }
   return { defaultValue: second, params: third };
+}
+
+/**
+ * `defaultLanguage` is optional at the type level, so the runtime value can
+ * still arrive as `undefined`, `null`, `''` or a non-string from plain JS or a
+ * JSON-driven config. Resolve it once, loudly: an unknown or empty id would
+ * otherwise become the current language and surface as a broken `dir`/locale.
+ * The same pass asserts that every id is usable and unique — a duplicate would
+ * silently break `find`, `next()`/`previous()` and dictionary lookup by id.
+ */
+function resolveDefaultLanguage<L extends string>(config: RiviniaI18nConfig<L>): L {
+  const languages = config.languages;
+  if (!Array.isArray(languages) || languages.length === 0) {
+    throw new Error(
+      '[rivinia/i18n] At least one language must be provided in the languages array.',
+    );
+  }
+  const seen = new Set<string>();
+  languages.forEach((language, index) => {
+    const id: unknown = language?.id;
+    if (typeof id !== 'string' || id.trim().length === 0) {
+      throw new Error(`[rivinia/i18n] language[${index}] needs a non-empty \`id\`.`);
+    }
+    if (seen.has(id)) {
+      throw new Error(`[rivinia/i18n] Duplicate language id "${id}" in the languages array.`);
+    }
+    seen.add(id);
+  });
+
+  const requested: unknown = config.defaultLanguage;
+  if (requested === undefined) {
+    return languages[0].id;
+  }
+  if (typeof requested !== 'string' || requested.trim().length === 0) {
+    throw new Error(
+      `[rivinia/i18n] defaultLanguage must be a non-empty string (received ${
+        JSON.stringify(requested) ?? String(requested)
+      }).`,
+    );
+  }
+  if (!languages.some((language) => language.id === requested)) {
+    throw new Error(
+      `[rivinia/i18n] defaultLanguage "${requested}" must be one of the configured language IDs.`,
+    );
+  }
+  return requested as L;
 }
