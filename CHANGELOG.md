@@ -95,6 +95,14 @@ restore half of `setValue` / `setValues`.
   declares `scroll-padding-top`, so a keyboard-scrolled row is not hidden
   under the bar. No new API: `--rv-select-search-bg`,
   `--rv-select-search-gap` and `--rv-select-search-offset` tune it.
+- **A strip of the list showed above the pinned bar.** The scrollport's own
+  top padding sits outside the bar's containing block, and a sticky box is
+  clamped to that block, so `top: 0` stopped at the content edge and rows
+  stayed visible in the 7px between the panel's border and the bar (measured
+  6px padding + 1px border, at every scroll offset). The bar now carries that
+  padding and the searchable panel drops it, so the bar's top edge is the
+  scrollport's content edge. The input, the rows and `scroll-padding` measure
+  exactly where they did before.
 
 ### @rivinia/i18n 0.5.0
 

@@ -2650,16 +2650,31 @@ Three defects, all found by a consumer using the packages.
   `--rv-select-search-offset` (3rem, the panel's `scroll-padding-top`) are
   read with fallbacks, so an ancestor theme still wins — same boundary as
   every other select token.
+- **The pinned bar left a strip of the list above it.** Found on the owner's
+  dark-mode demo: a sliver of the previous row (its count, half a label)
+  stayed visible between the panel's top edge and the search. The scrollport's
+  `padding: var(--rv-select-popup-pad)` sits outside the bar's containing
+  block, and a sticky box is clamped to that block, so `top: 0` stopped at the
+  content edge — measured 7px = 6px padding + 1px border, at every scroll
+  offset (40/80/120/160). Searchable panels now drop the top padding and the
+  bar carries it (`padding-top: var(--rv-select-popup-pad)`), so the bar's top
+  edge is the scrollport's content edge. Measured after: band 1px (the border
+  itself), input top 328.9 unchanged, first row unchanged, bottom and inline
+  padding 6px unchanged, `scroll-padding-top` 48px unchanged. The alternative
+  (a negative `top`) cannot work: the same clamp keeps the bar inside its
+  containing block.
 - **No new API, no DOM contract change for rows.** `.rv-select-search` keeps
   its class and its position in the panel's first slot; the bar is a wrapper
   around it. `reachEnd` reads `scrollHeight`/`scrollTop`/`clientHeight`, which
   `scroll-padding` does not touch.
-- **Tests.** `projects/select/tests/select-search-sticky.spec.ts` (4 cases):
+- **Tests.** `projects/select/tests/select-search-sticky.spec.ts` (5 cases):
   the CSS contract (sticky, `top: 0`, surface-backed background, transparent
-  input), `scroll-padding-top` on the searchable panel, the input living inside
-  the bar, and no bar on a non-searchable select. Mutation-checked: removing
-  the `position: sticky` line fails the first case; the structure cases fail
-  against the pre-fix template.
+  input), `scroll-padding-top` on the searchable panel, the padding handover
+  (`padding-top: 0` on the scrollport, the bar carrying
+  `var(--rv-select-popup-pad)`), the input living inside the bar, and no bar on
+  a non-searchable select. Mutation-checked: removing the `position: sticky`
+  line fails the first case; removing the bar's `padding-top` fails the third;
+  the structure cases fail against the pre-fix template.
 - **Not covered.** No engine here measures sticky repaint cost on very long
   virtual lists; the bar is one composited layer and `reachEnd` was re-run in
   the consumer page after the change.
