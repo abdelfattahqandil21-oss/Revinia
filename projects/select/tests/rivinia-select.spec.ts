@@ -88,3 +88,34 @@ describe('RiviniaSelect (multi)', () => {
     expect(select.values()).toEqual([]);
   });
 });
+
+describe('RiviniaSelect restore (setValue / setValues)', () => {
+  it('keeps an id whose option has not arrived, and names it once it does', () => {
+    const select = new RiviniaSelect('single');
+    select.setValue('x');
+    expect(select.value()).toBe('x');
+    expect(select.selectedLabels()).toEqual(['x']);
+
+    select.registerOption({ id: 'x', label: 'X-ray' });
+    expect(select.selectedLabels()).toEqual(['X-ray']);
+  });
+
+  it('restores a disabled id that select() refuses', () => {
+    const select = new RiviniaSelect('single');
+    select.registerOption({ id: 'blocked', label: 'Blocked', disabled: true });
+    expect(select.select('blocked')).toBe(false);
+
+    select.setValue('blocked');
+    expect(select.value()).toBe('blocked');
+    expect(select.selectedLabels()).toEqual(['Blocked']);
+  });
+
+  it('stores restored ids in the given order', () => {
+    const select = new RiviniaSelect('multi');
+    for (const o of OPTIONS) select.registerOption(o);
+
+    select.setValues(['paid', 'outstanding']);
+    expect(select.values()).toEqual(['paid', 'outstanding']);
+    expect(select.selectedLabels()).toEqual(['Paid', 'Outstanding invoices']);
+  });
+});

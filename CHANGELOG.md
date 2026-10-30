@@ -72,6 +72,18 @@ Firefox and WebKit against the published 0.6.1 bytes.
   a consumer must rebind, and a repo e2e case (open → close → reopen) fails
   without the fix.
 
+Documentation and tests, no behaviour change: the README's DI recipe bound
+nothing — it showed `provideRiviniaSelect('multi')` next to a `<rv-select>`
+that never received the controller, so the provided instance was described
+but unused. The snippet now binds `[select]="controller"`, and an "Ownership
+rules" block states that `mode` selects only the component-owned controller,
+that an injected controller is bound explicitly and is one per injector, and
+that sharing a controller is for one logical value (shared selection and
+query, per-component panels, the last mirrored `options` wins). `mode` is
+typed as the exported `RiviniaSelectMode`. Twelve tests pin the DI contract,
+the mode precedence, the supported shared-controller configuration, and the
+restore half of `setValue` / `setValues`.
+
 ### @rivinia/i18n 0.5.0
 
 The 0.4.0 code-review set. 0.4.1 was never published, so its patch set ships

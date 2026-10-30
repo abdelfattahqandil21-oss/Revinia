@@ -20,7 +20,7 @@ import { SelectPopupControllerImpl } from '../../services/select-popup';
 import type { SelectPopupUiPlacement } from '../../models/select-popup.ui-types';
 import { SelectPopupComponent, SelectPopupItem } from '../popup/select-popup';
 import { RiviniaSelect } from '@rivinia/select';
-import type { RiviniaSelectController, RiviniaSelectOption } from '@rivinia/select';
+import type { RiviniaSelectController, RiviniaSelectMode, RiviniaSelectOption } from '@rivinia/select';
 
 /** Payload of RiviniaSelectComponent.selectionChange. Single: id (or null after clear). Multi: ids. */
 export type SelectChange = string | readonly string[] | null;
@@ -71,12 +71,17 @@ class SelectLabelIdGenerator {
 })
 export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
   /**
-   * External controller (shared/test double). Omitted: the component owns one
-   * matching `mode()` (simplest embedding).
+   * External controller (injected, shared or a test double). Omitted: the
+   * component owns one matching `mode()`. When bound, the controller's own
+   * `mode` wins and the `mode` input is ignored.
    */
   readonly select = input<RiviniaSelectController | null>(null);
-  /** 'single' closes on pick; 'multi' toggles and stays open. @default 'single' */
-  readonly mode = input<'single' | 'multi'>('single');
+  /**
+   * Mode of the controller this component owns: 'single' closes on pick,
+   * 'multi' toggles and stays open. Ignored when `select` is bound — an
+   * external controller is authoritative for its own mode. @default 'single'
+   */
+  readonly mode = input<RiviniaSelectMode>('single');
   /** Option data; labels double as the search index. */
   readonly options = input<readonly RiviniaSelectOption[]>([]);
   /** Show the filter box. @default false */
