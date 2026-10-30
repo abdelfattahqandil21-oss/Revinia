@@ -132,10 +132,44 @@ rv-select {
 .rv-select-trigger[data-open='true'] .rv-select-chevron {
   transform: rotate(180deg);
 }
+/*
+ * The panel is the scrollport, so a plain first-child input scrolled away with
+ * the list (measured: search top 7px -> -154px after a 300px scroll). The bar
+ * owns the stickiness AND the paint: the input stays transparent so the panel
+ * shows through, and a sticky transparent box lets rows slide visibly
+ * underneath it — measured on the consumer override that pinned the input
+ * itself (position: sticky, computed background rgba(0, 0, 0, 0), rows on
+ * screen through the input).
+ *
+ * The gap below the input belongs to the bar too; as a transparent margin it
+ * left a 4px band where rows peeked through while scrolling.
+ */
+.rv-select-search-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding-bottom: var(--rv-select-search-gap, 0.25rem);
+  background: var(
+    --rv-select-search-bg,
+    var(--rv-select-popup-bg, var(--rv-select-bg, var(--rv-bg, #ffffff)))
+  );
+}
+/*
+ * Keyboard navigation scrolls the focused row into view with `block: nearest`,
+ * and the pinned bar would cover it. scroll-padding keeps the row clear of the
+ * search without touching any scrollTop arithmetic — `reachEnd` reads
+ * scrollHeight/scrollTop/clientHeight, none of which this changes.
+ *
+ * The selector has to be the OUTER popup panel: the select's own panel div is
+ * projected inside it, and the scrollport is the outer one (`overflow-y: auto`
+ * in select-popup.css). `:has` keeps the inset off panels that have no search.
+ */
+.rv-select .rv-select-popup-panel:has(.rv-select-search-bar) {
+  scroll-padding-top: var(--rv-select-search-offset, 3rem);
+}
 .rv-select-search {
   width: 100%;
   box-sizing: border-box;
-  margin-bottom: 0.25rem;
   padding: var(--rv-select-search-padding, 0.5rem 0.625rem);
   border-radius: var(--rv-select-search-radius, 0.5rem);
   border: 1px solid var(--rv-select-border, var(--rv-border, #e0e0e0));
