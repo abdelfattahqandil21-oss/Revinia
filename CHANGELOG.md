@@ -125,6 +125,21 @@ restore half of `setValue` / `setValues`.
   row, which stops exactly at the pinned bar's bottom edge (`scroll-padding`
   doing its job). A virtualised list that does not render the active row has
   nothing to reveal; its consumer owns scrolling, as the README now says.
+- **Feature: `variant` on `<rv-select>`, forwarded to the panel it builds.**
+  `'simple'`
+  (the default) is byte-for-byte the 0.6.1 skin, so nothing changes unless you
+  ask for it. `'premium'` adds a 250ms entrance on the standard dropdown
+  curve, a layered panel shadow, a 1px trigger shadow, a hover/active row
+  wash, a thinner search field, a styled scrollbar, and a shimmering skeleton
+  in the loading row. The value is reflected as `data-variant` and everything
+  downstream is CSS — no branch in the component logic, no runtime cost when
+  unused. Measured cost of shipping both skins: **+801 B brotli / +1,292 B
+  gzip** on the UI chunk, 0 B on `@rivinia/select` headless.
+- **The premium skin does not animate on close, on purpose.** The panel is a
+  real top-layer element; holding it open to fade it out would swallow clicks
+  aimed at whatever is underneath, hand `panelReady` a node that is about to
+  disappear (the virtualiser would measure it), and let the next open latch
+  onto the leaving element. Close stays instant.
 
 ### @rivinia/i18n 0.5.0
 
