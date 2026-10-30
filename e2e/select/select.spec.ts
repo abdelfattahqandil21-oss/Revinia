@@ -237,6 +237,37 @@ test.describe('select: virtualised list', () => {
     await expect(panel.locator('.virtual-row', { hasText: 'Row 500' })).toHaveCount(1);
   });
 
+  test('keeps working after a close and reopen', async ({ page }) => {
+    // The panel is destroyed on close and rebuilt on open. `panelReady` has to
+    // hand over the NEW element each time; a once-per-instance emission left
+    // the virtual list bound to a detached panel, so scrolls after reopening
+    // no longer moved the window.
+    await page.goto('/select');
+    const trigger = page.locator('#virtual-select .rv-select-trigger');
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.click();
+    const panel = page.locator('#virtual-select .rv-select-popup-panel');
+    await expect(panel).toBeVisible();
+    await panel.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    await expect(panel.locator('.virtual-row', { hasText: 'Row 500' })).toHaveCount(1);
+
+    await page.keyboard.press('Escape');
+    await expect(panel).toBeHidden();
+
+    await trigger.click();
+    await expect(panel).toBeVisible();
+    await panel.evaluate((el) => {
+      // A fresh panel already sits at 0, so 0 alone fires no scroll event. Nudge
+      // it first: the consumer's window only moves on a scroll it can hear.
+      el.scrollTop = 200;
+      el.scrollTop = 0;
+    });
+    await expect(panel.locator('.virtual-row').first()).toHaveText('Row 1');
+    await expect(panel.locator('.virtual-row', { hasText: 'Row 500' })).toHaveCount(0);
+  });
+
   test('keeps the panel as wide as the trigger with the virtual list', async ({ page }) => {
     await page.goto('/select');
     const trigger = page.locator('#virtual-select .rv-select-trigger');
