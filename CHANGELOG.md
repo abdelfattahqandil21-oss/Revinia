@@ -7,8 +7,9 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ### @rivinia/select 0.6.2
 
-Seven defects found by running the packed tarball in visible Chromium,
-Firefox and WebKit against the published 0.6.1 bytes.
+Eleven defects, all found by running the packed tarball in real browsers: the
+first seven in a visible Chromium/Firefox/WebKit matrix against the published
+0.6.1 bytes, the rest in a consumer playground.
 
 - **The panel scrolled sideways.** `overflow-y: auto` computes `overflow-x` to
   `auto`, and every row was `width: 100%` with its padding outside that 100%
@@ -103,6 +104,27 @@ restore half of `setValue` / `setValues`.
   padding and the searchable panel drops it, so the bar's top edge is the
   scrollport's content edge. The input, the rows and `scroll-padding` measure
   exactly where they did before.
+- **Reopening landed on the first row, not on the selection.** `(opened)` asks
+  the inner controller to activate the current value before the rows have
+  rendered, so the call returned `false` and the first row that registered won
+  the open — the trigger showed Alexandria while the highlight sat on Cairo.
+  The controller now holds a requested id while the menu is open and applies
+  it when that row registers; a different row no longer claims the open, and
+  any explicit navigation or close drops the request. Rows register after the
+  open by design, so a registration must not double as a dependency: reading
+  the registry inside the row's own effect made that effect re-run on every
+  registration, and the query effect re-aimed at the first row on each of
+  them. Both are `untracked()` now.
+- **The active row could sit off-screen.** Focus moves with `preventScroll`
+  and nothing else scrolled, so a reopen on a deep value opened at
+  `scrollTop` 0 with the cursor below the fold, and Home/End/typeahead moved
+  the active row without scrolling either. Every change of the active row now
+  reveals it with `scrollIntoView({ block: 'nearest' })` — measured on the
+  governorate list: reopen on the last one lands at `scrollTop` 131 with the
+  row inside the panel, and wrapping past the end scrolls back to the first
+  row, which stops exactly at the pinned bar's bottom edge (`scroll-padding`
+  doing its job). A virtualised list that does not render the active row has
+  nothing to reveal; its consumer owns scrolling, as the README now says.
 
 ### @rivinia/i18n 0.5.0
 
