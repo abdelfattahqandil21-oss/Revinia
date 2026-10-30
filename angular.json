@@ -245,22 +245,17 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "browser": "projects/i18n-e2e/src/main.ts",
-            "server": "projects/i18n-e2e/src/main.server.ts",
-            "tsConfig": "projects/i18n-e2e/tsconfig.app.json",
+            "browser": "projects/menu-e2e/src/main.ts",
+            "tsConfig": "projects/menu-e2e/tsconfig.app.json",
             "assets": [
               {
                 "glob": "**/*",
-                "input": "projects/i18n-e2e/public"
+                "input": "projects/menu-e2e/public"
               }
             ],
             "styles": [
-              "projects/i18n-e2e/src/styles.css"
-            ],
-            "outputMode": "server",
-            "ssr": {
-              "entry": "projects/i18n-e2e/src/server.ts"
-            }
+              "projects/menu-e2e/src/styles.css"
+            ]
           },
           "configurations": {
             "production": {
@@ -290,10 +285,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "i18n-e2e:build:production"
+              "buildTarget": "menu-e2e:build:production"
             },
             "development": {
-              "buildTarget": "i18n-e2e:build:development"
+              "buildTarget": "menu-e2e:build:development"
             }
           },
           "defaultConfiguration": "development"
