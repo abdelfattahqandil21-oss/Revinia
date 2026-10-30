@@ -205,6 +205,7 @@ the headless `RiviniaSelect` controller.
 | `ariaLabel`         | `string \| null`                  | `null`             | Explicit accessible name for the trigger; used when there is no caption.                  |
 | `popupLabel`        | `string \| null`                  | `null`             | Accessible name for the opened panel (`aria-label`); falls back to `label`.               |
 | `searchLabel`       | `string`                          | `'Search options'` | Accessible name for the filter box.                                                       |
+| `variant`           | `'simple' \| 'premium'`           | `'simple'`         | Skin. Reflected as `data-variant`; styling only, no behaviour change. See Variants.        |
 
 ### Outputs
 
@@ -895,6 +896,74 @@ The selectors, and the `data-*` state hooks:
 | `data-flipped`    | panel   | it flipped to the other side   |
 | `data-positioned` | panel   | it has been measured           |
 | `data-top-layer`  | panel   | it is in the browser top layer |
+
+## Variants
+
+One input picks the skin. Nothing else about the component changes — same
+controller, same keyboard contract, same ARIA.
+
+```html
+<rv-select [options]="options" variant="premium" />
+```
+
+| Value       | What you get                                                                                              |
+| ----------- | --------------------------------------------------------------------------------------------------------- |
+| `'simple'`  | The default. The 0.6.1 skin, unchanged — including its 160ms entrance. Upgrading changes nothing.         |
+| `'premium'` | A slower, softer entrance, layered shadow, thin styled scrollbar, hover/active wash, loading skeleton.    |
+
+`<rv-select>` forwards its own value to the panel it builds, so a custom
+`listTemplate` inside it still gets the premium chrome. (`<rv-select-popup>` is
+the panel primitive and takes the same input, but it is internal — the select
+is its only caller; drive the headless controller instead if you need your own
+markup.)
+
+The value lands on both hosts as `data-variant`, and every premium rule is
+scoped under `[data-variant='premium']`. There is no branch in the component
+logic and no extra work when the flag is off — the browser matches a selector
+or it does not.
+
+### What premium actually does
+
+- **Entrance, 250ms.** Both skins animate in; premium retunes the shot — 250ms
+  on `cubic-bezier(0.22, 1, 0.36, 1)`, rising 4px from `scale(0.97)`, where
+  simple keeps the original 160ms / 6px / `0.96`. On a `top-*` placement the
+  travel flips. Tune with `--rv-select-popup-duration`,
+  `--rv-select-popup-easing`, `--rv-select-popup-from-scale`,
+  `--rv-select-popup-from-y`.
+- **No exit animation, by design.** The panel is a real top-layer element; a
+  closing animation would keep it over the page swallowing clicks, hand
+  `panelReady` a node that the virtualiser is about to lose, and let the next
+  open latch onto the leaving element. Close is instant.
+- **Rows.** Hover washes in at 150ms, out at 250ms; the keyboard-active row
+  sits one step stronger.
+- **Scrollbar.** `scrollbar-width: thin` and `scrollbar-color` on the panel.
+  These are the standard properties — the `::-webkit-scrollbar` pseudo-elements
+  are ignored by Chromium as soon as `scrollbar-color` is set, so the library
+  ships only the standard pair. The actual width is the OS's call: 8–12px on
+  Chromium, overlay on macOS, always visible on Windows.
+- **Loading row.** While `[loading]="true"` the row shows three shimmering bars
+  next to `loadingLabel`. They are static under
+  `prefers-reduced-motion: reduce`.
+- **Search and trigger.** A 1px resting shadow, a 14% foreground border, and a
+  search field that is a quiet inset wash rather than a bordered box.
+
+Every value above resolves through the same token chain as the rest of the
+library, so a `--rv-select-*` or `--rv-*` you already set still wins:
+
+```css
+:root {
+  --rv-select-trigger-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --rv-select-popup-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
+  --rv-select-popup-duration: 180ms;
+}
+```
+
+Selected rows carry `data-selected="true"` in both skins — a hook for your own
+styling, with no paint of its own (the check mark already reads as selected).
+
+Cost of shipping both skins, measured on the packed tarball: **+801 B brotli
+/ +1,292 B gzip** on the `@rivinia/select/ui` chunk, **0 B** on the headless
+`@rivinia/select` entry point.
 
 ## Theming
 

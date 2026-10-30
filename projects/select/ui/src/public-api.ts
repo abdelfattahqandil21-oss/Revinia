@@ -15,3 +15,4 @@ export type {
   SelectPopupViewport as ViewportSize,
 } from './lib/utils/select-popup-position';
 export type { SelectPopupUiPlacement as SelectPlacement } from './lib/models/select-popup.ui-types';
+export type { RiviniaSelectVariant } from './lib/models/select-popup.ui-types';

@@ -4,6 +4,7 @@
 <div class="rv-select" (focusout)="onFocusOut($event)">
   <rv-select-popup
     [popup]="popup"
+    [variant]="variant()"
     [placement]="placement()"
     [popupLabel]="panelLabel()"
     (picked)="onPick($event.id)"
@@ -64,6 +65,7 @@
         <button
           rvSelectPopupItem
           [id]="o.id"
+          [attr.data-selected]="controller().isSelected(o.id) ? 'true' : null"
           [disabled]="o.disabled ?? false"
           [checked]="controller().mode === 'multi' ? controller().isSelected(o.id) : null"
         >
@@ -107,7 +109,9 @@
       }
       @if (loading()) {
         <div class="rv-select-loading" role="status" aria-live="polite">
-          {{ loadingLabel() }}
+          <!-- Skeleton bars: premium only, decorative, so hidden from AT. -->
+          <span class="rv-select-skeleton" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="rv-select-loading-text">{{ loadingLabel() }}</span>
         </div>
       }
       <!--
