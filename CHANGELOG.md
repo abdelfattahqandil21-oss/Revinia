@@ -5,6 +5,65 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ## Prepared releases (unpublished)
 
+### @rivinia/select 0.6.2
+
+Six defects found by running the packed tarball in visible Chromium,
+Firefox and WebKit against the published 0.6.1 bytes.
+
+- **The panel scrolled sideways.** `overflow-y: auto` computes `overflow-x` to
+  `auto`, and every row was `width: 100%` with its padding outside that 100%
+  in the content box — so even a short list had 5–17px of horizontal overflow
+  (measured `scrollWidth` 105–118 against a 101px `clientWidth`). Rows are now
+  `border-box`, the panel is `overflow-x: hidden`, and a 60-character unbroken
+  label wraps (`overflow-wrap: anywhere`) instead of pushing `scrollWidth` to
+  475px.
+- **The panel had a width of its own.** It carried a 16rem floor while the
+  select's was 14rem, so two surfaces meant to read as one control stood
+  apart with no consumer opt-in (measured: a 256px panel over a 224px
+  trigger). The floor now lives only on the select (`--rv-select-width`, capped
+  by the container), the trigger fills the select, and the panel takes exactly
+  the trigger's width in every path — the anchor path already did that with
+  `anchor-size(inline)` and the primitive's floor was overriding it. A
+  container narrower than the floor shrinks both together and the labels wrap.
+  The floor is capped by the container on purpose: 10rem (160px) is the
+  smallest width that still fits a row on one line, and below it the select
+  shrinks with its cell (measured 55–114px rows between 128px and 96px)
+  instead of overflowing. The README now states that minimum.
+  The panel is also `border-box` in every engine now — Firefox used to be 14px
+  wider than the trigger it was aligned to — and the JS path no longer writes
+  `min-width: 0` inline. The trigger is `border-box` for the same reason:
+  `width: 100%` plus its 1px borders had made the button 2px wider than the
+  select it fills, and the panel followed the button.
+- **The width floor never applied off the grid.** The trigger's `min-width` was
+  `min(--rv-select-width, 100%)`, but its containing block is a chain of
+  shrink-to-fit boxes, so the percentage collapsed and the button sized itself
+  to its content: measured 103px where the documentation promised 14rem. Only
+  a select inside a grid cell (a definite width) honoured the floor. The floor
+  moved to the host, whose containing block is the consumer's layout.
+- **`*-end` placements sat off the trigger.** The CSS anchor path anchored to
+  `.rv-select-popup-trigger`, the full-width hit area, while the JS path
+  measured the `<button>` inside it: 128px apart on a 352px cell with a 224px
+  button. Measured `bottom-end` panel at `x=528..752` with the button at
+  `x=400..624` in Chromium and WebKit; Firefox, on the JS path, was correct.
+  The select now anchors to the trigger button and takes `anchor-name` off the
+  wrapper, so both paths measure the same element.
+- **RTL panels aligned to the wrong edge in a mixed-direction page.** A
+  `dir="rtl"` select inside an LTR document opened its panel left-aligned
+  (measured 649..905 against a 649..752 trigger) in Chromium and WebKit, while
+  Firefox, on the JS path, aligned the right edges. `position-area` span
+  keywords resolve against the containing block, and a top-layer popover's
+  containing block is the ICB — the root's direction, not the panel's. The
+  component now compares its own computed direction with the root's and swaps
+  the inline span keyword; `:dir()` cannot do that job because it follows the
+  `dir` attribute rather than the CSS `direction` property (measured in both
+  engines). The JS path reads computed direction too, so `<html dir>` no
+  longer overrides a differently-directed subtree.
+- **README: the ARIA section described a different component.** It promised
+  `role="listbox"` / `option` / `aria-selected`, `aria-haspopup="listbox"` and
+  `aria-multiselectable`; the shipped DOM is `menu` / `menuitem` /
+  `menuitemcheckbox` with `aria-haspopup="menu"` and `aria-checked`. The
+  README now documents the measured DOM.
+
 ### @rivinia/i18n 0.5.0
 
 The 0.4.0 code-review set. 0.4.1 was never published, so its patch set ships

@@ -23,8 +23,10 @@ styling. Rendering lives in `@rivinia/select/ui` or in your own UI.
 - **Single and multi mode**, sharing one model.
 - **Form-ready.** `FormValueControl`, so Signal Forms, Reactive Forms and
   `ngModel` all work without a custom accessor.
-- **RTL-correct by construction.** The panel is placed with CSS anchor
-  positioning and logical keywords, so a direction change needs no JS branch.
+- **RTL-correct, even in a mixed-direction page.** The panel is placed with CSS
+  anchor positioning; when the select's direction differs from the document's
+  (an RTL form inside an LTR app), the inline anchor keyword is mirrored so
+  `*-start` still means the select's own start edge.
 - **Your own rows.** `optionTemplate` replaces a row's content for icons,
   avatars or badges; the ARIA and the keyboard stay.
 - **Paged data.** A loader row, a `reachEnd` signal for infinite scroll, a
@@ -1034,7 +1036,23 @@ none of it would have moved.
 | `--rv-select-error`  | `#dc2626`                     | invalid trigger   |
 | `--rv-select-radius` | `0.625rem`                    | trigger + panel   |
 | `--rv-select-shadow` | `0 16px 48px rgba(0,0,0,.22)` | panel             |
-| `--rv-select-width`  | `14rem`                       | trigger min-width |
+| `--rv-select-width`  | `14rem`                       | select floor; panel follows it |
+
+**The panel is the trigger's width.** One floor — `--rv-select-width`, capped
+by the container — sits on the select itself; the trigger fills it and the
+panel follows the trigger exactly, so the two read as one control. Widen the
+token and all three grow together. Option labels wrap (a 60-character unbroken
+string wraps instead of widening the panel), and the panel never scrolls
+sideways: long lists scroll **vertically** only. In a container narrower than
+the floor both shrink together and the labels wrap.
+
+**The smallest width that keeps the shape is 10rem (160px).** At 160px a row
+still fits on one line; below that the container wins and labels wrap to two
+or three lines (measured 55–114px rows between 128px and 96px) while the
+trigger value truncates with an ellipsis. The trigger stops shrinking around
+103px — width of the padding, the gap and the chevron — so that is the hard
+floor of the control itself. Nothing ever overflows its container: if the
+cell is narrower than the padding, the page stays put.
 
 **No forced dark mode** — there is no `prefers-color-scheme` block anywhere in
 the package, so a component can never override your explicit choice.
@@ -1060,18 +1078,21 @@ Single/multi share the same model:
 
 ## Accessibility
 
-Select is a **button + listbox**, not an ARIA combobox and not a native
-`<select>`. The opened panel is exposed as `role="listbox"` with
-`role="option"` children carrying `aria-selected`; the trigger carries
-`aria-haspopup="listbox"`, `aria-expanded`, and `aria-controls`, and the panel
-carries `aria-multiselectable="true"` in multi mode. Focus physically moves
-into the option list, so there is no `aria-activedescendant`.
+Select is a **button + menu**, not an ARIA combobox and not a native
+`<select>`. The shipped DOM (measured in Chromium, Firefox and WebKit):
+the trigger is a `<button>` carrying `aria-haspopup="menu"`, `aria-expanded`
+and `aria-controls` pointing at the panel; the panel is `role="menu"`; single
+rows are `role="menuitem"`; multi rows are `role="menuitemcheckbox"` with
+`aria-checked`. There is no `aria-multiselectable` — the checkbox rows carry
+the state. Focus physically moves into the list, so there is no
+`aria-activedescendant`.
 
 Consequences to be aware of:
 
-- Screen readers announce it as a listbox, not a native `<select>`. If you need
-  native-select semantics, use a native `<select>`; Select does not pretend to
-  be one.
+- Screen readers announce a menu, not a listbox and not a native `<select>`.
+  If you need native-select or listbox semantics, use a native `<select>` or
+  build the markup yourself on the headless controller; Select does not
+  pretend to be one.
 - Give the field an accessible name: a visible `label` (preferred) or
   `ariaLabel`. The opened panel should be named too, via `popupLabel` or by
   letting it fall back to the caption.
@@ -1082,9 +1103,13 @@ Consequences to be aware of:
 
 - **No real screen reader testing** — automated axe checks only. Manual
   testing with NVDA/JAWS/VoiceOver is still required.
-- **WebKit cannot be launched** in this environment (missing system
-  libraries); only Chromium and Firefox are verified. See
-  `npx playwright install-deps webkit`.
+- **WebKit** is verified on this machine (27.2) after installing three system
+  libraries Playwright's bundle expects — `libavif16`, `libgav1-1`, `libyuv0`.
+  Without root, `apt-get download` plus `dpkg -x` and an `LD_LIBRARY_PATH` (or
+  a symlink into `minibrowser-gtk/sys/lib`) is enough. `npx playwright
+  install-deps webkit` does the same with root.
+- **Safari proper is not tested** — WebKit is the engine, not the browser
+  chrome (Safari's own top-layer and anchor support can lag the engine).
 - **No Tailwind project** in the test suite.
 - **No forced-colors / high-contrast** handling — supply your own
   `--rv-select-*` values under `@media (forced-colors: active)`.

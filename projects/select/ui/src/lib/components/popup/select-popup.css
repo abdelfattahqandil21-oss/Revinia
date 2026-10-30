@@ -72,7 +72,15 @@ rv-select-popup {
   max-width: calc(100dvw - 2rem);
   /* Long lists scroll inside the panel instead of leaving the viewport. */
   max-height: min(20rem, calc(100dvh - 2rem));
+  /*
+   * Vertical only. `overflow-y: auto` already computes `overflow-x` to `auto`,
+   * so a single over-wide row used to spawn a horizontal scrollbar; rows wrap
+   * now, and anything that still cannot wrap is clipped instead of scrolled.
+   */
+  overflow-x: hidden;
   overflow-y: auto;
+  /* Rows are `width: 100%`; the padding has to live inside that 100%. */
+  box-sizing: border-box;
   background: var(--rv-select-popup-bg, var(--rv-select-bg, var(--rv-bg, #ffffff)));
   color: var(--rv-select-popup-fg, var(--rv-select-fg, var(--rv-fg, #111111)));
   font-family: var(--rv-select-popup-font, system-ui, -apple-system, 'Segoe UI', sans-serif);
@@ -120,15 +128,27 @@ rv-select-popup {
   position: fixed;
   inset: auto;
   margin: 0;
+  /*
+   * Top layer is `position: fixed`, so the base rule's `100%` resolves against
+   * the viewport rather than the trigger cell. State the floor explicitly and
+   * cap it against the viewport: a 103px trigger used to open a 103px panel.
+   */
+  min-width: min(var(--rv-select-popup-width, 16rem), calc(100dvw - 2rem));
 }
 /*
  * CSS ANCHOR POSITIONING.
  *
  * Baseline widely-available since 2026-01 (Firefox 147 shipped the last
  * piece), so the top-layer panel can be tethered to its trigger with no
- * JavaScript coordinates at all. position-area takes LOGICAL keywords,
- * which makes the placement direction-correct in RTL for free — the
- * asymmetry that broke the JS path cannot reappear here.
+ * JavaScript coordinates at all. position-area takes LOGICAL keywords, but
+ * they resolve against the CONTAINING BLOCK — and a top-layer popover's
+ * containing block is the ICB, i.e. the ROOT element's direction, not the
+ * panel's. So the keywords are only "direction-correct for free" when the
+ * component agrees with <html>: a `dir="rtl"` select inside an LTR document
+ * used to mirror its panel (measured: 649..905, left edges aligned to a
+ * 649..752 trigger, where 496..752 — right edges aligned — is correct).
+ * The component reflects that mismatch as `data-inline-mirror` before showing
+ * the popover and the rules below swap the inline span keyword.
  *
  * anchor-size(inline) makes the panel exactly as wide as its trigger.
  * position-try-fallbacks replaces the clamp/flip arithmetic: the
@@ -185,7 +205,6 @@ rv-select-popup {
     margin: 0.375rem 0 0 0;
     box-sizing: border-box;
     width: anchor-size(inline);
-    min-width: 0;
     left: auto !important;
     top: auto !important;
     right: auto !important;
@@ -193,18 +212,38 @@ rv-select-popup {
     position-try-fallbacks: flip-block, flip-inline;
     /* Hide the panel when its trigger scrolls out of view. */
     position-visibility: anchors-visible;
+    /* Inline span side, in ICB terms. `-start`/`-end` below pick one. */
+    --rv-select-popup-span-start: span-inline-start;
+    --rv-select-popup-span-end: span-inline-end;
+  }
+  /*
+   * The component's direction disagrees with <html>'s (see the position-area
+   * note above): swap which ICB side the panel grows towards so the trigger's
+   * inline-start edge stays glued to the trigger.
+   */
+  .rv-select-popup-panel[data-top-layer='true'][data-inline-mirror] {
+    --rv-select-popup-span-start: span-inline-end;
+    --rv-select-popup-span-end: span-inline-start;
   }
   .rv-select-popup-panel[data-top-layer='true'][data-placement='bottom-start'] {
-    position-area: block-end span-inline-end;
+    position-area: block-end var(--rv-select-popup-span-end);
   }
   .rv-select-popup-panel[data-top-layer='true'][data-placement='bottom-end'] {
-    position-area: block-end span-inline-start;
+    position-area: block-end var(--rv-select-popup-span-start);
   }
   .rv-select-popup-panel[data-top-layer='true'][data-placement='top-start'] {
-    position-area: block-start span-inline-end;
+    position-area: block-start var(--rv-select-popup-span-end);
   }
   .rv-select-popup-panel[data-top-layer='true'][data-placement='top-end'] {
-    position-area: block-start span-inline-start;
+    position-area: block-start var(--rv-select-popup-span-start);
+  }
+  /*
+   * The gap sits on the side facing the trigger: below it for `bottom-*`,
+   * above it for `top-*`. The base rule only carries the top margin, so a
+   * `top-*` panel used to touch the trigger while the JS path kept its 6px.
+   */
+  .rv-select-popup-panel[data-top-layer='true'][data-placement^='top'] {
+    margin: 0 0 0.375rem 0;
   }
 }
 .rv-select-popup-panel [rvselectpopupitem] {
@@ -212,6 +251,15 @@ rv-select-popup {
   align-items: center;
   gap: var(--rv-select-item-gap, 0.625rem);
   width: 100%;
+  /* `width: 100%` plus padding used to overflow the panel by 1.25rem. */
+  box-sizing: border-box;
+  /*
+   * Shrink to the panel and wrap. Without this a long label keeps its
+   * min-content width, the row outgrows the panel and `overflow-y: auto`
+   * turns the leftover into a horizontal scrollbar.
+   */
+  min-width: 0;
+  overflow-wrap: anywhere;
   min-height: var(--rv-select-item-min-height, 2.5rem);
   border: 0;
   border-radius: var(--rv-select-item-radius, var(--rv-radius, 0.5rem));

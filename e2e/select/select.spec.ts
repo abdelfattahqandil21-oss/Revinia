@@ -53,6 +53,11 @@ test.describe('select: single mode', () => {
 test.describe('select: multi mode', () => {
   test('toggles and stays open', async ({ page }) => {
     await page.goto('/select');
+    // The harness page is taller than the 720px test viewport. Park the page at
+    // its maximum scroll before opening: otherwise Playwright's scroll-to-click
+    // on the top-layer row scrolls the document, and a document scroll closes
+    // the panel by design.
+    await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
     const trigger = page.locator('#multi-select .rv-select-trigger');
     await trigger.click();
     const rows = page.locator('#multi-select .rv-select-popup-panel [role="menuitemcheckbox"]');
@@ -140,6 +145,116 @@ test.describe('select: accessibility names', () => {
         document.getElementById(trigger.getAttribute('aria-labelledby')!)?.textContent?.trim(),
       ),
     ).toBe('Second application label');
+  });
+});
+
+test.describe('select: responsive width', () => {
+  async function measure(page: import('@playwright/test').Page, id: string) {
+    const trigger = page.locator(`#${id} .rv-select-trigger`);
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.click();
+    const panel = page.locator(`#${id} .rv-select-popup-panel`);
+    await expect(panel).toBeVisible();
+    // The panel opens with a scale animation; a rect taken mid-animation is
+    // 1–4px off and would look like a width mismatch.
+    await panel.evaluate(async (el) => {
+      await Promise.all(
+        el.getAnimations().map((animation) => animation.finished.catch(() => undefined)),
+      );
+    });
+    const triggerBox = (await trigger.boundingBox())!;
+    const panelBox = (await panel.boundingBox())!;
+    const rowHeight = await panel
+      .locator('[rvselectpopupitem]')
+      .first()
+      .evaluate((el) => el.getBoundingClientRect().height);
+    const overflow = await panel.evaluate((el) => ({
+      panel: el.scrollWidth > el.clientWidth,
+      page: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    }));
+    return { triggerBox, panelBox, rowHeight, overflow };
+  }
+
+  test('the 14rem floor applies in a wide container and the panel follows it', async ({ page }) => {
+    await page.goto('/select');
+    const m = await measure(page, 'size-wide');
+    // 0.6.1 sized the button to its content (measured 103px) because the
+    // percentage in `min(14rem, 100%)` collapsed inside a shrink-to-fit chain.
+    expect(m.triggerBox.width).toBeGreaterThanOrEqual(223);
+    expect(Math.abs(m.panelBox.width - m.triggerBox.width)).toBeLessThanOrEqual(1);
+    expect(m.overflow.panel).toBe(false);
+  });
+
+  test('at the 10rem design minimum a row still fits on one line', async ({ page }) => {
+    await page.goto('/select');
+    const m = await measure(page, 'size-160');
+    expect(Math.abs(m.panelBox.width - m.triggerBox.width)).toBeLessThanOrEqual(1);
+    // One line: the label and the panel padding fit exactly.
+    expect(m.rowHeight).toBeLessThanOrEqual(44);
+    expect(m.overflow.panel).toBe(false);
+  });
+
+  test('below the minimum the container wins, labels wrap, nothing overflows', async ({ page }) => {
+    await page.goto('/select');
+    const m = await measure(page, 'size-120');
+    // The floor is capped by the container, so the select shrinks with it
+    // instead of overflowing the cell or the page.
+    expect(m.triggerBox.width).toBeLessThan(160);
+    expect(Math.abs(m.panelBox.width - m.triggerBox.width)).toBeLessThanOrEqual(1);
+    // The row grows instead of the panel getting wider.
+    expect(m.rowHeight).toBeGreaterThan(44);
+    expect(m.overflow.panel).toBe(false);
+    expect(m.overflow.page).toBe(false);
+  });
+});
+
+test.describe('select: virtualised list', () => {
+  test('renders a window of 500 rows and scrolls the panel to the last one', async ({ page }) => {
+    await page.goto('/select');
+    const trigger = page.locator('#virtual-select .rv-select-trigger');
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.click();
+    const panel = page.locator('#virtual-select .rv-select-popup-panel');
+    await expect(panel).toBeVisible();
+
+    // `listTemplate` replaces the list and only the window is in the DOM.
+    const windowed = await panel.locator('.virtual-row').count();
+    expect(windowed).toBeGreaterThan(0);
+    expect(windowed).toBeLessThan(40);
+
+    const scroller = await panel.evaluate((el) => ({
+      scrollHeight: el.scrollHeight,
+      clientHeight: el.clientHeight,
+      horizontal: el.scrollWidth > el.clientWidth,
+    }));
+    // The panel is the scroll container the consumer virtualiser needs.
+    expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight * 10);
+    expect(scroller.horizontal).toBe(false);
+
+    await panel.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    await expect(panel.locator('.virtual-row', { hasText: 'Row 500' })).toHaveCount(1);
+  });
+
+  test('keeps the panel as wide as the trigger with the virtual list', async ({ page }) => {
+    await page.goto('/select');
+    const trigger = page.locator('#virtual-select .rv-select-trigger');
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.click();
+    const panel = page.locator('#virtual-select .rv-select-popup-panel');
+    await expect(panel).toBeVisible();
+    await panel.evaluate(async (el) => {
+      await Promise.all(
+        el.getAnimations().map((animation) => animation.finished.catch(() => undefined)),
+      );
+    });
+
+    const triggerWidth = (await trigger.boundingBox())!.width;
+    const panelWidth = (await panel.boundingBox())!.width;
+    expect(Math.abs(panelWidth - triggerWidth)).toBeLessThanOrEqual(1);
+    const horizontal = await panel.evaluate((el) => el.scrollWidth > el.clientWidth);
+    expect(horizontal).toBe(false);
   });
 });
 
