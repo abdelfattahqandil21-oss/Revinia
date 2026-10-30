@@ -5,7 +5,7 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ## Prepared releases (unpublished)
 
-### @rivinia/select 0.7.0
+### @rivinia/select 0.7.0 (published 2026-10-30)
 
 Eleven defects, all found by running the packed tarball in real browsers: the
 first seven in a visible Chromium/Firefox/WebKit matrix against the packed
