@@ -148,6 +148,8 @@ rv-select {
   position: sticky;
   top: 0;
   z-index: 1;
+  /* Takes over the scrollport's top padding; see the `:has` rule below. */
+  padding-top: var(--rv-select-popup-pad, 0.375rem);
   padding-bottom: var(--rv-select-search-gap, 0.25rem);
   background: var(
     --rv-select-search-bg,
@@ -163,8 +165,17 @@ rv-select {
  * The selector has to be the OUTER popup panel: the select's own panel div is
  * projected inside it, and the scrollport is the outer one (`overflow-y: auto`
  * in select-popup.css). `:has` keeps the inset off panels that have no search.
+ *
+ * The same `:has` gives up the scrollport's top padding. That padding sits
+ * OUTSIDE the bar's containing block, and a sticky box is clamped to that
+ * block, so `top: 0` stopped at the content edge: rows stayed visible in the
+ * 7px strip between the panel's border and the bar (measured 6px padding +
+ * 1px border, at every scroll offset, in Chromium). The bar now carries the
+ * padding itself, so its top edge IS the scrollport's content edge and
+ * nothing can paint above it. Bottom and inline padding stay on the panel.
  */
 .rv-select .rv-select-popup-panel:has(.rv-select-search-bar) {
+  padding-top: 0;
   scroll-padding-top: var(--rv-select-search-offset, 3rem);
 }
 .rv-select-search {

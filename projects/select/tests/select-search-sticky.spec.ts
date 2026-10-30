@@ -65,6 +65,21 @@ describe('select search stays reachable while the list scrolls', () => {
     expect(rule).toMatch(/scroll-padding-top:/);
   });
 
+  it('leaves no strip of the list above the pinned bar', () => {
+    const css = readFileSync(CSS_FILE, 'utf8');
+    // The scrollport's padding sits OUTSIDE the bar's containing block, and a
+    // sticky box is clamped to that block — so `top: 0` stopped at the content
+    // edge and rows stayed visible in the 7px strip between the panel's border
+    // and the bar (measured 6px padding + 1px border at every scroll offset).
+    // The bar carries that padding instead, so its top edge is the content edge.
+    const scrollport = block(css, '.rv-select .rv-select-popup-panel:has(.rv-select-search-bar)');
+
+    expect(scrollport).toMatch(/padding-top:\s*0/);
+    expect(block(css, '.rv-select-search-bar')).toMatch(
+      /padding-top:\s*var\(--rv-select-popup-pad/,
+    );
+  });
+
   it('puts the search input inside the sticky bar', async () => {
     const fixture = TestBed.createComponent(SearchHarness);
     fixture.detectChanges();
