@@ -51,17 +51,26 @@ describe('select panel metrics', () => {
     expect(declaration(popup, '.rv-select-popup-panel', 'overflow-x')).toBe('hidden');
   });
 
-  it('declares an explicit minimum width for the panel in every path', () => {
-    const base = declaration(popup, '.rv-select-popup-panel', 'min-width');
+  it('gives the select panel no floor of its own, so it can match the trigger', () => {
+    // 0.6.1 carried two floors — 14rem on the trigger, 16rem on the panel — so
+    // the panel sat 32px wider than the button that opened it with no consumer
+    // opt-in. The floor lives on the select now; the trigger fills it and the
+    // panel follows the trigger.
+    expect(declaration(select, '.rv-select .rv-select-popup-panel', 'min-width')).toBe('0');
+    expect(
+      declaration(select, ".rv-select .rv-select-popup-panel[data-top-layer='true']", 'min-width'),
+    ).toBe('0');
+    expect(declaration(select, 'rv-select', 'min-width')).toBe(
+      'min(var(--rv-select-width, 14rem), 100%)',
+    );
+    expect(declaration(select, '.rv-select-trigger', 'width')).toBe('100%');
+
+    // A standalone popup has no trigger to follow, so it keeps its own floor.
     const topLayer = declaration(
       popup,
       ".rv-select-popup-panel[data-top-layer='true']",
       'min-width',
     );
-
-    expect(base).toContain('--rv-select-popup-width');
-    // The top-layer panel is `position: fixed`, so `100%` is the viewport and
-    // the floor has to be capped against the viewport, not the trigger.
     expect(topLayer).toContain('--rv-select-popup-width');
     expect(topLayer).toContain('100dvw');
   });

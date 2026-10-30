@@ -2495,19 +2495,33 @@ Three defects, all found by a consumer using the packages.
 ## 2026-10-30 — D75: select panel metrics, and `position-area` resolves against the ICB
 
 - **What shipped.** `@rivinia/select` 0.6.2 (prepared, unpublished): the panel
-  no longer scrolls horizontally, a narrow trigger no longer collapses the panel
-  below its width floor, `*-end` placements sit on the trigger button, RTL
-  panels align in a mixed-direction page, and the README's ARIA section was
-  rewritten from the measured DOM.
+  no longer scrolls horizontally, the panel and its trigger are one width,
+  `*-end` placements sit on the trigger button, RTL panels align in a
+  mixed-direction page, and the README's ARIA section was rewritten from the
+  measured DOM.
 - **Panel metrics.** Rows were `width: 100%` in a content box, so padding pushed
   every row past the panel: `scrollWidth` 105–118 against `clientWidth` 101, and
   `overflow-y: auto` turned that into a horizontal scrollbar. Rows are
   `border-box` with `min-width: 0` and `overflow-wrap: anywhere`; the panel is
-  `overflow-x: hidden` with a `border-box` of its own. The top-layer panel sets
-  `min-width: min(var(--rv-select-popup-width, 16rem), calc(100dvw - 2rem))`
-  (a 103px trigger used to open a 103px panel) and the JS path stopped writing
-  `min-width: 0` inline. Everything measured identical in Chromium 156, Firefox
-  157 and WebKit 27.2 after the fix.
+  `overflow-x: hidden` with a `border-box` of its own. Everything measured
+  identical in Chromium 156, Firefox 157 and WebKit 27.2 after the fix.
+- **One control, one width.** The first pass fixed a 103px trigger opening a
+  103px panel by giving the panel its own floor — but the popup primitive's
+  floor (16rem) and the trigger's (14rem) then disagreed, so with no consumer
+  opt-in the panel sat 32px wider than the button (measured 256 over 224). The
+  owner's call: the panel must read as the same box. One floor now lives on the
+  `rv-select` host, `min(var(--rv-select-width, 14rem), 100%)`; the trigger is
+  `width: 100%` of it, the select scopes the panel to `min-width: 0` so
+  `anchor-size(inline)` / `root.style.width` decide, and a standalone
+  `rv-select-popup` keeps its own floor because it has no trigger to follow.
+  The host is where the floor has to be: on the trigger the containing block is
+  a chain of shrink-to-fit boxes, so the `100%` inside `min()` resolved against
+  an indefinite width and collapsed to 0 — measured 103px where 14rem was
+  documented, and only a select in a grid cell (a definite width) honoured it.
+  The host's containing block is the consumer's layout, where the percentage is
+  a real width. A container narrower than the floor shrinks both together and
+  the labels wrap — the "narrow panel" is now intended behaviour, which is why
+  the e2e asserts equality instead of a minimum.
 - **The platform finding: `position-area` is ICB-relative.** Span keywords
   (`span-inline-start`/`-end`) resolve against the containing block, and a
   top-layer popover's containing block is the ICB — `<html>`'s direction, not
@@ -2524,10 +2538,10 @@ Three defects, all found by a consumer using the packages.
 - **Same finding in the JS path.** `isRtl()` preferred `document.documentElement.dir`
   over computed direction, so an LTR document with an RTL section was placed as
   LTR there too. It reads the component's computed direction now.
-- **Coverage.** 78 unit tests (two new contracts in `tests/panel-metrics.spec.ts`
-  pin the span-variable swap and the placement wiring) and 138/138 e2e —
-  46 cases × Chromium, Firefox, WebKit — against the packed tarball installed in
-  the consumer fixture, on a scratch port.
+- **Coverage.** 78 unit tests (the new contracts in `tests/panel-metrics.spec.ts`
+  pin the width ownership, the span-variable swap and the placement wiring) and
+  138/138 e2e — 46 cases × Chromium 156, Firefox 157, WebKit 27.2 — against the
+  packed tarball installed in the consumer fixture, on a scratch port.
 
 ## 2026-10-30 — D74: `@rivinia/i18n@0.7.1` LIVE — 0.7.0 folded in, and web auth instead of `--otp`
 

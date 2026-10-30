@@ -1,5 +1,19 @@
+/*
+ * The one width floor lives HERE, on the select itself. On the trigger it was
+ * never resolvable in normal flow: the trigger's containing block is a chain
+ * of shrink-to-fit boxes, so the `100%` inside `min()` resolved to 0 and the
+ * button collapsed to its content (measured 103px where 224px was documented).
+ * The host's containing block is the consumer's layout, where `100%` is a real
+ * width. The trigger then fills the select, and the panel follows the trigger —
+ * one knob, one box.
+ *
+ * Capped by the container: `min()` is the only way to cap a min-width, because
+ * a plain `max-width: 100%` LOSES to `min-width` by the cascade — a 21rem
+ * floor would still be 21rem wide in a 12rem cell.
+ */
 rv-select {
   display: inline-block;
+  min-width: min(var(--rv-select-width, 14rem), 100%);
 }
 /*
  * SEL-01: the CSS anchor path used to anchor to `.rv-select-popup-trigger`,
@@ -37,13 +51,31 @@ rv-select {
   --rv-select-popup-muted: var(--rv-select-muted, var(--rv-muted, #555555));
   --rv-select-popup-radius: var(--rv-select-radius, var(--rv-radius, 0.75rem));
   --rv-select-popup-shadow: var(--rv-select-shadow, var(--rv-shadow, 0 16px 48px rgba(0, 0, 0, 0.22)));
-  --rv-select-popup-width: var(--rv-select-width, 16rem);
   /*
    * The panel's own metrics ride the same tokens as the trigger, so a
    * consumer sets one value and both surfaces follow.
    */
   --rv-select-popup-pad: var(--rv-select-panel-padding, 0.375rem);
   --rv-select-popup-font: var(--rv-select-font, system-ui, -apple-system, 'Segoe UI', sans-serif);
+}
+/*
+ * One control, one width.
+ *
+ * Every path already gives the panel the trigger's width: `anchor-size(inline)`
+ * in the CSS anchor path, `root.style.width` in the JS path. The popup
+ * primitive's own floor (`--rv-select-popup-width`, 16rem) then overrode it
+ * and made the panel 32px wider than its trigger with no consumer opt-in —
+ * two surfaces that are meant to read as one. The floor belongs to the select
+ * host, and the panel simply follows the trigger that fills it; a container
+ * narrower than that floor shrinks both together and the labels wrap.
+ *
+ * The `[data-top-layer]` selector is not redundant: it outranks the
+ * primitive's own `[data-top-layer='true']` rule, and relying on stylesheet
+ * order between two components would be a coin flip.
+ */
+.rv-select .rv-select-popup-panel,
+.rv-select .rv-select-popup-panel[data-top-layer='true'] {
+  min-width: 0;
 }
 .rv-select-caption {
   display: block;
@@ -57,12 +89,11 @@ rv-select {
   justify-content: var(--rv-select-trigger-justify, flex-start);
   gap: var(--rv-select-trigger-gap, 0.5rem);
   /*
-   * Capped by the container, so a large --rv-select-width can never make the
-   * trigger overflow its cell. `min()` is the only way to cap a min-width:
-   * a plain `max-width: 100%` LOSES to `min-width` by the cascade, so a
-   * 21rem min-width would still be 21rem wide in a 12rem cell.
+   * Fill the select. The floor lives on the host (see the rule above); the
+   * button must stay its width or the panel, which follows the trigger, would
+   * be narrower than the control the user clicked.
    */
-  min-width: min(var(--rv-select-width, 14rem), 100%);
+  width: 100%;
   max-width: 100%;
   padding: var(--rv-select-trigger-padding, 0.5rem 0.75rem);
   border-radius: var(--rv-select-radius, var(--rv-radius, 0.625rem));

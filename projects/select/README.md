@@ -1036,12 +1036,15 @@ none of it would have moved.
 | `--rv-select-error`  | `#dc2626`                     | invalid trigger   |
 | `--rv-select-radius` | `0.625rem`                    | trigger + panel   |
 | `--rv-select-shadow` | `0 16px 48px rgba(0,0,0,.22)` | panel             |
-| `--rv-select-width`  | `14rem`                       | trigger + panel min-width |
+| `--rv-select-width`  | `14rem`                       | select floor; panel follows it |
 
-**The panel never scrolls sideways.** It has an explicit minimum width
-(`--rv-select-width`, capped to the viewport) so a narrow trigger still opens a
-usable panel, and option labels wrap — a 60-character unbroken string wraps
-instead of widening the panel. Long lists scroll **vertically** only.
+**The panel is the trigger's width.** One floor — `--rv-select-width`, capped
+by the container — sits on the select itself; the trigger fills it and the
+panel follows the trigger exactly, so the two read as one control. Widen the
+token and all three grow together. Option labels wrap (a 60-character unbroken
+string wraps instead of widening the panel), and the panel never scrolls
+sideways: long lists scroll **vertically** only. In a container narrower than
+the floor both shrink together and the labels wrap.
 
 **No forced dark mode** — there is no `prefers-color-scheme` block anywhere in
 the package, so a component can never override your explicit choice.

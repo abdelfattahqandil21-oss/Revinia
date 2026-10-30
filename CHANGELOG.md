@@ -7,7 +7,7 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ### @rivinia/select 0.6.2
 
-Four defects found by running the packed tarball in visible Chromium,
+Six defects found by running the packed tarball in visible Chromium,
 Firefox and WebKit against the published 0.6.1 bytes.
 
 - **The panel scrolled sideways.** `overflow-y: auto` computes `overflow-x` to
@@ -17,13 +17,23 @@ Firefox and WebKit against the published 0.6.1 bytes.
   `border-box`, the panel is `overflow-x: hidden`, and a 60-character unbroken
   label wraps (`overflow-wrap: anywhere`) instead of pushing `scrollWidth` to
   475px.
-- **A narrow trigger produced a narrow panel.** The top-layer panel forced
-  `min-width: 0`, so the documented `--rv-select-width` floor never applied:
-  a 103px trigger opened a 103px panel. The top-layer panel now has an explicit
-  `min-width: min(var(--rv-select-width, 16rem), calc(100dvw - 2rem))`, and the
-  JS path no longer writes `min-width: 0` inline. The panel is also
-  `border-box` in every engine now — Firefox used to be 14px wider than the
-  trigger it was aligned to.
+- **The panel had a width of its own.** It carried a 16rem floor while the
+  select's was 14rem, so two surfaces meant to read as one control stood
+  apart with no consumer opt-in (measured: a 256px panel over a 224px
+  trigger). The floor now lives only on the select (`--rv-select-width`, capped
+  by the container), the trigger fills the select, and the panel takes exactly
+  the trigger's width in every path — the anchor path already did that with
+  `anchor-size(inline)` and the primitive's floor was overriding it. A
+  container narrower than the floor shrinks both together and the labels wrap.
+  The panel is also `border-box` in every engine now — Firefox used to be 14px
+  wider than the trigger it was aligned to — and the JS path no longer writes
+  `min-width: 0` inline.
+- **The width floor never applied off the grid.** The trigger's `min-width` was
+  `min(--rv-select-width, 100%)`, but its containing block is a chain of
+  shrink-to-fit boxes, so the percentage collapsed and the button sized itself
+  to its content: measured 103px where the documentation promised 14rem. Only
+  a select inside a grid cell (a definite width) honoured the floor. The floor
+  moved to the host, whose containing block is the consumer's layout.
 - **`*-end` placements sat off the trigger.** The CSS anchor path anchored to
   `.rv-select-popup-trigger`, the full-width hit area, while the JS path
   measured the `<button>` inside it: 128px apart on a 352px cell with a 224px
