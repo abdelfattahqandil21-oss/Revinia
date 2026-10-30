@@ -146,6 +146,32 @@ describe('the loading features', () => {
     expect(panel?.classList.contains('rv-select-popup-panel')).toBe(true);
   });
 
+  it('hands the NEW panel element after a close and reopen', async () => {
+    // The panel lives inside `@if (open)`, so closing destroys it. A
+    // once-per-instance emission left the consumer holding the detached
+    // element: a reopened virtual list scrolled a node that was no longer in
+    // the document and nothing moved.
+    const fixture = TestBed.createComponent(LoaderHost);
+    fixture.detectChanges();
+    await openPanel(fixture);
+
+    const first = fixture.componentInstance.panel();
+    expect(first).not.toBeNull();
+    expect(first?.isConnected).toBe(true);
+
+    first?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.rv-select-popup-panel')).toBeNull();
+
+    await openPanel(fixture);
+
+    const second = fixture.componentInstance.panel();
+    expect(second).not.toBe(first);
+    expect(second?.isConnected).toBe(true);
+  });
+
   it('replaces the list with the consumer template when given one', async () => {
     const fixture = TestBed.createComponent(VirtualHost);
     fixture.detectChanges();

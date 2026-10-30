@@ -2548,22 +2548,31 @@ Three defects, all found by a consumer using the packages.
 - **Same finding in the JS path.** `isRtl()` preferred `document.documentElement.dir`
   over computed direction, so an LTR document with an RTL section was placed as
   LTR there too. It reads the component's computed direction now.
-- **Coverage.** 78 unit tests (the new contracts in `tests/panel-metrics.spec.ts`
-  pin the width ownership, the span-variable swap and the placement wiring);
-  15/15 repo e2e cases × Chromium 156, Firefox 157, WebKit 27.2 (45/45) —
-  including three sizing cases at 480px, 160px and 120px, and two
-  virtualised-list cases; and the tarball matrix, 138/138 (46 cases × 3
-  engines), installed in the consumer fixture on a scratch port. WebKit runs
-  headed here: the headless WPE build in the local Playwright cache fails to
-  load `libavif.so.16`, while the GTK build used headed starts fine. That is an
-  environment limitation, surfaced as not-green rather than hidden.
+- **Coverage.** 79 unit tests (the new contracts in `tests/panel-metrics.spec.ts`
+  pin the width ownership, the span-variable swap and the placement wiring;
+  `select-loading.spec.ts` pins the per-open `panelReady`); 16/16 repo e2e cases
+  × Chromium 156, Firefox 157, WebKit 27.2 (48/48) — including three sizing
+  cases at 480px, 160px and 120px, and three virtualised-list cases; and the
+  tarball matrix, 138/138 (46 cases × 3 engines), installed in the consumer
+  fixture on a scratch port. WebKit runs headed here: the headless WPE build in
+  the local Playwright cache fails to load `libavif.so.16`, while the GTK build
+  used headed starts fine. That is an environment limitation, surfaced as
+  not-green rather than hidden.
 - **Virtualised list, measured.** The README recipe (`listTemplate` + the panel
   from `panelReady`) now has a fixture: 500 options, a 36px-row window and the
   panel as scroll element. Open renders 19 rows (`scrollHeight` 18,012 against
   a 318px `clientHeight`), scrolling to the end renders rows 487–500 and the
-  panel stays 224px — the trigger's width — with no horizontal scroll. The
-  recipe needed no product change after the metrics work; this pins it so it
-  cannot regress silently.
+  panel stays 224px — the trigger's width — with no horizontal scroll.
+- **`panelReady` per open.** Building a 283-row governorate demo on the packed
+  tarball surfaced a real defect: the panel lives inside `@if (open)`, so every
+  reopen builds a new element, while `panelReady` carried a once-per-instance
+  flag and kept handing over the first one. Closing and reopening the demo left
+  its scroll listener on a detached node. The guard now compares the element,
+  not a boolean. Covered twice: a unit test in `select-loading.spec.ts` and a
+  repo e2e case (open → scroll → Escape → reopen → scroll) — both were run
+  against the reverted fix and both fail. The demo also exposed a consumer-side
+  trap worth documenting: an effect that reads the query and the panel signal
+  together resets the list scroll every time a new panel arrives.
 
 ## 2026-10-30 — D74: `@rivinia/i18n@0.7.1` LIVE — 0.7.0 folded in, and web auth instead of `--otp`
 

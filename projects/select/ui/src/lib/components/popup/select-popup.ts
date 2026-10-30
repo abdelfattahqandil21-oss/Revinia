@@ -212,7 +212,8 @@ export class SelectPopupComponent {
    * ```
    *
    * Emitted after the panel is committed, so the element is in the document
-   * when it arrives.
+   * when it arrives. The panel is rebuilt on every open, so this fires again
+   * with the new element each time — consumers must rebind, not cache.
    */
   readonly panelReady = output<HTMLElement>();
 
@@ -246,8 +247,8 @@ export class SelectPopupComponent {
     typeof HTMLElement !== 'undefined' && 'showPopover' in HTMLElement.prototype;
   /** Coordinates applied (gates the enter animation until measured). */
   protected readonly positioned = signal(false);
-  /** Whether the panel element has already been handed over. */
-  private panelEmitted = false;
+  /** The element already handed to the consumer, so each open emits once. */
+  private emittedPanel: HTMLElement | null = null;
   /** Whether the panel flipped to the opposite vertical side. */
   protected readonly flipped = signal(false);
   /** Printable-character search buffer; reset by timer after 500ms quiet. */
@@ -367,19 +368,21 @@ export class SelectPopupComponent {
    * placement when popover is unsupported (jsdom included).
    */
   /**
-   * Hand the panel element to the consumer, once.
+   * Hand the panel element to the consumer, once per open.
    *
    * A virtualised list needs the panel as its scroll element, and the panel
-   * only exists while the popup is open — so it is emitted on open and the
-   * consumer keeps the reference.
+   * only exists while the popup is open. `@if (open)` destroys it on close and
+   * builds a NEW element on reopen, so "already emitted" has to mean "already
+   * emitted for this element" — a once-per-instance flag handed the consumer a
+   * detached node, and a reopened virtual list listened to a panel nobody
+   * could scroll (measured in the demo).
    */
   private emitPanelReady(): void {
-    if (this.panelEmitted) return;
     const root = this.self.nativeElement.querySelector(
       '.rv-select-popup-panel',
     ) as HTMLElement | null;
-    if (!root) return;
-    this.panelEmitted = true;
+    if (!root || root === this.emittedPanel) return;
+    this.emittedPanel = root;
     this.panelReady.emit(root);
   }
 

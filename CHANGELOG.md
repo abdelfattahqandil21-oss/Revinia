@@ -7,7 +7,7 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ### @rivinia/select 0.6.2
 
-Six defects found by running the packed tarball in visible Chromium,
+Seven defects found by running the packed tarball in visible Chromium,
 Firefox and WebKit against the published 0.6.1 bytes.
 
 - **The panel scrolled sideways.** `overflow-y: auto` computes `overflow-x` to
@@ -63,6 +63,14 @@ Firefox and WebKit against the published 0.6.1 bytes.
   `aria-multiselectable`; the shipped DOM is `menu` / `menuitem` /
   `menuitemcheckbox` with `aria-haspopup="menu"` and `aria-checked`. The
   README now documents the measured DOM.
+- **`panelReady` fired once per instance, not once per open.** The panel lives
+  inside `@if (open)`, so every reopen builds a new element, while the
+  once-per-instance flag kept handing consumers the first one. A reopened
+  virtual list then scrolled a detached node and nothing moved — found while
+  building a 283-row governorate demo on the packed tarball. It now emits
+  whenever the element differs from the last one handed over, the README says
+  a consumer must rebind, and a repo e2e case (open → close → reopen) fails
+  without the fix.
 
 ### @rivinia/i18n 0.5.0
 

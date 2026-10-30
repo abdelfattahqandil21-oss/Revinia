@@ -213,7 +213,7 @@ the headless `RiviniaSelect` controller.
 | `selectionChange` | `string \| null` (single) / `readonly string[]` (multi) | A pick, or `clear()`.              |
 | `opened`          | `void`                                                  | Panel opened.                      |
 | `reachEnd`        | `void`                                                  | The panel scrolled near its end.   |
-| `panelReady`      | `HTMLElement`                                           | The panel element, once it exists. |
+| `panelReady`      | `HTMLElement`                                           | The panel element — emitted again on every open. |
 | `closed`          | `void`                                                  | Panel closed.                      |
 
 ### The controller
@@ -773,6 +773,11 @@ if (last && last.index >= this.options().length - 1) this.loadMore();
 
 `@tanstack/angular-virtual` is the usual choice, but any virtualizer works —
 it only needs the scroll element and the row count.
+
+The panel is destroyed on close and built again on the next open, so
+`panelReady` fires **once per open with a new element**. Keep it in a signal
+and rebind your scroll listener when it changes; caching the first element
+leaves the list scrolling a detached node after the first reopen.
 
 ### A custom entrance animation
 
