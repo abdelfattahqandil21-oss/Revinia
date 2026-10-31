@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/i18n",
-  "version": "0.7.2",
+  "version": "0.8.0",
   "description": "Headless Angular language manager: signals, RTL, SSR-safe loaders, fallback language, missing-key reporting, ICU plurals, typed keys.",
   "keywords": [
     "angular",
@@ -32,10 +32,14 @@
   },
   "peerDependencies": {
     "@angular-devkit/schematics": "^22.0.0",
-    "@angular/core": "^22.0.0"
+    "@angular/core": "^22.0.0",
+    "@rivinia/select": "^0.7.0"
   },
   "peerDependenciesMeta": {
     "@angular-devkit/schematics": {
+      "optional": true
+    },
+    "@rivinia/select": {
       "optional": true
     }
   },
