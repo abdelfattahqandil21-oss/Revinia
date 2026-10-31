@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/theme",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The shared Rivinia design-token layer: one import, one place to set the whole component ecosystem's colours, shapes and type.",
   "keywords": [
     "angular",

@@ -2,7 +2,7 @@
 
 Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
 
-## Unreleased
+## 0.2.0 - 2026-10-31
 
 The styling-stack fixes (SPEC-0.1.1): the Tailwind palette keeps subtree
 overrides again, and the packaged contract is checked instead of assumed.
