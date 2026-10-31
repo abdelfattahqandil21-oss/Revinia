@@ -180,4 +180,27 @@ test.describe('select: structure', () => {
     await expect(page.locator('#multi-select .rv-select-panel')).toBeHidden();
     await expect(trigger).toBeFocused();
   });
+
+  test('keyboard: Space picks the focused row', async ({ page }) => {
+    await page.goto('/select');
+    const trigger = page.locator('#multi-select .rv-select-trigger');
+    await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+    await trigger.focus();
+    await page.keyboard.press('ArrowDown');
+    const rows = page.locator('#multi-select .rv-select-popup-menu [role="menuitemcheckbox"]');
+    await expect(rows.nth(0)).toBeFocused();
+    await page.keyboard.press(' ');
+    await expect(rows.nth(0)).toHaveAttribute('aria-checked', 'true');
+  });
+
+  test('keyboard: typing a letter jumps to the matching row', async ({ page }) => {
+    await page.goto('/select');
+    const trigger = page.locator('#rtl-select .rv-select-trigger');
+    await trigger.focus();
+    await page.keyboard.press('ArrowDown');
+    const rows = page.locator('#rtl-select .rv-select-popup-menu [role="menuitemradio"]');
+    await expect(rows.nth(0)).toBeFocused();
+    await page.keyboard.press('m');
+    await expect(rows.nth(2)).toBeFocused();
+  });
 });
