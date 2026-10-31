@@ -65,10 +65,12 @@ function open(fixture: ComponentFixture<unknown>): HTMLElement {
   return fixture.nativeElement as HTMLElement;
 }
 
+/** Prettier splits long selectors across lines; collapse before searching. */
 function rule(css: string, selector: string): string {
-  const at = css.indexOf(`${selector} {`);
+  const text = css.replace(/\s+/g, ' ');
+  const at = text.indexOf(`${selector} {`);
   if (at === -1) return '';
-  return css.slice(at, css.indexOf('}', at));
+  return text.slice(at, text.indexOf('}', at));
 }
 
 /** Selector assertions must not trip over prose inside block comments. */

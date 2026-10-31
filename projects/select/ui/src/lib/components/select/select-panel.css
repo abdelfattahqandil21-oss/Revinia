@@ -172,7 +172,10 @@ rv-select[data-variant='premium'] .rv-select-trigger[aria-invalid='true'] {
 }
 /* The trigger had no visible focus ring of its own. */
 rv-select[data-variant='premium'] .rv-select-trigger:focus-visible {
-  outline: var(--rv-select-focus-ring, 2px solid color-mix(in srgb, currentColor 55%, transparent));
+  outline: var(
+    --rv-select-focus-ring,
+    2px solid var(--rv-accent, color-mix(in srgb, currentColor 55%, transparent))
+  );
   outline-offset: var(--rv-select-focus-offset, 2px);
 }
 .rv-select-value {
@@ -291,7 +294,7 @@ rv-select[data-variant='premium'] .rv-select-chevron {
   font-size: var(--rv-select-search-size, 0.875rem);
 }
 .rv-select-search:focus {
-  outline: var(--rv-select-focus-ring, 2px solid currentColor);
+  outline: var(--rv-select-focus-ring, 2px solid var(--rv-accent, currentColor));
   outline-offset: var(--rv-select-focus-offset, -1px);
 }
 .rv-select-search::placeholder {
@@ -321,7 +324,10 @@ rv-select[data-variant='premium'] .rv-select-search:focus {
     --rv-select-border,
     var(--rv-border, color-mix(in srgb, currentColor 22%, transparent))
   );
-  outline: var(--rv-select-focus-ring, 2px solid color-mix(in srgb, currentColor 55%, transparent));
+  outline: var(
+    --rv-select-focus-ring,
+    2px solid var(--rv-accent, color-mix(in srgb, currentColor 55%, transparent))
+  );
   outline-offset: -1px;
 }
 .rv-select-check {
@@ -441,5 +447,32 @@ rv-select[data-variant='premium'] .rv-select-skeleton > i:nth-child(3) {
   }
   rv-select[data-variant='premium'] .rv-select-skeleton > i {
     animation: none;
+  }
+}
+
+/*
+ * FORCED COLORS — D87. The UA forces author colours in this mode, but it does
+ * not remove `box-shadow`, and a forced background erases the premium
+ * trigger's fill. System colours are the one palette an author may still name.
+ */
+@media (forced-colors: active) {
+  rv-select[data-variant='premium'] .rv-select-trigger {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+  .rv-select-search,
+  rv-select[data-variant='premium'] .rv-select-search {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+  }
+  .rv-select-search:focus,
+  rv-select[data-variant='premium'] .rv-select-search:focus {
+    outline-color: Highlight;
+  }
+  .rv-select-check {
+    color: CanvasText;
   }
 }
