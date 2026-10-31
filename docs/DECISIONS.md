@@ -3245,6 +3245,46 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   light, dark, forced-colors and RTL. Version for this work is decided at
   release, not here.
 
+### D87 addendum — the contrast matrix is explicit, and the border is not in it
+
+- Context: D87 says "WCAG AA (4.5:1 text, 3:1 non-text) for every token pair in
+  both schemes". Taken literally, `--rv-border` on `--rv-bg` fails: 1.32:1 on
+  white and 1.73:1 on `#161616`. Reaching 3:1 would repaint the hairline around
+  every select trigger, menu panel, modal and toast — a consumer-visible design
+  change that D87 did not scope, and one that cannot be judged for looks
+  without the owner.
+- Decision: the gate enforces three explicit groups — text (`--rv-fg`,
+  `--rv-muted`, `--rv-accent` at 4.5:1), indicators (the four status tokens at
+  3:1) and decorative (`--rv-border`, measured and printed, never failing).
+  `--rv-accent` counts as text because S5b paints selected/active labels with
+  it.
+- Why not "text everywhere": on white, `--rv-ok` is 3.30:1 and `--rv-warning`
+  3.19:1. The components use them as borders and tinted backgrounds — select
+  paints its error border with `--rv-danger`, datepicker tints with
+  `--rv-warning` — and none paints text with them.
+- Accepted gap: a consumer who paints text in a status token, or who relies on
+  the border alone to identify a control (WCAG 1.4.11), gets a low-contrast
+  result. The README says so next to the token table; changing either is a
+  palette decision for the owner, not something 1.0 does silently.
+- Also recorded: the Bootstrap adapter's mapping rules stay **unlayered** and
+  must set `color-scheme` themselves. Unlayered declarations beat the layered
+  `@media (prefers-color-scheme: dark)` block, which is what keeps Bootstrap's
+  palette authoritative; the probe caught the adapter mapping colours but
+  leaving `color-scheme: light`, so a Bootstrap dark surface kept light
+  scrollbars and form controls. The same probe found the dark block mapping
+  four tokens only, so the accent and the four status tokens kept their light
+  values on a dark surface; both mappings now carry all nine colours plus
+  `--rv-shadow`.
+- Verification: `pnpm check:contrast` (palette, drift and ratios) and
+  `pnpm check:theme-dark` (eleven documents, Chromium and Firefox, computed
+  values). Both run on demand; neither is part of `pnpm test`. The browser gate
+  also proves the two claims the numbers cannot: an unlayered consumer `:root`
+  rule really does beat the layered defaults, and the adapter really reads
+  `--bs-*` rather than silently falling back to its own values.
+- Scope recorded: the switch is read on `:root` only, so a subtree goes dark by
+  setting the `--rv-*` properties and `color-scheme` on itself. The attribute
+  was never a subtree switch, and the first README draft said it was.
+
 ## 2026-10-31 — D88: 1.0 ships as `1.0.0-rc.1` on `next`, then `1.0.0`
 
 - Context: pre-1.0 caret peers make release order load-bearing. i18n has an

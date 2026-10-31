@@ -25,6 +25,8 @@
     "test:theme": "vitest run projects/theme/tests",
     "check:docs": "node scripts/check-docs.mjs",
     "check:theme": "node scripts/check-theme-package.mjs",
+    "check:contrast": "node scripts/check-contrast.mjs",
+    "check:theme-dark": "node scripts/check-theme-dark.mjs",
     "check:pack": "node scripts/check-pack.mjs",
     "check:readmes": "node scripts/check-readmes.mjs",
     "test:scripts": "vitest run scripts/tests"
