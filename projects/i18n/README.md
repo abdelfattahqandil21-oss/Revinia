@@ -32,11 +32,11 @@ Arabic is a first-class target, not an afterthought of an English layout.
 `@rivinia/i18n` releases move with the rest of the ecosystem. Install a matching
 pair; the select peer is optional and only needed by the `/select` entry point.
 
-| `@rivinia/i18n` | `@angular/core` | `@rivinia/select` (optional, `/select` only) | Node |
-| --- | --- | --- | --- |
-| 0.8.x | `^22.0.0` | `^0.7.0` | same as Angular 22 |
-| 1.0.0-rc.x | `^22.0.0` | `^1.0.0-rc.1` | same as Angular 22 |
-| 1.0.x | `^22.0.0` | `^1.0.0` | same as Angular 22 |
+| `@rivinia/i18n` | `@angular/core` | `@rivinia/select` (optional, `/select` only) | Node               |
+| --------------- | --------------- | -------------------------------------------- | ------------------ |
+| 0.8.x           | `^22.0.0`       | `^0.7.0`                                     | same as Angular 22 |
+| 1.0.0-rc.x      | `^22.0.0`       | `^1.0.0-rc.1`                                | same as Angular 22 |
+| 1.0.x           | `^22.0.0`       | `^1.0.0`                                     | same as Angular 22 |
 
 The 1.0 rows are **prepared, not published**. A pre-1.0 caret is narrow: while
 i18n is 0.8, `^0.7.0` means `>=0.7.0 <0.8.0`, so any select 0.8.0 or 1.0.0
@@ -1091,32 +1091,39 @@ cannot disagree.
 Sizes are `rem`, properties are logical, and every token falls back to a `--rv-*`
 semantic value. Override the custom property, not the declaration:
 
-| Token                               | Falls back to | Default                                             |
-| ----------------------------------- | ------------- | --------------------------------------------------- |
-| `--rv-i18n-toggle-bg`               | `--rv-bg`     | `transparent`                                       |
-| `--rv-i18n-toggle-fg`               | `--rv-fg`     | `currentColor`                                      |
-| `--rv-i18n-toggle-border`           | `--rv-border` | `currentColor`                                      |
-| `--rv-i18n-toggle-radius`           | `--rv-radius` | `0.5rem`                                            |
-| `--rv-i18n-toggle-shadow`           | `--rv-shadow` | `none`                                              |
-| `--rv-i18n-toggle-font`             | `--rv-font`   | `inherit`                                           |
-| `--rv-i18n-toggle-padding`          | —             | `0.5rem 0.75rem`                                    |
-| `--rv-i18n-toggle-gap`              | —             | `0.5rem`                                            |
-| `--rv-i18n-toggle-size`             | —             | `0.875rem`                                          |
-| `--rv-i18n-toggle-icon-size`        | —             | `1.5em`                                             |
-| `--rv-i18n-toggle-hover-bg`         | —             | `color-mix(in srgb, currentColor 8%, transparent)`  |
-| `--rv-i18n-toggle-active-bg`        | —             | `color-mix(in srgb, currentColor 16%, transparent)` |
-| `--rv-i18n-toggle-focus-ring`       | —             | `2px solid currentColor`                            |
-| `--rv-i18n-toggle-focus-offset`     | —             | `0.125rem`                                          |
-| `--rv-i18n-toggle-disabled-opacity` | —             | `0.45`                                              |
+| Token                               | Falls back to | Default                                                                                                       |
+| ----------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------- |
+| `--rv-i18n-toggle-bg`               | `--rv-bg`     | `transparent`                                                                                                 |
+| `--rv-i18n-toggle-fg`               | `--rv-fg`     | `currentColor`                                                                                                |
+| `--rv-i18n-toggle-border`           | `--rv-border` | `currentColor`                                                                                                |
+| `--rv-i18n-toggle-radius`           | `--rv-radius` | `0.5rem`                                                                                                      |
+| `--rv-i18n-toggle-shadow`           | `--rv-shadow` | `none`                                                                                                        |
+| `--rv-i18n-toggle-font`             | `--rv-font`   | `inherit`                                                                                                     |
+| `--rv-i18n-toggle-padding`          | —             | `0.5rem 0.75rem`                                                                                              |
+| `--rv-i18n-toggle-gap`              | —             | `0.5rem`                                                                                                      |
+| `--rv-i18n-toggle-size`             | —             | `0.875rem`                                                                                                    |
+| `--rv-i18n-toggle-icon-size`        | —             | `1.5em`                                                                                                       |
+| `--rv-i18n-toggle-hover-bg`         | —             | `color-mix(in srgb, currentColor 8%, transparent)`                                                            |
+| `--rv-i18n-toggle-active-bg`        | —             | `color-mix(in srgb, var(--rv-accent, currentColor) 16%, var(--rv-i18n-toggle-bg, var(--rv-bg, transparent)))` |
+| `--rv-i18n-toggle-focus-ring`       | —             | `2px solid var(--rv-accent, currentColor)`                                                                    |
+| `--rv-i18n-toggle-focus-offset`     | —             | `0.125rem`                                                                                                    |
+| `--rv-i18n-toggle-disabled-opacity` | —             | `0.45`                                                                                                        |
 
 The border and font tokens are a **colour** and a **font family**, not shorthands: the
 declaration supplies `1px solid` and `font-family`, so `--rv-border` and `--rv-font` from
 `@rivinia/theme` flow through unchanged instead of producing an invalid shorthand.
 
-Hover and active default to 8% and 16% of `currentColor` mixed **over** the button's own
-background, so a dark `--rv-bg` keeps its fill instead of turning see-through. A value
-you set for `--rv-i18n-toggle-hover-bg` or `--rv-i18n-toggle-active-bg` replaces the whole
-fill, not just the tint.
+Hover defaults to 8% of `currentColor` and active to 16% of the accent, each mixed
+**over** the button's own background, so a dark `--rv-bg` keeps its fill instead of
+turning see-through. A value you set for `--rv-i18n-toggle-hover-bg` or
+`--rv-i18n-toggle-active-bg` replaces the whole fill, not just the tint.
+
+The active tint and the focus ring read `--rv-accent` when the theme is present and fall
+back to `currentColor` when it is not, so a page without `@rivinia/theme` looks exactly
+as it did before. In forced-colours mode (`@media (forced-colors: active)`) the button
+switches to system colours — `Canvas`/`CanvasText` at rest, `Highlight`/`HighlightText`
+while held, `GrayText` at full opacity when disabled. The toggle has no transition or
+animation today, so `prefers-reduced-motion` has nothing to switch off.
 
 The hooks that are safe to depend on:
 

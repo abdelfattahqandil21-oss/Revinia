@@ -2,6 +2,17 @@
 
 Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
 
+## Unreleased
+
+- **The toggle reads the theme's accent.** `--rv-accent` paints the focus ring
+  and the held-down fill (16% over the button's own background). Both read
+  `var(--rv-accent, currentColor)`, so a page that does not import
+  `@rivinia/theme` renders exactly as before (snapshot-proved).
+- **Forced colors.** `@media (forced-colors: active)` switches the button to
+  `Canvas`/`CanvasText`, `Highlight`/`HighlightText` while held, and
+  `GrayText` at full opacity when disabled. The toggle has no motion, so
+  `prefers-reduced-motion` has nothing to reduce.
+
 ## 0.8.0 - 2026-10-31
 
 The language picker: a third entry point, `@rivinia/i18n/select`, composed from
