@@ -26,7 +26,11 @@ import type {
 } from '../../models/select-popup.ui-types';
 import { SelectPopupComponent, SelectPopupItem } from '../popup/select-popup';
 import { RiviniaSelect } from '@rivinia/select';
-import type { RiviniaSelectController, RiviniaSelectMode, RiviniaSelectOption } from '@rivinia/select';
+import type {
+  RiviniaSelectController,
+  RiviniaSelectMode,
+  RiviniaSelectOption,
+} from '@rivinia/select';
 import { formatSelectionList, resolveListLocale } from '../../utils/selection-summary';
 
 /** Payload of RiviniaSelectComponent.selectionChange. Single: id (or null after clear). Multi: ids. */
@@ -61,11 +65,13 @@ class SelectLabelIdGenerator {
  * Search: typing filters (accent- and case-insensitive), Tab moves focus into
  * the list, Enter picks the top match. SSR renders the closed trigger.
  *
- * Semantics: the panel is exposed as `role="menu"` with `menuitem` options,
- * because focus physically moves into the option list. It is therefore a
- * filterable menu, NOT an ARIA combobox and not a native `<select>` — see
- * README -> Accessibility for the measured behaviour and the limitations a
- * future combobox mode would have to remove.
+ * Semantics: the panel is exposed as an inner `role="menu"` of
+ * `menuitemradio` (single) or `menuitemcheckbox` (multi) rows, because focus
+ * physically moves into the option list; the filter box and the status rows
+ * sit beside that menu, never inside it. It is therefore a filterable menu,
+ * NOT an ARIA combobox and not a native `<select>` — see README ->
+ * Accessibility for the measured behaviour and the limitations a future
+ * combobox mode would have to remove.
  */
 @Component({
   selector: 'rv-select',
@@ -240,6 +246,10 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
   private readonly justOpened = signal(false);
   /** Id of the rendered caption element, referenced by the trigger. */
   protected readonly labelId = this.labelIdGenerator.allocate();
+  /** Id of the hidden ariaLabel name span, referenced by the trigger. */
+  protected readonly ariaNameId = this.labelIdGenerator.allocate();
+  /** Id of the visible value span, referenced by the trigger. */
+  protected readonly valueId = this.labelIdGenerator.allocate();
   /** Id of the hidden description element, referenced by the trigger. */
   protected readonly selectionId = this.labelIdGenerator.allocate();
   private readonly document = inject(DOCUMENT);
@@ -292,6 +302,27 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
   });
 
   /**
+   * The trigger's accessible name references, in reading order.
+   *
+   * The visible value is ALWAYS part of the name: a button whose text is
+   * "Paid" and whose name is only "Invoice status" fails WCAG 2.5.3
+   * (axe `label-content-name-mismatch`, measured serious). `aria-labelledby`
+   * is used because it composes the field's name with the value;
+   * `aria-label` would replace the whole name instead.
+   *
+   * With neither a caption nor an `ariaLabel` the name stays content-based,
+   * which already contains the value — no attribute is invented.
+   */
+  protected readonly triggerLabelledBy = computed(() => {
+    const ids: string[] = [];
+    if (this.label()) ids.push(this.labelId);
+    else if (this.ariaLabel()) ids.push(this.ariaNameId);
+    else return null;
+    ids.push(this.valueId);
+    return ids.join(' ');
+  });
+
+  /**
    * The full selection for assistive technology.
    *
    * A caption or `ariaLabel` already names the field, so the description
@@ -309,6 +340,15 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
     if (described.length === 0) return null;
     return formatSelectionList(described, this.pageLang());
   });
+
+  /**
+   * Whether the no-results message applies. The live region around it renders
+   * always; only its class and text toggle, because a `role="status"` created
+   * together with its content is not announced by several screen readers.
+   */
+  protected readonly emptyVisible = computed(
+    () => !this.listTemplate() && this.controller().filtered().length === 0,
+  );
 
   constructor() {
     // Mirror the options input into the controller registry (stale ids drop,
@@ -357,7 +397,8 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
     // stays in the text input and the active option is pointed at with
     // aria-activedescendant. Here focus physically moves into the option
     // list (see onSearchKey -> Tab -> focusItem), so the exposed semantics are
-    // menu/menuitem. See README -> Accessibility for the full rationale.
+    // a menu of menuitemradio/menuitemcheckbox rows. See README ->
+    // Accessibility for the full rationale.
     afterRenderEffect(() => {
       if (!this.justOpened() || !this.popup.open() || !this.searchable()) return;
       this.justOpened.set(false);

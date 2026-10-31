@@ -389,7 +389,7 @@ describe('RiviniaLanguageSelect — select pass-through', () => {
 
     await open(fixture);
 
-    expect(root(fixture).querySelector('.rv-select-popup-panel')?.getAttribute('aria-label')).toBe(
+    expect(root(fixture).querySelector('.rv-select-popup-menu')?.getAttribute('aria-label')).toBe(
       'Choose a language',
     );
     const search = root(fixture).querySelector<HTMLInputElement>('.rv-select-search');

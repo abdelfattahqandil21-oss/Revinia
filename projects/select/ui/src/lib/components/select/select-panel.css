@@ -55,7 +55,10 @@ rv-select {
   --rv-select-popup-border: var(--rv-select-border, var(--rv-border, #e0e0e0));
   --rv-select-popup-muted: var(--rv-select-muted, var(--rv-muted, #555555));
   --rv-select-popup-radius: var(--rv-select-radius, var(--rv-radius, 0.75rem));
-  --rv-select-popup-shadow: var(--rv-select-shadow, var(--rv-shadow, 0 16px 48px rgba(0, 0, 0, 0.22)));
+  --rv-select-popup-shadow: var(
+    --rv-select-shadow,
+    var(--rv-shadow, 0 16px 48px rgba(0, 0, 0, 0.22))
+  );
   /*
    * The panel's own metrics ride the same tokens as the trigger, so a
    * consumer sets one value and both surfaces follow.
@@ -145,7 +148,10 @@ rv-select[data-variant='premium'] .rv-select-popup-panel {
 rv-select[data-variant='premium'] .rv-select-trigger {
   padding: var(--rv-select-trigger-padding, 0.5625rem 0.8125rem);
   border-radius: var(--rv-select-radius, var(--rv-radius, 0.75rem));
-  border-color: var(--rv-select-border, var(--rv-border, color-mix(in srgb, currentColor 14%, transparent)));
+  border-color: var(
+    --rv-select-border,
+    var(--rv-border, color-mix(in srgb, currentColor 14%, transparent))
+  );
   box-shadow: var(--rv-select-trigger-shadow, 0 1px 2px rgba(16, 24, 40, 0.06));
   transition:
     box-shadow 250ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -153,7 +159,10 @@ rv-select[data-variant='premium'] .rv-select-trigger {
 }
 rv-select[data-variant='premium'] .rv-select-trigger:not([disabled]):hover,
 rv-select[data-variant='premium'] .rv-select-trigger[data-open='true'] {
-  border-color: var(--rv-select-border, var(--rv-border, color-mix(in srgb, currentColor 22%, transparent)));
+  border-color: var(
+    --rv-select-border,
+    var(--rv-border, color-mix(in srgb, currentColor 22%, transparent))
+  );
   box-shadow: var(--rv-select-trigger-shadow, 0 2px 4px rgba(16, 24, 40, 0.08));
   transition-duration: 150ms;
 }
@@ -193,11 +202,7 @@ rv-select[data-variant='premium'] .rv-select-trigger:focus-visible {
   font-size: 0.75em;
   font-variant-numeric: tabular-nums;
   color: var(--rv-select-muted, var(--rv-muted, #555555));
-  background: color-mix(
-    in srgb,
-    var(--rv-select-muted, var(--rv-muted, #555555)) 12%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--rv-select-muted, var(--rv-muted, #555555)) 12%, transparent);
 }
 /*
  * Visually hidden, still in the accessibility tree: `display: none` and
@@ -312,7 +317,10 @@ rv-select[data-variant='premium'] .rv-select-search::placeholder {
 }
 rv-select[data-variant='premium'] .rv-select-search:focus {
   background: var(--rv-select-popup-bg, var(--rv-select-bg, var(--rv-bg, #ffffff)));
-  border-color: var(--rv-select-border, var(--rv-border, color-mix(in srgb, currentColor 22%, transparent)));
+  border-color: var(
+    --rv-select-border,
+    var(--rv-border, color-mix(in srgb, currentColor 22%, transparent))
+  );
   outline: var(--rv-select-focus-ring, 2px solid color-mix(in srgb, currentColor 55%, transparent));
   outline-offset: -1px;
 }
@@ -336,7 +344,14 @@ rv-select[data-variant='premium'] .rv-select-search:focus {
 .rv-select-hint {
   flex: none;
   margin-inline-start: 0.5rem;
-  font-family: var(--rv-select-hint-font, ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace);
+  font-family: var(
+    --rv-select-hint-font,
+    ui-monospace,
+    SFMono-Regular,
+    'SF Mono',
+    Menlo,
+    monospace
+  );
   font-size: var(--rv-select-hint-size, 0.6875rem);
   color: var(--rv-select-muted, var(--rv-muted, #555555));
   opacity: 0.85;
@@ -358,6 +373,17 @@ rv-select[data-variant='premium'] .rv-select-search:focus {
   text-align: center;
   font-size: var(--rv-select-empty-size, 0.8125rem);
   color: var(--rv-select-muted, var(--rv-muted, #555555));
+}
+/*
+ * The status region is always in the DOM — a live region created together with
+ * its text is not announced — but an empty one is still a flex item in the
+ * tail, where its presence pushed the loading row and the footer down by one
+ * gap. `display: contents` removes the box and keeps the node; `display: none`
+ * would remove it from the accessibility tree and defeat the reason it is
+ * unconditional.
+ */
+.rv-select-popup-tail > [role='status']:empty {
+  display: contents;
 }
 /* The skeleton markup is in the loading row in every skin; only premium paints
    it. This rule is what keeps `simple` the row it was before the feature. */

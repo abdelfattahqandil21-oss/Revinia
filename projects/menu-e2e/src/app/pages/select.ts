@@ -132,7 +132,18 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
     <ng-template #virtualList>
       <div class="virtual-list" [style.height.px]="virtualTotalHeight">
         @for (row of virtualRows(); track row.id) {
-          <div class="virtual-row" [style.transform]="'translateY(' + row.top + 'px)'">
+          <!--
+            A custom row still has to BE a menu item: role="menu" may only own
+            menuitem*/group/separator, and the scrollport needs a focusable
+            descendant. The row directive is internal, so the attributes are
+            written out (see the README recipe).
+          -->
+          <div
+            class="virtual-row"
+            role="menuitem"
+            tabindex="-1"
+            [style.transform]="'translateY(' + row.top + 'px)'"
+          >
             {{ row.label }}
           </div>
         }

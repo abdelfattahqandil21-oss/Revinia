@@ -184,8 +184,9 @@ the headless `RiviniaSelect` controller.
 
 > **Naming note:** the headless controller input is named `select` on
 > `rv-select`. It is a **controller input**, not a DOM name — the rendered
-> markup is `rv-select`, `.rv-select-trigger`, `.rv-select-popup-panel` and
-> `.rv-select-popup-item`. The package's popup shares no vocabulary with
+> markup is `rv-select`, `.rv-select-trigger`, `.rv-select-popup-panel`, the
+> inner `.rv-select-popup-menu` (the `role="menu"`), and
+> `[rvselectpopupitem]` rows. The package's popup shares no vocabulary with
 > `@rivinia/menu` and has no dependency on it — the two used to collide
 > (same `rv-menu` selector), which is why the popup is now `rv-select-popup`.
 
@@ -668,8 +669,8 @@ export class GroupedSelect {
   `@rivinia/menu` gives you a complete, audited menu-button implementation if
   you want to compose rather than write it.
 - **No ARIA.** `role="listbox"` / `role="option"` / `aria-selected` above are
-  yours to keep consistent; the built-in panel uses `role="menu"` with
-  `menuitem` rows.
+  yours to keep consistent; the built-in panel uses a `role="menu"` rows
+  container with `menuitemradio` (single) and `menuitemcheckbox` (multi) rows.
 - **No scroll or focus management.** The built-in panel moves focus into the
   option list and returns it to the trigger on close.
 
@@ -775,6 +776,8 @@ container the virtualizer needs:
   <div [style.height.px]="virtualizer.getTotalSize()" style="position: relative">
     @for (row of virtualizer.getVirtualItems(); track row.index) {
     <div
+      role="menuitem"
+      tabindex="-1"
       [style.transform]="'translateY(' + row.start + 'px)'"
       style="position: absolute; top: 0; left: 0; width: 100%"
     >
@@ -786,6 +789,12 @@ container the virtualizer needs:
 
 <rv-select [options]="options()" [listTemplate]="list" (panelReady)="panel.set($event)" />
 ```
+
+The `role` and `tabindex` are not decoration: the rows sit inside the panel's
+`role="menu"`, which may only own `menuitem*`/`group`/`separator`, and the
+scrollport needs a focusable descendant. Without them axe reports
+`aria-required-children` (critical) and `scrollable-region-focusable` (serious).
+Row directives are internal, so you write the attributes yourself.
 
 ```ts
 readonly panel = signal<HTMLElement | null>(null);
@@ -900,6 +909,7 @@ The selectors, and the `data-*` state hooks:
 | `.rv-select-hint`                            | an option's trailing hint   |
 | `.rv-select-check`                           | the multi-mode check mark   |
 | `.rv-select-popup-panel`                     | the opened panel            |
+| `.rv-select-popup-menu`                      | the `role="menu"` row container |
 | `.rv-select-popup-panel [rvselectpopupitem]` | an option row               |
 
 | Hook              | On      | Means                          |
@@ -1203,13 +1213,22 @@ Single/multi share the same model:
 ## Accessibility
 
 Select is a **button + menu**, not an ARIA combobox and not a native
-`<select>`. The shipped DOM (measured in Chromium, Firefox and WebKit):
-the trigger is a `<button>` carrying `aria-haspopup="menu"`, `aria-expanded`
-and `aria-controls` pointing at the panel; the panel is `role="menu"`; single
-rows are `role="menuitem"`; multi rows are `role="menuitemcheckbox"` with
-`aria-checked`. There is no `aria-multiselectable` — the checkbox rows carry
-the state. Focus physically moves into the list, so there is no
-`aria-activedescendant`.
+`<select>`. The shipped DOM (measured in Chromium; the accessibility tree is
+committed under [`docs/a11y-snapshots`](https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/docs/a11y-snapshots)):
+
+- the trigger is a `<button>` carrying `aria-haspopup="menu"`, `aria-expanded`
+  and `aria-controls` pointing at the menu;
+- inside the panel, a rows-only container is `role="menu"` and carries the
+  panel's accessible name (`popupLabel`, else the caption);
+- single rows are `role="menuitemradio"` with `aria-checked`; multi rows are
+  `role="menuitemcheckbox"` with `aria-checked`. There is no
+  `aria-multiselectable` — the rows carry the state;
+- the filter box (`role="searchbox"`), the empty state, the loader row and your
+  footer are **siblings of the menu inside the panel**, never its children:
+  `role="menu"` may only own `menuitem*`/`group`/`separator`, and a searchbox
+  child fails axe's `aria-required-children` (measured critical). They still
+  scroll with the rows and the filter box still sticks to the top edge;
+- focus physically moves into the list, so there is no `aria-activedescendant`.
 
 Consequences to be aware of:
 
@@ -1219,9 +1238,19 @@ Consequences to be aware of:
   pretend to be one.
 - Give the field an accessible name: a visible `label` (preferred) or
   `ariaLabel`. The opened panel should be named too, via `popupLabel` or by
-  letting it fall back to the caption.
+  letting it fall back to the caption. The trigger's accessible name composes
+  that field name with the visible value (`aria-labelledby`), so the name always
+  contains the text on screen — a button named only "Invoice status" while
+  showing "Paid" fails WCAG 2.5.3. With neither a caption nor an `ariaLabel`
+  the name stays content-based, which already contains the value.
 - `role="searchbox"` is used on the filter input; its name defaults to
   `'Search options'` and is configurable through `searchLabel`.
+- **A custom `listTemplate` must render menu items.** Give every row a
+  `menuitem`/`menuitemradio`/`menuitemcheckbox` role and `tabindex="-1"`;
+  otherwise the menu owns elements it may not own (axe
+  `aria-required-children`, critical) and the scrollport is not focusable
+  (`scrollable-region-focusable`, serious). The row directive is internal, so
+  write the attributes — see the virtual-list recipe.
 
 ### What the multi trigger announces
 
@@ -1249,8 +1278,17 @@ clearing every pick removes the attribute and the hidden element together.
 
 ### Known verification gaps
 
-- **No real screen reader testing** — automated axe checks only. Manual
-  testing with NVDA/JAWS/VoiceOver is still required.
+The machine-checked half of this section — which axe runs, which assertions,
+which accessibility trees — is recorded in
+[`docs/a11y-verification.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/a11y-verification.md).
+
+- **No real screen reader testing** — automated axe checks and committed
+  accessibility-tree snapshots only. NVDA, JAWS, VoiceOver and TalkBack are
+  still "not tested"; the matrix and the steps are in that document.
+- **Custom `listTemplate` rows are not keyboard-navigable.** Arrows move
+  between the select's own rows; a consumer-rendered window has no row
+  directive, so arrow keys do not step through it (post-1.0). Pointers and the
+  filter box still work, and `panelReady` gives you the scrollport.
 - **WebKit** is verified on this machine (27.2) after installing three system
   libraries Playwright's bundle expects — `libavif16`, `libgav1-1`, `libyuv0`.
   Without root, `apt-get download` plus `dpkg -x` and an `LD_LIBRARY_PATH` (or

@@ -11,9 +11,13 @@ import {
   input,
   output,
   signal,
+  untracked,
 } from '@angular/core';
 import type { SelectPopupController, SelectPopupItemData } from '../../models/select-popup.types';
-import type { RiviniaSelectVariant, SelectPopupUiPlacement } from '../../models/select-popup.ui-types';
+import type {
+  RiviniaSelectVariant,
+  SelectPopupUiPlacement,
+} from '../../models/select-popup.ui-types';
 import { SelectPopupControllerImpl } from '../../services/select-popup';
 import { computeSelectPopupPosition } from '../../utils/select-popup-position';
 
@@ -52,10 +56,20 @@ export class SelectPopupItem {
   });
   /**
    * Tri-state selection (e.g. multi-select options). `null` (default) renders
-   * a plain `menuitem`; a boolean renders `menuitemcheckbox` + `aria-checked`
-   * so screen readers announce the state (the visual check alone is silent).
+   * a plain `menuitem`; a boolean renders `menuitemcheckbox` (or
+   * `menuitemradio` with `radio`) plus `aria-checked`, so screen readers
+   * announce the state — the visual check alone is silent.
    */
   readonly checked = input<boolean | null>(null);
+  /**
+   * Exclusive selection: with `checked` set, the row reads `menuitemradio`
+   * instead of `menuitemcheckbox`. Applies to projected rows; the `[items]`
+   * mode has no radio flag and always renders checkboxes, so an exclusive
+   * list driven that way must project its own rows to get radio semantics.
+   */
+  readonly radio = input(false, {
+    transform: (v: boolean | string) => v === '' || v === true,
+  });
 
   private readonly host = inject(ElementRef<HTMLElement>, { optional: true });
   private readonly host_ = inject(SelectPopupComponent, { optional: true });
@@ -66,7 +80,8 @@ export class SelectPopupItem {
   }
 
   protected computedRole(): string {
-    return this.checked() === null ? 'menuitem' : 'menuitemcheckbox';
+    if (this.checked() === null) return 'menuitem';
+    return this.radio() ? 'menuitemradio' : 'menuitemcheckbox';
   }
 
   protected checkedAttr(): string | null {
@@ -109,13 +124,14 @@ export class SelectPopupItem {
     // panels. The effect only handles SUBSEQUENT changes.
     effect(() => {
       const id = this.id();
-      const menu = this.host_;
+      const disabled = this.isDisabled();
       if (this.registeredId === null) return;
-      if (this.registeredId !== id) this.host_?.unregisterItem(this.registeredId);
-      // Re-register unconditionally: covers a `disabled` flip as well as an
-      // id rename (register is idempotent by id).
-      this.host_?.registerItem({ id, disabled: this.isDisabled() });
+      const previous = this.registeredId;
       this.registeredId = id;
+      // Re-register unconditionally: a `disabled` flip must reach the registry
+      // (idempotent by id). Only a rename needs the activation hand-back.
+      if (previous === id) this.host_?.registerItem({ id, disabled });
+      else this.host_?.renameItem(previous, id, disabled);
     });
   }
 
@@ -275,9 +291,9 @@ export class SelectPopupComponent {
 
   /**
    * Checkbox semantics only when a consumer supplied an external controller
-   * with `multi`-style values; a single-select menu keeps plain `menuitem`
-   * roles. Kept a method (not a computed) so it stays cheap and reactive via
-   * template reads.
+   * with `multi`-style values; a plain `rv-select-popup` menu without one
+   * keeps plain `menuitem` rows. Kept a method (not a computed) so it stays
+   * cheap and reactive via template reads.
    */
   protected checkedFor(id: string): boolean | null {
     const c = this.controller() as SelectPopupController & {
@@ -307,6 +323,28 @@ export class SelectPopupComponent {
   /** Called by {@link SelectPopupItem} directives. */
   unregisterItem(id: string): void {
     this.controller().unregister(id);
+  }
+
+  /**
+   * Called by {@link SelectPopupItem} directives when their `id` binding
+   * changes. Unregistering alone hands activation to a neighbour, and the
+   * re-registration cannot take it back (the registry is never empty), so the
+   * row that kept its place would be demoted and Enter would pick a neighbour.
+   * The owned controller renames in place; an external one has no such hook,
+   * so it gets the remove-and-re-add fallback (activation kept, row moves last).
+   */
+  renameItem(from: string, to: string, disabled: boolean): void {
+    const controller = this.controller();
+    if (controller === this.owned) {
+      this.owned.rename(from, to, disabled);
+      return;
+    }
+    untracked(() => {
+      const wasActive = controller.pickActive() === from;
+      controller.unregister(from);
+      controller.register({ id: to, disabled });
+      if (wasActive) controller.activate(to);
+    });
   }
 
   constructor() {
@@ -626,7 +664,8 @@ export class SelectPopupComponent {
   }
 
   private matchTypeahead(buffer: string): string | null {
-    const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-select-popup-panel');
+    const root: HTMLElement | null =
+      this.self.nativeElement.querySelector('.rv-select-popup-panel');
     if (!root) return null;
     const enabled = new Set(
       this.controller()
@@ -701,7 +740,8 @@ export class SelectPopupComponent {
     // `open` never changes again — the second pass is the retry.
     const ready = this.positioned();
     if (!ready || !this.controller().open() || !this.focusPending) return;
-    const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-select-popup-panel');
+    const root: HTMLElement | null =
+      this.self.nativeElement.querySelector('.rv-select-popup-panel');
     // Panel not committed yet: keep the flag so the next pass retries. Clearing
     // it here is what used to strand focus on <body> (measured: Playwright
     // "received: inactive" on every arrow assertion).
@@ -718,7 +758,8 @@ export class SelectPopupComponent {
 
   private focusActive(): void {
     const id = this.controller().activeId();
-    const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-select-popup-panel');
+    const root: HTMLElement | null =
+      this.self.nativeElement.querySelector('.rv-select-popup-panel');
     if (!root) return;
     const target = id
       ? root.querySelector<HTMLElement>(`[data-rv-id="${CSS.escape(id)}"]`)
