@@ -39,7 +39,10 @@ rv-menu {
   overflow-y: auto;
   background: var(--rv-menu-bg, var(--rv-bg, #ffffff));
   color: var(--rv-menu-fg, var(--rv-fg, #111111));
-  font-family: var(--rv-menu-font, var(--rv-font, system-ui, -apple-system, 'Segoe UI', sans-serif));
+  font-family: var(
+    --rv-menu-font,
+    var(--rv-font, system-ui, -apple-system, 'Segoe UI', sans-serif)
+  );
   border: 1px solid var(--rv-menu-border, var(--rv-border, #e0e0e0));
   border-radius: var(--rv-menu-radius, var(--rv-radius, 0.75rem));
   box-shadow: var(--rv-menu-shadow, var(--rv-shadow, 0 16px 48px rgba(0, 0, 0, 0.22)));
@@ -127,7 +130,8 @@ rv-menu {
  * correct in both directions. `-moz-appearance` is the narrowest reliable
  * Firefox-only probe; remove the clause when Firefox fixes the area maths.
  */
-@supports (anchor-name: --a) and (position-area: block-end span-inline-end) and (not (-moz-appearance: none)) {
+@supports (anchor-name: --a) and (position-area: block-end span-inline-end) and
+  (not (-moz-appearance: none)) {
   /*
    * ESSENTIAL: without this every panel anchors to the LAST trigger in
    * the document, because the spec resolves a duplicate anchor-name to
@@ -217,10 +221,13 @@ rv-menu {
    the controller, so a separate :hover wash painted a second row at the same
    time (measured: the hovered row stayed washed after the arrows moved). */
 .rv-menu-panel [rvmenuitem][data-active='true'] {
-  background: var(--rv-menu-item-active-bg, color-mix(in srgb, currentColor 10%, transparent));
+  background: var(
+    --rv-menu-item-active-bg,
+    color-mix(in srgb, var(--rv-accent, currentColor) 10%, transparent)
+  );
 }
 .rv-menu-panel [rvmenuitem]:focus-visible {
-  outline: var(--rv-menu-focus-ring, 2px solid currentColor);
+  outline: var(--rv-menu-focus-ring, 2px solid var(--rv-accent, currentColor));
   outline-offset: var(--rv-menu-focus-offset, -2px);
 }
 .rv-menu-panel [rvmenuitem][aria-disabled='true'] {
@@ -290,5 +297,31 @@ rv-menu {
   from {
     opacity: 0;
     transform: translateY(var(--rv-menu-from-y, -0.375rem)) scale(0.96);
+  }
+}
+
+/*
+ * FORCED COLORS — D87. The UA forces author colours, but it does not remove
+ * `box-shadow`, and it flattens every background to Canvas, which erases the
+ * active row. System colours are the one palette an author may still name.
+ */
+@media (forced-colors: active) {
+  .rv-menu-panel {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+  .rv-menu-panel [rvmenuitem][data-active='true'] {
+    background: Highlight;
+    color: HighlightText;
+  }
+  .rv-menu-panel [rvmenuitem]:focus-visible {
+    outline-color: Highlight;
+  }
+  /* 0.45 of GrayText is unreadable; the system colour already says "disabled". */
+  .rv-menu-panel [rvmenuitem][aria-disabled='true'] {
+    color: GrayText;
+    opacity: 1;
   }
 }
