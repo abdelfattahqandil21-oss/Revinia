@@ -65,6 +65,37 @@ describe('activation requested before the rows exist', () => {
 
     expect(c.activeId()).toBeNull();
   });
+
+  it('hands activation to the top remaining row when the active one goes away', () => {
+    // Filtering destroys the rows that no longer match, and Angular flushes
+    // the query effect before that removal. `activateFirst()` therefore ran
+    // against the full registry, and the removal of the row it had just made
+    // active left `activeId` null — Enter then picked nothing (measured in
+    // Chromium: `data-active="false"` on the single leftover row).
+    const c = new SelectPopupControllerImpl();
+    c.openMenu('first');
+    c.register({ id: 'outstanding', disabled: false });
+    c.register({ id: 'overdue', disabled: true });
+    c.register({ id: 'paid', disabled: false });
+    expect(c.activeId()).toBe('outstanding');
+
+    c.unregister('outstanding');
+
+    // `overdue` is disabled, so the top MATCH is `paid`.
+    expect(c.activeId()).toBe('paid');
+  });
+
+  it('ends with nothing when every row goes away', () => {
+    const c = new SelectPopupControllerImpl();
+    c.openMenu('first');
+    c.register({ id: 'cairo', disabled: false });
+    c.register({ id: 'giza', disabled: false });
+
+    c.unregister('cairo');
+    expect(c.activeId()).toBe('giza');
+    c.unregister('giza');
+    expect(c.activeId()).toBeNull();
+  });
 });
 
 const OPTIONS = [

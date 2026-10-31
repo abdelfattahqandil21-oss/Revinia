@@ -64,12 +64,16 @@ export class SelectPopupControllerImpl implements SelectPopupController {
     });
   }
 
-  /** Remove an item; clears `activeId` when it pointed at it. */
+  /**
+   * Remove an item. When the active row goes away (a filter dropped it, a
+   * rename retired its id) activation falls to the top remaining enabled row,
+   * so Enter always has a target — leaving it null made Enter pick nothing.
+   */
   unregister(id: string): void {
     untracked(() => {
       this._items.update((list) => list.filter((i) => i.id !== id));
       if (this.requestedId === id) this.requestedId = null;
-      if (this.activeId() === id) this.activeId.set(null);
+      if (this.activeId() === id) this.activeId.set(firstEnabled(this._items()));
     });
   }
 
