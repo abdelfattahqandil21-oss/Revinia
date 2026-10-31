@@ -2935,8 +2935,9 @@ code). Three product rules and one browser workaround:
 - **Registry state.** `dist-tags.latest` is `0.4.0` and `0.7.2`. The version
   endpoint answered 404 for ~1–2 minutes before 200 (the same propagation gap
   as D64/D74); do not re-publish during it.
-- **Not done.** No commit, tag or push: the worktree is still uncommitted on
-  `pkg/menu/usage-and-display`, so the "publish from a tag" gate is not
-  satisfied. The publish used the inspected `pack/` tarballs; a release
-  commit and the `menu/v0.4.0` / `i18n/v0.7.2` tags remain to be created and
-  pushed.
+- **Release record.** The publish itself used the inspected `pack/` tarballs,
+  so the "publish from a tag" gate was not satisfied at that moment. It was
+  closed afterwards: `d4c052c` (menu), `899e815` (i18n), `b12c2d1` (repo
+  docs), merged with `--no-ff` as `b32b6b6`; `main` and the annotated tags
+  `menu/v0.4.0` / `i18n/v0.7.2` are pushed, and both tags point at the merge
+  commit.
