@@ -1,12 +1,12 @@
 /**
- * A row whose `id` binding changes keeps its activation.
+ * A row whose `id` binding changes keeps its activation AND its place.
  *
- * The row directive unregisters the old id before registering the new one, and
- * `unregister` hands activation to the top remaining row. Registration is not
- * allowed to steal activation back (the registry is never empty), so without an
- * explicit hand-back the renamed row is demoted and Enter picks a neighbour.
+ * The row directive reports the rename instead of unregistering and
+ * re-registering on its own: `unregister` hands activation to the top
+ * remaining row and `register` appends, so doing it naively demotes the row
+ * and pushes it last, which would reverse arrow navigation around it.
  *
- * The id is a signal because this harness is zoneless: a plain field does not
+ * The ids are signals because this harness is zoneless: a plain field does not
  * mark the view dirty, so `detectChanges()` alone would not re-evaluate it.
  */
 import { Component, signal } from '@angular/core';
@@ -23,26 +23,38 @@ import { SelectPopupComponent, SelectPopupItem } from '../ui/src/lib/components/
       <button rv-select-popup-trigger type="button">Open</button>
       <div rv-select-popup-panel>
         <button rvSelectPopupItem [id]="first()">First</button>
-        <button rvSelectPopupItem id="second">Second</button>
+        <button rvSelectPopupItem [id]="second()">Second</button>
+        <button rvSelectPopupItem id="third">Third</button>
       </div>
     </rv-select-popup>
   `,
 })
 class RenameHost {
   readonly first = signal('one');
+  readonly second = signal('two');
 }
 
 function open(fixture: ComponentFixture<unknown>): HTMLElement {
   const trigger = fixture.nativeElement.querySelector('.rv-select-popup-trigger') as HTMLElement;
   trigger.click();
+  settle(fixture);
+  return fixture.nativeElement as HTMLElement;
+}
+
+function settle(fixture: ComponentFixture<unknown>): void {
   fixture.detectChanges();
   TestBed.flushEffects();
   fixture.detectChanges();
-  return fixture.nativeElement as HTMLElement;
 }
 
 function activeRow(host: HTMLElement): string | null {
   return host.querySelector('[data-active="true"]')?.getAttribute('data-rv-id') ?? null;
+}
+
+function press(fixture: ComponentFixture<unknown>, key: string): void {
+  const target = fixture.nativeElement.querySelector('.rv-select-popup-panel') as HTMLElement;
+  target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+  settle(fixture);
 }
 
 beforeEach(() => {
@@ -57,11 +69,27 @@ describe('a row whose id changes', () => {
     expect(activeRow(host)).toBe('one');
 
     fixture.componentInstance.first.set('uno');
-    fixture.detectChanges();
-    TestBed.flushEffects();
-    fixture.detectChanges();
+    settle(fixture);
 
     expect(host.querySelector('[data-rv-id="one"]')).toBeNull();
     expect(activeRow(host)).toBe('uno');
+  });
+
+  it('keeps its place, so arrow navigation around it does not skip a row', () => {
+    const fixture = TestBed.createComponent(RenameHost);
+    fixture.detectChanges();
+    const host = open(fixture);
+    press(fixture, 'End');
+    expect(activeRow(host)).toBe('third');
+
+    fixture.componentInstance.second.set('dos');
+    settle(fixture);
+    expect(activeRow(host)).toBe('third');
+
+    // Order kept: one, dos, third — so ArrowUp from third lands on dos. Had
+    // the rename appended, the order would be one, third, dos and ArrowUp
+    // would land on one.
+    press(fixture, 'ArrowUp');
+    expect(activeRow(host)).toBe('dos');
   });
 });

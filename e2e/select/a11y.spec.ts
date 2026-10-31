@@ -55,7 +55,11 @@ test.describe('select: axe', () => {
     await page.goto('/select');
     await page.locator('#single-select .rv-select-trigger').click();
     await page.locator('#single-select .rv-select-search').fill('zzz');
-    await expect(page.locator('#single-select .rv-select-empty')).toBeVisible();
+    const empty = page.locator('#single-select .rv-select-empty');
+    await expect(empty).toBeVisible();
+    // Filtering to zero rows removes the list itself, so the message has to be
+    // a live region or the change is silent.
+    await expect(empty).toHaveRole('status');
     const results = await new AxeBuilder({ page }).include('#single-select').analyze();
     expect(results.violations).toEqual([]);
   });
