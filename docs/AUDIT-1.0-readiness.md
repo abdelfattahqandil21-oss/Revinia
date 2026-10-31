@@ -124,10 +124,11 @@ soaked on its own before the 1.0 freeze.
 ## 7. Consequences for the next branches
 
 - `pkg/repo/1-0-packaging` (S1 + S6 + S9 tooling): **owner decision, 2026-10-31
-  — the four 1.0 packages only.** The branch adds `repository`/`homepage`/`bugs`,
-  `engines` (Angular's exact range) and `CHANGELOG.md` to theme, select, menu and
-  i18n, and extends the pack gate to require them while printing the file list.
-  The same metadata for the six 0.x packages waits for their own specs.
+  — the four 1.0 packages only.** theme, select and menu gain
+  `repository`/`homepage`/`bugs`, `engines` (Angular's exact range) and a
+  `CHANGELOG.md`; i18n already had all three and only needed its README version
+  line corrected. The pack gate now requires them and prints the file list. The
+  same metadata for the six 0.x packages waits for their own specs.
 - i18n stays the only package that declares the select peer; its 1.0 manifest
   change is `^0.7.0` → `^1.0.0`, still optional.
 - The four unpublished patch bumps are out of scope for every 1.0 branch; they

@@ -65,9 +65,9 @@ Node version Angular itself refuses to run on.
 | --- | --- | --- |
 | Pack metadata | `pnpm check:pack` | `repository`/`homepage`/`bugs`/`engines`, README + CHANGELOG in the tarball, every export target shipped |
 | Theme contract | `pnpm check:theme` | `exports["."].style` and the nine-file list |
-| Docs accuracy | `pnpm check:docs` | no README mentions an unexported symbol; root table matches manifests |
+| Docs accuracy | `pnpm check:docs` | fails when the root package table disagrees with the manifests; warns on prose that names an unexported symbol |
 | README budget | `pnpm check:readmes` | 200-line budget (temporary allowances) and version claims |
-| Select isolation | `pnpm ng test i18n --watch=false` (`language-select-surface.spec.ts`) | only `i18n/select/src/language-select.ts` imports `@rivinia/select/ui` |
+| Select isolation | `pnpm ng test i18n --watch=false` (`language-select-surface.spec.ts`) | only `projects/i18n/select/src/lib/components/language-select/language-select.ts` imports `@rivinia/select/ui` |
 
 ## Out of scope
 

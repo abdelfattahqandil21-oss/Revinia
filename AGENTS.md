@@ -68,7 +68,8 @@ dynamic import()` pattern from i18n-egy, not speculative abstractions.
    For theme, select, menu and i18n, also run `pnpm check:pack <pkg>`: it fails
    when the tarball drops `README.md`, `CHANGELOG.md`, `repository`, `homepage`,
    `bugs`, `engines` or an `exports` target, and prints the shipped file list.
-   `pnpm check:readmes` enforces the 200-line README budget and the version line.
+   `pnpm check:readmes` checks the 200-line README budget (the four 1.0
+   packages are temporarily allowlisted until the S9 move) and the version line.
 4. Tarball installed in a clean consumer fixture; consumer production build succeeds.
 5. Public imports tested exactly as consumer uses them.
 6. Bundle sizes recorded (baseline → core-only → core+UI sync → UI lazy).
