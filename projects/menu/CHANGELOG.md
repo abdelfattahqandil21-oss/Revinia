@@ -4,6 +4,17 @@ Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
 Older releases (0.1.0 to 0.4.0) are documented in the repository
 [CHANGELOG](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/CHANGELOG.md).
 
+## Unreleased
+
+- **The theme's accent now reaches the panel.** `--rv-accent` paints the row
+  focus ring and the active row's tint. Both read
+  `var(--rv-accent, <previous value>)`, so a page that does not import
+  `@rivinia/theme` renders exactly as before (snapshot-proved).
+- **Forced colors.** `@media (forced-colors: active)` gives the panel
+  `Canvas`/`CanvasText`, the active row `Highlight`/`HighlightText` and a
+  disabled row `GrayText` at full opacity — the UA otherwise flattens the
+  active row into invisibility and leaves the panel's shadow in place.
+
 ## 0.5.0
 
 The panel becomes a safe host for projected content. A language picker (or any

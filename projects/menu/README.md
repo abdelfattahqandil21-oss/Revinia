@@ -256,6 +256,7 @@ makes it visible. Put the stroke on the icon, not on the row:
   Profile
 </button>
 ```
+
 Projected content remains yours to style. Where supported, the panel uses the
 browser popover top layer to avoid clipping ancestors; browsers without that
 support use the positioned-panel fallback.
@@ -504,6 +505,19 @@ wherever they appear. **Map it on `:root`, never on a component element** — an
 element-level declaration shadows the root value and the override silently
 stops working.
 
+### Accent and forced colors
+
+`--rv-accent` paints the row focus ring and the active row's tint. Both read
+`var(--rv-accent, <their previous value>)`, so a page that never imports the
+theme looks exactly as it did before — unless you set `--rv-menu-focus-ring` or
+`--rv-menu-item-active-bg`, which still win over all of it.
+
+In forced-colours mode (`@media (forced-colors: active)`, Windows High
+Contrast) the panel and rows switch to system colours: `Canvas`/`CanvasText`
+for the surface, `Highlight`/`HighlightText` for the active row — which would
+otherwise be flattened to invisible — and `GrayText` at full opacity for a
+disabled row.
+
 ### Which styling stack?
 
 | Stack           | Import                                       |
@@ -623,13 +637,13 @@ unencapsulated, so these selectors are global and stable:
 | `.rv-menu-empty`              | the "nothing to show" state |
 | `rv-menu hr`                  | a divider between groups    |
 
-| Hook              | On    | Means                          |
-| ----------------- | ----- | ------------------------------ |
-| `data-active`     | row   | the keyboard-active row        |
-| `data-placement`  | panel | `bottom-start`, `top-end`, …   |
-| `data-flipped`    | panel | it flipped to the other side   |
-| `data-positioned` | panel | it has been measured           |
-| `data-top-layer`  | panel | it is in the browser top layer |
+| Hook              | On    | Means                                 |
+| ----------------- | ----- | ------------------------------------- |
+| `data-active`     | row   | the keyboard-active row               |
+| `data-placement`  | panel | `bottom-start`, `top-end`, …          |
+| `data-flipped`    | panel | it flipped to the other side          |
+| `data-positioned` | panel | it has been measured                  |
+| `data-top-layer`  | panel | it is in the browser top layer        |
 | `data-rtl`        | panel | the panel's current writing direction |
 
 ## Migration notes
