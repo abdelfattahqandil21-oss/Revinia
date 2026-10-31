@@ -52,7 +52,13 @@ export const CASES = Object.freeze([
     stylesheet: 'theme.css',
     label: 'OS dark, no attribute',
     scheme: 'dark',
-    expect: { bg: '#161616', fg: '#f2f2f2', colorScheme: 'dark', shadowAlpha: 0.6 },
+    expect: {
+      bg: '#161616',
+      fg: '#f2f2f2',
+      colorScheme: 'dark',
+      shadowAlpha: 0.6,
+      accent: '#8b8bf0',
+    },
   },
   {
     id: 'os-light',
@@ -60,7 +66,13 @@ export const CASES = Object.freeze([
     stylesheet: 'theme.css',
     label: 'OS light, no attribute',
     scheme: 'light',
-    expect: { bg: '#ffffff', fg: '#111111', colorScheme: 'light', shadowAlpha: 0.22 },
+    expect: {
+      bg: '#ffffff',
+      fg: '#111111',
+      colorScheme: 'light',
+      shadowAlpha: 0.22,
+      accent: '#5b5bd6',
+    },
   },
   {
     id: 'light-attr',
@@ -68,7 +80,13 @@ export const CASES = Object.freeze([
     stylesheet: 'theme.css',
     label: 'OS dark + data-rv-theme="light"',
     scheme: 'dark',
-    expect: { bg: '#ffffff', fg: '#111111', colorScheme: 'light', shadowAlpha: 0.22 },
+    expect: {
+      bg: '#ffffff',
+      fg: '#111111',
+      colorScheme: 'light',
+      shadowAlpha: 0.22,
+      accent: '#5b5bd6',
+    },
   },
   {
     id: 'dark-attr-light-os',
@@ -76,7 +94,13 @@ export const CASES = Object.freeze([
     stylesheet: 'theme.css',
     label: 'OS light + data-rv-theme="dark"',
     scheme: 'light',
-    expect: { bg: '#161616', fg: '#f2f2f2', colorScheme: 'dark', shadowAlpha: 0.6 },
+    expect: {
+      bg: '#161616',
+      fg: '#f2f2f2',
+      colorScheme: 'dark',
+      shadowAlpha: 0.6,
+      accent: '#8b8bf0',
+    },
   },
   {
     id: 'dark-attr-dark-os',
@@ -84,7 +108,13 @@ export const CASES = Object.freeze([
     stylesheet: 'theme.css',
     label: 'OS dark + data-rv-theme="dark"',
     scheme: 'dark',
-    expect: { bg: '#161616', fg: '#f2f2f2', colorScheme: 'dark', shadowAlpha: 0.6 },
+    expect: {
+      bg: '#161616',
+      fg: '#f2f2f2',
+      colorScheme: 'dark',
+      shadowAlpha: 0.6,
+      accent: '#8b8bf0',
+    },
   },
   {
     id: 'bs-light',
@@ -92,7 +122,13 @@ export const CASES = Object.freeze([
     stylesheet: 'bootstrap.css',
     label: 'Bootstrap light, OS dark',
     scheme: 'dark',
-    expect: { bg: '#ffffff', fg: '#111111', colorScheme: 'light', shadowAlpha: 0.22 },
+    expect: {
+      bg: '#ffffff',
+      fg: '#111111',
+      colorScheme: 'light',
+      shadowAlpha: 0.22,
+      accent: '#5b5bd6',
+    },
   },
   {
     id: 'bs-dark',
@@ -100,7 +136,13 @@ export const CASES = Object.freeze([
     stylesheet: 'bootstrap.css',
     label: 'Bootstrap dark, OS light',
     scheme: 'light',
-    expect: { bg: '#161616', fg: '#f2f2f2', colorScheme: 'dark', shadowAlpha: 0.6 },
+    expect: {
+      bg: '#161616',
+      fg: '#f2f2f2',
+      colorScheme: 'dark',
+      shadowAlpha: 0.6,
+      accent: '#8b8bf0',
+    },
   },
   {
     id: 'consumer-override',
@@ -109,7 +151,13 @@ export const CASES = Object.freeze([
     label: 'consumer :root override, OS dark',
     scheme: 'dark',
     extra: ':root{--rv-bg:#ff0000;--rv-fg:#00ff00}',
-    expect: { bg: '#ff0000', fg: '#00ff00', colorScheme: 'dark', shadowAlpha: 0.6 },
+    expect: {
+      bg: '#ff0000',
+      fg: '#00ff00',
+      colorScheme: 'dark',
+      shadowAlpha: 0.6,
+      accent: '#8b8bf0',
+    },
   },
   {
     id: 'bs-map-light',
@@ -117,8 +165,14 @@ export const CASES = Object.freeze([
     stylesheet: 'bootstrap.css',
     label: 'Bootstrap light vars, OS dark',
     scheme: 'dark',
-    extra: ':root{--bs-body-bg:#123456;--bs-body-color:#abcdef}',
-    expect: { bg: '#123456', fg: '#abcdef', colorScheme: 'light', shadowAlpha: 0.22 },
+    extra: ':root{--bs-body-bg:#123456;--bs-body-color:#abcdef;--bs-primary:#ff00aa}',
+    expect: {
+      bg: '#123456',
+      fg: '#abcdef',
+      colorScheme: 'light',
+      shadowAlpha: 0.22,
+      accent: '#ff00aa',
+    },
   },
   {
     id: 'bs-map-dark',
@@ -126,8 +180,15 @@ export const CASES = Object.freeze([
     stylesheet: 'bootstrap.css',
     label: 'Bootstrap dark vars, OS light',
     scheme: 'light',
-    extra: '[data-bs-theme="dark"]{--bs-body-bg:#102030;--bs-body-color:#dcba98}',
-    expect: { bg: '#102030', fg: '#dcba98', colorScheme: 'dark', shadowAlpha: 0.6 },
+    extra:
+      '[data-bs-theme="dark"]{--bs-body-bg:#102030;--bs-body-color:#dcba98;--bs-primary:#00ffaa}',
+    expect: {
+      bg: '#102030',
+      fg: '#dcba98',
+      colorScheme: 'dark',
+      shadowAlpha: 0.6,
+      accent: '#00ffaa',
+    },
   },
   {
     id: 'section-dark',
@@ -135,11 +196,23 @@ export const CASES = Object.freeze([
     stylesheet: 'theme.css',
     label: 'dark section in a light page',
     scheme: 'light',
-    // The README's recipe, verbatim.
+    // The README's section recipe, declarations and all.
     extra:
       '#section-probe{color-scheme:dark;--rv-bg:#161616;--rv-fg:#f2f2f2;--rv-muted:#a1a1aa;--rv-border:#3f3f46;--rv-accent:#8b8bf0;--rv-shadow:0 16px 48px rgba(0,0,0,.6)}',
-    expect: { bg: '#ffffff', fg: '#111111', colorScheme: 'light', shadowAlpha: 0.22 },
-    expectSection: { bg: '#161616', fg: '#f2f2f2', colorScheme: 'dark', shadowAlpha: 0.6 },
+    expect: {
+      bg: '#ffffff',
+      fg: '#111111',
+      colorScheme: 'light',
+      shadowAlpha: 0.22,
+      accent: '#5b5bd6',
+    },
+    expectSection: {
+      bg: '#161616',
+      fg: '#f2f2f2',
+      colorScheme: 'dark',
+      shadowAlpha: 0.6,
+      accent: '#8b8bf0',
+    },
   },
 ]);
 
@@ -192,6 +265,8 @@ export async function run({ engines = ['chromium', 'firefox'], log = console.log
               return match ? Number(match[1]) : null;
             };
             const shadowAlpha = alphaOf(root.getPropertyValue('--rv-shadow'));
+            const accent = root.getPropertyValue('--rv-accent').trim();
+            const sectionAccent = section.getPropertyValue('--rv-accent').trim();
             const sectionShadowAlpha = alphaOf(
               getComputedStyle(document.querySelector('#section-probe')).getPropertyValue(
                 '--rv-shadow',
@@ -202,6 +277,8 @@ export async function run({ engines = ['chromium', 'firefox'], log = console.log
               fg: body.color,
               colorScheme: root.colorScheme,
               shadowAlpha,
+              accent,
+              sectionAccent,
               sectionShadowAlpha,
               sectionBg: section.backgroundColor,
               sectionFg: section.color,
@@ -214,6 +291,8 @@ export async function run({ engines = ['chromium', 'firefox'], log = console.log
             fg: toHex(actual.fg),
             colorScheme: actual.colorScheme,
             shadowAlpha: actual.shadowAlpha,
+            accent: toHex(actual.accent),
+            sectionAccent: toHex(actual.sectionAccent),
             sectionShadowAlpha: actual.sectionShadowAlpha,
             sectionBg: toHex(actual.sectionBg),
             sectionFg: toHex(actual.sectionFg),

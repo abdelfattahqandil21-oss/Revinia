@@ -3259,8 +3259,9 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   `--rv-accent` counts as text because S5b paints selected/active labels with
   it.
 - Why not "text everywhere": on white, `--rv-ok` is 3.30:1 and `--rv-warning`
-  3.19:1. All three UI packages use them as borders and tinted backgrounds,
-  never as words.
+  3.19:1. The components use them as borders and tinted backgrounds — select
+  paints its error border with `--rv-danger`, datepicker tints with
+  `--rv-warning` — and none paints text with them.
 - Accepted gap: a consumer who paints text in a status token, or who relies on
   the border alone to identify a control (WCAG 1.4.11), gets a low-contrast
   result. The README says so next to the token table; changing either is a

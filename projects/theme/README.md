@@ -167,8 +167,11 @@ tokens and the scheme on it:
 
 Every Rivinia component inside that element follows those tokens, and the rest
 of the page is untouched. The status tokens and `--rv-font`/`--rv-radius`
-keep their root values unless you list them too. `pnpm check:theme-dark`
-renders that rule and measures both sides of its boundary.
+keep their root values unless you list them too. A component token set on
+`:root` still wins inside the section — the component reads its own token
+before `--rv-bg`, as it does everywhere — so do not set one there if you want
+the section to override it. `pnpm check:theme-dark` renders that rule and
+measures both sides of its boundary.
 
 Both blocks also set `color-scheme` on `:root`, which descendants inherit, so
 form controls, scrollbars and the canvas follow the palette instead of staying
@@ -252,8 +255,8 @@ not measured). A page loading CSS with no bundler has to name the file:
 | **Less**        | `@import (less) '@rivinia/theme/theme.css';` — the explicit file, nothing else.      |
 
 Import the Tailwind or Bootstrap adapter **instead of** the base entry, never in
-addition: the adapter already imports the base, and both together emit the
-theme twice (1,019 B of built CSS instead of 613 B).
+addition: the adapter already imports the base, and both together emit
+`styles/theme.css` twice — 3,997 B duplicated at this version.
 
 ### Tailwind v4
 
@@ -296,9 +299,11 @@ token stops following `--rv-bg` in the same stylesheet.
 ```
 
 The adapter maps the semantic layer onto `--bs-body-bg`, `--bs-body-color`,
-`--bs-border-color` and `--bs-secondary-color`, under both
-`[data-bs-theme='light']` and `[data-bs-theme='dark']`. A Bootstrap theme
-switch re-themes the Rivinia components with no extra wiring.
+`--bs-secondary-color`, `--bs-border-color`, `--bs-primary`, `--bs-danger`,
+`--bs-success`, `--bs-info` and `--bs-warning`, under both
+`[data-bs-theme='light']` and `[data-bs-theme='dark']`. `--rv-shadow` has no
+Bootstrap equivalent, so it keeps the theme's values. A Bootstrap theme switch
+re-themes the Rivinia components with no extra wiring.
 
 Import order does not matter — the adapter and Bootstrap read each other through
 `var()`, which resolves at computed-value time (measured: swapping the two lines

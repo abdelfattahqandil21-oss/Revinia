@@ -55,7 +55,9 @@
  * would change nothing.
  *
  * `scripts/check-contrast.mjs` fails when the two dark blocks disagree or when
- * any documented pair drops below its WCAG AA threshold; see the README.
+ * a measured pair drops below its WCAG AA threshold. `--rv-border` is measured
+ * and printed but never failed: it is a hairline, not a control's only edge.
+ * See the README.
  */
 
 @layer rivinia-theme {
