@@ -5,6 +5,26 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ## Prepared releases (unpublished)
 
+### @rivinia/i18n 0.7.2 (published 2026-10-31)
+
+- **Fixed: a view-transition switch kept the previous dictionary.** With
+  `viewTransition.enabled`, `applyLanguage()` started the dictionary load
+  before the transition callback changed `currentLanguage`. A cached
+  dictionary applies synchronously, and `DictionaryStore._apply()` publishes
+  only the dictionary whose language is current — so the new dictionary was
+  discarded and the UI stayed in the old language. The first switch worked
+  when `skipInitialTransition` ran it synchronously; every later switch did
+  not. The load and `ensureFallback()` now run inside the transition callback,
+  after `_currentLanguageId.set(id)`.
+- Proven by two regression tests that hold the transition callback and switch
+  twice — one through `setLanguage()`, one through the preload-first
+  `setLanguageAsync()` path (`projects/i18n/tests/view-transition-switch.spec.ts`);
+  both fail on the pre-fix code. Also the full i18n suite (347 tests), and the
+  packed build in the `rv-tailwind` demo with
+  `viewTransition` enabled: `ar → en → ar → en → ar → en`, with the heading,
+  `<html lang>` and persisted language correct on every step and no console
+  errors. No API change.
+
 ### @rivinia/select 0.7.0 (published 2026-10-30)
 
 Eleven defects, all found by running the packed tarball in real browsers: the
@@ -232,7 +252,7 @@ Playwright Firefox 157) against a production CSR build, and 16 SSR checks
 against a real `renderApplication` host (Arabic HTML, transfer payload, no
 client refetch, hydration, post-hydration language switch).
 
-### @rivinia/env 0.3.4 · @rivinia/http 0.5.4 · @rivinia/modal 0.6.2 · @rivinia/toast 0.5.2 · @rivinia/menu 0.3.6
+### @rivinia/env 0.3.4 · @rivinia/http 0.5.4 · @rivinia/modal 0.6.2 · @rivinia/toast 0.5.2 · @rivinia/menu 0.4.0
 
 - **The packages are organised into layers.** Every package used to keep its
   types, its controller, its helpers, its provider and its pipe in one flat
@@ -264,6 +284,38 @@ client refetch, hydration, post-hydration language switch).
   is the `BaseEnvironment` type and everything it does happens in the
   schematic — so the test covers the seam between the two: the environment
   file the SHIPPED schematic scaffolds must satisfy the published type.
+
+`@rivinia/menu` ships as **0.4.0**, a minor: a pointer open no longer
+pre-selects a row, which is a deliberate interaction change, so a patch would
+understate it. 0.3.6 was prepared and never published; 0.4.0 supersedes it and
+is live on npm as of 2026-10-31. It also closes the usage and display defects
+found in the 0.3.5 audit:
+
+- **A click opens without choosing.** Pointer open goes through
+  `toggle('none')`: no row is active and focus stays on the trigger. Enter,
+  Space, ArrowDown and ArrowUp still open on the first/last enabled row, and
+  the first arrow key after a click enters the list.
+- **One highlight at a time.** The `:hover` wash is gone; hover moves the
+  active row through the controller, so a hovered row and a keyboard-active
+  row can no longer both look selected.
+- **The panel is `border-box` with a 10rem floor and a 22rem cap.** The new
+  `--rv-menu-max-width` token (default `22rem`, bounded by the viewport) stops
+  a long label from stretching the panel (measured 513px → ≤352px). Labels
+  wrap, a long word breaks, and rows are never ellipsized.
+- **Generated `[items]` rows are `type="button"`.** Picking a row inside a
+  `<form>` no longer submits it.
+- **`aria-controls` exists only while the panel does**, and Tab closes the
+  menu even when focus never left the trigger. In WebKit the trigger is
+  re-seated after a close so Shift+Tab continues (measured: without it the
+  key does nothing).
+- **The opening animation grows from the trigger corner** in LTR, RTL and when
+  the panel flips, via `transform-origin` custom properties and a new
+  `data-rtl` panel hook.
+- **Icons are documented as supported**: the library sizes any `svg` inside a
+  row to 16px and tones it muted; the consumer supplies the stroke/fill.
+
+Proven by 49 menu unit tests (was 41) and 57 Playwright cases per browser —
+chromium, firefox and webkit all 57/57 — plus per-hunk mutation checks.
 
 ### @rivinia/env 0.3.3 (published 2026-10-20)
 
