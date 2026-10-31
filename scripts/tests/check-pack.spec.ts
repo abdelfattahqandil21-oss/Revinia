@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { afterEach, describe, expect, it } from 'vitest';
-import { auditPackage, packDryRun } from '../check-pack.mjs';
+import { auditPackage, checkPackage, packDryRun } from '../check-pack.mjs';
 
 /**
  * The pack gate answers one question: does the tarball a consumer installs
@@ -138,6 +138,23 @@ describe('auditPackage', () => {
   it('fails when package.json is absent from the packed files', () => {
     const report = audit({ files: FILES.filter((file) => file !== 'package.json') });
     expect(report.problems.join('\n')).toMatch(/package\.json/);
+  });
+});
+
+describe('checkPackage', () => {
+  // A malformed manifest used to surface as a pile of "repository is missing"
+  // problems; the real cause was the parse error, which nobody saw.
+  it('reports a package.json that is not valid JSON', () => {
+    const dir = tempDir('rv-pack-json-');
+    writeFileSync(join(dir, 'package.json'), '{ "name": ');
+    const report = checkPackage(dir);
+    expect(report.ok).toBe(false);
+    expect(report.problems.join('\n')).toMatch(/not valid JSON/);
+  });
+
+  it('reports a directory without a package.json', () => {
+    const report = checkPackage(tempDir('rv-pack-empty-'));
+    expect(report.problems.join('\n')).toMatch(/does not exist/);
   });
 });
 

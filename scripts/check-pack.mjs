@@ -123,6 +123,14 @@ export function checkPackage(dir, { expectedEngines = null } = {}) {
     return { ok: false, problems: [`${manifestPath} does not exist`], files: [], size: 0 };
   }
   const manifest = readJson(manifestPath);
+  if (manifest.__error) {
+    return {
+      ok: false,
+      problems: [`${manifestPath} is not valid JSON: ${manifest.__error}`],
+      files: [],
+      size: 0,
+    };
+  }
   const packed = packDryRun(dir);
   const report = auditPackage({ dir, manifest, files: packed.files, expectedEngines });
   return { ...report, size: packed.size };
