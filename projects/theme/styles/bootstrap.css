@@ -37,6 +37,9 @@
   --rv-ok: var(--bs-success, #16a34a);
   --rv-info: var(--bs-info, #2563eb);
   --rv-warning: var(--bs-warning, #d97706);
+  /* Bootstrap has no single elevation token to read, so the theme's value
+     stands — repeated here because the dark block changes it. */
+  --rv-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
 }
 
 [data-bs-theme='dark'] {
@@ -45,4 +48,6 @@
   --rv-fg: var(--bs-body-color, #f2f2f2);
   --rv-muted: var(--bs-secondary-color, #a1a1aa);
   --rv-border: var(--bs-border-color, #3f3f46);
+  /* Elevation: the light alpha of black vanishes on a dark surface. */
+  --rv-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
 }
