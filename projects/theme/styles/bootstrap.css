@@ -13,12 +13,21 @@
  * The direction matters: Rivinia's tokens point AT Bootstrap's, never the
  * other way round. If they pointed the other way, a theme switch would have to
  * update two sets of variables and they could drift.
+ *
+ * These rules are UNLAYERED on purpose. theme.css keeps its defaults — light
+ * and dark — inside `@layer rivinia-theme`, and unlayered declarations beat
+ * layered ones regardless of specificity or media query. That is what makes
+ * Bootstrap authoritative here: with `data-bs-theme="light"` and a dark OS
+ * preference, this file still wins and the components stay Bootstrap-light.
+ * Moving these rules into a layer would hand control back to the theme's dark
+ * block, so do not.
  */
 
 @import './theme.css';
 
 :root,
 [data-bs-theme='light'] {
+  color-scheme: light;
   --rv-bg: var(--bs-body-bg, #ffffff);
   --rv-fg: var(--bs-body-color, #111111);
   --rv-muted: var(--bs-secondary-color, #555555);
@@ -31,8 +40,9 @@
 }
 
 [data-bs-theme='dark'] {
+  color-scheme: dark;
   --rv-bg: var(--bs-body-bg, #161616);
   --rv-fg: var(--bs-body-color, #f2f2f2);
-  --rv-muted: var(--bs-secondary-color, #a8a8a8);
-  --rv-border: var(--bs-border-color, #333333);
+  --rv-muted: var(--bs-secondary-color, #a1a1aa);
+  --rv-border: var(--bs-border-color, #3f3f46);
 }
