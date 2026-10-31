@@ -11,6 +11,10 @@
     "title": "مفتاح اللغة",
     "label": "تغيير اللغة"
   },
+  "select": {
+    "title": "قائمة اللغات",
+    "label": "اللغة"
+  },
   "icu": {
     "items": "{count, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {# عناصر} many {# عنصرًا} other {# عنصر}}",
     "compact": "{count, plural, zero{لا عناصر} one{عنصر واحد} two{عنصران} few{# عناصر} many{# عنصرًا} other{# عنصر}}",
