@@ -59,8 +59,9 @@ export class SelectPopupItem {
   readonly checked = input<boolean | null>(null);
   /**
    * Exclusive selection: with `checked` set, the row reads `menuitemradio`
-   * instead of `menuitemcheckbox`. The consumer owns exclusivity (checking one
-   * row unchecks the others).
+   * instead of `menuitemcheckbox`. The controller does not enforce
+   * exclusivity — `rv-select` unchecks the others in single mode; a consumer
+   * populating the panel with `[items]` must do the same.
    */
   readonly radio = input(false, {
     transform: (v: boolean | string) => v === '' || v === true,
@@ -119,13 +120,14 @@ export class SelectPopupItem {
     // panels. The effect only handles SUBSEQUENT changes.
     effect(() => {
       const id = this.id();
-      const menu = this.host_;
+      const disabled = this.isDisabled();
       if (this.registeredId === null) return;
-      if (this.registeredId !== id) this.host_?.unregisterItem(this.registeredId);
-      // Re-register unconditionally: covers a `disabled` flip as well as an
-      // id rename (register is idempotent by id).
-      this.host_?.registerItem({ id, disabled: this.isDisabled() });
+      const previous = this.registeredId;
       this.registeredId = id;
+      // Re-register unconditionally: a `disabled` flip must reach the registry
+      // (idempotent by id). Only a rename needs the activation hand-back.
+      if (previous === id) this.host_?.registerItem({ id, disabled });
+      else this.host_?.renameItem(previous, id, disabled);
     });
   }
 
@@ -317,6 +319,20 @@ export class SelectPopupComponent {
   /** Called by {@link SelectPopupItem} directives. */
   unregisterItem(id: string): void {
     this.controller().unregister(id);
+  }
+
+  /**
+   * Called by {@link SelectPopupItem} directives when their `id` binding
+   * changes. Unregistering alone hands activation to a neighbour, and the
+   * re-registration cannot take it back (the registry is never empty), so the
+   * row that kept its place would be demoted and Enter would pick a neighbour.
+   */
+  renameItem(from: string, to: string, disabled: boolean): void {
+    const controller = this.controller();
+    const wasActive = controller.pickActive() === from;
+    controller.unregister(from);
+    controller.register({ id: to, disabled });
+    if (wasActive) controller.activate(to);
   }
 
   constructor() {

@@ -65,9 +65,11 @@ export class SelectPopupControllerImpl implements SelectPopupController {
   }
 
   /**
-   * Remove an item. When the active row goes away (a filter dropped it, a
-   * rename retired its id) activation falls to the top remaining enabled row,
-   * so Enter always has a target — leaving it null made Enter pick nothing.
+   * Remove an item. When the active row goes away (a filter dropped it, the
+   * option list changed under the panel) activation falls to the top remaining
+   * enabled row, so Enter always has a target — leaving it null made Enter pick
+   * nothing. A row that merely renames its id keeps its activation through
+   * the popup's `renameItem`, which hands it back after re-registering.
    */
   unregister(id: string): void {
     untracked(() => {
