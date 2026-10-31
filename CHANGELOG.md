@@ -5,7 +5,7 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ## Prepared releases (unpublished)
 
-### @rivinia/menu 0.5.0
+### @rivinia/menu 0.5.0 (published 2026-10-31)
 
 The panel becomes a safe host for projected content. A language picker (or any
 consumer widget) can live inside `rv-menu-panel` without the menu stealing its
@@ -37,11 +37,21 @@ under the pre-1.0 rule: the keyboard contract gains rules, and `[radio]` is new.
   panel never invents a group of its own.
 - No change to `@rivinia/menu` headless semantics, the public controller, the
   panel's CSS or its positioning. Proven by 59 unit tests and 66 Playwright
-  cases per engine (Chromium and Firefox, WebKit not runnable on this host)
-  over a new `/content` demo: a language picker with no `@rivinia/i18n` import,
-  where the page owns `dir`/`lang` and the menu only supplies rows.
+  cases per engine (Chromium and Firefox) over a new `/content` demo: a
+  language picker with no `@rivinia/i18n` import, where the page owns
+  `dir`/`lang` and the menu only supplies rows.
+- **Proven through the packed tarball.** A clean consumer that installs only
+  `rivinia-menu-0.5.0.tgz` builds in production (156.16 kB raw / 45.84 kB
+  transfer) and passes 10 browser cases on Chromium, Firefox and headed WebKit
+  (30/30) with zero console errors: radio roles and `aria-checked`, arrow keys
+  staying with a projected input, `preventDefault()` keeping `Escape`,
+  typeahead, focus restore on pick, RTL, and `[items]` wrapping past a
+  disabled row.
+- **Sizes and artifacts.** Core FESM byte-identical to 0.4.0 (2,087 B raw /
+  749 B gzip / 676 B brotli); `/ui` +1,491 B raw / +240 B gzip / +217 B brotli
+  (32,420 → 33,911 raw). Tarball 38,957 B, 8 files, sha512 `190fda85…`.
 
-### @rivinia/select 0.7.1 (prepared, not published)
+### @rivinia/select 0.7.1 (published 2026-10-31)
 
 Two fixes to the multi trigger, both found in a browser and proved in a browser:
 the trigger no longer grows with every pick, and the picks it cannot show are
@@ -91,8 +101,8 @@ is a patch.
 - **Sizes and artifacts.** Core FESM byte-identical to 0.7.0
   (`rivinia-select.mjs`, 3,711 B raw / 1,279 B gzip / 1,121 B brotli); `/ui`
   +4,523 B raw / +1,063 B gzip / +803 B brotli (81,151 → 85,674 raw). Tarball
-  70,904 B, 9 files, sha512 `bdc2ebd3…`. Version bump, tag, publish and push are
-  still pending an explicit go-ahead.
+  70,906 B, 8 files, sha512 `2b519e8f…`; `npm pack @rivinia/select@0.7.1` came
+  back byte-identical to the published file.
 
 ### @rivinia/i18n 0.8.0 (published 2026-10-31)
 
