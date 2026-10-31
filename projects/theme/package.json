@@ -11,6 +11,21 @@
     "bootstrap"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abdelfattahqandil21-oss/Revinia.git",
+    "directory": "projects/theme"
+  },
+  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/projects/theme#readme",
+  "bugs": {
+    "url": "https://github.com/abdelfattahqandil21-oss/Revinia/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "sideEffects": [
     "**/*.css",
     "**/*.scss"

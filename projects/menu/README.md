@@ -11,8 +11,9 @@ Angular dropdown menus: a headless controller and an optional ready-made UI.
 The menu follows the WAI-ARIA menu-button pattern; it is for **actions**, not
 for a menubar or a general-purpose listbox.
 
-- Package version: **0.4.0**
+- Package version: **0.5.0**
 - Requires: **Angular `^22.0.0`** (`@angular/core`).
+- Node: **same as Angular 22** (`^22.22.3 || ^24.15.0 || >=26.0.0`).
 - `@rivinia/menu` exports the headless controller and its types.
 - `@rivinia/menu/ui` exports the standalone menu component and item directive.
 - Side effects: **none** (`sideEffects: false`).

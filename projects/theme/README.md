@@ -12,6 +12,8 @@ component ecosystem's colours, shapes and type.
 
 - Package version: **0.1.0**
 - Requires: **nothing** — it is a stylesheet, not code.
+- Node: **same as Angular 22** (`^22.22.3 || ^24.15.0 || >=26.0.0`) — for the
+  package manager's engine check only; the CSS has no runtime.
 - Side effects: **the CSS itself** (`sideEffects: ["**/*.css", "**/*.scss"]`).
 
 ## Quick features
