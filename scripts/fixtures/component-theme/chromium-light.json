@@ -52,6 +52,9 @@
       },
       "checkIdle": {
         "color": "rgb(85, 85, 85)"
+      },
+      "activeHover": {
+        "backgroundColor": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.08)"
       }
     },
     "premiumTrigger": {

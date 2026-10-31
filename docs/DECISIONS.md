@@ -3318,6 +3318,16 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   white, so the forced block repeats both tick selectors; and a `Highlight`
   ring on a `Highlight` band is invisible, so the active row's ring is
   `CanvasText`.
+- Hover activates the row (`hoverItem` reaches `activate`), so the pointer's row
+  is always the active one. The simple `:hover` rule ties the active tint at
+  (0,3,0) and comes later in source, so it painted its neutral 8% wash over the
+  accent — a defect no snapshot of an unpainted page could show. A
+  `[data-active='true']:hover` rule at (0,4,0) now carries both:
+  `--rv-select-item-active-hover-bg`, falling back to exactly the 8% ink the
+  unthemed page painted in that state, so the identity snapshot still holds.
+  The gate measures it (pointer moved to the active row's centre, then parked at
+  0,0) in the `light` and `accent` cases. Premium needs no such rule: its
+  (0,4,0) rules sit later in source.
 - Verification: `pnpm check:component-theme` renders both demo apps (real
   components, built from `dist/`) in Chromium and Firefox — six cases on
   Chromium (no theme, dark via `data-rv-theme`, dark via the OS preference,

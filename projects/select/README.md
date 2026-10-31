@@ -1048,6 +1048,10 @@ that never imports the theme looks exactly as it did before — unless you set
 The tick has two fallbacks because it had two colours: `--rv-select-popup-muted`
 on an ordinary row, and the row's own ink when that row is the active one.
 
+Pointing at a row makes it the active row, so the tint must survive the pointer
+too — it is `--rv-select-item-active-hover-bg` while hovered, and its fallback
+is the 8% ink an unthemed page painted there before the theme was wired.
+
 In forced-colours mode (`@media (forced-colors: active)`, Windows High
 Contrast) the panel and rows switch to system colours: `Canvas`/`CanvasText`
 for the surface, `Highlight`/`HighlightText` for the active row — which would

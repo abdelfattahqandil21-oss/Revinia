@@ -112,6 +112,13 @@ export const CASES = Object.freeze([
         ['no-theme check mark keeps the row ink', simple.check.color, simple.row.color],
         // The tick off the active row keeps the muted token (0.7.x: #555555).
         ['no-theme idle tick keeps the muted ink', simple.checkIdle.color, 'rgb(85, 85, 85)'],
+        // Hovering activates the row, so this is the pointer's normal state.
+        // 8% of the row ink is exactly what 0.7.x painted there.
+        [
+          'no-theme hovered active row keeps the 8% ink',
+          simple.activeHover.backgroundColor,
+          'color(srgb 0.0666667 0.0666667 0.0666667 / 0.08)',
+        ],
         ['no-theme row ring keeps the row ink', simple.active.outlineColor, simple.row.color],
         [
           'no-theme menu row ring keeps the row ink',
@@ -154,6 +161,14 @@ export const CASES = Object.freeze([
         ['select check mark', simple.check.color, 'rgb(1, 2, 3)'],
         ['select row ring', simple.active.outlineColor, 'rgb(1, 2, 3)'],
         ['select active row', simple.active.backgroundColor, probes.rowActive],
+        // Hover activates the row, and the hover wash used to win over the
+        // accent. The probe evaluates the 8% accent mix independently, so a
+        // component that let `currentColor` win reads as an ink mix here.
+        [
+          'select active row under the pointer',
+          simple.activeHover.backgroundColor,
+          probes.rowActiveHover,
+        ],
         ['select search ring', simple.search.outlineColor, 'rgb(1, 2, 3)'],
         ['premium trigger ring', measured.menu.premiumTrigger.outlineColor, 'rgb(1, 2, 3)'],
         ['menu row ring', measured.menu.menu.active.outlineColor, 'rgb(1, 2, 3)'],
@@ -405,6 +420,23 @@ async function measureMenu(page, testCase) {
   // The tick now sits on a row that is NOT active: its pre-wiring ink was the
   // muted token, not the row's colour. This is what the `light` case pins.
   simple.checkIdle = await styles(page, '#single-select .rv-select-check', ['color']);
+  // Hover ACTIVATES the row, so this is the state a pointer lives in, and the
+  // hover wash used to paint over the active tint here. Move the mouse instead
+  // of calling `hover()`: Playwright's hover scrolls the row into view and an
+  // outside scroll closes this popup by design.
+  const activeRow = page.locator('#single-select [rvselectpopupitem][data-active="true"]');
+  const activeBox = await activeRow.boundingBox();
+  if (!activeBox) throw new Error('the active select row has no box to hover');
+  await page.mouse.move(activeBox.x + activeBox.width / 2, activeBox.y + activeBox.height / 2);
+  await settleFrame(page);
+  simple.activeHover = await styles(
+    page,
+    '#single-select [rvselectpopupitem][data-active="true"]',
+    ['backgroundColor'],
+  );
+  // Park the pointer outside the panel so nothing after this reads a hover.
+  await page.mouse.move(0, 0);
+  await settleFrame(page);
   if (testCase.forcedColors) {
     // Measured only here so the other snapshots keep their captured shape.
     simple.searchFill = await styles(page, '#single-select .rv-select-search', [
@@ -503,6 +535,7 @@ function measureAccentProbes(page) {
     };
     const value = {
       rowActive: read('color-mix(in srgb, var(--rv-accent, currentColor) 10%, transparent)'),
+      rowActiveHover: read('color-mix(in srgb, var(--rv-accent, currentColor) 8%, transparent)'),
       toggleActive: read(
         'color-mix(in srgb, var(--rv-accent, currentColor) 16%, var(--rv-i18n-toggle-bg, var(--rv-bg, transparent)))',
       ),

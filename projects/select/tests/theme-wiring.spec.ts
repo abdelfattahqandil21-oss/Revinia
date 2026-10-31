@@ -71,10 +71,11 @@ describe('select theme wiring', () => {
 
   it('reads the accent only through a fallback, never bare', () => {
     expect(panel + popup).not.toMatch(/var\(--rv-accent\)/);
-    // Nine reads, one per place D87 names: three panel rings (premium trigger,
-    // simple search, premium search), two row rings, two active-row tints, and
-    // the tick on and off the active row.
-    expect(accentReads(panel) + accentReads(popup)).toBe(9);
+    // Ten reads, one per place D87 names: three panel rings (premium trigger,
+    // simple search, premium search), two row rings, three active-row tints
+    // (simple, simple under the pointer, premium), and the tick on and off the
+    // active row.
+    expect(accentReads(panel) + accentReads(popup)).toBe(10);
   });
 
   it('paints the selected check mark with the accent', () => {
@@ -114,10 +115,25 @@ describe('select theme wiring', () => {
   });
 
   /**
-   * Forced colors: the UA forces author colours, but NOT `box-shadow`, and it
-   * flattens every background to Canvas — which erases the active row. System
-   * colours are the one palette an author may still state, so each piece that
-   * would otherwise be lost names one explicitly.
+   * Hover activates the row, so the pointer's row is always the active one.
+   * The hover wash ties the active tint at (0,3,0) and comes later, which
+   * painted the neutral wash over the accent under the pointer; this rule
+   * outranks both and keeps the accent, with the pre-wiring 8% ink as the
+   * unthemed fallback.
+   */
+  it('keeps the accent on the active row while the pointer is over it', () => {
+    expect(
+      flat(block(popup, ".rv-select-popup-panel [rvselectpopupitem][data-active='true']:hover {")),
+    ).toContain(
+      'background: var(--rv-select-item-active-hover-bg, color-mix(in srgb, var(--rv-accent, currentColor) 8%, transparent));',
+    );
+  });
+
+  /**
+   * Forced colors: the UA forces author colours and flattens every background
+   * to Canvas — which erases the active row. System colours are the one palette
+   * an author may still state, so each piece that would otherwise be lost names
+   * one explicitly.
    */
   it('gives the popup a forced-colors default it can survive', () => {
     const forced = flat(block(popup, '@media (forced-colors: active) {'));
