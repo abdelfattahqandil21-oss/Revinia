@@ -5,7 +5,7 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ## Prepared releases (unpublished)
 
-### @rivinia/i18n 0.8.0
+### @rivinia/i18n 0.8.0 (published 2026-10-31)
 
 The language picker: a third entry point, `@rivinia/i18n/select`, composed from
 `@rivinia/select` instead of re-implementing a listbox. Additive — no core or `/ui`
