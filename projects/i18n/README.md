@@ -17,10 +17,12 @@ Concretely: the text lives in JSON files, components ask for a key, and the whol
 app — text, direction, dates, numbers — follows the language the user picked.
 Arabic is a first-class target, not an afterthought of an English layout.
 
-- Package version: **0.7.2**
-- Peer dependency: **`@angular/core` `^22.0.0`** (plus `@angular-devkit/schematics` for `ng add`)
-- Entry points: **`@rivinia/i18n`** (headless core) and **`@rivinia/i18n/ui`**
-  (the standalone language toggle)
+- Package version: **0.8.0**
+- Peer dependency: **`@angular/core` `^22.0.0`** (plus `@angular-devkit/schematics` for `ng add`,
+  and an optional `@rivinia/select` `^0.7.0` for the `/select` entry point)
+- Entry points: **`@rivinia/i18n`** (headless core), **`@rivinia/i18n/ui`**
+  (the standalone language toggle) and **`@rivinia/i18n/select`** (the
+  multi-language picker)
 - `sideEffects: false`; no runtime import beyond `@angular/core`; loaders are lazy chunks
 - No `HttpClient` peer — the built-in loaders use `fetch`
 
@@ -510,6 +512,33 @@ button, and works with the service (`[manager]`) or without it (`[languages]` +
 `[current]` + `(languageChange)`). **Experimental in 0.7.1** — custom icons, trigger
 templates, presentational mode, styling hooks and the accessibility contract are in the
 [toggle reference](#toggle-reference).
+
+### The language select
+
+The toggle flips between exactly two languages. For `ar`, `en`, `de`, … use the
+third entry point, which composes `@rivinia/select` into a list:
+
+```bash
+npm install @rivinia/select
+```
+
+```ts
+import { RiviniaLanguageSelect } from '@rivinia/i18n/select';
+// <rv-language-select [manager]="i18n" label="Language" />
+```
+
+Every language becomes one row, in the order declared, with its native name. Each row
+name carries `lang` and `dir`, so `العربية` is pronounced as Arabic even while the page
+runs `en`. The closed trigger is `rv-select`'s own text and carries no `lang`, so the
+marking starts at the panel. Managed mode (`[manager]`) calls `setLanguageAsync` and emits
+`(languageChange)` only after the switch is confirmed; presentational mode
+(`[languages]` + `[current]`) emits synchronously. `searchable` adds the filter box for
+long lists, and `variant="premium"` applies the select's premium skin.
+
+`@rivinia/select` is an **optional peer**: the core and `/ui` entry points never
+import it, so an application that does not import `@rivinia/i18n/select` does not
+install it and its bundle does not grow. The full contract is in the
+[select reference](#select-reference).
 
 ### Server-side rendering
 
@@ -1093,8 +1122,9 @@ supported shape for three or more languages, not something the toggle turns into
 - **Inside a menu.** The toggle is a plain `<button>` in normal flow, so it can sit in a
   panel that already exists — `@rivinia/menu/ui` ships the menu primitives. The menu's
   focus trap and keyboard model with this control inside it have **not** been tested.
-- **Beside a native `<select>`.** For three or more languages, bind the select to the
-  service and leave the toggle out:
+- **Beside a native `<select>`.** For three or more languages, prefer the ready-made
+  [language select](#select-reference) and leave the toggle out. If you need a native
+  element instead, bind it to the service:
 
   ```html
   <select (change)="i18n.setLanguage($any($event.target).value)">
@@ -1116,6 +1146,149 @@ languages are politically ambiguous and the W3C i18n guidance recommends against
 A globe does not name a language it cannot represent, and it says "switch language"
 without saying which. An app that wants its own mark passes `[icon]`, or draws one
 inside `rvLanguageTrigger`; either way the accessible name is unaffected.
+
+### Select reference
+
+The `@rivinia/i18n/select` entry point ships the multi-language picker and the pure
+mapper behind it:
+
+```ts
+import { RiviniaLanguageSelect, languageSelectOptions } from '@rivinia/i18n/select';
+```
+
+**Every export of this entry point is Experimental in 0.8.0**:
+`RiviniaLanguageSelect`, `languageSelectOptions`, `LanguageSelectOption`, and the
+re-exported `LanguageLike` / `RiviniaLanguageManager`. The select is a composition over
+`@rivinia/select/ui`; its public surface may follow that package's pre-1.0 changes.
+
+#### Managed, with `RiviniaI18n`
+
+```ts
+import { Component, inject } from '@angular/core';
+import { RiviniaI18n } from '@rivinia/i18n';
+import { RiviniaLanguageSelect } from '@rivinia/i18n/select';
+
+@Component({
+  selector: 'app-header',
+  imports: [RiviniaLanguageSelect],
+  template: `<rv-language-select
+    [manager]="i18n"
+    [label]="label()"
+    [searchable]="true"
+    (languageChange)="onLanguage($event)"
+  />`,
+})
+export class Header {
+  readonly i18n = inject(RiviniaI18n<'ar' | 'en' | 'de'>);
+  readonly label = this.i18n.t('common.language');
+}
+```
+
+`RiviniaI18n` satisfies `RiviniaLanguageManager` structurally, so pass the service
+directly. Managed state wins: `[languages]`, `[current]` and `[busy]` are ignored while
+`manager` is set. The trigger shows the current language's native name; the panel lists
+every language in declaration order.
+
+`(languageChange)` fires **after** `setLanguageAsync` confirms the id, matching the
+toggle's contract. A manager that leaves the language unchanged emits nothing and the
+trigger returns to the real current language. While the manager reports
+`loadingState() === 'loading'`, the control is disabled, so a second pick cannot race the
+first.
+
+#### Presentational, without a manager
+
+```html
+<rv-language-select
+  [languages]="languages"
+  [current]="language()"
+  [busy]="switching()"
+  label="Language"
+  (languageChange)="language.set($event)"
+/>
+```
+
+With no manager, `languages` + `current` describe the state and `languageChange` is the
+only side effect. Presentational mode is synchronous; the picked row stays selected until
+`[current]` changes, then the trigger follows the new value.
+
+#### Inputs and output
+
+| Input               | Type                      | Default            | Meaning                                                                           |
+| ------------------- | ------------------------- | ------------------ | --------------------------------------------------------------------------------- |
+| `manager`           | `RiviniaLanguageManager`  | —                  | Managed mode; wins over `languages` / `current` / `busy`.                         |
+| `languages`         | `readonly LanguageLike[]` | `[]`               | Presentational language list.                                                     |
+| `current`           | `string`                  | —                  | Presentational current id.                                                        |
+| `label`             | `string \| null`          | `null`             | Visible caption; also the trigger's accessible name and the panel's default name. |
+| `ariaLabel`         | `string \| null`          | `null`             | Accessible name when there is no visible caption.                                 |
+| `popupLabel`        | `string \| null`          | `null`             | Explicit panel name; defaults to `label`, then `ariaLabel`.                       |
+| `placeholder`       | `string`                  | `'Select…'`        | Trigger text when nothing is selected.                                            |
+| `searchable`        | `boolean`                 | `false`            | Show the filter box.                                                              |
+| `searchLabel`       | `string`                  | `'Search options'` | Filter box accessible name.                                                       |
+| `searchPlaceholder` | `string`                  | `'Search…'`        | Filter box placeholder.                                                           |
+| `emptyLabel`        | `string`                  | `'No results'`     | Shown when the filter matches nothing.                                            |
+| `variant`           | `'simple' \| 'premium'`   | `'simple'`         | Passed to `rv-select`.                                                            |
+| `disabled`          | `boolean`                 | `false`            | Blocks opening and picking.                                                       |
+| `busy`              | `boolean`                 | `false`            | Presentational loading state.                                                     |
+
+| Output           | Payload  | When                                                                      |
+| ---------------- | -------- | ------------------------------------------------------------------------- |
+| `languageChange` | `string` | After a managed switch confirms, or synchronously in presentational mode. |
+
+#### Sizing
+
+The host is `inline-block` with a `min-inline-size: 14rem` floor. `rv-select` cannot
+supply it: its own `min-width: min(14rem, 100%)` resolves that `100%` to `0` inside a
+shrink-to-fit host, so without the floor the trigger, the panel and every row collapse to
+one character per line (`English` becomes `En / gli / sh`). Widen it with ordinary CSS —
+`rv-language-select { inline-size: 100% }` in a form row — and the panel follows the
+trigger within `rv-select`'s own limits. The `i18n-e2e` suite measures this in Chromium
+and Firefox.
+
+#### Rows and accessibility
+
+Each row carries `lang` and `dir` on the visible name, so a screen reader pronounces
+`العربية` as Arabic even when the page runs `en`, and the name lays out in its own
+direction. The closed trigger is `rv-select`'s value span and has no `lang`/`dir` hook of
+its own, so it inherits the page's language — the marking lives in the panel. The row's
+accessible name is its visible text: the native name, plus the
+language id as a hint when the two differ. The id is not repeated when the label already
+is the id.
+
+`languageSelectOptions(languages)` is the pure mapper used by the component. It preserves
+order, resolves the name with the same rule as `/ui` (`nativeName` → `Intl.DisplayNames` →
+id), and returns:
+
+```ts
+interface LanguageSelectOption extends RiviniaSelectOption {
+  readonly lang: string;
+  readonly dir?: 'ltr' | 'rtl';
+}
+```
+
+Use it directly when you want `rv-select` with your own trigger or row:
+
+```ts
+import { languageSelectOptions } from '@rivinia/i18n/select';
+
+readonly options = computed(() => languageSelectOptions(this.i18n.languages()));
+```
+
+#### Optional peer and bundle isolation
+
+`@rivinia/select` is declared as an **optional peer** of `@rivinia/i18n`:
+
+```json
+{
+  "peerDependencies": { "@rivinia/select": "^0.7.0" },
+  "peerDependenciesMeta": { "@rivinia/select": { "optional": true } }
+}
+```
+
+The core and `/ui` entry points never import it. Only
+`fesm2022/rivinia-i18n-select.mjs` contains `@rivinia/select/ui`, so an application that
+does not import `@rivinia/i18n/select` neither installs the peer nor pays for its code.
+The unit surface spec checks the sources for this; the release gates then inspect the
+built FESM.
 
 ### SSR reference
 
@@ -1161,6 +1334,9 @@ import {
   customLoader,
   formatIcu,
 } from '@rivinia/i18n';
+
+import { RiviniaLanguageToggle, RiviniaLanguageTrigger } from '@rivinia/i18n/ui';
+import { RiviniaLanguageSelect, languageSelectOptions } from '@rivinia/i18n/select';
 ```
 
 ### API stability
@@ -1169,26 +1345,30 @@ Every export is classified so the 1.0 freeze is predictable. **Internal** symbol
 exist only so the package's own tests can import them; they may move to an
 `@rivinia/i18n/internal` entry point (or disappear) before 1.0.
 
-| Export                                                                                         | Kind             | Tier         |
-| ---------------------------------------------------------------------------------------------- | ---------------- | ------------ |
-| `RiviniaI18n`                                                                                  | service          | Stable       |
-| `provideRiviniaI18n`, `defineRiviniaI18n`, `injectRiviniaI18n`                                 | providers        | Stable       |
-| `RvTranslatePipe` (`rvTranslate`)                                                              | pipe             | Stable       |
-| `RiviniaI18nConfig`                                                                            | type             | Stable       |
-| `Language`, `Direction`, `Translation`, `TranslateParams`, `StorageStrategy`, `SwitchStrategy` | types            | Stable       |
-| `RiviniaLoadError`                                                                             | class            | Stable       |
-| `MissingKeyEvent`, `MissingParamEvent`                                                         | types            | Stable       |
-| `TranslationLoader`, `LoaderDescriptor`, `LoaderContext`                                       | types            | Stable       |
-| `jsonLoader`, `httpLoader`, `remoteLoader`, `customLoader`                                     | loader factories | Stable       |
-| `HttpLoaderOptions`, `RemoteLoaderOptions`                                                     | types            | Stable       |
-| `formatIcu`, `IcuFormatOptions`                                                                | ICU API          | Stable       |
-| `RegisteredI18nKey`, `RiviniaI18nKeyRegistry`                                                  | typed-keys types | Stable       |
-| `ViewTransitionConfig`, `ViewTransitionInfo`                                                   | types            | Experimental |
-| `ViewTransitionService`                                                                        | service          | Internal     |
-| `parseCookie`, `serializeCookie`                                                               | cookie helpers   | Internal     |
-| `browserLanguages`, `detectBrowserLanguage`                                                    | helpers          | Internal     |
-| `RiviniaLanguageToggle` (`rv-language-toggle`), `RiviniaLanguageTrigger` (`rvLanguageTrigger`) | `/ui` components | Experimental |
-| `RiviniaLanguageManager`, `LanguageLike`, `RiviniaLanguageTriggerContext`                      | `/ui` types      | Experimental |
+| Export                                                                                         | Kind                | Tier         |
+| ---------------------------------------------------------------------------------------------- | ------------------- | ------------ |
+| `RiviniaI18n`                                                                                  | service             | Stable       |
+| `provideRiviniaI18n`, `defineRiviniaI18n`, `injectRiviniaI18n`                                 | providers           | Stable       |
+| `RvTranslatePipe` (`rvTranslate`)                                                              | pipe                | Stable       |
+| `RiviniaI18nConfig`                                                                            | type                | Stable       |
+| `Language`, `Direction`, `Translation`, `TranslateParams`, `StorageStrategy`, `SwitchStrategy` | types               | Stable       |
+| `RiviniaLoadError`                                                                             | class               | Stable       |
+| `MissingKeyEvent`, `MissingParamEvent`                                                         | types               | Stable       |
+| `TranslationLoader`, `LoaderDescriptor`, `LoaderContext`                                       | types               | Stable       |
+| `jsonLoader`, `httpLoader`, `remoteLoader`, `customLoader`                                     | loader factories    | Stable       |
+| `HttpLoaderOptions`, `RemoteLoaderOptions`                                                     | types               | Stable       |
+| `formatIcu`, `IcuFormatOptions`                                                                | ICU API             | Stable       |
+| `RegisteredI18nKey`, `RiviniaI18nKeyRegistry`                                                  | typed-keys types    | Stable       |
+| `ViewTransitionConfig`, `ViewTransitionInfo`                                                   | types               | Experimental |
+| `ViewTransitionService`                                                                        | service             | Internal     |
+| `parseCookie`, `serializeCookie`                                                               | cookie helpers      | Internal     |
+| `browserLanguages`, `detectBrowserLanguage`                                                    | helpers             | Internal     |
+| `RiviniaLanguageToggle` (`rv-language-toggle`), `RiviniaLanguageTrigger` (`rvLanguageTrigger`) | `/ui` components    | Experimental |
+| `RiviniaLanguageManager`, `LanguageLike`, `RiviniaLanguageTriggerContext`                      | `/ui` types         | Experimental |
+| `RiviniaLanguageSelect` (`rv-language-select`)                                                 | `/select` component | Experimental |
+| `languageSelectOptions`                                                                        | `/select` helper    | Experimental |
+| `LanguageSelectOption`                                                                         | `/select` type      | Experimental |
+| `LanguageLike`, `RiviniaLanguageManager` (re-exported)                                         | `/select` types     | Experimental |
 
 ### Migration 0.5.0 to 0.6.0
 
