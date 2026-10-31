@@ -27,6 +27,14 @@ Older releases (0.1.0 to 0.6.0) are documented in the repository
 - **Fixed: Enter did nothing right after filtering.** The active row was the
   one the filter had just removed, and nothing took over; activation now falls
   to the top remaining row.
+- **The theme's accent now reaches the control.** `--rv-accent` paints the
+  trigger, search and row focus rings, the active row's tint and the selected
+  tick. Every read is `var(--rv-accent, <previous value>)`, so a page that does
+  not import `@rivinia/theme` renders exactly as before (snapshot-proved).
+- **Forced colors.** `@media (forced-colors: active)` gives the panel
+  `Canvas`/`CanvasText`, the active row `Highlight`/`HighlightText` and a
+  disabled row `GrayText` at full opacity — the UA otherwise flattens the active
+  row into invisibility and leaves the panel's shadow in place.
 
 ## 0.7.1
 
