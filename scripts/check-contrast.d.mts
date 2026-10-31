@@ -29,6 +29,8 @@ export declare const PAIRS: readonly {
   readonly kind: 'text' | 'indicator' | 'decorative';
 }[];
 
+export declare const MINIMUM: Readonly<Record<'text' | 'indicator' | 'decorative', number>>;
+
 export declare function parseHex(value: string): [number, number, number];
 
 export declare function luminance(hex: string): number;

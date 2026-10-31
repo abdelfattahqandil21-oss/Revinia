@@ -15,10 +15,22 @@
  *  5. OS dark + data-rv-theme="dark"   → the dark values.
  *  6. Bootstrap light, OS dark         → Bootstrap's palette wins; color-scheme light.
  *  7. Bootstrap dark, OS light         → Bootstrap's palette wins; color-scheme dark.
+ *  8. Consumer `:root` override, OS dark → the consumer's value wins.
+ *  9. Bootstrap light variables, OS dark → `--rv-*` follows `--bs-*`, not the fallbacks.
+ * 10. Bootstrap dark variables, OS light → same, in the dark block.
+ * 11. A dark section inside a light page → `--rv-*` and `color-scheme` on the
+ *     section reach it and nothing outside it. This is the README's workaround
+ *     for the fact that `data-rv-theme` is read on `<html>` only.
  *
  * Cases 6 and 7 are the reason the adapter's rules stay unlayered: unlayered
  * declarations beat every layered one, so Bootstrap stays authoritative over
  * the theme's `@media (prefers-color-scheme: dark)` block.
+ *
+ * Cases 8, 9 and 10 exist because the first seven would pass for the wrong
+ * reason. 8 proves the layer really is a layer — an unlayered `:root` rule must
+ * beat the layered defaults. 9 and 10 supply `--bs-*` from the fixture, so the
+ * expected value comes from the fixture and not from the adapter's own
+ * fallbacks: a misspelled `var(--bs-…)` cannot pass any more.
  *
  * Needs the Playwright browsers (`npx playwright install`), so it runs on
  * demand, not in `pnpm test`.
@@ -31,69 +43,107 @@ import { fileURLToPath } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const STYLES = join(ROOT, 'projects', 'theme', 'styles');
 
-const BODY = '<style>body{background:var(--rv-bg);color:var(--rv-fg)}</style>';
+const BODY = '<style>body,#section-probe{background:var(--rv-bg);color:var(--rv-fg)}</style>';
 
 export const CASES = Object.freeze([
   {
-    file: 'plain',
+    id: 'os-dark',
     htmlAttrs: '',
     stylesheet: 'theme.css',
     label: 'OS dark, no attribute',
     scheme: 'dark',
-    expect: { bg: '#161616', fg: '#f2f2f2', colorScheme: 'dark' },
+    expect: { bg: '#161616', fg: '#f2f2f2', colorScheme: 'dark', shadowAlpha: 0.6 },
   },
   {
-    file: 'plain',
+    id: 'os-light',
     htmlAttrs: '',
     stylesheet: 'theme.css',
     label: 'OS light, no attribute',
     scheme: 'light',
-    expect: { bg: '#ffffff', fg: '#111111', colorScheme: 'light' },
+    expect: { bg: '#ffffff', fg: '#111111', colorScheme: 'light', shadowAlpha: 0.22 },
   },
   {
-    file: 'light-attr',
+    id: 'light-attr',
     htmlAttrs: ' data-rv-theme="light"',
     stylesheet: 'theme.css',
     label: 'OS dark + data-rv-theme="light"',
     scheme: 'dark',
-    expect: { bg: '#ffffff', fg: '#111111', colorScheme: 'light' },
+    expect: { bg: '#ffffff', fg: '#111111', colorScheme: 'light', shadowAlpha: 0.22 },
   },
   {
-    file: 'dark-attr',
+    id: 'dark-attr-light-os',
     htmlAttrs: ' data-rv-theme="dark"',
     stylesheet: 'theme.css',
     label: 'OS light + data-rv-theme="dark"',
     scheme: 'light',
-    expect: { bg: '#161616', fg: '#f2f2f2', colorScheme: 'dark' },
+    expect: { bg: '#161616', fg: '#f2f2f2', colorScheme: 'dark', shadowAlpha: 0.6 },
   },
   {
-    file: 'dark-attr',
+    id: 'dark-attr-dark-os',
     htmlAttrs: ' data-rv-theme="dark"',
     stylesheet: 'theme.css',
     label: 'OS dark + data-rv-theme="dark"',
     scheme: 'dark',
-    expect: { bg: '#161616', fg: '#f2f2f2', colorScheme: 'dark' },
+    expect: { bg: '#161616', fg: '#f2f2f2', colorScheme: 'dark', shadowAlpha: 0.6 },
   },
   {
-    file: 'bs-light',
+    id: 'bs-light',
     htmlAttrs: ' data-bs-theme="light"',
     stylesheet: 'bootstrap.css',
     label: 'Bootstrap light, OS dark',
     scheme: 'dark',
-    expect: { bg: '#ffffff', fg: '#111111', colorScheme: 'light' },
+    expect: { bg: '#ffffff', fg: '#111111', colorScheme: 'light', shadowAlpha: 0.22 },
   },
   {
-    file: 'bs-dark',
+    id: 'bs-dark',
     htmlAttrs: ' data-bs-theme="dark"',
     stylesheet: 'bootstrap.css',
     label: 'Bootstrap dark, OS light',
     scheme: 'light',
-    expect: { bg: '#161616', fg: '#f2f2f2', colorScheme: 'dark' },
+    expect: { bg: '#161616', fg: '#f2f2f2', colorScheme: 'dark', shadowAlpha: 0.6 },
+  },
+  {
+    id: 'consumer-override',
+    htmlAttrs: '',
+    stylesheet: 'theme.css',
+    label: 'consumer :root override, OS dark',
+    scheme: 'dark',
+    extra: ':root{--rv-bg:#ff0000;--rv-fg:#00ff00}',
+    expect: { bg: '#ff0000', fg: '#00ff00', colorScheme: 'dark', shadowAlpha: 0.6 },
+  },
+  {
+    id: 'bs-map-light',
+    htmlAttrs: ' data-bs-theme="light"',
+    stylesheet: 'bootstrap.css',
+    label: 'Bootstrap light vars, OS dark',
+    scheme: 'dark',
+    extra: ':root{--bs-body-bg:#123456;--bs-body-color:#abcdef}',
+    expect: { bg: '#123456', fg: '#abcdef', colorScheme: 'light', shadowAlpha: 0.22 },
+  },
+  {
+    id: 'bs-map-dark',
+    htmlAttrs: ' data-bs-theme="dark"',
+    stylesheet: 'bootstrap.css',
+    label: 'Bootstrap dark vars, OS light',
+    scheme: 'light',
+    extra: '[data-bs-theme="dark"]{--bs-body-bg:#102030;--bs-body-color:#dcba98}',
+    expect: { bg: '#102030', fg: '#dcba98', colorScheme: 'dark', shadowAlpha: 0.6 },
+  },
+  {
+    id: 'section-dark',
+    htmlAttrs: '',
+    stylesheet: 'theme.css',
+    label: 'dark section in a light page',
+    scheme: 'light',
+    extra: '#section-probe{color-scheme:dark;--rv-bg:#161616;--rv-fg:#f2f2f2}',
+    expect: { bg: '#ffffff', fg: '#111111', colorScheme: 'light', shadowAlpha: 0.22 },
+    expectSection: { bg: '#161616', fg: '#f2f2f2', colorScheme: 'dark' },
   },
 ]);
 
-function document(htmlAttrs, stylesheet) {
-  return `<!doctype html><html${htmlAttrs}><head><link rel="stylesheet" href="${stylesheet}">${BODY}</head><body><p>probe</p></body></html>`;
+function document(htmlAttrs, stylesheet, extra = '') {
+  const override = extra ? `<style>${extra}</style>` : '';
+  return `<!doctype html><html${htmlAttrs}><head><link rel="stylesheet" href="${stylesheet}">${override}${BODY}</head><body><p>probe</p><section id="section-probe">section</section></body></html>`;
 }
 
 function writeFixtures() {
@@ -102,8 +152,8 @@ function writeFixtures() {
   copyFileSync(join(STYLES, 'bootstrap.css'), join(dir, 'bootstrap.css'));
   for (const testCase of CASES) {
     writeFileSync(
-      join(dir, `${testCase.file}.html`),
-      document(testCase.htmlAttrs, testCase.stylesheet),
+      join(dir, `${testCase.id}.html`),
+      document(testCase.htmlAttrs, testCase.stylesheet, testCase.extra),
     );
   }
   return dir;
@@ -128,19 +178,43 @@ export async function run({ engines = ['chromium', 'firefox'], log = console.log
         for (const testCase of CASES) {
           const context = await browser.newContext({ colorScheme: testCase.scheme });
           const page = await context.newPage();
-          await page.goto(`file://${join(dir, `${testCase.file}.html`)}`);
+          await page.goto(`file://${join(dir, `${testCase.id}.html`)}`);
           const actual = await page.evaluate(() => {
             const root = getComputedStyle(document.documentElement);
             const body = getComputedStyle(document.body);
-            return { bg: body.backgroundColor, fg: body.color, colorScheme: root.colorScheme };
+            const section = getComputedStyle(document.querySelector('#section-probe'));
+            const shadow = root.getPropertyValue('--rv-shadow').trim();
+            const alpha = /rgba\([^)]*,\s*([\d.]+)\s*\)/.exec(shadow);
+            return {
+              bg: body.backgroundColor,
+              fg: body.color,
+              colorScheme: root.colorScheme,
+              shadowAlpha: alpha ? Number(alpha[1]) : null,
+              sectionBg: section.backgroundColor,
+              sectionFg: section.color,
+              sectionColorScheme: section.colorScheme,
+            };
           });
           await context.close();
           const measured = {
             bg: toHex(actual.bg),
             fg: toHex(actual.fg),
             colorScheme: actual.colorScheme,
+            shadowAlpha: actual.shadowAlpha,
+            sectionBg: toHex(actual.sectionBg),
+            sectionFg: toHex(actual.sectionFg),
+            sectionColorScheme: actual.sectionColorScheme,
           };
-          const mismatches = Object.entries(testCase.expect).filter(
+          const expected = {
+            ...testCase.expect,
+            ...Object.fromEntries(
+              Object.entries(testCase.expectSection ?? {}).map(([key, value]) => [
+                `section${key[0].toUpperCase()}${key.slice(1)}`,
+                value,
+              ]),
+            ),
+          };
+          const mismatches = Object.entries(expected).filter(
             ([key, value]) => measured[key] !== value,
           );
           if (mismatches.length) {
@@ -151,7 +225,7 @@ export async function run({ engines = ['chromium', 'firefox'], log = console.log
               mismatches: mismatches.map(([key]) => key),
             });
             log(
-              `FAIL ${engineName.padEnd(8)} ${testCase.label.padEnd(32)} got ${JSON.stringify(measured)}`,
+              `FAIL ${engineName.padEnd(8)} ${testCase.label.padEnd(32)} ${mismatches.map(([key]) => key).join(', ')}: got ${JSON.stringify(measured)}`,
             );
           } else {
             log(

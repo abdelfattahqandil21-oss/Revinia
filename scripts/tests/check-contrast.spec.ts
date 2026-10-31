@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_CSS,
+  MINIMUM,
   PALETTE,
   PAIRS,
   auditPalette,
@@ -71,6 +72,27 @@ ${block(darkTokens, 'dark')}
 `;
 }
 
+describe('the contract', () => {
+  it('holds the documented thresholds', () => {
+    // D87: 4.5:1 text, 3:1 non-text. A lower number here is a weaker promise.
+    expect(MINIMUM).toEqual({ text: 4.5, indicator: 3, decorative: 3 });
+  });
+
+  it('classifies each token as D87 classifies it', () => {
+    expect(PAIRS.map((pair) => `${pair.fg}:${pair.kind}`)).toEqual([
+      'fg:text',
+      'muted:text',
+      'accent:text',
+      'danger:indicator',
+      'ok:indicator',
+      'info:indicator',
+      'warning:indicator',
+      'border:decorative',
+    ]);
+    expect(PAIRS.every((pair) => pair.bg === 'bg')).toBe(true);
+  });
+});
+
 describe('contrast maths', () => {
   it('black on white is 21:1, and the ratio is symmetric', () => {
     expect(contrastRatio('#000000', '#ffffff')).toBeCloseTo(21, 5);
@@ -131,6 +153,23 @@ describe('auditThemeCss', () => {
     const report = auditThemeCss(css);
     expect(report.ok).toBe(false);
     expect(report.problems.join('\n')).toMatch(/no `:root\[data-rv-theme="dark"\]` block/);
+  });
+
+  it('reports a canonical block declared twice', () => {
+    // findBlock reads the first; the browser applies the last.
+    const css = `${stylesheet()}\n:root { --rv-bg: #ffffff; }\n`;
+    const report = auditThemeCss(css);
+    expect(report.problems.join('\n')).toMatch(/declares `:root` 2 times/);
+  });
+
+  it('reports a block that lost its color-scheme', () => {
+    const report = auditThemeCss(stylesheet().replace('    color-scheme: light;\n', ''));
+    expect(report.problems.join('\n')).toMatch(/must declare `color-scheme: light`/);
+  });
+
+  it('reports a token that is missing from both dark blocks', () => {
+    const report = auditThemeCss(stylesheet().replace(/ *--rv-ok: [^\n]*\n/g, ''));
+    expect(report.problems.join('\n')).toMatch(/dark: --rv-ok is not declared in the dark block/);
   });
 
   it('fails a palette whose dark muted grey drops under 4.5:1', () => {

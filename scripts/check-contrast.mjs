@@ -17,7 +17,7 @@
  *    `--rv-accent` because S5b paints selected/active labels with it.
  *  - indicator (3:1): the four status tokens. They are used as borders and as
  *    tinted backgrounds; the shipped components never set text in them, and
- *    the light defaults (ok 3.30, warning 3.20) cannot reach 4.5 without
+ *    the light defaults (ok 3.30, warning 3.19) cannot reach 4.5 without
  *    changing the palette's look, which is a consumer-visible change D87 does
  *    not cover.
  *  - decorative (reported, not enforced): `--rv-border`. It is the hairline
@@ -76,7 +76,12 @@ export const PAIRS = Object.freeze([
   Object.freeze({ fg: 'border', bg: 'bg', kind: 'decorative' }),
 ]);
 
-const MINIMUM = Object.freeze({ text: 4.5, indicator: 3, decorative: 3 });
+/**
+ * The WCAG AA line per pair kind. Exported because it is part of the promise:
+ * a test pins these numbers, so lowering one is a visible decision rather than
+ * a quiet edit.
+ */
+export const MINIMUM = Object.freeze({ text: 4.5, indicator: 3, decorative: 3 });
 
 /** #rrggbb → [r, g, b] in 0..255. Throws on anything else, on purpose. */
 export function parseHex(value) {
@@ -183,6 +188,14 @@ function findBlock(blocks, selector, media) {
   );
 }
 
+function countBlocks(blocks, selector, media) {
+  return blocks.filter(
+    (block) =>
+      block.selector === selector &&
+      (media === null ? block.media === null : media.test(block.media ?? '')),
+  ).length;
+}
+
 function sameDeclarations(a, b) {
   if (a.size !== b.size) return false;
   for (const [key, value] of a) if (b.get(key) !== value) return false;
@@ -226,7 +239,8 @@ export function auditPalette(palette = PALETTE) {
 
 /**
  * Audit the stylesheet. Returns { ok, problems, rows } where each row is one
- * measured pair. Never throws on a content problem — the caller decides.
+ * measured pair. Content problems come back as `problems`; a palette value that
+ * is not a six-digit hex throws from `parseHex`, on purpose.
  */
 export function auditThemeCss(source) {
   const problems = [];
@@ -235,6 +249,21 @@ export function auditThemeCss(source) {
   const light = findBlock(blocks, LIGHT_SELECTOR, null);
   const darkMedia = findBlock(blocks, DARK_MEDIA_SELECTOR, DARK_MEDIA);
   const darkAttribute = findBlock(blocks, DARK_ATTRIBUTE_SELECTOR, null);
+
+  // findBlock reads the first match; a second block with the same selector
+  // wins in the browser and would be invisible to every check below.
+  for (const [selector, media] of [
+    [LIGHT_SELECTOR, null],
+    [DARK_MEDIA_SELECTOR, DARK_MEDIA],
+    [DARK_ATTRIBUTE_SELECTOR, null],
+  ]) {
+    const count = countBlocks(blocks, selector, media);
+    if (count > 1) {
+      problems.push(
+        `theme.css declares \`${selector}\` ${count} times: the browser uses the last one, the gate reads the first`,
+      );
+    }
+  }
 
   if (!light) problems.push('theme.css has no top-level `:root` block');
   if (!darkMedia)
