@@ -3285,6 +3285,41 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   setting the `--rv-*` properties and `color-scheme` on itself. The attribute
   was never a subtree switch, and the first README draft said it was.
 
+### D87 addendum 2 — component wiring, and what the snapshot actually proves
+
+- Wiring shipped: select (premium and simple) rings, active rows and the tick;
+  menu row ring and active row; i18n toggle ring and held-down fill. Every read
+  is `var(--rv-accent, <the value that shipped before>)`.
+- The tick needed specificity, not just a declaration: the generic row-icon
+  rule paints every row `svg` at (0,2,1), so `svg.rv-select-check` names the
+  element and sits below the active-row `color: inherit` it ties with, in the
+  same stylesheet so source order decides. A first attempt at `.rv-select-check`
+  (0,1,0) was measured as `rgb(17, 17, 17)` — the row ink — on both engines.
+- Forced-colors defaults are stated per component because the UA does not
+  remove `box-shadow` and it flattens author backgrounds: the active row would
+  otherwise be invisible. It does not force `opacity` either, so the disabled
+  row's 0.45 is replaced with `GrayText` at full opacity.
+- Verification: `pnpm check:component-theme` renders both demo apps (real
+  components, built from `dist/`) in Chromium and Firefox — five cases on
+  Chromium (no theme, dark, accent, RTL, forced colors) and four on Firefox.
+  Playwright cannot emulate `forced-colors` in Firefox, so that case is
+  Chromium-only and a Firefox forced-colors check is a human item.
+- The identity claim, honestly: the `light` snapshots were captured BEFORE any
+  component CSS changed, with only the demo fixtures and the harness in place.
+  After the wiring, `chromium-light` and `firefox-light` differ from that
+  capture by one harness key removed earlier, and by no colour at all; the
+  case also asserts that the tick, the row ring and the toggle ring keep the
+  row/button ink, so a hardcoded accent default fails even on a fresh checkout.
+  The `dark` snapshots did move, by design: every wired surface now takes the
+  theme's `#8b8bf0` accent.
+- Mutation checks (both caught): a hardcoded `#5b5bd6` fallback on the tick
+  fails `light` on both engines (`rgb(91, 91, 214)` instead of the row ink);
+  deleting `background: Highlight` from the popup's forced-colors block fails
+  with a 10% author tint where `Highlight` is expected.
+- The i18n toggle has no transition or animation, so `prefers-reduced-motion`
+  is a no-op; a spec asserts that and says to add the block if it ever gains
+  motion.
+
 ## 2026-10-31 — D88: 1.0 ships as `1.0.0-rc.1` on `next`, then `1.0.0`
 
 - Context: pre-1.0 caret peers make release order load-bearing. i18n has an
