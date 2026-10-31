@@ -452,12 +452,20 @@ export class RiviniaI18n<L extends string = string> {
     const lang = this._languages().find((l) => l.id === id);
     if (!lang) return;
 
-    this._direction.apply(lang, () => this._currentLanguageId.set(id));
+    this._direction.apply(lang, () => {
+      // The language must change BEFORE the load resolves: a cached
+      // dictionary applies synchronously, and `DictionaryStore._apply()` only
+      // publishes a dictionary whose language is current. With a view
+      // transition the callback runs after `startViewTransition` captured the
+      // old state, so loading outside it discarded the new dictionary and the
+      // UI kept the previous language.
+      this._currentLanguageId.set(id);
 
-    if (!opts?.skipLoad) {
-      void this._store.load(id);
-      this._store.ensureFallback();
-    }
+      if (!opts?.skipLoad) {
+        void this._store.load(id);
+        this._store.ensureFallback();
+      }
+    });
 
     // Explicit switch only (RIV-17): the initial language is never written.
     this._languageStorage.persistAfterSwitch(id);

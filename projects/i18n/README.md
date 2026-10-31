@@ -17,7 +17,7 @@ Concretely: the text lives in JSON files, components ask for a key, and the whol
 app — text, direction, dates, numbers — follows the language the user picked.
 Arabic is a first-class target, not an afterthought of an English layout.
 
-- Package version: **0.7.1**
+- Package version: **0.7.2**
 - Peer dependency: **`@angular/core` `^22.0.0`** (plus `@angular-devkit/schematics` for `ng add`)
 - Entry points: **`@rivinia/i18n`** (headless core) and **`@rivinia/i18n/ui`**
   (the standalone language toggle)
