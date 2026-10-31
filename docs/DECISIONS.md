@@ -3102,3 +3102,89 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   animation (the panel's `getAnimations()` is empty) never scrolls. The gate
   opens panels by scrolling the trigger into view first and waiting for the
   animation, which is both realistic and deterministic.
+
+## 2026-10-31 — D85: select's single rows are `menuitemradio`, not plain `menuitem`
+
+- Context: in 0.7.1 the single-select panel renders every row as
+  `role="menuitem"` (`select-popup.ts`, `checked() === null` branch), so the
+  selected governorate is not announced as selected. Multi already ships
+  `menuitemcheckbox` + `aria-checked`, and `@rivinia/menu@0.5.0` already ships
+  `menuitemradio` for exclusive rows (`menu-panel.ts`, D80/D83). Verified by
+  source read on 2026-10-31; no screen reader run yet.
+- Decision (option A): keep the button + `role="menu"` model and its focus
+  behavior. In single mode each option renders `role="menuitemradio"` with
+  `aria-checked="true|false"`. The trigger keeps `aria-haspopup="menu"`,
+  `aria-expanded` and `aria-controls`. Multi stays `menuitemcheckbox`.
+- Open sub-decision: the searchable variant puts an `input[role="searchbox"]`
+  inside the `role="menu"` panel (`select-panel.html`). The alternative
+  (moving the filter out of the menu semantics) is decided in the S2 ADR
+  addendum only after the accessibility-tree check; no change before that.
+- Rejected: option B, a select-only combobox + listbox with
+  `aria-activedescendant`. It is the stricter pattern but a full focus-model
+  rewrite, deferred to post-1.0.
+- Impact: ARIA roles are public contract, so this ships in select `1.0.0`.
+  README "Accessibility" and the a11y verification doc must state exactly what
+  was tested; Playwright asserts roles and `aria-checked` toggling for single,
+  multi, searchable, disabled rows and RTL, and axe stays at zero violations.
+
+## 2026-10-31 — D86: no popup dedupe before 1.0; a conformance suite instead
+
+- Context: select popup and menu panel duplicate outside-pointerdown close,
+  scroll/resize close, top-layer placement, anchor positioning and the
+  controller registry. Fixes can land in one and miss the other.
+- Decision: do **not** extract a shared popup core before 1.0. Add one
+  conformance suite parametrized over both components now, plus a report-only
+  duplication check (`jscpd`) in CI. The extraction ships after 1.0 as a
+  non-breaking refactor.
+- Suite covers: outside pointerdown closes without stealing focus; Escape
+  closes and restores trigger focus; outside scroll closes, inside scroll does
+  not; the resize policy from S4; forced `topLayerSupported = false`; balanced
+  `addEventListener`/`removeEventListener` after destroy; no `window`/`document`
+  access during server render.
+- Rejected: extracting an internal module/package now. It adds a new surface
+  to freeze for no public API gain.
+- Impact: a behavior broken in only one component fails the shared suite.
+  Acceptance requires the suite green on both.
+
+## 2026-10-31 — D87: theme is in scope before 1.0 — dark, forced-colors, accent
+
+- Context: `@rivinia/theme@0.1.0` has no dark values and no forced-colors
+  defaults; `--rv-accent` is declared (`theme.css`, `@layer rivinia-theme`) but
+  read by none of select, menu or the i18n toggle. Only `table/ui` handles
+  `forced-colors` today.
+- Decision: add dark values under `@media (prefers-color-scheme: dark)` guarded
+  by `:root:not([data-rv-theme="light"])` and under `:root[data-rv-theme="dark"]`,
+  keeping defaults in `@layer rivinia-theme`; add `@media (forced-colors: active)`
+  defaults using system colors (`Canvas`, `CanvasText`, `Highlight`,
+  `GrayText`); wire `--rv-accent` into the focus-visible ring, the
+  selected/active indicator and the language toggle's active state. With no
+  theme imported the rendered result must be identical to today (snapshot).
+- Also: a contrast script checks WCAG AA (4.5:1 text, 3:1 non-text) for every
+  token pair in both schemes; the language toggle honors
+  `prefers-reduced-motion` if it gains motion; every `--rv-*` token is listed
+  as public contract in the theme README.
+- Rejected: dark-only scope (leaves `--rv-accent` dead and half the contract
+  unread); deferring the theme entirely (1.0 would document a contract the libs
+  do not read).
+- Impact: touches theme, select, menu and i18n `/ui`; visual snapshots for
+  light, dark, forced-colors and RTL. Version for this work is decided at
+  release, not here.
+
+## 2026-10-31 — D88: 1.0 ships as `1.0.0-rc.1` on `next`, then `1.0.0`
+
+- Context: pre-1.0 caret peers make release order load-bearing. i18n has an
+  optional peer on select (`^0.7.0`), so select must reach 1.0 before i18n can
+  peer on `^1.0.0`. The registry state on 2026-10-31 is i18n 0.8.0,
+  select 0.7.1, menu 0.5.0, theme 0.1.0.
+- Decision: publish `1.0.0-rc.1` on dist-tag `next` in the order theme →
+  select → menu → i18n; keep it there through a soak period; then promote to
+  `latest` as `1.0.0`. i18n's peer becomes `@rivinia/select: ^1.0.0`, still
+  optional via `peerDependenciesMeta`. Every publish stays a human gate with
+  explicit confirmation of name, version, access and tarball contents.
+- Also: document the i18n × select compatibility table, and the `@angular/*`
+  peer policy, in the i18n README.
+- Rejected: straight to `1.0.0` with no soak; staying on 0.x (the peer-range
+  trap only gets worse with the next select minor).
+- Impact: `rc` and `1.0.0` share the same public contract (exported TS API,
+  `--rv-*` names, documented ARIA roles). Theme's unreleased SPEC-0.1.1 work
+  must be versioned before the order starts.
