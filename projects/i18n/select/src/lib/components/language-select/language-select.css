@@ -1,0 +1,19 @@
+/*
+ * `rv-select`'s floor is `min-width: min(14rem, 100%)`, and that `100%` is 0
+ * under a shrink-to-fit host — so without this the rows wrap letter by letter.
+ */
+:host {
+  display: inline-block;
+  min-inline-size: 14rem;
+}
+
+/*
+ * The row layout itself comes from `rv-select`'s own classes, which the
+ * composed row reuses (`rv-select-label`, `rv-select-hint`, `rv-select-check`).
+ * This class exists as the language-specific styling hook.
+ */
+.rv-language-select__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

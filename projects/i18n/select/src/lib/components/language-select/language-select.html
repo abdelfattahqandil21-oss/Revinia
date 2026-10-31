@@ -1,0 +1,39 @@
+<ng-template #languageRow let-option>
+  <span
+    class="rv-select-label rv-language-select__name"
+    [attr.lang]="option.lang"
+    [attr.dir]="option.dir ?? 'auto'"
+  >{{ option.label }}</span>
+  @if (option.hint) {
+    <span class="rv-select-hint">{{ option.hint }}</span>
+  }
+  @if (option.id === selected()) {
+    <svg
+      class="rv-select-check"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path d="M3 8.5 6.5 12 13 4.5" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  }
+</ng-template>
+
+<rv-select
+  [options]="options()"
+  [(value)]="selected"
+  [label]="label()"
+  [ariaLabel]="ariaLabel()"
+  [popupLabel]="panelLabel()"
+  [placeholder]="placeholder()"
+  [searchable]="searchable()"
+  [searchLabel]="searchLabel()"
+  [searchPlaceholder]="searchPlaceholder()"
+  [emptyLabel]="emptyLabel()"
+  [variant]="variant()"
+  [disabled]="isDisabled()"
+  [optionTemplate]="languageRow"
+  (selectionChange)="onSelectionChange($event)"
+/>
