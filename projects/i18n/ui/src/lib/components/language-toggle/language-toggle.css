@@ -99,6 +99,10 @@
     background-color: Highlight;
     color: HighlightText;
   }
+  /* Held down the fill is Highlight, so the ring must not also be Highlight. */
+  .rv-language-toggle__button:active:focus-visible {
+    outline-color: CanvasText;
+  }
   .rv-language-toggle__button:focus-visible {
     outline-color: Highlight;
   }

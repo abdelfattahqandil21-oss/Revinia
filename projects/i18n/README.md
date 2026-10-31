@@ -1122,8 +1122,9 @@ The active tint and the focus ring read `--rv-accent` when the theme is present 
 back to `currentColor` when it is not, so a page without `@rivinia/theme` looks exactly
 as it did before. In forced-colours mode (`@media (forced-colors: active)`) the button
 switches to system colours — `Canvas`/`CanvasText` at rest, `Highlight`/`HighlightText`
-while held, `GrayText` at full opacity when disabled. The toggle has no transition or
-animation today, so `prefers-reduced-motion` has nothing to switch off.
+while held, `GrayText` at full opacity when disabled. Held down, the focus ring turns
+`CanvasText` so it is not a `Highlight` ring on a `Highlight` fill. The toggle has no
+transition or animation today, so `prefers-reduced-motion` has nothing to switch off.
 
 The hooks that are safe to depend on:
 

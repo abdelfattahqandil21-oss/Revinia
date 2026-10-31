@@ -62,6 +62,10 @@ describe('language toggle theme wiring', () => {
     expect(forced).toMatch(/color: HighlightText\b/);
     expect(forced).toMatch(/color: GrayText\b/);
     expect(forced).toMatch(/box-shadow: none/);
+    // Held down the fill is Highlight, so the ring cannot also be Highlight.
+    expect(forced).toContain(
+      '.rv-language-toggle__button:active:focus-visible { outline-color: CanvasText; }',
+    );
   });
 
   it('writes forced-colors preludes in the only form engines accept', () => {
