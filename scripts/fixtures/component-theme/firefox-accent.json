@@ -1,0 +1,145 @@
+{
+  "menu": {
+    "simple": {
+      "trigger": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "rgb(224, 242, 254)",
+        "borderTopColor": "rgb(56, 189, 248)",
+        "borderRadius": "4px"
+      },
+      "panel": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "rgb(224, 242, 254)",
+        "borderTopColor": "rgb(56, 189, 248)",
+        "borderRadius": "4px",
+        "boxShadow": "rgba(0, 0, 0, 0.22) 0px 16px 48px 0px",
+        "direction": "ltr"
+      },
+      "row": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "1"
+      },
+      "check": {
+        "color": "rgb(1, 2, 3)"
+      },
+      "disabled": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "0.45"
+      },
+      "search": {
+        "outlineColor": "rgb(1, 2, 3)",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px"
+      },
+      "active": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "color(srgb 0.00392157 0.00784314 0.0117647 / 0.1)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "1",
+        "outlineColor": "rgb(1, 2, 3)",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "focusVisible": true,
+        "row": "select",
+        "disabled": false
+      }
+    },
+    "premiumTrigger": {
+      "color": "rgb(17, 17, 17)",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "borderTopColor": "rgb(224, 224, 224)",
+      "borderRadius": "10px",
+      "outlineColor": "rgb(1, 2, 3)",
+      "outlineStyle": "solid",
+      "outlineWidth": "2px"
+    },
+    "premiumPanel": {
+      "color": "rgb(17, 17, 17)",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "borderTopColor": "rgb(224, 224, 224)",
+      "borderRadius": "10px",
+      "boxShadow": "rgba(0, 0, 0, 0.22) 0px 16px 48px 0px",
+      "direction": "ltr"
+    },
+    "menu": {
+      "panel": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "borderTopColor": "rgb(224, 224, 224)",
+        "borderRadius": "10px",
+        "boxShadow": "rgba(0, 0, 0, 0.22) 0px 16px 48px 0px",
+        "direction": "ltr"
+      },
+      "row": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "color(srgb 0.00392157 0.00784314 0.0117647 / 0.1)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "1"
+      },
+      "active": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "color(srgb 0.00392157 0.00784314 0.0117647 / 0.1)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "1",
+        "outlineColor": "rgb(1, 2, 3)",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "focusVisible": true,
+        "row": "menu",
+        "disabled": false
+      }
+    },
+    "rtl": {
+      "panel": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "borderTopColor": "rgb(224, 224, 224)",
+        "borderRadius": "10px",
+        "boxShadow": "rgba(0, 0, 0, 0.22) 0px 16px 48px 0px",
+        "direction": "rtl"
+      },
+      "row": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "color(srgb 0.00392157 0.00784314 0.0117647 / 0.1)",
+        "textAlign": "start",
+        "direction": "rtl",
+        "opacity": "1"
+      }
+    }
+  },
+  "i18n": {
+    "host": {
+      "direction": "rtl"
+    },
+    "button": {
+      "color": "rgb(17, 17, 17)",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "borderTopColor": "rgb(224, 224, 224)",
+      "borderRadius": "10px",
+      "boxShadow": "rgba(0, 0, 0, 0.22) 0px 16px 48px 0px",
+      "direction": "ltr"
+    },
+    "focus": {
+      "outlineColor": "rgb(1, 2, 3)",
+      "outlineStyle": "solid",
+      "outlineWidth": "2px"
+    },
+    "active": {
+      "backgroundColor": "color(srgb 0.840628 0.841255 0.841882)",
+      "color": "rgb(17, 17, 17)"
+    }
+  },
+  "probes": {
+    "rowActive": "color(srgb 0.00392157 0.00784314 0.0117647 / 0.1)",
+    "toggleActive": "color(srgb 0.840628 0.841255 0.841882)"
+  }
+}
