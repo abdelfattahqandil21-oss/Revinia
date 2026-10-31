@@ -3295,23 +3295,37 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   element and sits below the active-row `color: inherit` it ties with, in the
   same stylesheet so source order decides. A first attempt at `.rv-select-check`
   (0,1,0) was measured as `rgb(17, 17, 17)` — the row ink — on both engines.
+- The tick also needed TWO fallbacks, because it had two colours: the muted
+  token on an ordinary row, and the inherited row ink while its row is the
+  active one. `var(--rv-accent, currentColor)` alone changed the off-active
+  tick from `#555555` to the row ink on an unthemed page; the shipped rules are
+  `var(--rv-accent, var(--rv-select-popup-muted))` and, on the active row,
+  `var(--rv-accent, currentColor)` (which resolves to the same inherited value
+  the old `color: inherit` produced).
 - Forced-colors defaults are stated per component because the UA does not
   remove `box-shadow` and it flattens author backgrounds: the active row would
   otherwise be invisible. It does not force `opacity` either, so the disabled
-  row's 0.45 is replaced with `GrayText` at full opacity.
+  row's 0.45 is replaced with `GrayText` at full opacity. Two corrections came
+  out of measuring it: the (0,3,1)/(0,4,1) tick rules outranked a plain
+  `.rv-select-check { color: CanvasText }` and Chromium measured white on
+  white, so the forced block repeats both tick selectors; and a `Highlight`
+  ring on a `Highlight` band is invisible, so the active row's ring is
+  `CanvasText`.
 - Verification: `pnpm check:component-theme` renders both demo apps (real
-  components, built from `dist/`) in Chromium and Firefox — five cases on
-  Chromium (no theme, dark, accent, RTL, forced colors) and four on Firefox.
-  Playwright cannot emulate `forced-colors` in Firefox, so that case is
-  Chromium-only and a Firefox forced-colors check is a human item.
-- The identity claim, honestly: the `light` snapshots were captured BEFORE any
-  component CSS changed, with only the demo fixtures and the harness in place.
-  After the wiring, `chromium-light` and `firefox-light` differ from that
-  capture by one harness key removed earlier, and by no colour at all; the
-  case also asserts that the tick, the row ring and the toggle ring keep the
-  row/button ink, so a hardcoded accent default fails even on a fresh checkout.
-  The `dark` snapshots did move, by design: every wired surface now takes the
-  theme's `#8b8bf0` accent.
+  components, built from `dist/`) in Chromium and Firefox — six cases on
+  Chromium (no theme, dark via `data-rv-theme`, dark via the OS preference,
+  accent, RTL, forced colors) and five on Firefox. Playwright cannot emulate
+  `forced-colors` in Firefox, so that case is Chromium-only and a Firefox
+  forced-colors check is a human item.
+- The identity claim, honestly: the `light` snapshot is the pre-wiring render,
+  and the gate's header records how to re-derive it — check out the base CSS,
+  rebuild the three packages and both demo apps, re-run `--only=light`, and
+  `git diff` the snapshot. It was re-derived that way after the wiring and
+  matched byte for byte; the case also asserts that the tick (on and off the
+  active row), the row ring and the toggle ring keep the pre-wiring ink, so a
+  hardcoded accent default fails even on a fresh checkout. The `dark`
+  snapshots did move, by design: every wired surface now takes the theme's
+  `#8b8bf0` accent.
 - Mutation checks (both caught): a hardcoded `#5b5bd6` fallback on the tick
   fails `light` on both engines (`rgb(91, 91, 214)` instead of the row ink);
   deleting `background: Highlight` from the popup's forced-colors block fails

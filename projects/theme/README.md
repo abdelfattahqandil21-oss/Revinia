@@ -202,16 +202,17 @@ The import reaches the interactive layer of each component, not just surfaces:
 
 Every one of those reads is `var(--rv-accent, <its previous value>)`. A page
 that imports nothing has no `--rv-accent`, so it renders exactly as it did
-before the theme shipped — `pnpm check:component-theme` compares that page
-against snapshots captured before the wiring, in Chromium and Firefox.
+before the theme shipped — `pnpm check:component-theme` re-derives that render
+from the pre-wiring CSS and fails on any difference, in Chromium and Firefox.
 
 **Forced colors.** Windows High Contrast and Firefox's forced-colours mode
 throw author colours away. The things the UA cannot force — a background it
 flattens to `Canvas`, a shadow it leaves in place, a disabled row whose only
 cue was 45% opacity — are re-stated with system colours: `Canvas`,
 `CanvasText`, `Highlight`, `HighlightText` and `GrayText`. The active row keeps
-a visible band, a disabled row turns grey at full opacity, and panels drop
-their shadow.
+a visible band and a ring that contrasts with it (`CanvasText`, not
+`Highlight`), a disabled row turns grey at full opacity, and panels drop their
+shadow.
 
 ## Contrast
 
