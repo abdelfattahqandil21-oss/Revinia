@@ -65,6 +65,7 @@ only you can fill them.
 - The filter box is announced as a search box with its own name, and typing
   into it is not announced as menu typeahead.
 - The disabled row is announced unavailable and cannot be picked.
+- The "no results" message is announced once when it appears, not silently.
 - Focus returns to the trigger on pick and on <kbd>Esc</kbd>, and the trigger
   name contains the visible value.
 

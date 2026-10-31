@@ -64,8 +64,8 @@ export class SelectPopupItem {
   /**
    * Exclusive selection: with `checked` set, the row reads `menuitemradio`
    * instead of `menuitemcheckbox`. Applies to projected rows; the `[items]`
-   * mode drives `checked` from the controller's `isSelected` and always
-   * renders checkboxes, so exclusivity there is the consumer's job.
+   * mode has no radio flag and always renders checkboxes, so an exclusive
+   * list driven that way must project its own rows to get radio semantics.
    */
   readonly radio = input(false, {
     transform: (v: boolean | string) => v === '' || v === true,
