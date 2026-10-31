@@ -69,6 +69,10 @@ describe('menu theme wiring', () => {
     expect(forced).toMatch(/box-shadow: none/);
     // 0.45 on top of GrayText double-dims into unreadable.
     expect(forced).toContain('opacity: 1;');
+    // The active row's band is Highlight, so its ring cannot also be Highlight.
+    expect(forced).toContain(
+      ".rv-menu-panel [rvmenuitem][data-active='true']:focus-visible { outline-color: CanvasText; }",
+    );
   });
 
   it('writes forced-colors preludes in the only form engines accept', () => {

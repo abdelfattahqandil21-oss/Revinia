@@ -516,7 +516,8 @@ In forced-colours mode (`@media (forced-colors: active)`, Windows High
 Contrast) the panel and rows switch to system colours: `Canvas`/`CanvasText`
 for the surface, `Highlight`/`HighlightText` for the active row — which would
 otherwise be flattened to invisible — and `GrayText` at full opacity for a
-disabled row.
+disabled row. The active row's ring becomes `CanvasText`, because a `Highlight`
+ring on a `Highlight` band cannot be seen.
 
 ### Which styling stack?
 

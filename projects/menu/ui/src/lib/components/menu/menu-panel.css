@@ -319,6 +319,13 @@ rv-menu {
   .rv-menu-panel [rvmenuitem]:focus-visible {
     outline-color: Highlight;
   }
+  /*
+   * On the active row the band itself is Highlight, so a Highlight ring is
+   * invisible; CanvasText is the colour that contrasts with that band.
+   */
+  .rv-menu-panel [rvmenuitem][data-active='true']:focus-visible {
+    outline-color: CanvasText;
+  }
   /* 0.45 of GrayText is unreadable; the system colour already says "disabled". */
   .rv-menu-panel [rvmenuitem][aria-disabled='true'] {
     color: GrayText;
