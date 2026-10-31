@@ -5,6 +5,42 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ## Prepared releases (unpublished)
 
+### @rivinia/i18n 0.8.0
+
+The language picker: a third entry point, `@rivinia/i18n/select`, composed from
+`@rivinia/select` instead of re-implementing a listbox. Additive — no core or `/ui`
+signature changed, and the optional peer means consumers that do not import it pay
+nothing.
+
+- **`@rivinia/i18n/select`.** `RiviniaLanguageSelect` (`rv-language-select`) renders one
+  row per configured language showing the native name, managed (`[manager]`) or
+  presentational (`[languages]` + `[current]`). `languageSelectOptions()` and
+  `LanguageSelectOption` are exported for consumers who want `rv-select` with their own
+  trigger. Each row name carries `lang` and `dir`; the closed trigger is `rv-select`'s
+  value span and inherits the page language.
+- **Optional peer.** `@rivinia/select@^0.7.0` is declared optional and imported only by
+  the `/select` FESM; the core and `/ui` FESMs in the tarball are byte-identical to
+  0.7.2's, and the tarball grows only by the new entry's FESM, map and types.
+- **Managed picks are last-wins.** Resolving an older `setLanguageAsync()` after a newer
+  pick emits nothing, including when the newer pick is the language that is currently
+  current — it makes no manager call but still supersedes the pending switch. The
+  trigger follows the manager, never a superseded intent
+  (`projects/i18n/tests/language-select.spec.ts`, fails without the guard).
+- **The picker owns a width floor.** The host is `inline-block` with a 14rem minimum:
+  `rv-select`'s own `min-width: min(14rem, 100%)` resolves that `100%` to 0 under a
+  shrink-to-fit host, so the bare usage rendered `English` as `En / gli / sh`. Found in
+  the packed build in a browser; the `i18n-e2e` suite now measures the host, the panel
+  and the row line count in Chromium and Firefox, and fails when the floor is removed.
+- Proven by 371 tests in 35 files; the `i18n-e2e` Playwright suite green (96 tests
+  across Chromium, system Chrome and Firefox, four of them the new `/select` page); two
+  clean consumers built from the packed tarball — one without the peer (no select code
+  in any chunk) and one with it plus a lazy route (picker in a 45.71 kB / 10.72 kB
+  chunk, no `rv-language-select` in the initial bundle); and 30 real-browser checks in
+  Chromium and Firefox each over an `ar`/`en`/`de` demo (row `lang`/`dir`, managed pick
+  setting `<html lang>` to the locale and `dir`, presentational pick leaving the
+  manager on `ar`, zero console, page or network errors). WebKit was not run: the host
+  lacks `libavif.so.16`.
+
 ### @rivinia/i18n 0.7.2 (published 2026-10-31)
 
 - **Fixed: a view-transition switch kept the previous dictionary.** With

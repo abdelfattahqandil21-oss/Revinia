@@ -1,0 +1,31 @@
+<main class="select-page">
+  <h1 data-testid="select-title">{{ title() }}</h1>
+  <p class="state" data-testid="select-state">{{ i18n.currentLanguage() }} · {{ i18n.dir() }}</p>
+
+  <section id="managed">
+    <h2>managed — RiviniaI18n as the manager</h2>
+    <!-- Plain block flow on purpose: a stretched grid item would hide the
+         shrink-to-fit layout the geometry assertions measure. -->
+    <rv-language-select
+      data-testid="managed-select"
+      [manager]="i18n"
+      [label]="label()"
+      [searchable]="true"
+    />
+  </section>
+
+  <section id="presentational">
+    <h2>presentational — no manager; Français has no dir</h2>
+    <rv-language-select
+      data-testid="presentational-select"
+      [languages]="presentationalLanguages"
+      [current]="presentationalCurrent()"
+      [label]="label()"
+      [searchable]="true"
+      (languageChange)="onPresentationalChange($event)"
+    />
+    <p class="state" data-testid="presentational-state">
+      {{ presentationalCurrent() }} · {{ presentationalEvent() ?? '—' }}
+    </p>
+  </section>
+</main>

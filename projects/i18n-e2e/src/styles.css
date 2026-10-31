@@ -149,3 +149,17 @@ section {
   font-size: 0.75rem;
   opacity: 0.75;
 }
+
+.select-page {
+  max-inline-size: 60rem;
+  margin: 0 auto;
+}
+
+.select-page h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+}
+
+.select-page section {
+  margin-block-start: 1.25rem;
+}

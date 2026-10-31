@@ -2,6 +2,67 @@
 
 Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
 
+## 0.8.0 - 2026-10-31
+
+The language picker: a third entry point, `@rivinia/i18n/select`, composed from
+`@rivinia/select` instead of re-implementing a listbox. Additive — no core or `/ui`
+signature changed, and no new dependency for consumers that do not import it.
+
+- **`@rivinia/i18n/select` entry point.** Own FESM and types chunk, exported as
+  `exports["./select"]`. `@rivinia/select` (`^0.7.0`) is declared as an **optional**
+  peer: the core and `/ui` entry points never import it, so an application that does
+  not import `@rivinia/i18n/select` neither installs the peer nor pays for its code.
+  The core and `/ui` FESMs in this tarball are byte-identical to 0.7.2's.
+- **`RiviniaLanguageSelect` (`rv-language-select`).** One trigger, one option per
+  configured language, in declared order, showing the native name. Managed
+  (`[manager]`, structurally satisfied by `RiviniaI18n`) or presentational
+  (`[languages]` + `[current]`); a manager wins over the presentational inputs. The
+  managed path goes through `setLanguageAsync()`, which never rejects, so the trigger
+  never keeps a failed pick: after a failure it falls back to the manager's current
+  language.
+- **A later intent outvotes a switch still in flight.** Managed picks are
+  last-wins: resolving an older `setLanguageAsync()` after the user has picked again
+  emits nothing. That includes re-picking the language that is _currently_ current —
+  no manager call is made for it, but it still supersedes the pending switch, whose
+  confirmation must not surface as a change the user never asked for
+  (`projects/i18n/tests/language-select.spec.ts`, holds the manager's promise open and
+  re-picks the current language; it fails without the guard).
+- **Each row name carries `lang` and `dir`.** `العربية` is pronounced as Arabic and
+  laid out right-to-left even while the page runs `en`; the language id is an
+  accessible hint when the native name differs from it. The closed trigger is
+  `rv-select`'s own value span and inherits the page language — the marking starts at
+  the panel (documented in the README).
+- **`languageSelectOptions(languages)` and `LanguageSelectOption`.** The pure mapper
+  the component uses, exported for consumers who want `rv-select` with their own
+  trigger or row. It preserves order and resolves each name as `nativeName` →
+  `Intl.DisplayNames` → id, the same rule as `/ui`.
+- **`RiviniaLanguageManager` and `LanguageLike` are re-exported** from this entry, so
+  a consumer importing only `/select` does not need `@rivinia/i18n/ui` on the side.
+- **The picker owns a width floor.** The host is `inline-block` with
+  `min-inline-size: 14rem`. `rv-select`'s own `min-width: min(14rem, 100%)` cannot
+  supply it: inside a shrink-to-fit host that `100%` resolves to `0`, so a bare
+  `<rv-language-select [manager]="i18n" />` rendered the trigger, the panel and every
+  row one character wide, and `English` wrapped as `En / gli / sh`. Caught in the
+  packed build in a browser, not by a build or a test double; the `i18n-e2e` suite now
+  measures the host, the panel and the row line count in Chromium and Firefox, and both
+  geometry tests fail when the floor is removed.
+- Packaging/build: the new entry consumes `@rivinia/select/ui` from dist, so
+  `build:select` runs before `build:i18n`. No new byte budget for anyone else: the
+  tarball grows by the `/select` FESM, its map and its types, and the pack gate checks
+  the built FESM — only `fesm2022/rivinia-i18n-select.mjs` may mention
+  `@rivinia/select/ui`.
+- Proven end-to-end: 371 tests in 35 files; the repo's `i18n-e2e` Playwright suite
+  green (96 tests across Chromium, system Chrome and Firefox, four of them the new
+  `/select` page); two clean consumers built from the packed tarball — one without the
+  peer (its JS contains no select code at all) and one with the peer and a lazy route
+  (the picker lands in a 45.71 kB / 10.72 kB chunk, zero occurrences of
+  `rv-language-select` in the initial bundle); and a real-browser run of the packed
+  build in Chromium and Firefox, 30 checks each over a three-language `ar`/`en`/`de`
+  demo: rows' `lang`/`dir`, managed pick flipping `<html lang>` to the locale
+  (`de-DE`) and `dir`, a presentational pick leaving the manager untouched, and no
+  console, page or network errors. WebKit was **not run** — the host is missing
+  `libavif.so.16`, so MiniBrowser cannot launch.
+
 ## 0.7.2 - 2026-10-30
 
 - **Fixed: a view-transition switch kept the previous dictionary.** With

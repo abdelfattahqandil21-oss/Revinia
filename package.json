@@ -14,7 +14,7 @@
     "schematics:env": "tsc -p projects/env/schematics/tsconfig.schematics.json && mv projects/env/schematics/ng-add/index.js projects/env/schematics/ng-add/index.cjs",
     "build:http": "pnpm schematics:http && ng build http",
     "build:toast": "pnpm schematics:toast && ng build toast",
-    "build:i18n": "pnpm schematics:i18n && ng build i18n",
+    "build:i18n": "pnpm schematics:i18n && pnpm build:select && ng build i18n",
     "build:modal": "pnpm schematics:modal && ng build modal",
     "build:env": "pnpm schematics:env && ng build env",
     "build:menu": "ng build menu",

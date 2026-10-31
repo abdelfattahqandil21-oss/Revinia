@@ -11,6 +11,10 @@
     "title": "Language toggle",
     "label": "Switch language"
   },
+  "select": {
+    "title": "Language picker",
+    "label": "Language"
+  },
   "icu": {
     "items": "{count, plural, =0 {No items} one {# item} other {# items}}",
     "compact": "{count, plural, =0{none} one{# item} other{# items}}",
