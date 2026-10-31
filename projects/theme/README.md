@@ -72,7 +72,8 @@ bun add @rivinia/theme
   --rv-border: #e0e0e0;
 }
 
-[data-rv-theme='dark'] {
+:root[data-rv-theme='dark'] {
+  color-scheme: dark;
   --rv-bg: #161616;
   --rv-fg: #f2f2f2;
   --rv-border: #3f3f46;
@@ -160,23 +161,27 @@ tokens and the scheme on it:
   --rv-muted: #a1a1aa;
   --rv-border: #3f3f46;
   --rv-accent: #8b8bf0;
+  --rv-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
 }
 ```
 
 Every Rivinia component inside that element follows those tokens, and the rest
-of the page is untouched. `pnpm check:theme-dark` renders exactly that document.
+of the page is untouched. The status tokens and `--rv-font`/`--rv-radius`
+keep their root values unless you list them too. `pnpm check:theme-dark`
+renders that rule and measures both sides of its boundary.
 
-Both blocks also set `color-scheme`, so form controls, scrollbars and the
-canvas follow the palette instead of staying light under a dark surface. If you
-override the dark values yourself, set `color-scheme: dark` in the same rule.
+Both blocks also set `color-scheme` on `:root`, which descendants inherit, so
+form controls, scrollbars and the canvas follow the palette instead of staying
+light under a dark surface. If you override the dark values yourself, set
+`color-scheme: dark` in the same rule.
 
 **Adapters.** The Tailwind adapter needs nothing: its utilities are `inline`
 aliases of `--rv-*`, so they follow the switch. The Bootstrap adapter maps both
 schemes from `--bs-*` and sets `color-scheme` itself — its rules are unlayered
 so that Bootstrap stays authoritative even when the OS preference says dark.
-Under `bootstrap.css` the switch is Bootstrap's own `data-bs-theme`: the
+Under `bootstrap.css` the switch is Bootstrap's own `data-bs-theme`; the
 adapter's unlayered mapping beats the theme's `:root[data-rv-theme]` block, so
-`data-rv-theme` has no effect there. Use one of the two, not both.
+`data-rv-theme` does nothing on that path.
 
 `pnpm check:theme-dark` proves all of this in Chromium and Firefox: eleven cases
 across both engines, reading the computed background, colour, shadow and
@@ -185,7 +190,7 @@ across both engines, reading the computed background, colour, shadow and
 ## Contrast
 
 The two palettes are checked, not assumed. `pnpm check:contrast` measures every
-documented pair in both schemes and fails the build when one drops below its
+documented pair in both schemes and fails when one drops below its
 threshold:
 
 | Group      | Pairs                                                              | Threshold |

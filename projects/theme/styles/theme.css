@@ -28,9 +28,14 @@
  * layered ones, so your own `:root { --rv-bg: … }` wins wherever it appears in
  * your stylesheet, with no import-ordering to get wrong.
  *
- * One thing to avoid: do not map the semantic layer ON a component element. An
- * element-level declaration shadows the root value for that subtree, and the
- * override silently stops working. Map it on `:root` (or `html`).
+ * One thing to avoid: do not map the semantic layer ON a Rivinia component's
+ * element. That declaration shadows the root value inside that one component,
+ * so a later change to the page palette silently stops reaching it. Map it on
+ * `:root` for the page, or on a section when scoping a region is the intent.
+ *
+ * A component token set on the root (`--rv-select-bg`) still shadows a
+ * section's `--rv-bg` inside that section: the component reads its own token
+ * first, wherever it is.
  *
  * DARK MODE
  *

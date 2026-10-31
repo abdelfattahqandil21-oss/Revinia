@@ -13,18 +13,24 @@ Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
   they ever drift. Proven in Chromium and Firefox on eleven documents
   (`pnpm check:theme-dark`).
 - **Migration.** The switch attribute is `data-rv-theme`, not the `data-theme`
-  an earlier README example used. A page that toggled `data-theme="dark"`
-  should rename it; until it does, the page follows the OS setting alone. A
-  page that had no switch now goes dark when the OS does, and
-  `<html data-rv-theme="light">` opts out. The attribute is read on `<html>`:
-  a subtree switches by setting the `--rv-*` properties on itself.
+  an earlier README example used. Rename it. A page whose own stylesheet still
+  maps `[data-theme='dark']` keeps painting those three declarations while the
+  attribute is present, but that rule cannot restore light under a dark OS and
+  sets no `color-scheme` — rename it and add the scheme. A page with no switch
+  now follows the OS, and `<html data-rv-theme="light">` opts out. The attribute
+  is read on `<html>`: a subtree switches by setting the `--rv-*` properties on
+  itself.
 - **`color-scheme`.** The light block declares `light`, both dark blocks and the
   Bootstrap adapter declare their scheme, so form controls, scrollbars and the
-  canvas follow the palette. Without it a dark surface kept a white scrollbar.
-- **Bootstrap adapter.** Both mappings now carry `--rv-shadow`, so
-  `data-bs-theme="dark"` under a light OS stops keeping the light elevation.
-  `data-rv-theme` does not apply under this adapter — the unlayered `--bs-*`
-  mapping outranks it, so Bootstrap's own `data-bs-theme` is the switch.
+  canvas inherit the palette. Without it a dark surface kept a white scrollbar.
+- **Bootstrap adapter.** Both mappings now carry `--rv-shadow`, and the dark
+  block maps the accent and the four status tokens, so a dark page that imports
+  this adapter alone gets the dark palette instead of the light one (with real
+  Bootstrap present the variable wins either way). The dark fallbacks for
+  `--rv-muted` and `--rv-border` follow the theme palette (`#a1a1aa`,
+  `#3f3f46`) instead of `#a8a8a8`/`#333333`. `data-rv-theme` does not apply
+  under this adapter — the unlayered `--bs-*` mapping outranks it, so
+  Bootstrap's own `data-bs-theme` is the switch.
 - **Contrast gate.** `pnpm check:contrast` reads `styles/theme.css`, checks that
   the three blocks carry the documented palette, and measures every documented
   pair against WCAG AA in both schemes: `--rv-fg`, `--rv-muted` and

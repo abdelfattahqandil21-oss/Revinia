@@ -3270,7 +3270,10 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   `@media (prefers-color-scheme: dark)` block, which is what keeps Bootstrap's
   palette authoritative; the probe caught the adapter mapping colours but
   leaving `color-scheme: light`, so a Bootstrap dark surface kept light
-  scrollbars and form controls.
+  scrollbars and form controls. The same probe found the dark block mapping
+  four tokens only, so the accent and the four status tokens kept their light
+  values on a dark surface; both mappings now carry all nine colours plus
+  `--rv-shadow`.
 - Verification: `pnpm check:contrast` (palette, drift and ratios) and
   `pnpm check:theme-dark` (eleven documents, Chromium and Firefox, computed
   values). Both run on demand; neither is part of `pnpm test`. The browser gate
