@@ -2,6 +2,25 @@
 
 Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
 
+## 0.7.2 - 2026-10-30
+
+- **Fixed: a view-transition switch kept the previous dictionary.** With
+  `viewTransition.enabled`, `applyLanguage()` started the dictionary load
+  before the transition callback changed `currentLanguage`. A cached
+  dictionary applies synchronously, and `DictionaryStore._apply()` publishes
+  only the dictionary whose language is current — so the new dictionary was
+  discarded and the UI stayed in the old language. The first switch worked
+  when `skipInitialTransition` ran it synchronously; every later switch did
+  not. The load and `ensureFallback()` now run inside the transition callback,
+  after `_currentLanguageId.set(id)`.
+- Two regression tests hold the transition callback and switch twice — one
+  through `setLanguage()`, one through the preload-first `setLanguageAsync()`
+  path (`projects/i18n/tests/view-transition-switch.spec.ts`); both fail on
+  the pre-fix code. The packed build was
+  also exercised in the `rv-tailwind` demo with `viewTransition` enabled:
+  `ar → en → ar → en → ar → en`, with the heading, `<html lang>` and persisted
+  language correct on every step and no console errors. No API change.
+
 ## 0.7.1 - 2026-10-29
 
 0.7.0 was never published; this release ships it unchanged and adds one option and one

@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/i18n",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Headless Angular language manager: signals, RTL, SSR-safe loaders, fallback language, missing-key reporting, ICU plurals, typed keys.",
   "keywords": [
     "angular",

@@ -1,4 +1,5 @@
 import { test, expect, beforeEach } from '@playwright/test';
+import { openMenu } from './support';
 
 /**
  * Public-API tests: the two documented usage levels, driven through a real
@@ -9,9 +10,9 @@ test.describe('public API — data-driven [items]', () => {
     await page.goto('/api');
   });
 
-  test('renders items, opens on click and focuses the first enabled row', async ({ page }) => {
+  test('renders items, opens on click and enters the rows with ArrowDown', async ({ page }) => {
     const trigger = page.getByRole('button', { name: 'Data' });
-    await trigger.click();
+    await openMenu(page, trigger);
     const menu = page.getByRole('menu', { name: 'Data actions' });
     await expect(menu).toBeVisible();
     // Fixture rows: Profile, Billing (both enabled), Archived (disabled).
@@ -27,7 +28,7 @@ test.describe('public API — data-driven [items]', () => {
   });
 
   test('keyboard navigation skips disabled rows and Enter emits the id', async ({ page }) => {
-    await page.getByRole('button', { name: 'Data' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'Data' }));
     await expect(page.getByRole('menuitem', { name: 'Profile' })).toBeFocused();
     await page.keyboard.press('ArrowDown');
     await expect(page.getByRole('menuitem', { name: 'Billing' })).toBeFocused();
@@ -39,7 +40,7 @@ test.describe('public API — data-driven [items]', () => {
   });
 
   test('typeahead works over declarative rows', async ({ page }) => {
-    await page.getByRole('button', { name: 'Data' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'Data' }));
     await expect(page.getByRole('menuitem', { name: 'Profile' })).toBeFocused();
     await page.keyboard.press('b');
     await expect(page.getByRole('menuitem', { name: 'Billing' })).toBeFocused();
@@ -68,18 +69,36 @@ test.describe('public API — composable markup', () => {
     const trigger = page.getByRole('button', { name: /Account/ }).last();
     const menu = page.getByRole('menu', { name: 'Custom actions' });
     await expect(menu).toBeHidden();
+
+    // Pointer open (no row active yet): the panel is projected and the icon
+    // takes the library's muted tone. Computed styles, not a bounding box —
+    // the open animation scales the box for 160ms.
     await trigger.click();
     await expect(menu).toBeVisible();
     // The projected header renders but is skipped by keyboard navigation.
     await expect(page.locator('.account-header')).toBeVisible();
-    await expect(page.getByRole('menuitem', { name: 'Profile' })).toBeFocused();
+    const row = page.getByRole('menuitem', { name: 'Profile' });
+    const icon = row.locator('svg');
+    expect(await icon.evaluate((el) => getComputedStyle(el).width)).toBe('16px');
+    expect(await icon.evaluate((el) => getComputedStyle(el).height)).toBe('16px');
+    expect(await icon.evaluate((el) => getComputedStyle(el).color)).toBe('rgb(85, 85, 85)');
+    // The consumer owns the stroke/fill that makes the icon visible.
+    await expect(icon).toHaveAttribute('fill', 'none');
+    await expect(icon).toHaveAttribute('stroke', 'currentColor');
+
+    // Keyboard entry focuses Profile, and the active row overrides the tone
+    // with `color: inherit` so the icon never looks disabled.
+    await page.keyboard.press('ArrowDown');
+    await expect(row).toBeFocused();
+    const colors = await row.evaluate((el) => {
+      const svg = el.querySelector('svg') as SVGElement;
+      return { row: getComputedStyle(el).color, icon: getComputedStyle(svg).color };
+    });
+    expect(colors.icon).toBe(colors.row);
   });
 
   test('static disabled attribute is honoured (native property collision)', async ({ page }) => {
-    await page
-      .getByRole('button', { name: /Account/ })
-      .last()
-      .click();
+    await openMenu(page, page.getByRole('button', { name: /Account/ }).last());
     const signout = page.getByRole('menuitem', { name: 'Sign out' });
     await expect(signout).toHaveAttribute('aria-disabled', 'true');
     await page.keyboard.press('End');
@@ -88,10 +107,7 @@ test.describe('public API — composable markup', () => {
   });
 
   test('selection emits only this menu and both levels stay independent', async ({ page }) => {
-    await page
-      .getByRole('button', { name: /Account/ })
-      .last()
-      .click();
+    await openMenu(page, page.getByRole('button', { name: /Account/ }).last());
     await expect(page.getByRole('menuitem', { name: 'Profile' })).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page.locator('[data-testid="api-result"]')).toHaveText('picked=custom=profile');

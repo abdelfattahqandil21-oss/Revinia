@@ -12,7 +12,15 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
       <button rv-menu-trigger>Actions</button>
       <div rv-menu-panel>
         <button rvMenuItem id="new">
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
+          <svg
+            viewBox="0 0 16 16"
+            aria-hidden="true"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+          >
+            <path d="M8 3v10M3 8h10" />
+          </svg>
           New file
         </button>
         <button rvMenuItem id="duplicate">Duplicate</button>

@@ -320,17 +320,16 @@ export class RiviniaMenuComponent {
         window.removeEventListener('resize', onScroll);
       });
     });
-    // APG menu-button: the trigger exposes haspopup + expanded. The trigger
-    // element is consumer-owned, so the attributes sync onto its focusable
-    // child (or the wrapper itself as a fallback). aria-controls references
-    // the stable panel id (valid while hidden per ARIA).
+    // APG menu-button: the trigger exposes haspopup + expanded, and
+    // aria-controls only while the panel it names exists.
     effect(() => {
       if (typeof document === 'undefined') return;
       const open = this.controller().open();
       const trigger = this.triggerEl();
       trigger?.setAttribute('aria-haspopup', 'menu');
       trigger?.setAttribute('aria-expanded', String(open));
-      trigger?.setAttribute('aria-controls', this.panelId);
+      if (open) trigger?.setAttribute('aria-controls', this.panelId);
+      else trigger?.removeAttribute('aria-controls');
     });
     afterRenderEffect(() => {
       if (this.controller().open() && !this.positioned()) this.showAndPosition();
@@ -379,7 +378,14 @@ export class RiviniaMenuComponent {
     }
   }
 
-  private isRtl(): boolean {
+  /**
+   * Writing direction for both the positioning path and the CSS origin hook.
+   * The document's explicit `dir` wins; otherwise the host's computed
+   * direction is read. Called during change detection for `data-rtl`, so the
+   * panel follows a direction change while it is open and programmatic opens
+   * (external controller) get the same hook as pointer/keyboard opens.
+   */
+  protected isRtl(): boolean {
     try {
       const doc = typeof document === 'undefined' ? null : document.documentElement;
       if (doc?.dir === 'rtl') return true;
@@ -397,22 +403,25 @@ export class RiviniaMenuComponent {
    * afterRenderEffect always gets a second pass: once with the panel measured,
    * then again after `positioned` flips back to true — that second pass is what
    * guarantees focus lands even if the first one raced the panel's insertion.
+   *
+   * A pointer open is a glance, not a keyboard entry (APG menu button): it
+   * activates nothing and leaves focus where the user clicked, so a row only
+   * starts looking chosen after a hover or an arrow key.
    */
-  private markOpening(): void {
-    this.focusPending = true;
-    // Set on every open so rows that register after the panel rendered can
-    // claim the initial activation exactly once.
-    this.pendingActivation = true;
+  private markOpening(from: 'pointer' | 'keyboard'): void {
+    this.focusPending = from === 'keyboard';
+    this.pendingActivation = from === 'keyboard';
     this.flipped.set(false);
     this.positioned.set(false);
   }
 
   protected onTriggerClick(): void {
     const c = this.controller();
-    c.toggle();
+    // `toggle('none')`: a click must not activate a row the user did not pick.
+    c.toggle('none');
     if (c.open()) {
       this.opened.emit();
-      this.markOpening();
+      this.markOpening('pointer');
     } else {
       // Focus never left the trigger on toggle-close — restore is a no-op.
       this.closed.emit();
@@ -426,15 +435,25 @@ export class RiviniaMenuComponent {
       case ' ':
       case 'ArrowDown':
         event.preventDefault();
+        if (c.open()) {
+          // A pointer open leaves focus here, so the arrow/Enter that follows
+          // must fold into the row list — not re-emit `opened` or toggle shut.
+          this.enterRows('first');
+          break;
+        }
         c.openMenu('first');
         this.opened.emit();
-        this.markOpening();
+        this.markOpening('keyboard');
         break;
       case 'ArrowUp':
         event.preventDefault();
+        if (c.open()) {
+          this.enterRows('last');
+          break;
+        }
         c.openMenu('last');
         this.opened.emit();
-        this.markOpening();
+        this.markOpening('keyboard');
         break;
       case 'Escape':
         if (c.open()) {
@@ -442,9 +461,22 @@ export class RiviniaMenuComponent {
           this.doClose(true);
         }
         break;
+      case 'Tab':
+        // Same reason: after a pointer open the panel's own Tab handler never
+        // runs. Close, then let the browser move focus on (no preventDefault).
+        if (c.open()) this.doClose(false);
+        break;
       default:
         break;
     }
+  }
+
+  /** Move focus into the row list of an already-open panel. */
+  private enterRows(where: 'first' | 'last'): void {
+    const c = this.controller();
+    if (where === 'first') c.activateFirst();
+    else c.activateLast();
+    this.focusActive();
   }
 
   protected onPanelKey(event: KeyboardEvent): void {
@@ -588,6 +620,22 @@ export class RiviniaMenuComponent {
     this.controller().closeMenu();
     if (was) this.closed.emit();
     if (restoreFocus) this.focusTrigger();
+    this.reseatTriggerFocus();
+  }
+
+  /**
+   * WebKit (measured 2026-10-30): a manual popover shown while focus stayed on
+   * the trigger leaves the sequential focus navigation starting point inside
+   * the hidden top-layer panel, so Shift+Tab from the trigger does nothing
+   * until focus visits another element. A blur/focus cycle re-seats the
+   * starting point on the trigger. Harmless when focus is elsewhere.
+   */
+  private reseatTriggerFocus(): void {
+    if (typeof document === 'undefined') return;
+    const trigger = this.triggerEl();
+    if (!trigger || document.activeElement !== trigger) return;
+    trigger.blur();
+    trigger.focus();
   }
 
   /**
@@ -620,11 +668,13 @@ export class RiviniaMenuComponent {
 
   private focusActive(): void {
     const id = this.controller().activeId();
+    // Nothing active means nothing to focus: the panel's rows are all
+    // tabindex="-1" and may be disabled, so the fallback used to put focus on
+    // a disabled first row.
+    if (id === null) return;
     const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-menu-panel');
     if (!root) return;
-    const target = id
-      ? root.querySelector<HTMLElement>(`[data-rv-id="${CSS.escape(id)}"]`)
-      : root.querySelector<HTMLElement>('[rvmenuitem]');
+    const target = root.querySelector<HTMLElement>(`[data-rv-id="${CSS.escape(id)}"]`);
     try {
       target?.focus({ preventScroll: true });
     } catch {

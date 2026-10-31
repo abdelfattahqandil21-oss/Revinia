@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openMenu } from './support';
 
 test.describe('two independent menus', () => {
   test('panel ids are unique per instance', async ({ page }) => {
@@ -23,7 +24,7 @@ test.describe('two independent menus', () => {
 
   test('opening one menu does not disturb the other', async ({ page }) => {
     await page.goto('/two');
-    await page.getByRole('button', { name: 'First' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'First' }));
     await expect(page.getByRole('menu', { name: 'First menu' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Second' })).toHaveAttribute(
       'aria-expanded',
@@ -35,14 +36,14 @@ test.describe('two independent menus', () => {
 
   test('picking in one menu emits only on that menu', async ({ page }) => {
     await page.goto('/two');
-    await page.getByRole('button', { name: 'Second' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'Second' }));
     await expect(page.getByRole('menuitem', { name: 'Beta one' })).toBeFocused();
     await page.keyboard.press('End');
     await page.keyboard.press('Enter');
     await expect(page.locator('[data-testid="result"]')).toHaveText('picked=second=b2');
     await expect(page.getByRole('menu', { name: 'First menu' })).toHaveCount(0);
 
-    await page.getByRole('button', { name: 'First' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'First' }));
     await expect(page.getByRole('menuitem', { name: 'Alpha one' })).toBeFocused();
     await page.keyboard.press('End');
     await expect(page.getByRole('menuitem', { name: 'Alpha two' })).toBeFocused();
@@ -54,7 +55,7 @@ test.describe('two independent menus', () => {
     page,
   }) => {
     await page.goto('/two');
-    await page.getByRole('button', { name: 'First' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'First' }));
     await expect(page.getByRole('menuitem', { name: 'Alpha one' })).toBeFocused();
     await page.keyboard.press('ArrowDown');
     await page.keyboard.press('Enter');

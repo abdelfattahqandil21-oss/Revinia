@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openMenu } from './support';
 
 /**
  * Focus-contract regressions that need a real browser: Tab traversal, live
@@ -69,14 +70,14 @@ test.describe('focus contract — live disabled state', () => {
     await page.goto('/dynamic');
     // Open the menu, focus the LAST enabled row, then disable everything
     // live while focus is still on it.
-    await page.getByRole('button', { name: 'Dynamic' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'Dynamic' }));
     await page.keyboard.press('End');
     const focusedRow = page.locator('[rvmenuitem][data-active="true"]');
     await expect(focusedRow).toHaveCount(1);
 
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Toggle all disabled' }).click();
-    await page.getByRole('button', { name: 'Dynamic' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'Dynamic' }));
 
     // Every row now reports disabled and nothing can be picked.
     const rows = page.locator('[rvmenuitem]');
@@ -91,12 +92,12 @@ test.describe('focus contract — live disabled state', () => {
   test('re-enabling a row makes it pickable again', async ({ page }) => {
     await page.goto('/dynamic');
     await page.getByRole('button', { name: 'Toggle all disabled' }).click();
-    await page.getByRole('button', { name: 'Dynamic' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'Dynamic' }));
     await expect(page.locator('[rvmenuitem]').first()).toHaveAttribute('aria-disabled', 'true');
 
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Toggle all disabled' }).click();
-    await page.getByRole('button', { name: 'Dynamic' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'Dynamic' }));
     await expect(page.locator('[rvmenuitem]').first()).not.toHaveAttribute('aria-disabled', 'true');
     await page.keyboard.press('Enter');
     await expect(page.locator('[data-testid="result"]')).toHaveText('picked=one count=3');

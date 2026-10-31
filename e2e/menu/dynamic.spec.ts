@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openMenu } from './support';
 
 const row = (page: import('@playwright/test').Page, name: string) =>
   page.getByRole('menuitem', { name });
@@ -11,7 +12,7 @@ test.describe('dynamic items lifecycle', () => {
   test('items added at runtime appear and are navigable', async ({ page }) => {
     await page.getByRole('button', { name: 'Add item' }).click();
     await page.getByRole('button', { name: 'Add item' }).click();
-    await page.getByRole('button', { name: 'Dynamic' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'Dynamic' }));
     await expect(page.getByRole('menu', { name: 'Dynamic menu' })).toBeVisible();
     await expect(row(page, 'Item 4')).toBeVisible();
     await expect(row(page, 'Item 5')).toBeVisible();
@@ -22,7 +23,7 @@ test.describe('dynamic items lifecycle', () => {
 
   test('items removed at runtime disappear and navigation stays valid', async ({ page }) => {
     await page.getByRole('button', { name: 'Remove last' }).click();
-    await page.getByRole('button', { name: 'Dynamic' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'Dynamic' }));
     await expect(row(page, 'Three')).toHaveCount(0);
     await expect(row(page, 'One')).toBeVisible();
     await page.keyboard.press('End');
@@ -30,7 +31,7 @@ test.describe('dynamic items lifecycle', () => {
   });
 
   test('removing the focused item moves focus to a valid target', async ({ page }) => {
-    await page.getByRole('button', { name: 'Dynamic' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'Dynamic' }));
     await expect(row(page, 'Three')).toBeVisible();
     // 'Three' is disabled in the fixture, so End lands on the last ENABLED
     // item ('Two') — disabled rows are never focus targets.
@@ -46,8 +47,11 @@ test.describe('dynamic items lifecycle', () => {
     // Menu opens empty: no crash, no focus target, still operable.
     await expect(page.getByRole('menu')).toBeVisible();
     await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('Enter');
+    await page.keyboard.press('End');
+    await page.keyboard.press('Home');
     await expect(page.getByRole('menu')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('menu')).toBeHidden();
   });
 
   test('an empty menu opens safely and stays operable', async ({ page }) => {
@@ -58,7 +62,7 @@ test.describe('dynamic items lifecycle', () => {
     await expect(page.getByRole('menu')).toBeVisible();
     await page.keyboard.press('ArrowDown');
     await page.keyboard.press('End');
-    await page.keyboard.press('Enter');
+    await page.keyboard.press('Home');
     await page.keyboard.press('Escape');
     await expect(page.getByRole('menu')).toBeHidden();
     expect(errors).toEqual([]);
@@ -75,8 +79,11 @@ test.describe('dynamic items lifecycle', () => {
     await page.keyboard.press('ArrowDown');
     await page.keyboard.press('End');
     await page.keyboard.press('Home');
-    await page.keyboard.press('Enter');
-    // Nothing was picked, and focus was not stranded on <body>.
+    // No row can take focus, so nothing is active; a direct click on a
+    // disabled row is refused by the controller.
+    await expect(page.locator('[rvmenuitem][data-active="true"]')).toHaveCount(0);
+    await row(page, 'One').dispatchEvent('click');
+    // Nothing was picked, and the menu is still open and operable.
     await expect(page.getByRole('menu')).toBeVisible();
     await expect(page.locator('[data-testid="result"]')).toHaveText(/picked=\(none\)/);
     expect(errors).toEqual([]);

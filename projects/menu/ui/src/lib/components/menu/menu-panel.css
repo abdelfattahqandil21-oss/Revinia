@@ -26,18 +26,14 @@ rv-menu {
 .rv-menu-panel[data-positioned='false'] {
   animation: none;
 }
-/* Flipped panels grow out of the opposite edge (matches coordinates). */
-.rv-menu-panel[data-top-layer='true'][data-placement^='bottom'][data-flipped='true'] {
-  transform-origin: bottom center;
-}
-.rv-menu-panel[data-top-layer='true'][data-placement^='top'][data-flipped='true'] {
-  transform-origin: top center;
-}
 .rv-menu-panel {
   position: absolute;
   z-index: var(--rv-menu-z, 500);
-  min-width: var(--rv-menu-width, 16rem);
-  max-width: calc(100dvw - 2rem);
+  /* Every size token describes the visible box, padding and border included:
+     with the default content-box a 16rem min-width rendered 270px of panel. */
+  box-sizing: border-box;
+  min-width: var(--rv-menu-width, 10rem);
+  max-width: min(var(--rv-menu-max-width, 22rem), calc(100dvw - 1rem));
   /* Long lists scroll inside the panel instead of leaving the viewport. */
   max-height: var(--rv-menu-panel-max-height, min(20rem, calc(100dvh - 2rem)));
   overflow-y: auto;
@@ -161,8 +157,8 @@ rv-menu {
      * the edge, so the panel keeps its own size.
      */
     width: max-content;
-    min-width: var(--rv-menu-width, 16rem);
-    max-width: calc(100dvw - 2rem);
+    min-width: var(--rv-menu-width, 10rem);
+    max-width: min(var(--rv-menu-max-width, 22rem), calc(100dvw - 1rem));
     left: auto !important;
     top: auto !important;
     right: auto !important;
@@ -209,15 +205,19 @@ rv-menu {
   font: inherit;
   font-size: var(--rv-menu-item-size, 0.875rem);
   line-height: 1.4;
+  /* A label longer than the panel cap wraps inside the row; it is never
+     ellipsized, and a single long word still breaks instead of overflowing. */
+  white-space: normal;
+  overflow-wrap: break-word;
   text-align: var(--rv-menu-item-align, start);
   padding: var(--rv-menu-item-padding, 0.5rem 0.625rem);
   cursor: pointer;
 }
+/* The active state is the ONLY row highlight. Hover activates the row through
+   the controller, so a separate :hover wash painted a second row at the same
+   time (measured: the hovered row stayed washed after the arrows moved). */
 .rv-menu-panel [rvmenuitem][data-active='true'] {
   background: var(--rv-menu-item-active-bg, color-mix(in srgb, currentColor 10%, transparent));
-}
-.rv-menu-panel [rvmenuitem]:hover {
-  background: var(--rv-menu-item-hover-bg, color-mix(in srgb, currentColor 8%, transparent));
 }
 .rv-menu-panel [rvmenuitem]:focus-visible {
   outline: var(--rv-menu-focus-ring, 2px solid currentColor);
@@ -241,18 +241,45 @@ rv-menu {
   color: inherit;
 }
 /* Opening motion (researched: Radix/shadcn/HeadlessUI pattern):
-   fade + scale from the trigger edge + a small slide toward rest.
-   Origin follows the vertical side so the panel grows out of the
-   trigger; duration/easing stay overridable via vars. */
+   fade + scale from the TRIGGER CORNER + a small slide toward rest.
+   Origin was the panel's centre (measured: transform-origin 135px 0px), which
+   reads as "a box appearing" instead of "a menu growing out of its trigger".
+
+   `transform-origin` only takes physical keywords, so the two axes are derived
+   below from the logical placement, the writing direction (the `data-rtl`
+   attribute written by the component — no `:dir()` dependency) and whether the
+   panel actually flipped to the other side. Duration/easing stay overridable. */
 .rv-menu-panel {
-  transform-origin: top center;
+  --rv-menu-origin-x: left;
+  --rv-menu-origin-y: top;
+  transform-origin: var(--rv-menu-origin-x) var(--rv-menu-origin-y);
   animation: rv-menu-in var(--rv-menu-duration, 160ms)
     var(--rv-menu-easing, cubic-bezier(0.16, 1, 0.3, 1));
+}
+/* -end aligns to the right edge in LTR, mirrored in RTL. */
+.rv-menu-panel[data-placement$='-end'] {
+  --rv-menu-origin-x: right;
+}
+.rv-menu-panel[data-rtl='true'][data-placement$='-start'] {
+  --rv-menu-origin-x: right;
+}
+.rv-menu-panel[data-rtl='true'][data-placement$='-end'] {
+  --rv-menu-origin-x: left;
+}
+/* Top placements grow from the bottom edge; a flipped panel grows from the
+   edge it actually landed on. */
+.rv-menu-panel[data-placement^='top'] {
+  --rv-menu-origin-y: bottom;
+}
+.rv-menu-panel[data-flipped='true'] {
+  --rv-menu-origin-y: bottom;
+}
+.rv-menu-panel[data-placement^='top'][data-flipped='true'] {
+  --rv-menu-origin-y: top;
 }
 .rv-menu-panel[data-placement='top-start'],
 .rv-menu-panel[data-placement='top-end'] {
   --rv-menu-from-y: 0.375rem;
-  transform-origin: bottom center;
 }
 @media (prefers-reduced-motion: reduce) {
   .rv-menu-panel {

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openMenu } from './support';
 
 test.describe('consumer styling via CSS variables', () => {
   test('consumer --vars on an ancestor win over the library fallbacks', async ({ page }) => {
@@ -25,9 +26,9 @@ test.describe('consumer styling via CSS variables', () => {
 
   test('state hooks follow keyboard focus', async ({ page }) => {
     await page.goto('/styled');
-    await page.getByRole('button', { name: 'Styled' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'Styled' }));
 
-    // Opening focuses the first enabled item, which is the active one.
+    // The first ArrowDown focuses the first enabled item, which is the active one.
     const one = page.getByRole('menuitem', { name: 'Styled one' });
     const two = page.getByRole('menuitem', { name: 'Styled two' });
     await expect(one).toBeFocused();
@@ -45,7 +46,7 @@ test.describe('consumer styling via CSS variables', () => {
 
   test('a consumer outline on the active hook is applied', async ({ page }) => {
     await page.goto('/styled');
-    await page.getByRole('button', { name: 'Styled' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'Styled' }));
     const one = page.getByRole('menuitem', { name: 'Styled one' });
     await expect(one).toBeFocused();
     // The fixture styles `.peach [rvmenuitem][data-active='true']`.
