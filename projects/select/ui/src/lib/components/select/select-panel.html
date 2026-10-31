@@ -28,7 +28,9 @@
     >
       <span class="rv-select-value" [id]="valueId">{{ visibleValue() }}</span>
       @if (overflowCount() > 0) {
-        <span class="rv-select-count" aria-hidden="true"><bdi dir="ltr">+{{ overflowCount() }}</bdi></span>
+        <span class="rv-select-count" aria-hidden="true"
+          ><bdi dir="ltr">+{{ overflowCount() }}</bdi></span
+        >
       }
       <svg
         class="rv-select-chevron"
@@ -68,62 +70,66 @@
         <!-- The consumer's own list — a virtualised one, typically. -->
         <ng-container
           [ngTemplateOutlet]="list"
-          [ngTemplateOutletContext]="{ $implicit: controller().filtered(), options: controller().filtered() }"
+          [ngTemplateOutletContext]="{
+            $implicit: controller().filtered(),
+            options: controller().filtered(),
+          }"
         />
       } @else {
-      @for (o of controller().filtered(); track o.id) {
-        <button
-          rvSelectPopupItem
-          [id]="o.id"
-          [attr.data-selected]="controller().isSelected(o.id) ? 'true' : null"
-          [disabled]="o.disabled ?? false"
-          [checked]="controller().isSelected(o.id)"
-          [radio]="controller().mode === 'single'"
-        >
-          @if (optionTemplate(); as row) {
-            <!--
+        @for (o of controller().filtered(); track o.id) {
+          <button
+            rvSelectPopupItem
+            [id]="o.id"
+            [attr.data-selected]="controller().isSelected(o.id) ? 'true' : null"
+            [disabled]="o.disabled ?? false"
+            [checked]="controller().isSelected(o.id)"
+            [radio]="controller().mode === 'single'"
+          >
+            @if (optionTemplate(); as row) {
+              <!--
               The consumer's own row markup. It replaces the default row
               entirely, so the hint and the check mark are theirs to render.
               The button wrapper stays, which is what keeps the ARIA, the
               keyboard handling and the check state working.
             -->
-            <ng-container
-              [ngTemplateOutlet]="row"
-              [ngTemplateOutletContext]="{ $implicit: o, option: o }"
-            />
-          } @else {
-            <span class="rv-select-label">{{ o.label }}</span>
-            @if (o.hint) {
-              <span class="rv-select-hint">{{ o.hint }}</span>
+              <ng-container
+                [ngTemplateOutlet]="row"
+                [ngTemplateOutletContext]="{ $implicit: o, option: o }"
+              />
+            } @else {
+              <span class="rv-select-label">{{ o.label }}</span>
+              @if (o.hint) {
+                <span class="rv-select-hint">{{ o.hint }}</span>
+              }
+              @if (controller().isSelected(o.id)) {
+                <svg
+                  class="rv-select-check"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <path d="M3 8.5 6.5 12 13 4.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              }
             }
-            @if (controller().isSelected(o.id)) {
-              <svg
-                class="rv-select-check"
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                aria-hidden="true"
-              >
-                <path
-                  d="M3 8.5 6.5 12 13 4.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            }
-          }
-        </button>
-      }
+          </button>
+        }
       }
     </div>
     <!-- Status rows and the consumer's footer are not menu children. -->
     <div rv-select-popup-tail class="rv-select-popup-tail">
-      @if (!listTemplate() && controller().filtered().length === 0) {
-        <!-- Live region: filtering to zero rows removes the list, so the only
-             signal left is the message itself. -->
-        <div class="rv-select-empty" role="status">{{ emptyLabel() }}</div>
-      }
+      <!--
+        Live region, rendered empty before it holds text: a `role="status"`
+        created together with its content is not announced. Filtering to zero
+        rows removes the list, so this message is the only signal left.
+      -->
+      <div [class.rv-select-empty]="emptyVisible()" role="status">
+        @if (emptyVisible()) {
+          {{ emptyLabel() }}
+        }
+      </div>
       @if (loading()) {
         <div class="rv-select-loading" role="status" aria-live="polite">
           <!-- Skeleton bars: premium only, decorative, so hidden from AT. -->

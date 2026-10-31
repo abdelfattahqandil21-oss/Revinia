@@ -26,7 +26,11 @@ import type {
 } from '../../models/select-popup.ui-types';
 import { SelectPopupComponent, SelectPopupItem } from '../popup/select-popup';
 import { RiviniaSelect } from '@rivinia/select';
-import type { RiviniaSelectController, RiviniaSelectMode, RiviniaSelectOption } from '@rivinia/select';
+import type {
+  RiviniaSelectController,
+  RiviniaSelectMode,
+  RiviniaSelectOption,
+} from '@rivinia/select';
 import { formatSelectionList, resolveListLocale } from '../../utils/selection-summary';
 
 /** Payload of RiviniaSelectComponent.selectionChange. Single: id (or null after clear). Multi: ids. */
@@ -336,6 +340,15 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
     if (described.length === 0) return null;
     return formatSelectionList(described, this.pageLang());
   });
+
+  /**
+   * Whether the no-results message applies. The live region around it renders
+   * always; only its class and text toggle, because a `role="status"` created
+   * together with its content is not announced by several screen readers.
+   */
+  protected readonly emptyVisible = computed(
+    () => !this.listTemplate() && this.controller().filtered().length === 0,
+  );
 
   constructor() {
     // Mirror the options input into the controller registry (stale ids drop,
