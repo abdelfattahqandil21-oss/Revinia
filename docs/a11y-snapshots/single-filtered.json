@@ -1,0 +1,216 @@
+{
+  "state": "single-filtered",
+  "capturedAt": "2026-10-31T20:08:01.142Z",
+  "url": "http://127.0.0.1:4299/select",
+  "browser": "Chromium 156.0.8078.4",
+  "viewport": {
+    "width": 1280,
+    "height": 900
+  },
+  "selector": "#single-select",
+  "nodes": [
+    {
+      "id": "n0",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n1",
+        "n4"
+      ]
+    },
+    {
+      "id": "n1",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n2"
+      ]
+    },
+    {
+      "id": "n2",
+      "role": "StaticText",
+      "name": "Invoice status",
+      "childIds": [
+        "n3"
+      ]
+    },
+    {
+      "id": "n3",
+      "role": "InlineTextBox",
+      "name": "Invoice status",
+      "childIds": []
+    },
+    {
+      "id": "n4",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n5"
+      ]
+    },
+    {
+      "id": "n5",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n6",
+        "n11"
+      ]
+    },
+    {
+      "id": "n6",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n7"
+      ]
+    },
+    {
+      "id": "n7",
+      "role": "button",
+      "name": "Invoice status Select…",
+      "properties": {
+        "invalid": "false",
+        "hasPopup": "menu",
+        "expanded": true,
+        "controls": "rv-select-popup-panel-1"
+      },
+      "childIds": [
+        "n8"
+      ]
+    },
+    {
+      "id": "n8",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n9"
+      ]
+    },
+    {
+      "id": "n9",
+      "role": "StaticText",
+      "name": "Select…",
+      "childIds": [
+        "n10"
+      ]
+    },
+    {
+      "id": "n10",
+      "role": "InlineTextBox",
+      "name": "Select…",
+      "childIds": []
+    },
+    {
+      "id": "n11",
+      "role": "group",
+      "name": "",
+      "childIds": [
+        "n12",
+        "n18"
+      ]
+    },
+    {
+      "id": "n12",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n13"
+      ]
+    },
+    {
+      "id": "n13",
+      "role": "searchbox",
+      "name": "Search options",
+      "properties": {
+        "invalid": "false",
+        "focused": true
+      },
+      "childIds": [
+        "n14",
+        "n15"
+      ]
+    },
+    {
+      "id": "n14",
+      "role": "none",
+      "name": "",
+      "ignored": true,
+      "childIds": []
+    },
+    {
+      "id": "n15",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n16"
+      ]
+    },
+    {
+      "id": "n16",
+      "role": "StaticText",
+      "name": "paid",
+      "childIds": [
+        "n17"
+      ]
+    },
+    {
+      "id": "n17",
+      "role": "InlineTextBox",
+      "name": "paid",
+      "childIds": []
+    },
+    {
+      "id": "n18",
+      "role": "menu",
+      "name": "Invoice status options",
+      "childIds": [
+        "n19"
+      ]
+    },
+    {
+      "id": "n19",
+      "role": "none",
+      "name": "",
+      "ignored": true,
+      "childIds": [
+        "n20"
+      ]
+    },
+    {
+      "id": "n20",
+      "role": "menuitemradio",
+      "name": "Paid",
+      "properties": {
+        "invalid": "false",
+        "checked": "false"
+      },
+      "childIds": [
+        "n21"
+      ]
+    },
+    {
+      "id": "n21",
+      "role": "none",
+      "name": "",
+      "ignored": true,
+      "childIds": [
+        "n22"
+      ]
+    },
+    {
+      "id": "n22",
+      "role": "StaticText",
+      "name": "Paid",
+      "childIds": [
+        "n23"
+      ]
+    },
+    {
+      "id": "n23",
+      "role": "InlineTextBox",
+      "name": "Paid",
+      "childIds": []
+    }
+  ]
+}

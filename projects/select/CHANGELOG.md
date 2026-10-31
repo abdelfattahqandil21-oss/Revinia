@@ -4,6 +4,30 @@ Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
 Older releases (0.1.0 to 0.6.0) are documented in the repository
 [CHANGELOG](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/CHANGELOG.md).
 
+## Unreleased
+
+- **Single rows are `menuitemradio` with `aria-checked`.** They were plain
+  `menuitem`, so the selected option was not announced as selected (D85).
+  Multi rows stay `menuitemcheckbox`. ARIA roles are public contract: a
+  consumer that queried `[role="menuitem"]` inside the panel must query
+  `[role="menuitemradio"]`.
+- **The menu owns rows only.** The panel still holds everything, but the
+  `role="menu"` element is now an inner rows container (`.rv-select-popup-menu`);
+  the filter box, the empty state, the loader row and a consumer footer are its
+  siblings. A `searchbox` child of `role="menu"` is an axe
+  `aria-required-children` violation (critical, measured).
+- **A custom `listTemplate` must give its rows a `menuitem*` role and
+  `tabindex="-1"`.** Without them the menu owns elements it may not own and the
+  scrollport is not focusable (measured: critical + serious). The README recipe
+  shows the attributes.
+- **The trigger's name includes the visible value.** `aria-labelledby` composes
+  the caption (or `ariaLabel`) with the value, so the accessible name always
+  contains the text on screen (WCAG 2.5.3, axe `label-content-name-mismatch`,
+  measured serious).
+- **Fixed: Enter did nothing right after filtering.** The active row was the
+  one the filter had just removed, and nothing took over; activation now falls
+  to the top remaining row.
+
 ## 0.7.1
 
 Two fixes to the multi trigger, both found in a browser and proved in a browser.

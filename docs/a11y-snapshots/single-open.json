@@ -1,0 +1,273 @@
+{
+  "state": "single-open",
+  "capturedAt": "2026-10-31T20:08:00.863Z",
+  "url": "http://127.0.0.1:4299/select",
+  "browser": "Chromium 156.0.8078.4",
+  "viewport": {
+    "width": 1280,
+    "height": 900
+  },
+  "selector": "#single-select",
+  "nodes": [
+    {
+      "id": "n0",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n1",
+        "n4"
+      ]
+    },
+    {
+      "id": "n1",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n2"
+      ]
+    },
+    {
+      "id": "n2",
+      "role": "StaticText",
+      "name": "Invoice status",
+      "childIds": [
+        "n3"
+      ]
+    },
+    {
+      "id": "n3",
+      "role": "InlineTextBox",
+      "name": "Invoice status",
+      "childIds": []
+    },
+    {
+      "id": "n4",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n5"
+      ]
+    },
+    {
+      "id": "n5",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n6",
+        "n11"
+      ]
+    },
+    {
+      "id": "n6",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n7"
+      ]
+    },
+    {
+      "id": "n7",
+      "role": "button",
+      "name": "Invoice status Select…",
+      "properties": {
+        "invalid": "false",
+        "hasPopup": "menu",
+        "expanded": true,
+        "controls": "rv-select-popup-panel-1"
+      },
+      "childIds": [
+        "n8"
+      ]
+    },
+    {
+      "id": "n8",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n9"
+      ]
+    },
+    {
+      "id": "n9",
+      "role": "StaticText",
+      "name": "Select…",
+      "childIds": [
+        "n10"
+      ]
+    },
+    {
+      "id": "n10",
+      "role": "InlineTextBox",
+      "name": "Select…",
+      "childIds": []
+    },
+    {
+      "id": "n11",
+      "role": "group",
+      "name": "",
+      "childIds": [
+        "n12",
+        "n16"
+      ]
+    },
+    {
+      "id": "n12",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n13"
+      ]
+    },
+    {
+      "id": "n13",
+      "role": "searchbox",
+      "name": "Search options",
+      "properties": {
+        "invalid": "false",
+        "focused": true
+      },
+      "childIds": [
+        "n14",
+        "n15"
+      ]
+    },
+    {
+      "id": "n14",
+      "role": "none",
+      "name": "",
+      "ignored": true,
+      "childIds": []
+    },
+    {
+      "id": "n15",
+      "role": "generic",
+      "name": "",
+      "childIds": []
+    },
+    {
+      "id": "n16",
+      "role": "menu",
+      "name": "Invoice status options",
+      "childIds": [
+        "n17"
+      ]
+    },
+    {
+      "id": "n17",
+      "role": "none",
+      "name": "",
+      "ignored": true,
+      "childIds": [
+        "n18",
+        "n22",
+        "n26"
+      ]
+    },
+    {
+      "id": "n18",
+      "role": "menuitemradio",
+      "name": "Outstanding invoices",
+      "properties": {
+        "invalid": "false",
+        "checked": "false"
+      },
+      "childIds": [
+        "n19"
+      ]
+    },
+    {
+      "id": "n19",
+      "role": "none",
+      "name": "",
+      "ignored": true,
+      "childIds": [
+        "n20"
+      ]
+    },
+    {
+      "id": "n20",
+      "role": "StaticText",
+      "name": "Outstanding invoices",
+      "childIds": [
+        "n21"
+      ]
+    },
+    {
+      "id": "n21",
+      "role": "InlineTextBox",
+      "name": "Outstanding invoices",
+      "childIds": []
+    },
+    {
+      "id": "n22",
+      "role": "menuitemradio",
+      "name": "Overdue",
+      "properties": {
+        "disabled": true,
+        "invalid": "false",
+        "checked": "false"
+      },
+      "childIds": [
+        "n23"
+      ]
+    },
+    {
+      "id": "n23",
+      "role": "none",
+      "name": "",
+      "ignored": true,
+      "childIds": [
+        "n24"
+      ]
+    },
+    {
+      "id": "n24",
+      "role": "StaticText",
+      "name": "Overdue",
+      "childIds": [
+        "n25"
+      ]
+    },
+    {
+      "id": "n25",
+      "role": "InlineTextBox",
+      "name": "Overdue",
+      "childIds": []
+    },
+    {
+      "id": "n26",
+      "role": "menuitemradio",
+      "name": "Paid",
+      "properties": {
+        "invalid": "false",
+        "checked": "false"
+      },
+      "childIds": [
+        "n27"
+      ]
+    },
+    {
+      "id": "n27",
+      "role": "none",
+      "name": "",
+      "ignored": true,
+      "childIds": [
+        "n28"
+      ]
+    },
+    {
+      "id": "n28",
+      "role": "StaticText",
+      "name": "Paid",
+      "childIds": [
+        "n29"
+      ]
+    },
+    {
+      "id": "n29",
+      "role": "InlineTextBox",
+      "name": "Paid",
+      "childIds": []
+    }
+  ]
+}

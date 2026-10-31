@@ -1,0 +1,245 @@
+{
+  "state": "rtl-open",
+  "capturedAt": "2026-10-31T20:08:01.987Z",
+  "url": "http://127.0.0.1:4299/select",
+  "browser": "Chromium 156.0.8078.4",
+  "viewport": {
+    "width": 1280,
+    "height": 900
+  },
+  "selector": "#rtl-select",
+  "nodes": [
+    {
+      "id": "n0",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n1",
+        "n4"
+      ]
+    },
+    {
+      "id": "n1",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n2"
+      ]
+    },
+    {
+      "id": "n2",
+      "role": "StaticText",
+      "name": "الدور",
+      "childIds": [
+        "n3"
+      ]
+    },
+    {
+      "id": "n3",
+      "role": "InlineTextBox",
+      "name": "الدور",
+      "childIds": []
+    },
+    {
+      "id": "n4",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n5"
+      ]
+    },
+    {
+      "id": "n5",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n6",
+        "n12"
+      ]
+    },
+    {
+      "id": "n6",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n7"
+      ]
+    },
+    {
+      "id": "n7",
+      "role": "button",
+      "name": "الدور Select…",
+      "properties": {
+        "invalid": "false",
+        "hasPopup": "menu",
+        "expanded": true,
+        "controls": "rv-select-popup-panel-3"
+      },
+      "childIds": [
+        "n8"
+      ]
+    },
+    {
+      "id": "n8",
+      "role": "generic",
+      "name": "",
+      "childIds": [
+        "n9"
+      ]
+    },
+    {
+      "id": "n9",
+      "role": "StaticText",
+      "name": "Select…",
+      "childIds": [
+        "n10",
+        "n11"
+      ]
+    },
+    {
+      "id": "n10",
+      "role": "InlineTextBox",
+      "name": "…",
+      "childIds": []
+    },
+    {
+      "id": "n11",
+      "role": "InlineTextBox",
+      "name": "Select",
+      "childIds": []
+    },
+    {
+      "id": "n12",
+      "role": "group",
+      "name": "",
+      "childIds": [
+        "n13"
+      ]
+    },
+    {
+      "id": "n13",
+      "role": "menu",
+      "name": "الدور",
+      "childIds": [
+        "n14"
+      ]
+    },
+    {
+      "id": "n14",
+      "role": "none",
+      "name": "",
+      "ignored": true,
+      "childIds": [
+        "n15",
+        "n19",
+        "n23"
+      ]
+    },
+    {
+      "id": "n15",
+      "role": "menuitemradio",
+      "name": "Owner",
+      "properties": {
+        "invalid": "false",
+        "focused": true,
+        "checked": "false"
+      },
+      "childIds": [
+        "n16"
+      ]
+    },
+    {
+      "id": "n16",
+      "role": "none",
+      "name": "",
+      "ignored": true,
+      "childIds": [
+        "n17"
+      ]
+    },
+    {
+      "id": "n17",
+      "role": "StaticText",
+      "name": "Owner",
+      "childIds": [
+        "n18"
+      ]
+    },
+    {
+      "id": "n18",
+      "role": "InlineTextBox",
+      "name": "Owner",
+      "childIds": []
+    },
+    {
+      "id": "n19",
+      "role": "menuitemradio",
+      "name": "Admin",
+      "properties": {
+        "invalid": "false",
+        "checked": "false"
+      },
+      "childIds": [
+        "n20"
+      ]
+    },
+    {
+      "id": "n20",
+      "role": "none",
+      "name": "",
+      "ignored": true,
+      "childIds": [
+        "n21"
+      ]
+    },
+    {
+      "id": "n21",
+      "role": "StaticText",
+      "name": "Admin",
+      "childIds": [
+        "n22"
+      ]
+    },
+    {
+      "id": "n22",
+      "role": "InlineTextBox",
+      "name": "Admin",
+      "childIds": []
+    },
+    {
+      "id": "n23",
+      "role": "menuitemradio",
+      "name": "Member",
+      "properties": {
+        "invalid": "false",
+        "checked": "false"
+      },
+      "childIds": [
+        "n24"
+      ]
+    },
+    {
+      "id": "n24",
+      "role": "none",
+      "name": "",
+      "ignored": true,
+      "childIds": [
+        "n25"
+      ]
+    },
+    {
+      "id": "n25",
+      "role": "StaticText",
+      "name": "Member",
+      "childIds": [
+        "n26"
+      ]
+    },
+    {
+      "id": "n26",
+      "role": "InlineTextBox",
+      "name": "Member",
+      "childIds": []
+    }
+  ]
+}

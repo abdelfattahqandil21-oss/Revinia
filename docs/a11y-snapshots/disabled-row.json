@@ -1,0 +1,49 @@
+{
+  "state": "disabled-row",
+  "capturedAt": "2026-10-31T20:08:01.411Z",
+  "url": "http://127.0.0.1:4299/select",
+  "browser": "Chromium 156.0.8078.4",
+  "viewport": {
+    "width": 1280,
+    "height": 900
+  },
+  "selector": "#single-select .rv-select-popup-menu [aria-disabled=\"true\"]",
+  "nodes": [
+    {
+      "id": "n0",
+      "role": "menuitemradio",
+      "name": "Overdue",
+      "properties": {
+        "disabled": true,
+        "invalid": "false",
+        "checked": "false"
+      },
+      "childIds": [
+        "n1"
+      ]
+    },
+    {
+      "id": "n1",
+      "role": "none",
+      "name": "",
+      "ignored": true,
+      "childIds": [
+        "n2"
+      ]
+    },
+    {
+      "id": "n2",
+      "role": "StaticText",
+      "name": "Overdue",
+      "childIds": [
+        "n3"
+      ]
+    },
+    {
+      "id": "n3",
+      "role": "InlineTextBox",
+      "name": "Overdue",
+      "childIds": []
+    }
+  ]
+}
