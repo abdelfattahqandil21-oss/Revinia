@@ -11,21 +11,6 @@
     "spans"
   ],
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/abdelfattahqandil21-oss/Revinia.git",
-    "directory": "projects/table"
-  },
-  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/projects/table#readme",
-  "bugs": {
-    "url": "https://github.com/abdelfattahqandil21-oss/Revinia/issues"
-  },
-  "engines": {
-    "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
   "peerDependencies": {
     "@angular/common": "^22.0.0",
     "@angular/core": "^22.0.0"
