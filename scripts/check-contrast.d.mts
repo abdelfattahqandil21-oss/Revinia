@@ -37,9 +37,12 @@ export declare function luminance(hex: string): number;
 
 export declare function contrastRatio(a: string, b: string): number;
 
-export declare function parseBlocks(
-  source: string,
-): readonly { selector: string; media: string | null; declarations: Map<string, string> }[];
+export declare function parseBlocks(source: string): readonly {
+  selector: string;
+  media: string | null;
+  context: string;
+  declarations: Map<string, string>;
+}[];
 
 export declare function auditThemeCss(source: string): ContrastReport;
 

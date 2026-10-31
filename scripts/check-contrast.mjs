@@ -110,8 +110,9 @@ export function contrastRatio(a, b) {
 
 /**
  * Every declaration block in the stylesheet, with the media query it sits in
- * (null at the top level). Selectors are canonicalised: whitespace collapsed,
- * single quotes as double, so `:root:not([data-rv-theme='light'])` and
+ * (null at the top level) and the full chain of at-rules around it. Selectors
+ * are canonicalised: whitespace collapsed, single quotes as double, so
+ * `:root:not([data-rv-theme='light'])` and
  * `:root:not([data-rv-theme="light"])` compare equal.
  */
 export function parseBlocks(source) {
@@ -130,7 +131,7 @@ export function parseBlocks(source) {
     return map;
   }
 
-  function walk(index, media) {
+  function walk(index, media, context) {
     let cursor = index;
     while (cursor < css.length) {
       while (cursor < css.length && /\s/.test(css[cursor])) cursor++;
@@ -149,7 +150,10 @@ export function parseBlocks(source) {
       cursor++; // past '{'
 
       if (prelude.startsWith('@')) {
-        cursor = walk(cursor, prelude.startsWith('@media') ? prelude : media);
+        cursor = walk(cursor, prelude.startsWith('@media') ? prelude : media, [
+          ...context,
+          prelude,
+        ]);
         continue;
       }
 
@@ -162,12 +166,17 @@ export function parseBlocks(source) {
       }
       const body = css.slice(bodyStart, cursor);
       cursor++; // past '}'
-      blocks.push({ selector: canonical(prelude), media, declarations: declarations(body) });
+      blocks.push({
+        selector: canonical(prelude),
+        media,
+        context: context.join(' '),
+        declarations: declarations(body),
+      });
     }
     return cursor;
   }
 
-  walk(0, null);
+  walk(0, null, []);
   return blocks;
 }
 
@@ -188,12 +197,21 @@ function findBlock(blocks, selector, media) {
   );
 }
 
-function countBlocks(blocks, selector, media) {
-  return blocks.filter(
+/**
+ * A selector that appears twice can only apply once, and which one wins depends
+ * on layers, nesting and order — none of which the gate models. So any second
+ * occurrence is reported with its context, and a deliberate one has to be moved
+ * or removed. The shipped file declares each of the three exactly once.
+ */
+function duplicates(blocks, selector, media) {
+  const matches = blocks.filter(
     (block) =>
       block.selector === selector &&
       (media === null ? block.media === null : media.test(block.media ?? '')),
-  ).length;
+  );
+  if (matches.length < 2) return null;
+  const contexts = [...new Set(matches.map((match) => match.context || 'the top level'))];
+  return { count: matches.length, contexts };
 }
 
 function sameDeclarations(a, b) {
@@ -250,17 +268,17 @@ export function auditThemeCss(source) {
   const darkMedia = findBlock(blocks, DARK_MEDIA_SELECTOR, DARK_MEDIA);
   const darkAttribute = findBlock(blocks, DARK_ATTRIBUTE_SELECTOR, null);
 
-  // findBlock reads the first match; a second block with the same selector
-  // wins in the browser and would be invisible to every check below.
+  // findBlock reads the first match. A second block with the same selector at
+  // the same level means the two compete, and the gate can vouch for only one.
   for (const [selector, media] of [
     [LIGHT_SELECTOR, null],
     [DARK_MEDIA_SELECTOR, DARK_MEDIA],
     [DARK_ATTRIBUTE_SELECTOR, null],
   ]) {
-    const count = countBlocks(blocks, selector, media);
-    if (count > 1) {
+    const duplicate = duplicates(blocks, selector, media);
+    if (duplicate) {
       problems.push(
-        `theme.css declares \`${selector}\` ${count} times: the browser uses the last one, the gate reads the first`,
+        `theme.css declares \`${selector}\` ${duplicate.count} times (${duplicate.contexts.join(', ')}): only one can apply, so the gate cannot vouch for the rest`,
       );
     }
   }

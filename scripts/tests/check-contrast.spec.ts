@@ -11,6 +11,7 @@ import {
   contrastRatio,
   formatRows,
   luminance,
+  parseBlocks,
   parseHex,
 } from '../check-contrast.mjs';
 
@@ -204,15 +205,22 @@ describe('the shipped stylesheet', () => {
     expect(report.ok).toBe(true);
   });
 
-  it('checks every colour token the palette declares', () => {
-    const report = auditThemeCss(readFileSync(DEFAULT_CSS, 'utf8'));
+  it('declares every palette token in the light and the attribute dark block', () => {
+    // Read from the file, not from PALETTE: the gate must cover what ships.
+    const blocks = parseBlocks(readFileSync(DEFAULT_CSS, 'utf8'));
+    const declared = {
+      light: blocks.find((block) => block.selector === ':root' && block.media === null),
+      dark: blocks.find(
+        (block) => block.selector === ':root[data-rv-theme="dark"]' && block.media === null,
+      ),
+    };
+    expect(declared.light, 'a top-level :root block').toBeDefined();
+    expect(declared.dark, 'a top-level :root[data-rv-theme="dark"] block').toBeDefined();
     for (const scheme of ['light', 'dark'] as const) {
-      const measured = new Set(
-        report.rows.filter((row) => row.scheme === scheme).map((row) => row.pair.fg),
-      );
       for (const token of Object.keys(PALETTE[scheme])) {
-        const covered = measured.has(token) || PAIRS.some((pair) => pair.bg === token);
-        expect(covered, `${token} in ${scheme}`).toBe(true);
+        expect(declared[scheme]?.declarations.get(`--rv-${token}`), `${scheme} --rv-${token}`).toBe(
+          PALETTE[scheme][token],
+        );
       }
     }
   });

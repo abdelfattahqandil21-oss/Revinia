@@ -135,15 +135,19 @@ export const CASES = Object.freeze([
     stylesheet: 'theme.css',
     label: 'dark section in a light page',
     scheme: 'light',
-    extra: '#section-probe{color-scheme:dark;--rv-bg:#161616;--rv-fg:#f2f2f2}',
+    // The README's recipe, verbatim.
+    extra:
+      '#section-probe{color-scheme:dark;--rv-bg:#161616;--rv-fg:#f2f2f2;--rv-muted:#a1a1aa;--rv-border:#3f3f46;--rv-accent:#8b8bf0;--rv-shadow:0 16px 48px rgba(0,0,0,.6)}',
     expect: { bg: '#ffffff', fg: '#111111', colorScheme: 'light', shadowAlpha: 0.22 },
-    expectSection: { bg: '#161616', fg: '#f2f2f2', colorScheme: 'dark' },
+    expectSection: { bg: '#161616', fg: '#f2f2f2', colorScheme: 'dark', shadowAlpha: 0.6 },
   },
 ]);
 
 function document(htmlAttrs, stylesheet, extra = '') {
+  // The consumer sheet goes BEFORE the theme link on purpose: the layer is
+  // what makes it win, not source order.
   const override = extra ? `<style>${extra}</style>` : '';
-  return `<!doctype html><html${htmlAttrs}><head><link rel="stylesheet" href="${stylesheet}">${override}${BODY}</head><body><p>probe</p><section id="section-probe">section</section></body></html>`;
+  return `<!doctype html><html${htmlAttrs}><head>${override}<link rel="stylesheet" href="${stylesheet}">${BODY}</head><body><p>probe</p><section id="section-probe">section</section></body></html>`;
 }
 
 function writeFixtures() {
@@ -183,13 +187,22 @@ export async function run({ engines = ['chromium', 'firefox'], log = console.log
             const root = getComputedStyle(document.documentElement);
             const body = getComputedStyle(document.body);
             const section = getComputedStyle(document.querySelector('#section-probe'));
-            const shadow = root.getPropertyValue('--rv-shadow').trim();
-            const alpha = /rgba\([^)]*,\s*([\d.]+)\s*\)/.exec(shadow);
+            const alphaOf = (value) => {
+              const match = /rgba\([^)]*,\s*([\d.]+)\s*\)/.exec(value.trim());
+              return match ? Number(match[1]) : null;
+            };
+            const shadowAlpha = alphaOf(root.getPropertyValue('--rv-shadow'));
+            const sectionShadowAlpha = alphaOf(
+              getComputedStyle(document.querySelector('#section-probe')).getPropertyValue(
+                '--rv-shadow',
+              ),
+            );
             return {
               bg: body.backgroundColor,
               fg: body.color,
               colorScheme: root.colorScheme,
-              shadowAlpha: alpha ? Number(alpha[1]) : null,
+              shadowAlpha,
+              sectionShadowAlpha,
               sectionBg: section.backgroundColor,
               sectionFg: section.color,
               sectionColorScheme: section.colorScheme,
@@ -201,6 +214,7 @@ export async function run({ engines = ['chromium', 'firefox'], log = console.log
             fg: toHex(actual.fg),
             colorScheme: actual.colorScheme,
             shadowAlpha: actual.shadowAlpha,
+            sectionShadowAlpha: actual.sectionShadowAlpha,
             sectionBg: toHex(actual.sectionBg),
             sectionFg: toHex(actual.sectionFg),
             sectionColorScheme: actual.sectionColorScheme,
