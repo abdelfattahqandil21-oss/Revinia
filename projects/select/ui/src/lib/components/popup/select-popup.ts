@@ -778,15 +778,33 @@ export class SelectPopupComponent {
    * deep value (measured: always `scrollTop` 0) and Home/End/typeahead left
    * the cursor active but off-screen.
    *
-   * `nearest` scrolls only when the row is outside the scrollport, and the
-   * scrollport's `scroll-padding-top` keeps it clear of the pinned search bar.
-   * A virtualised list that does not render the active row has no element to
-   * reveal — the consumer owns scrolling there.
+   * Only the panel's own `scrollTop` may change. `scrollIntoView({block:
+   * 'nearest'})` also scrolls the DOCUMENT once Chromium paints the panel in
+   * the top layer, and this popup closes on an outside scroll (stale
+   * coordinates): measured on a page scrolled to 389px, pressing ArrowDown
+   * scrolled it to 325 and the panel unmounted under the keyboard. A panel
+   * scroll is exempt from that listener by design.
+   *
+   * The scrollport's `scroll-padding` keeps the row clear of the pinned search
+   * bar. A virtualised list that does not render the active row has no element
+   * to reveal — the consumer owns scrolling there.
    */
   private revealActive(target: HTMLElement | null): void {
     if (!target || !this.controller().open()) return;
+    const panel = this.self.nativeElement.querySelector(
+      '.rv-select-popup-panel',
+    ) as HTMLElement | null;
+    if (!panel || !panel.contains(target)) return;
     try {
-      target.scrollIntoView({ block: 'nearest' });
+      const style = getComputedStyle(panel);
+      const paddingTop = Number.parseFloat(style.scrollPaddingTop) || 0;
+      const paddingBottom = Number.parseFloat(style.scrollPaddingBottom) || 0;
+      const row = target.getBoundingClientRect();
+      const box = panel.getBoundingClientRect();
+      const above = box.top + paddingTop - row.top;
+      const below = row.bottom - (box.bottom - paddingBottom);
+      if (above > 0) panel.scrollTop -= above;
+      else if (below > 0) panel.scrollTop += below;
     } catch {
       // Revealing is best-effort.
     }

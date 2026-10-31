@@ -261,10 +261,12 @@ rv-select[data-variant='premium'] .rv-select-chevron {
   );
 }
 /*
- * Keyboard navigation scrolls the focused row into view with `block: nearest`,
- * and the pinned bar would cover it. scroll-padding keeps the row clear of the
- * search without touching any scrollTop arithmetic — `reachEnd` reads
- * scrollHeight/scrollTop/clientHeight, none of which this changes.
+ * Keyboard navigation reveals the focused row itself (`revealActive`): it reads
+ * this `scroll-padding-top` off the scrollport and shifts the panel's own
+ * `scrollTop`, so the pinned bar never covers the row. It is deliberately NOT
+ * `scrollIntoView` — that also scrolls the document, and this popup closes on
+ * an outside scroll. Nothing else reads scroll-padding, so `reachEnd` (which
+ * reads scrollHeight/scrollTop/clientHeight) is unaffected.
  *
  * The selector has to be the OUTER popup panel: the select's own panel div is
  * projected inside it, and the scrollport is the outer one (`overflow-y: auto`
