@@ -1,9 +1,9 @@
 # Release order for 1.0 (S1)
 
 Status: **prepared** — nothing here has been published. Publishing, tags and
-dist-tags are human steps: the hand-run checks are collected in
-`docs/HUMAN-CHECKS-1.0.md` and the copy-paste publish runbook, both written in
-S8 and **not part of this branch**.
+dist-tags are human steps. S8 writes two more documents and neither exists
+before it runs: `docs/HUMAN-CHECKS-1.0.md` (the hand-run checks) and the
+copy-paste publish runbook. Both are **not part of this branch**.
 
 ## Order
 
@@ -14,7 +14,7 @@ S8 and **not part of this branch**.
 | 3 | `@rivinia/select` | `1.0.0-rc.1` | `next` | S2 ARIA + S3/S4 popup work |
 | 4 | `@rivinia/menu` | `1.0.0-rc.1` | `next` | S3 conformance parity with select |
 | 5 | `@rivinia/i18n` | `1.0.0-rc.1` | `next` | peers on select; must point at a select that exists |
-| 6 | — | soak | — | criteria in S8's `docs/HUMAN-CHECKS-1.0.md` (not in this branch) |
+| 6 | — | soak | — | criteria written by S8, in the human-checks document (not in this branch) |
 | 7 | all four | `1.0.0` | `latest` | same order as 2–5 |
 
 ## Why i18n is last

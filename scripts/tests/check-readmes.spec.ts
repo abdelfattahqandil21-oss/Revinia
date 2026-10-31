@@ -1,5 +1,8 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { checkReadme, LINE_BUDGET } from '../check-readmes.mjs';
+import { checkReadme, LINE_BUDGET, readManifest } from '../check-readmes.mjs';
 
 /**
  * Two README rules are mechanical and fail the build:
@@ -88,6 +91,29 @@ describe('version claims', () => {
     const report = prerelease('- Package version: **1.0.0-rc.2**\n');
     expect(report.problems.join('\n')).toMatch(/1\.0\.0-rc\.2/);
   });
+
+  // A stale final version must not slip past a prerelease manifest.
+  it('fails when a final version is claimed against a prerelease manifest', () => {
+    const report = prerelease('- Package version: **1.0.0**\n');
+    expect(report.problems.join('\n')).toMatch(/claims version 1\.0\.0\b/);
+  });
+
+  // No colour token means the trailing `rc` belongs to the version; a
+  // heuristic that drops any alphabetic tail turns this accurate badge red.
+  it('does not eat a prerelease suffix as a badge colour', () => {
+    const report = checkReadme({
+      pkg: 'theme',
+      text: '[![v](https://img.shields.io/badge/version-1.0.0--rc)](x)\n',
+      manifest: { name: '@rivinia/theme', version: '1.0.0-rc' },
+      allowOverBudget: true,
+    });
+    expect(report.problems).toEqual([]);
+  });
+
+  it('accepts a badge that prefixes the version with v', () => {
+    const text = '[![v](https://img.shields.io/badge/npm-v1.0.0--rc.1-blue)](x)\n';
+    expect(prerelease(text).problems).toEqual([]);
+  });
 });
 
 describe('link report', () => {
@@ -113,5 +139,41 @@ describe('link report', () => {
       '[npm](https://www.npmjs.com/package/@rivinia/select) [top](#install) [mail](mailto:a@b.c)\n',
     );
     expect(report.warnings).toEqual([]);
+  });
+});
+
+describe('readManifest', () => {
+  // A gate that dies with a SyntaxError hides which file is broken.
+  it('names a manifest that is not valid JSON', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'rv-readme-'));
+    try {
+      const path = join(dir, 'package.json');
+      writeFileSync(path, '{ "version": ');
+      expect(readManifest(path).error).toMatch(/not valid JSON/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a manifest without a version string', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'rv-readme-'));
+    try {
+      const path = join(dir, 'package.json');
+      writeFileSync(path, '{"name":"@rivinia/probe"}');
+      expect(readManifest(path).error).toMatch(/no version/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('returns a well-formed manifest', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'rv-readme-'));
+    try {
+      const path = join(dir, 'package.json');
+      writeFileSync(path, '{"name":"@rivinia/probe","version":"1.0.0-rc.1"}');
+      expect(readManifest(path)).toEqual({ name: '@rivinia/probe', version: '1.0.0-rc.1' });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

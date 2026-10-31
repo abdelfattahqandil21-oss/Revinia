@@ -123,10 +123,14 @@ export function checkPackage(dir, { expectedEngines = null } = {}) {
     return { ok: false, problems: [`${manifestPath} does not exist`], files: [], size: 0 };
   }
   const manifest = readJson(manifestPath);
-  if (manifest.__error) {
+  if (!manifest || typeof manifest !== 'object' || manifest.__error) {
     return {
       ok: false,
-      problems: [`${manifestPath} is not valid JSON: ${manifest.__error}`],
+      problems: [
+        manifest?.__error
+          ? `${manifestPath} is not valid JSON: ${manifest.__error}`
+          : `${manifestPath} is not a JSON object`,
+      ],
       files: [],
       size: 0,
     };

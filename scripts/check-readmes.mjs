@@ -47,11 +47,32 @@ const VERSION_CLAIMS = [
   /package version\s*:?\s*(?:\*\*)?\s*v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)/gi,
 ];
 
+/** The colour tokens shields accepts by name; anything else is the message. */
+const BADGE_COLOURS = new Set([
+  'brightgreen',
+  'green',
+  'yellowgreen',
+  'yellow',
+  'orange',
+  'red',
+  'blue',
+  'grey',
+  'gray',
+  'lightgrey',
+  'lightgray',
+  'blueviolet',
+  'success',
+  'important',
+  'critical',
+  'informational',
+  'inactive',
+]);
+
 /**
  * Shields badge messages: `<label>-<message>-<color>`, with `-` inside the
- * message written as `--` (`version-1.0.0--rc.1-blue`). The trailing color is
- * arbitrary text, so the message is taken as everything after the label minus
- * the final token when that token looks like a color.
+ * message written as `--` (`version-1.0.0--rc.1-blue`). Only a known colour
+ * token is dropped: `version-1.0.0-rc` has no colour, and its `rc` is part of
+ * the version. A leading `v` (`npm-v1.0.0`) is not part of the semver.
  *
  * @param {string} text
  * @returns {string[]} claimed versions, already unescaped
@@ -60,9 +81,9 @@ function badgeClaims(text) {
   const claims = [];
   for (const match of text.matchAll(/img\.shields\.io\/badge\/(?:npm|version|v)-([^\s)"'?#]+)/gi)) {
     const tokens = match[1].replace(/\.svg$/i, '').split('-');
-    const last = tokens[tokens.length - 1];
-    if (tokens.length > 1 && (/^[a-z]+$/i.test(last) || /^[0-9a-f]{6}$/i.test(last))) tokens.pop();
-    claims.push(tokens.join('-').replace(/--/g, '-'));
+    const last = tokens[tokens.length - 1].toLowerCase();
+    if (tokens.length > 1 && (BADGE_COLOURS.has(last) || /^[0-9a-f]{6}$/i.test(last))) tokens.pop();
+    claims.push(tokens.join('-').replace(/--/g, '-').replace(/^v(?=\d)/i, ''));
   }
   return claims;
 }
@@ -126,6 +147,25 @@ export function checkReadme({ pkg, text, manifest, allowOverBudget = false, file
   return { ok: problems.length === 0, problems, warnings, lines };
 }
 
+/**
+ * A malformed manifest must be a named problem, not a thrown SyntaxError from
+ * inside the gate: the release stops either way, but only one says why.
+ *
+ * @param {string} path
+ * @returns {{ error?: string } & Record<string, unknown>}
+ */
+export function readManifest(path) {
+  try {
+    const manifest = JSON.parse(readFileSync(path, 'utf8'));
+    if (!manifest || typeof manifest !== 'object' || typeof manifest.version !== 'string') {
+      return { error: `${path} has no version string` };
+    }
+    return manifest;
+  } catch (error) {
+    return { error: `${path} is not valid JSON: ${error.message}` };
+  }
+}
+
 const entry = process.argv[1] ? resolve(process.argv[1]) : '';
 if (entry === fileURLToPath(import.meta.url)) {
   let failures = 0;
@@ -138,7 +178,12 @@ if (entry === fileURLToPath(import.meta.url)) {
       failures++;
       continue;
     }
-    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    const manifest = readManifest(manifestPath);
+    if (manifest.error) {
+      console.error(`FAIL ${manifest.error}`);
+      failures++;
+      continue;
+    }
     const report = checkReadme({
       pkg,
       text: readFileSync(readmePath, 'utf8'),

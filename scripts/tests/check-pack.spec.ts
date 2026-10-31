@@ -152,6 +152,14 @@ describe('checkPackage', () => {
     expect(report.problems.join('\n')).toMatch(/not valid JSON/);
   });
 
+  it('reports a package.json that parses to a non-object', () => {
+    const dir = tempDir('rv-pack-null-');
+    writeFileSync(join(dir, 'package.json'), 'null');
+    const report = checkPackage(dir);
+    expect(report.ok).toBe(false);
+    expect(report.problems.join('\n')).toMatch(/not a JSON object/);
+  });
+
   it('reports a directory without a package.json', () => {
     const report = checkPackage(tempDir('rv-pack-empty-'));
     expect(report.problems.join('\n')).toMatch(/does not exist/);
