@@ -20,12 +20,27 @@
  *  1. EXPLICIT assertions per case — the value D87 promises, written down.
  *     They fail with the measured value, so a failure says what changed.
  *  2. SNAPSHOTS under scripts/fixtures/component-theme, one file per engine and
- *     case. The `light` snapshots were captured BEFORE the wiring landed; they
- *     are the proof that a consumer who imports no theme sees no change.
+ *     case. The `light` snapshot is the identity proof: it was captured from
+ *     the PRE-wiring CSS, and the procedure below re-derives it from those
+ *     files at any time. If the two disagree, the wiring changed an unthemed
+ *     page and the gate fails.
+ *
+ *     To re-derive (after a `--update` that touched `*-light.json`):
+ *       git checkout <base> -- \
+ *         projects/select/ui/src/lib/components/select/select-panel.css \
+ *         projects/select/ui/src/lib/components/popup/select-popup.css \
+ *         projects/menu/ui/src/lib/components/menu/menu-panel.css \
+ *         projects/i18n/ui/src/lib/components/language-toggle/language-toggle.css
+ *       pnpm build:select && pnpm build:menu && pnpm build:i18n
+ *       npx ng build menu-e2e && npx ng build i18n-e2e --configuration csr
+ *       node scripts/check-component-theme.mjs --update --only=light
+ *       git diff --exit-code scripts/fixtures/component-theme
+ *       git checkout HEAD -- <the same four files>            # restore
  *
  * Cases:
  *  - light          no theme imported; snapshot must equal the pre-change one.
  *  - dark           theme.css linked + data-rv-theme="dark"; all three libs.
+ *  - dark-os        theme.css linked + prefers-color-scheme: dark; same values.
  *  - accent         theme.css + --rv-accent overridden; ring, indicator, toggle.
  *  - rtl            document direction rtl; the same snapshot fields.
  *  - forced-colors  system colours; Chromium only (Playwright emulates the
@@ -62,6 +77,21 @@ const ROW_PROPS = ['color', 'backgroundColor', 'textAlign', 'direction', 'opacit
 const OUTLINE_PROPS = ['outlineColor', 'outlineStyle', 'outlineWidth'];
 const FOCUS_PROPS = [...ROW_PROPS, ...OUTLINE_PROPS];
 
+/** The two dark paths must produce the same component colours. */
+const assertDark = (measured) => {
+  const plain = measured.menu.menu.panel;
+  const toggle = measured.i18n.button;
+  return [
+    ['select panel is dark', measured.menu.premiumPanel.backgroundColor, 'rgb(22, 22, 22)'],
+    ['select panel text is light', measured.menu.premiumPanel.color, 'rgb(242, 242, 242)'],
+    ['menu panel is dark', plain.backgroundColor, 'rgb(22, 22, 22)'],
+    ['menu panel text is light', plain.color, 'rgb(242, 242, 242)'],
+    ['toggle is dark', toggle.backgroundColor, 'rgb(22, 22, 22)'],
+    ['toggle text is light', toggle.color, 'rgb(242, 242, 242)'],
+    ['premium trigger is dark', measured.menu.premiumTrigger.backgroundColor, 'rgb(22, 22, 22)'],
+  ];
+};
+
 export const CASES = Object.freeze([
   {
     id: 'light',
@@ -69,16 +99,19 @@ export const CASES = Object.freeze([
     scheme: 'light',
     /**
      * The snapshot below is the identity proof: it was captured BEFORE the
-     * accent wiring and must never drift. These assertions say WHY it must
-     * not: with no theme there is no `--rv-accent`, so every wired surface
-     * falls back to the ink it used before. A default such as
-     * `var(--rv-accent, #5b5bd6)` would pass the snapshot's absence test on a
-     * fresh checkout but fail here.
+     * accent wiring and was re-derived from that CSS afterwards (the procedure
+     * is in the header). These assertions say WHY it must not drift: with no
+     * theme there is no `--rv-accent`, so every wired surface falls back to
+     * the ink it used before. A default such as `var(--rv-accent, #5b5bd6)`
+     * would pass the snapshot's absence test on a fresh checkout but fail
+     * here.
      */
     assert: (measured) => {
       const simple = measured.menu.simple;
       return [
         ['no-theme check mark keeps the row ink', simple.check.color, simple.row.color],
+        // The tick off the active row keeps the muted token (0.7.x: #555555).
+        ['no-theme idle tick keeps the muted ink', simple.checkIdle.color, 'rgb(85, 85, 85)'],
         ['no-theme row ring keeps the row ink', simple.active.outlineColor, simple.row.color],
         [
           'no-theme menu row ring keeps the row ink',
@@ -99,23 +132,14 @@ export const CASES = Object.freeze([
     scheme: 'light',
     theme: true,
     htmlAttrs: { 'data-rv-theme': 'dark' },
-    assert: (measured) => {
-      const plain = measured.menu.menu.panel;
-      const toggle = measured.i18n.button;
-      return [
-        ['select panel is dark', measured.menu.premiumPanel.backgroundColor, 'rgb(22, 22, 22)'],
-        ['select panel text is light', measured.menu.premiumPanel.color, 'rgb(242, 242, 242)'],
-        ['menu panel is dark', plain.backgroundColor, 'rgb(22, 22, 22)'],
-        ['menu panel text is light', plain.color, 'rgb(242, 242, 242)'],
-        ['toggle is dark', toggle.backgroundColor, 'rgb(22, 22, 22)'],
-        ['toggle text is light', toggle.color, 'rgb(242, 242, 242)'],
-        [
-          'premium trigger is dark',
-          measured.menu.premiumTrigger.backgroundColor,
-          'rgb(22, 22, 22)',
-        ],
-      ];
-    },
+    assert: assertDark,
+  },
+  {
+    id: 'dark-os',
+    label: 'theme.css + prefers-color-scheme: dark',
+    scheme: 'dark',
+    theme: true,
+    assert: assertDark,
   },
   {
     id: 'accent',
@@ -165,6 +189,7 @@ export const CASES = Object.freeze([
       const active = measured.menu.simple.active;
       const disabled = measured.menu.simple.disabled;
       const menuActive = measured.menu.menu.active;
+      const menuPanel = measured.menu.menu.panel;
       const toggle = measured.i18n.button;
       return [
         ['select panel background', panel.backgroundColor, probe.canvas],
@@ -172,11 +197,29 @@ export const CASES = Object.freeze([
         ['select panel shadow', panel.boxShadow, 'none'],
         ['select active row background', active.backgroundColor, probe.highlight],
         ['select active row text', active.color, probe.highlightText],
+        // The tick carries an accent rule at (0,3,1)/(0,4,1); if the forced
+        // rules lose it, Chromium paints white on white.
+        ['select tick on the band', measured.menu.simple.check.color, probe.highlightText],
+        // A Highlight ring on the Highlight band is invisible.
+        ['select active row ring', active.outlineColor, probe.canvasText],
         ['select disabled row', disabled.color, probe.grayText],
+        [
+          'select premium trigger background',
+          measured.menu.premiumTrigger.backgroundColor,
+          probe.canvas,
+        ],
+        ['select premium trigger text', measured.menu.premiumTrigger.color, probe.canvasText],
+        ['select search background', measured.menu.simple.searchFill.backgroundColor, probe.canvas],
+        ['select search text', measured.menu.simple.searchFill.color, probe.canvasText],
+        ['menu panel background', menuPanel.backgroundColor, probe.canvas],
+        ['menu panel text', menuPanel.color, probe.canvasText],
         ['menu active row background', menuActive.backgroundColor, probe.highlight],
         ['menu active row text', menuActive.color, probe.highlightText],
+        ['menu active row ring', menuActive.outlineColor, probe.canvasText],
         ['toggle background', toggle.backgroundColor, probe.canvas],
         ['toggle text', toggle.color, probe.canvasText],
+        ['toggle held fill', measured.i18n.active.backgroundColor, probe.highlight],
+        ['toggle held text', measured.i18n.active.color, probe.highlightText],
       ];
     },
   },
@@ -226,6 +269,71 @@ async function focusVisible(page, selector) {
   if (!state.focused || !state.visible) throw new Error(`${selector} did not match :focus-visible`);
 }
 
+/**
+ * Scroll events are dispatched at the next animation frame. The popup closes
+ * on an outside scroll by design, so a Playwright-driven scroll (focus,
+ * scrollIntoViewIfNeeded, click auto-scroll) must be allowed to fire BEFORE
+ * the panel opens — otherwise its own setup closes it a frame later.
+ *
+ * The same wait is needed between a panel opening and the first key press:
+ * a key dispatched in the panel's opening frame is lost. Measured on the
+ * select's reopen path (fresh Chromium page, `waitFor(panel)` then
+ * ArrowDown): pressing immediately left `data-active` on the old row for the
+ * whole 400 ms observation, while pressing one frame later moved both focus
+ * and the attribute every time. Two frames cover the scroll event and the
+ * opening render.
+ */
+function settleFrame(page) {
+  return page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
+}
+
+/**
+ * Change detection writes `data-active` after the key handler has already
+ * moved focus, so a read in the same task can see the previous row. Wait for
+ * the attribute instead of assuming a flush order. A panel that unmounted
+ * (an outside scroll closed it) never reaches the state; the failure then
+ * dumps the page state instead of a bare timeout.
+ */
+async function waitForActiveRow(page, kind) {
+  try {
+    await page.waitForFunction(
+      (kind) => {
+        const element = document.activeElement;
+        if (!element) return false;
+        const row = element.getAttribute('rvselectpopupitem') !== null ? 'select' : 'menu';
+        return row === kind && element.getAttribute('data-active') === 'true';
+      },
+      kind,
+      { timeout: 3000 },
+    );
+  } catch (error) {
+    const state = await page.evaluate(() => {
+      const element = document.activeElement;
+      const rowOf = (node) =>
+        node && node.getAttribute('rvselectpopupitem') !== null ? 'select' : 'menu';
+      return {
+        activeTag: element ? element.tagName : null,
+        activeClass: element ? element.className : null,
+        activeId: element ? element.getAttribute('data-rv-id') : null,
+        activeRow: rowOf(element),
+        activeDataActive: element ? element.getAttribute('data-active') : null,
+        panels: document.querySelectorAll('.rv-select-popup-panel, .rv-menu-panel').length,
+        rows: [...document.querySelectorAll('[rvselectpopupitem], [rvmenuitem]')].map((item) => ({
+          id: item.getAttribute('data-rv-id'),
+          active: item.getAttribute('data-active'),
+          focused: item === element,
+        })),
+        scrollTop: document.scrollingElement ? document.scrollingElement.scrollTop : null,
+      };
+    });
+    throw new Error(`${kind} never became the active row: ${JSON.stringify(state, null, 2)}`, {
+      cause: error,
+    });
+  }
+}
+
 async function setDocumentDir(page, dir) {
   if (!dir) return;
   await page.evaluate((value) => {
@@ -243,17 +351,30 @@ async function measureMenu(page, testCase) {
   // Pick a row so the check mark exists, then reopen with the keyboard. The
   // keyboard matters: the row's ring is asserted against :focus-visible.
   await trigger.scrollIntoViewIfNeeded();
+  await settleFrame(page);
   await trigger.click();
   await page.locator('#single-select .rv-select-popup-menu').waitFor();
   await page.locator('#single-select [rvselectpopupitem]', { hasText: 'Paid' }).click();
   await page.locator('#single-select .rv-select-popup-panel').waitFor({ state: 'detached' });
 
   await focusVisible(page, '#single-select .rv-select-trigger');
+  await settleFrame(page);
   await page.keyboard.press('Enter');
   await page.locator('#single-select .rv-select-popup-panel').waitFor();
+  // Let the opening render commit: a key in that frame would be lost (see
+  // settleFrame).
+  await settleFrame(page);
 
-  const search = page.locator('#single-select .rv-select-search');
-  await search.click();
+  // The searchable select focuses its filter box on open (afterRenderEffect).
+  // Do NOT click it: Playwright's click auto-scrolls, and this popup closes on
+  // an outside scroll by design, so the click could unmount the panel between
+  // measurements. The ring assertions below need the box focus-visible, which
+  // the keyboard-open already made true; assert it rather than assume it.
+  const focusedSearch = await page.evaluate(() => {
+    const box = document.querySelector('#single-select .rv-select-search');
+    return !!box && box === document.activeElement && box.matches(':focus-visible');
+  });
+  if (!focusedSearch) throw new Error('the search box was not keyboard-focused on open');
   const simple = {
     trigger: await styles(page, '#single-select .rv-select-trigger', TRIGGER_PROPS),
     panel: await styles(page, '#single-select .rv-select-popup-panel', PANEL_PROPS),
@@ -266,18 +387,31 @@ async function measureMenu(page, testCase) {
     ),
     search: await styles(page, '#single-select .rv-select-search', OUTLINE_PROPS),
   };
-  // Two presses put the active row on a normal entry whether or not the
-  // controller skips the disabled "Overdue" row.
+  // Reopening activates the selected row ("Paid"), so one press moves the
+  // active row to the first enabled option ("Outstanding", wrapping past the
+  // disabled one): the tick's row is then off-active and the row that carries
+  // the ring is not the selected one, which is what the light case pins.
   await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('ArrowDown');
+  await waitForActiveRow(page, 'select');
   simple.active = await activeStyles(page, FOCUS_PROPS);
   if (simple.active.row !== 'select') throw new Error('ArrowDown left the select rows');
   if (!simple.active.focusVisible) throw new Error('the active select row is not :focus-visible');
   if (simple.active.disabled) throw new Error('the active select row is disabled');
+  // The tick now sits on a row that is NOT active: its pre-wiring ink was the
+  // muted token, not the row's colour. This is what the `light` case pins.
+  simple.checkIdle = await styles(page, '#single-select .rv-select-check', ['color']);
+  if (testCase.forcedColors) {
+    // Measured only here so the other snapshots keep their captured shape.
+    simple.searchFill = await styles(page, '#single-select .rv-select-search', [
+      'backgroundColor',
+      'color',
+    ]);
+  }
   await page.keyboard.press('Escape');
 
   await page.locator('#premium-select .rv-select-trigger').scrollIntoViewIfNeeded();
   await focusVisible(page, '#premium-select .rv-select-trigger');
+  await settleFrame(page);
   const premiumTrigger = await styles(page, '#premium-select .rv-select-trigger', [
     ...TRIGGER_PROPS,
     ...OUTLINE_PROPS,
@@ -286,17 +420,21 @@ async function measureMenu(page, testCase) {
   // `--rv-select-bg` is a component token and must keep winning.
   await page.keyboard.press('Enter');
   await page.locator('#premium-select .rv-select-popup-panel').waitFor();
+  await settleFrame(page);
   const premiumPanel = await styles(page, '#premium-select .rv-select-popup-panel', PANEL_PROPS);
   await page.keyboard.press('Escape');
 
   await focusVisible(page, '#plain-menu .rv-menu-trigger button');
+  await settleFrame(page);
   await page.keyboard.press('Enter');
   await page.locator('#plain-menu .rv-menu-panel').waitFor();
+  await settleFrame(page);
   const menu = {
     panel: await styles(page, '#plain-menu .rv-menu-panel', PANEL_PROPS),
     row: await styles(page, '#plain-menu [rvmenuitem]', ROW_PROPS),
   };
   await page.keyboard.press('ArrowDown');
+  await waitForActiveRow(page, 'menu');
   menu.active = await activeStyles(page, FOCUS_PROPS);
   if (menu.active.row !== 'menu') throw new Error('ArrowDown left the menu rows');
   if (!menu.active.focusVisible) throw new Error('the active menu row is not :focus-visible');
@@ -304,8 +442,10 @@ async function measureMenu(page, testCase) {
 
   const rtlTrigger = page.locator('#rtl-select .rv-select-trigger');
   await rtlTrigger.scrollIntoViewIfNeeded();
+  await settleFrame(page);
   await rtlTrigger.click();
   await page.locator('#rtl-select .rv-select-popup-panel').waitFor();
+  await settleFrame(page);
   const rtl = {
     panel: await styles(page, '#rtl-select .rv-select-popup-panel', PANEL_PROPS),
     row: await styles(page, '#rtl-select [rvselectpopupitem]', ROW_PROPS),
@@ -359,7 +499,7 @@ function measureAccentProbes(page) {
     const value = {
       rowActive: read('color-mix(in srgb, var(--rv-accent, currentColor) 10%, transparent)'),
       toggleActive: read(
-        'color-mix(in srgb, var(--rv-accent, currentColor) 16%, var(--rv-bg, transparent))',
+        'color-mix(in srgb, var(--rv-accent, currentColor) 16%, var(--rv-i18n-toggle-bg, var(--rv-bg, transparent)))',
       ),
     };
     probe.remove();

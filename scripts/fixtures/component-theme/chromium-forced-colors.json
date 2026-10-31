@@ -43,12 +43,19 @@
         "textAlign": "start",
         "direction": "ltr",
         "opacity": "1",
-        "outlineColor": "rgba(5, 0, 73, 0.8)",
+        "outlineColor": "rgb(0, 0, 0)",
         "outlineStyle": "solid",
         "outlineWidth": "2px",
         "focusVisible": true,
         "row": "select",
         "disabled": false
+      },
+      "checkIdle": {
+        "color": "rgb(0, 0, 0)"
+      },
+      "searchFill": {
+        "backgroundColor": "rgb(255, 255, 255)",
+        "color": "rgb(0, 0, 0)"
       }
     },
     "premiumTrigger": {
@@ -90,7 +97,7 @@
         "textAlign": "start",
         "direction": "ltr",
         "opacity": "1",
-        "outlineColor": "rgba(5, 0, 73, 0.8)",
+        "outlineColor": "rgb(0, 0, 0)",
         "outlineStyle": "solid",
         "outlineWidth": "2px",
         "focusVisible": true,

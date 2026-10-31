@@ -49,6 +49,9 @@
         "focusVisible": true,
         "row": "select",
         "disabled": false
+      },
+      "checkIdle": {
+        "color": "rgb(139, 139, 240)"
       }
     },
     "premiumTrigger": {

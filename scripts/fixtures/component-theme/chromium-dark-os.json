@@ -1,0 +1,144 @@
+{
+  "menu": {
+    "simple": {
+      "trigger": {
+        "color": "rgb(242, 242, 242)",
+        "backgroundColor": "rgb(224, 242, 254)",
+        "borderTopColor": "rgb(56, 189, 248)",
+        "borderRadius": "4px"
+      },
+      "panel": {
+        "color": "rgb(242, 242, 242)",
+        "backgroundColor": "rgb(224, 242, 254)",
+        "borderTopColor": "rgb(56, 189, 248)",
+        "borderRadius": "4px",
+        "boxShadow": "rgba(0, 0, 0, 0.6) 0px 16px 48px 0px",
+        "direction": "ltr"
+      },
+      "row": {
+        "color": "rgb(242, 242, 242)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "1"
+      },
+      "check": {
+        "color": "rgb(139, 139, 240)"
+      },
+      "disabled": {
+        "color": "rgb(242, 242, 242)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "0.45"
+      },
+      "search": {
+        "outlineColor": "rgb(139, 139, 240)",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px"
+      },
+      "active": {
+        "color": "rgb(242, 242, 242)",
+        "backgroundColor": "color(srgb 0.545098 0.545098 0.941176 / 0.1)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "1",
+        "outlineColor": "rgb(139, 139, 240)",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "focusVisible": true,
+        "row": "select",
+        "disabled": false
+      },
+      "checkIdle": {
+        "color": "rgb(139, 139, 240)"
+      }
+    },
+    "premiumTrigger": {
+      "color": "rgb(242, 242, 242)",
+      "backgroundColor": "rgb(22, 22, 22)",
+      "borderTopColor": "rgb(63, 63, 70)",
+      "borderRadius": "10px",
+      "outlineColor": "rgb(139, 139, 240)",
+      "outlineStyle": "solid",
+      "outlineWidth": "2px"
+    },
+    "premiumPanel": {
+      "color": "rgb(242, 242, 242)",
+      "backgroundColor": "rgb(22, 22, 22)",
+      "borderTopColor": "rgb(63, 63, 70)",
+      "borderRadius": "10px",
+      "boxShadow": "rgba(0, 0, 0, 0.6) 0px 16px 48px 0px",
+      "direction": "ltr"
+    },
+    "menu": {
+      "panel": {
+        "color": "rgb(242, 242, 242)",
+        "backgroundColor": "rgb(22, 22, 22)",
+        "borderTopColor": "rgb(63, 63, 70)",
+        "borderRadius": "10px",
+        "boxShadow": "rgba(0, 0, 0, 0.6) 0px 16px 48px 0px",
+        "direction": "ltr"
+      },
+      "row": {
+        "color": "rgb(242, 242, 242)",
+        "backgroundColor": "color(srgb 0.545098 0.545098 0.941176 / 0.1)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "1"
+      },
+      "active": {
+        "color": "rgb(242, 242, 242)",
+        "backgroundColor": "color(srgb 0.545098 0.545098 0.941176 / 0.1)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "1",
+        "outlineColor": "rgb(139, 139, 240)",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "focusVisible": true,
+        "row": "menu",
+        "disabled": false
+      }
+    },
+    "rtl": {
+      "panel": {
+        "color": "rgb(242, 242, 242)",
+        "backgroundColor": "rgb(22, 22, 22)",
+        "borderTopColor": "rgb(63, 63, 70)",
+        "borderRadius": "10px",
+        "boxShadow": "rgba(0, 0, 0, 0.6) 0px 16px 48px 0px",
+        "direction": "rtl"
+      },
+      "row": {
+        "color": "rgb(242, 242, 242)",
+        "backgroundColor": "color(srgb 0.545098 0.545098 0.941176 / 0.1)",
+        "textAlign": "start",
+        "direction": "rtl",
+        "opacity": "1"
+      }
+    }
+  },
+  "i18n": {
+    "host": {
+      "direction": "rtl"
+    },
+    "button": {
+      "color": "rgb(242, 242, 242)",
+      "backgroundColor": "rgb(22, 22, 22)",
+      "borderTopColor": "rgb(63, 63, 70)",
+      "borderRadius": "10px",
+      "boxShadow": "rgba(0, 0, 0, 0.6) 0px 16px 48px 0px",
+      "direction": "ltr"
+    },
+    "focus": {
+      "outlineColor": "rgb(139, 139, 240)",
+      "outlineStyle": "solid",
+      "outlineWidth": "2px"
+    },
+    "active": {
+      "backgroundColor": "color(srgb 0.159686 0.159686 0.223059)",
+      "color": "rgb(242, 242, 242)"
+    }
+  }
+}
