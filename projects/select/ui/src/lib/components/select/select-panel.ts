@@ -61,11 +61,13 @@ class SelectLabelIdGenerator {
  * Search: typing filters (accent- and case-insensitive), Tab moves focus into
  * the list, Enter picks the top match. SSR renders the closed trigger.
  *
- * Semantics: the panel is exposed as `role="menu"` with `menuitem` options,
- * because focus physically moves into the option list. It is therefore a
- * filterable menu, NOT an ARIA combobox and not a native `<select>` — see
- * README -> Accessibility for the measured behaviour and the limitations a
- * future combobox mode would have to remove.
+ * Semantics: the panel is exposed as an inner `role="menu"` of
+ * `menuitemradio` (single) or `menuitemcheckbox` (multi) rows, because focus
+ * physically moves into the option list; the filter box and the status rows
+ * sit beside that menu, never inside it. It is therefore a filterable menu,
+ * NOT an ARIA combobox and not a native `<select>` — see README ->
+ * Accessibility for the measured behaviour and the limitations a future
+ * combobox mode would have to remove.
  */
 @Component({
   selector: 'rv-select',
@@ -382,7 +384,8 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
     // stays in the text input and the active option is pointed at with
     // aria-activedescendant. Here focus physically moves into the option
     // list (see onSearchKey -> Tab -> focusItem), so the exposed semantics are
-    // menu/menuitem. See README -> Accessibility for the full rationale.
+    // a menu of menuitemradio/menuitemcheckbox rows. See README ->
+    // Accessibility for the full rationale.
     afterRenderEffect(() => {
       if (!this.justOpened() || !this.popup.open() || !this.searchable()) return;
       this.justOpened.set(false);

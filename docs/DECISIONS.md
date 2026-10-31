@@ -3131,16 +3131,16 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
 
 - Measured, not assumed. Chromium 156.0.8078.4, 1280×900, snapshots committed
   under `docs/a11y-snapshots/` (produced by `scripts/capture-a11y-tree.mjs`).
-  With the select open the tree is:
+  With the select open, in document order, the tree is:
 
   ```
+  button "Invoice status Select…"  hasPopup=menu expanded=true controls=rv-select-popup-panel-1
   group
     searchbox "Search options"
     menu "Invoice status options"
       menuitemradio "Outstanding invoices"  checked=false
       menuitemradio "Overdue"               checked=false disabled=true
       menuitemradio "Paid"                  checked=false
-  button "Invoice status Select…"  hasPopup=menu expanded=true controls=rv-select-popup-panel-1
   ```
 
   The menu owns rows and nothing else; the filter box is a sibling inside the
@@ -3154,6 +3154,9 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   `role="searchbox"` with its own name. This is the lowest-risk option because
   it changes no focus behavior (the box is still focused on open; Tab still
   moves into the rows) and leaves every ARIA role exactly as D85 chose.
+  S2.4 defers the *final* call to the screen-reader pass; this is the shape the
+  code ships until that pass contradicts it, and the whole entry stays marked
+  PROVISIONAL for that reason.
 - Alternative considered and recorded (option 2): wrap the filter box and the
   rows in `role="group"` *inside* the menu, which is what a naive reading of
   the required-children rule suggests. Not chosen: in the accessibility tree
