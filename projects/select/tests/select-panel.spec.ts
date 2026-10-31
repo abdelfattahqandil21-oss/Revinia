@@ -144,9 +144,15 @@ describe('RiviniaSelectComponent (multi)', () => {
     expect(rows[0].getAttribute('aria-checked')).toBe('true');
     expect(rows[1].getAttribute('role')).toBe('menuitemcheckbox');
     expect(rows[1].getAttribute('aria-checked')).toBe('false');
+    // 0.7.1 contract: the trigger shows the first pick plus the count of the
+    // rest, so it cannot grow with the selection.
     expect(fixture.nativeElement.querySelector('.rv-select-value').textContent).toContain(
-      'Outstanding invoices, Paid',
+      'Outstanding invoices',
     );
+    expect(fixture.nativeElement.querySelector('.rv-select-value').textContent).not.toContain(
+      'Paid',
+    );
+    expect(fixture.nativeElement.querySelector('.rv-select-count').textContent).toContain('+1');
   });
 });
 

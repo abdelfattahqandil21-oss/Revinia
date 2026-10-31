@@ -21,12 +21,16 @@
       [attr.aria-label]="ariaLabel()"
       [attr.aria-labelledby]="label() ? labelId : null"
       [attr.aria-expanded]="popup.open()"
+      [attr.aria-describedby]="selectionDescription() ? selectionId : null"
       [attr.aria-invalid]="invalid() || errors().length > 0 ? 'true' : null"
       [attr.aria-disabled]="disabled() ? 'true' : null"
       [attr.data-open]="popup.open()"
       [disabled]="disabled()"
     >
-      <span class="rv-select-value">{{ display() }}</span>
+      <span class="rv-select-value">{{ visibleValue() }}</span>
+      @if (overflowCount() > 0) {
+        <span class="rv-select-count" aria-hidden="true"><bdi dir="ltr">+{{ overflowCount() }}</bdi></span>
+      }
       <svg
         class="rv-select-chevron"
         viewBox="0 0 16 16"
@@ -121,4 +125,11 @@
       <ng-content select="[rv-select-popup-footer], [rvSelectPopupFooter]" />
     </div>
   </rv-select-popup>
+  <!--
+    The description is a sibling of the trigger, never a child: a hidden child
+    would join the trigger's content-based name and be read twice.
+  -->
+  @if (selectionDescription(); as description) {
+    <span class="rv-select-sr-only" [id]="selectionId">{{ description }}</span>
+  }
 </div>

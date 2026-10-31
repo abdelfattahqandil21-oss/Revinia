@@ -1,10 +1,12 @@
-import { NgTemplateOutlet } from '@angular/common';
+import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
   APP_ID,
   Component,
+  DestroyRef,
   ElementRef,
   Service,
   ViewEncapsulation,
+  afterNextRender,
   afterRenderEffect,
   computed,
   effect,
@@ -25,6 +27,7 @@ import type {
 import { SelectPopupComponent, SelectPopupItem } from '../popup/select-popup';
 import { RiviniaSelect } from '@rivinia/select';
 import type { RiviniaSelectController, RiviniaSelectMode, RiviniaSelectOption } from '@rivinia/select';
+import { formatSelectionList, resolveListLocale } from '../../utils/selection-summary';
 
 /** Payload of RiviniaSelectComponent.selectionChange. Single: id (or null after clear). Multi: ids. */
 export type SelectChange = string | readonly string[] | null;
@@ -107,8 +110,9 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
   readonly placeholder = input('Select…');
   /**
    * Visible caption rendered above the trigger, and the trigger's accessible
-   * name via `aria-labelledby`. Use it to tell users what the field IS — the
-   * trigger's own text is the selected value, which changes as they pick.
+   * name via `aria-labelledby`. Use it to tell users what the field IS; the
+   * trigger's own text is the summary — one value, or the first pick plus `+N`
+   * in multi mode.
    */
   readonly label = input<string | null>(null);
   /**
@@ -236,6 +240,12 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
   private readonly justOpened = signal(false);
   /** Id of the rendered caption element, referenced by the trigger. */
   protected readonly labelId = this.labelIdGenerator.allocate();
+  /** Id of the hidden description element, referenced by the trigger. */
+  protected readonly selectionId = this.labelIdGenerator.allocate();
+  private readonly document = inject(DOCUMENT);
+  private readonly destroyRef = inject(DestroyRef);
+  /** Page locale for the description; reseeded when `<html lang>` changes. */
+  private readonly pageLang = signal(resolveListLocale(this.document));
 
   /**
    * Accessible name for the opened panel: an explicit `popupLabel`, else the
@@ -263,10 +273,42 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
     return this.select() ?? (this.mode() === 'multi' ? this.ownedMulti : this.ownedSingle);
   }
 
-  protected display(): string {
+  /**
+   * Trigger text: the placeholder, the single value, or the first pick in
+   * multi mode. Pick order is the controller's contract, so this needs no
+   * sorting or registry lookup.
+   */
+  protected readonly visibleValue = computed(() => {
     const labels = this.controller().selectedLabels();
-    return labels.length > 0 ? labels.join(', ') : this.placeholder();
-  }
+    return labels.length > 0 ? labels[0] : this.placeholder();
+  });
+
+  /** Selected values beyond the one shown; always 0 in single mode. */
+  protected readonly overflowCount = computed(() => {
+    const c = this.controller();
+    if (c.mode !== 'multi') return 0;
+    const count = c.selectedLabels().length;
+    return count > 1 ? count - 1 : 0;
+  });
+
+  /**
+   * The full selection for assistive technology.
+   *
+   * A caption or `ariaLabel` already names the field, so the description
+   * completes it with every label. Without either, the visible text IS the
+   * name, so only the labels not already spoken belong here. No caption and a
+   * single pick means the name says everything — no description at all.
+   */
+  protected readonly selectionDescription = computed(() => {
+    const c = this.controller();
+    if (c.mode !== 'multi') return null;
+    const labels = c.selectedLabels();
+    if (labels.length === 0) return null;
+    const named = this.label() !== null || this.ariaLabel() !== null;
+    const described = named ? labels : labels.slice(1);
+    if (described.length === 0) return null;
+    return formatSelectionList(described, this.pageLang());
+  });
 
   constructor() {
     // Mirror the options input into the controller registry (stale ids drop,
@@ -331,6 +373,27 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
         }
       });
     });
+
+    // A language switch changes the description format without a reload. The
+    // observer is created after the first render, so SSR never builds one.
+    afterNextRender(() => this.watchPageLanguage());
+  }
+
+  /**
+   * Re-resolve the page locale whenever `<html lang>` changes.
+   *
+   * Exactly one observer per instance: created once after the first browser
+   * render, its callback only writes the signal. It is never recreated, and it
+   * is disconnected once, on destroy.
+   */
+  private watchPageLanguage(): void {
+    const root = this.document.documentElement;
+    if (!root || typeof MutationObserver === 'undefined') return;
+    const observer = new MutationObserver(() => {
+      this.pageLang.set(resolveListLocale(this.document));
+    });
+    observer.observe(root, { attributes: true, attributeFilter: ['lang'] });
+    this.destroyRef.onDestroy(() => observer.disconnect());
   }
 
   protected onOpened(): void {

@@ -24,7 +24,9 @@ styling. Rendering lives in `@rivinia/select/ui` or in your own UI.
   (the components).
 - **Accent- and case-insensitive filtering**, with Arabic tashkeel, tatweel and
   alef forms folded.
-- **Single and multi mode**, sharing one model.
+- **Single and multi mode**, sharing one model. The multi trigger is a
+  one-line summary — first pick plus `+N` — and the full list is its
+  accessible description.
 - **Form-ready.** `FormValueControl`, so Signal Forms, Reactive Forms and
   `ngModel` all work without a custom accessor.
 - **RTL-correct, even in a mixed-direction page.** The panel is placed with CSS
@@ -167,6 +169,11 @@ export class TagPickerComponent {
 
 Single mode picks one value and closes; multi mode toggles with a check mark and
 stays open — without closing, so the filter you typed survives the pick.
+The multi trigger is a **summary, not a list**: it shows the first picked label
+and a `+N` pill for the rest, so neither its width nor its height moves as picks
+accumulate. Removing the first pick promotes the next one. The full selection
+stays available to assistive technology as the trigger's accessible
+description, in the page language (see [Accessibility](#accessibility)).
 Typing filters, Tab moves focus into the list, Enter picks the top match.
 Disabled options render but refuse picks. Rich per-option custom content
 (icons, badges, headers) is not supported by `rv-select`; drive it yourself from
@@ -241,7 +248,7 @@ const select = new RiviniaSelect('single'); // or 'multi'
 | `filtered`               | `Signal<readonly RiviniaSelectOption[]>` | Options matching `query`; disabled ones stay visible but unpickable.                                                 |
 | `value`                  | `WritableSignal<string \| null>`         | Single-mode selection.                                                                                               |
 | `values`                 | `WritableSignal<readonly string[]>`      | Multi-mode selections, in pick order.                                                                                |
-| `selectedLabels`         | `Signal<readonly string[]>`              | Labels of the current selection (falls back to the raw id).                                                          |
+| `selectedLabels`         | `Signal<readonly string[]>`              | Labels of the current selection, in pick order (falls back to the raw id).                                           |
 | `registerOption(option)` | method                                   | Idempotent by id; re-registering updates the entry.                                                                  |
 | `unregisterOption(id)`   | method                                   | Removes the entry; a selected id is dropped with it.                                                                 |
 | `syncOptions(list)`      | method                                   | Replaces the registry with exactly `list`.                                                                           |
@@ -580,7 +587,7 @@ The contract the controller gives you:
 | `query`            | The filter box's value. Bind both ways with `setQuery`.                    |
 | `filtered`         | The rows to render, already filtered.                                      |
 | `value` / `values` | The current selection; render the check mark or radio from it.             |
-| `selectedLabels`   | The trigger's text.                                                        |
+| `selectedLabels`   | The selected labels in pick order; the built-in trigger shows the first and a `+N` pill. |
 | `isSelected(id)`   | Per-row selected state.                                                    |
 | `select(id)`       | Single-mode pick. Returns `false` when the row is disabled — respect that. |
 | `toggle(id)`       | Multi-mode pick.                                                           |
@@ -884,6 +891,8 @@ The selectors, and the `data-*` state hooks:
 | `.rv-select-caption`                         | the label above the trigger |
 | `.rv-select-trigger`                         | the button                  |
 | `.rv-select-value`                           | the trigger's text          |
+| `.rv-select-count`                           | the multi `+N` pill         |
+| `.rv-select-sr-only`                         | the hidden multi description |
 | `.rv-select-chevron`                         | the chevron                 |
 | `.rv-select-search`                          | the filter box              |
 | `.rv-select-empty`                           | the "no results" state      |
@@ -1144,23 +1153,29 @@ none of it would have moved.
 | `--rv-select-error`  | `#dc2626`                     | invalid trigger   |
 | `--rv-select-radius` | `0.625rem`                    | trigger + panel   |
 | `--rv-select-shadow` | `0 16px 48px rgba(0,0,0,.22)` | panel             |
-| `--rv-select-width`  | `14rem`                       | select floor; panel follows it |
+| `--rv-select-width`  | `14rem`                       | select reference width; panel follows it |
 
-**The panel is the trigger's width.** One floor — `--rv-select-width`, capped
-by the container — sits on the select itself; the trigger fills it and the
-panel follows the trigger exactly, so the two read as one control. Widen the
-token and all three grow together. Option labels wrap (a 60-character unbroken
-string wraps instead of widening the panel), and the panel never scrolls
-sideways: long lists scroll **vertically** only. In a container narrower than
-the floor both shrink together and the labels wrap.
+**The panel is the trigger's width.** `--rv-select-width` is the control's
+**reference width**, not a floor: `rv-select` is
+`width: min(var(--rv-select-width, 14rem), 100%)` with `max-width: 100%` and
+`min-width: 0`. The trigger fills it and the panel follows the trigger exactly,
+so the two read as one control. Content never decides the width — picking eight
+options leaves the trigger exactly where it was; the multi summary above keeps
+a long selection on one line. Widen the token and all three grow together; set
+it to `100%` for a full-width field. In flex and grid, `min-width: 0` overrides
+the automatic minimum size of a `nowrap` item, so a narrow cell shrinks the
+control instead of pushing it out.
 
-**The smallest width that keeps the shape is 10rem (160px).** At 160px a row
-still fits on one line; below that the container wins and labels wrap to two
-or three lines (measured 55–114px rows between 128px and 96px) while the
-trigger value truncates with an ellipsis. The trigger stops shrinking around
-103px — width of the padding, the gap and the chevron — so that is the hard
-floor of the control itself. Nothing ever overflows its container: if the
-cell is narrower than the padding, the page stays put.
+**Narrow containers.** Below the reference width the container wins: the
+control shrinks with it, the trigger value truncates with an ellipsis and
+nothing overflows. Option labels wrap (a 60-character unbroken string wraps
+instead of widening the panel), and the panel never scrolls sideways: long
+lists scroll **vertically** only. The smallest width that keeps a row on one
+line is 10rem (160px); below that, labels wrap to two or three lines (measured
+55–114px rows between 128px and 96px) while the trigger keeps its shape. The
+trigger itself stops shrinking at the sum of its padding, gaps and chevron —
+plus the pill in multi mode — so a cell narrower than that is carried by the
+page, not by an overflowing control.
 
 **No forced dark mode** — there is no `prefers-color-scheme` block anywhere in
 the package, so a component can never override your explicit choice.
@@ -1207,6 +1222,30 @@ Consequences to be aware of:
 - `role="searchbox"` is used on the filter input; its name defaults to
   `'Search options'` and is configurable through `searchLabel`.
 
+### What the multi trigger announces
+
+The visible trigger shows only the first pick plus `+N`, so the rest of the
+selection is carried by `aria-describedby` on the trigger:
+
+| Name source             | Picks | Accessible description          |
+| ----------------------- | ----- | ------------------------------- |
+| `label`                 | ≥ 1   | every selected label            |
+| `ariaLabel`, no caption | ≥ 1   | every selected label            |
+| neither                 | 1     | none — the label is the value   |
+| neither                 | ≥ 2   | every label after the first     |
+| any                     | 0     | none — no attribute, no element |
+
+The text lives in a visually hidden sibling of the trigger
+(`.rv-select-sr-only`, clipped — not `display: none`, so the IDREF target stays
+in the accessibility tree), is formatted with `Intl.ListFormat`
+(`"TypeScript, Angular, and Signals"` in `en`, `"TypeScript وAngular
+وSignals"` in `ar`) and carries no English prefix. The locale is
+`document.documentElement.lang`: changing it re-renders the description live,
+with no reload and no extra input. An invalid locale falls back to `en`; a
+runtime without `Intl.ListFormat` joins with `', '`. The `+N` pill is
+`aria-hidden`, so it appears in neither the name nor the description, and
+clearing every pick removes the attribute and the hidden element together.
+
 ### Known verification gaps
 
 - **No real screen reader testing** — automated axe checks only. Manual
@@ -1227,6 +1266,22 @@ Consequences to be aware of:
   integration tests (see Forms).
 
 ## Migration notes
+
+### 0.7.0 → 0.7.1
+
+**No API change** — same exports, inputs, outputs and class names. Two visible
+changes in multi mode, both fixes:
+
+- **The trigger is a summary.** It used to join every selected label
+  (`Outstanding invoices, Paid, Overdue`), so the control grew with every pick —
+  measured 272px → 637.3px inside a 544px cell — while the open panel stayed at
+  the old width. It now shows the first picked label and a `+N` pill, and the
+  full list moved to the accessible description. A custom trigger built on the
+  controller can still join: `selectedLabels().join(', ')` is unchanged.
+- **`--rv-select-width` is a reference width, not a floor.** The control is
+  `min(var(--rv-select-width, 14rem), 100%)` instead of growing with content.
+  If a select relied on its content to widen it, set the token (or a wrapper
+  width); a select already inside a sized cell looks the same.
 
 ### 0.5.x → 0.6.0
 

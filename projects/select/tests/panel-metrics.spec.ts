@@ -60,9 +60,22 @@ describe('select panel metrics', () => {
     expect(
       declaration(select, ".rv-select .rv-select-popup-panel[data-top-layer='true']", 'min-width'),
     ).toBe('0');
-    expect(declaration(select, 'rv-select', 'min-width')).toBe(
+    /*
+     * 0.7.0 treated `--rv-select-width` as a floor on a shrink-to-fit host:
+     * with `min-width: min(…, 100%)` and a `nowrap` value, eight picks took the
+     * control from 272px to 637px inside a 544px cell. The token is now the
+     * reference width, capped by the container.
+     */
+    expect(declaration(select, 'rv-select', 'width')).toBe(
       'min(var(--rv-select-width, 14rem), 100%)',
     );
+    expect(declaration(select, 'rv-select', 'max-width')).toBe('100%');
+    expect(declaration(select, 'rv-select', 'min-width')).toBe('0');
+    // The value owns the ellipsis; without min-width: 0 a flex item refuses to
+    // shrink below its content.
+    expect(declaration(select, '.rv-select-value', 'min-width')).toBe('0');
+    // The pill never squeezes the value.
+    expect(declaration(select, '.rv-select-count', 'flex')).toBe('none');
     expect(declaration(select, '.rv-select-trigger', 'width')).toBe('100%');
     // `width: 100%` and a 1px border only add up to the select in border-box;
     // in content-box the button overflowed it by 2px and the panel followed.
