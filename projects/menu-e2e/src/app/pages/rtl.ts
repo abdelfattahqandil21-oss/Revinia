@@ -22,11 +22,25 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
           <button rvMenuItem id="r3">الثالث</button>
         </div>
       </rv-menu>
+      <rv-menu
+        [menu]="startMenu"
+        [placement]="'bottom-start'"
+        (picked)="picked.set('start=' + $event.id)"
+        menuLabel="قائمة البداية"
+      >
+        <button rv-menu-trigger>البداية</button>
+        <div rv-menu-panel>
+          <button rvMenuItem id="s1">أول</button>
+          <button rvMenuItem id="s2">ثاني</button>
+        </div>
+      </rv-menu>
       <p data-testid="result">picked={{ picked() }}</p>
     </div>
   `,
 })
 export class RtlPage {
   protected readonly menu = new RiviniaMenu();
+  /** bottom-start in RTL aligns to the trigger's right edge (mirrored). */
+  protected readonly startMenu = new RiviniaMenu();
   protected readonly picked = signal('(none)');
 }

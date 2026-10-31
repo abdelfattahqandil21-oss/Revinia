@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { openMenu } from './support';
 
 test.describe('basic action menu (axe + RTL)', () => {
   test('no axe violations while the menu is open', async ({ page }) => {
@@ -21,13 +22,13 @@ test.describe('basic action menu (axe + RTL)', () => {
     const trigger = page.getByRole('button', { name: 'الإجراءات' });
     const panel = page.getByRole('menu', { name: 'قائمة الإجراءات' });
 
-    await trigger.click();
+    await openMenu(page, trigger);
     await expect(panel).toBeVisible();
     await expect(page.getByRole('menuitem', { name: 'الأول' })).toBeFocused();
     await expect(panel).toHaveAttribute('data-placement', 'bottom-end');
 
-    // Opening focuses the first item in DOM order (keyboard order does not
-    // mirror in RTL).
+    // Entering the rows focuses the first item in DOM order (keyboard order
+    // does not mirror in RTL).
     await expect(page.getByRole('menuitem', { name: 'الأول' })).toBeFocused();
     await page.keyboard.press('ArrowDown');
     await expect(page.getByRole('menuitem', { name: 'الثاني' })).toBeFocused();
@@ -47,7 +48,7 @@ test.describe('basic action menu (axe + RTL)', () => {
 
   test('RTL: typeahead matches non-Latin labels', async ({ page }) => {
     await page.goto('/rtl');
-    await page.getByRole('button', { name: 'الإجراءات' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'الإجراءات' }));
     await expect(page.getByRole('menuitem', { name: 'الأول' })).toBeFocused();
     await page.keyboard.type('ا');
     await expect(page.getByRole('menuitem', { name: 'الأول' })).toBeFocused();

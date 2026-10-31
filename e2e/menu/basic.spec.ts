@@ -1,7 +1,9 @@
 import { test, expect, devices } from '@playwright/test';
+import { openMenu } from './support';
 
-// The documented contract: opening the menu focuses the FIRST enabled item
-// (last item when opened with ArrowUp). Tests below follow that contract.
+// The documented contract: a keyboard open focuses the FIRST enabled item
+// (last item with ArrowUp); a pointer open leaves focus on the trigger and
+// highlights nothing until the user hovers a row or presses an arrow key.
 test.use({ viewport: devices['Desktop Chrome'].viewport });
 
 test.describe('basic action menu', () => {
@@ -9,7 +11,7 @@ test.describe('basic action menu', () => {
     await page.goto('/basic');
   });
 
-  test('mouse open focuses the first item and exposes ARIA wiring', async ({ page }) => {
+  test('pointer open leaves no row active and exposes ARIA wiring', async ({ page }) => {
     const trigger = page.getByRole('button', { name: 'Actions' });
     const panel = page.getByRole('menu', { name: 'Actions menu' });
 
@@ -20,7 +22,13 @@ test.describe('basic action menu', () => {
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
     await expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
 
-    // Contract: opening focuses the first enabled item.
+    // A click is a glance, not a keyboard entry: nothing looks chosen and
+    // focus stays where the user clicked (APG menu button).
+    await expect(page.locator('[rvmenuitem][data-active="true"]')).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+
+    // The first ArrowDown enters the rows, as it does for keyboard users.
+    await page.keyboard.press('ArrowDown');
     await expect(page.getByRole('menuitem', { name: /New file/i })).toBeFocused();
     await expect(page.getByRole('menuitem', { name: 'Duplicate' })).toHaveAttribute(
       'data-active',
@@ -38,7 +46,7 @@ test.describe('basic action menu', () => {
   });
 
   test('arrow navigation skips disabled items and wraps', async ({ page }) => {
-    await page.getByRole('button', { name: 'Actions' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'Actions' }));
     await expect(page.getByRole('menu')).toBeVisible();
     await expect(page.getByRole('menuitem', { name: /New file/i })).toBeFocused();
 
@@ -55,7 +63,7 @@ test.describe('basic action menu', () => {
   });
 
   test('Home and End reach the first and last enabled items', async ({ page }) => {
-    await page.getByRole('button', { name: 'Actions' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'Actions' }));
     await expect(page.getByRole('menuitem', { name: /New file/i })).toBeFocused();
     await page.keyboard.press('End');
     await expect(page.getByRole('menuitem', { name: 'Delete' })).toBeFocused();
@@ -96,7 +104,7 @@ test.describe('basic action menu', () => {
   });
 
   test('Enter and Space activate the focused item', async ({ page }) => {
-    await page.getByRole('button', { name: 'Actions' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'Actions' }));
     await expect(page.getByRole('menuitem', { name: /New file/i })).toBeFocused();
     await page.keyboard.press('End');
     await page.keyboard.press('Enter');
@@ -117,7 +125,7 @@ test.describe('basic action menu', () => {
 
   test('typeahead finds items by accessible text', async ({ page }) => {
     const trigger = page.getByRole('button', { name: 'Actions' });
-    await trigger.click();
+    await openMenu(page, trigger);
     await expect(page.getByRole('menuitem', { name: /New file/i })).toBeFocused();
     await page.keyboard.press('d');
     await expect(page.getByRole('menuitem', { name: 'Duplicate' })).toBeFocused();
@@ -141,7 +149,7 @@ test.describe('basic action menu', () => {
   });
 
   test('repeated-character typeahead cycles between matches', async ({ page }) => {
-    await page.getByRole('button', { name: 'Actions' }).click();
+    await openMenu(page, page.getByRole('button', { name: 'Actions' }));
     await expect(page.getByRole('menuitem', { name: /New file/i })).toBeFocused();
     await page.keyboard.press('d');
     await expect(page.getByRole('menuitem', { name: 'Duplicate' })).toBeFocused();
@@ -152,8 +160,10 @@ test.describe('basic action menu', () => {
     await expect(page.getByRole('menuitem', { name: 'Duplicate' })).toBeFocused();
   });
 
-  test('aria-controls points at the real panel element', async ({ page }) => {
+  test('aria-controls only exists while the panel does', async ({ page }) => {
     const trigger = page.getByRole('button', { name: 'Actions' });
+    // Closed: the id it would reference does not exist, so it is not advertised.
+    expect(await trigger.getAttribute('aria-controls')).toBeNull();
     await trigger.click();
     const panel = page.getByRole('menu');
     const id = await panel.getAttribute('id');
@@ -161,6 +171,9 @@ test.describe('basic action menu', () => {
     await expect(trigger).toHaveAttribute('aria-controls', id!);
     // The referenced id really is the panel.
     await expect(page.locator(`#${id}`)).toHaveAttribute('role', 'menu');
+    await page.keyboard.press('Escape');
+    // Angular flushes the ARIA effect after the click handler returns.
+    await expect.poll(() => trigger.getAttribute('aria-controls')).toBeNull();
   });
 
   test('Tab closes the menu and focus continues naturally', async ({ page }) => {
@@ -200,9 +213,10 @@ test.describe('basic action menu', () => {
     await trigger.click();
     await page.keyboard.press('Escape');
     // close reason 2: selection
-    await trigger.click();
+    await openMenu(page, trigger);
     await page.keyboard.press('End');
     await page.keyboard.press('Enter');
+    await expect(page.locator('[data-testid="result"]')).toHaveText('picked=delete');
     // close reason 3: outside pointer
     await trigger.click();
     await page.locator('h1').click();
@@ -212,7 +226,7 @@ test.describe('basic action menu', () => {
     await trigger.click();
     await expect(page.getByRole('menu')).toBeHidden();
     // And it opens again cleanly after all four.
-    await trigger.click();
+    await openMenu(page, trigger);
     await expect(page.getByRole('menu')).toBeVisible();
     await expect(page.getByRole('menuitem', { name: /New file/i })).toBeFocused();
   });

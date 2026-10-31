@@ -11,7 +11,7 @@ Angular dropdown menus: a headless controller and an optional ready-made UI.
 The menu follows the WAI-ARIA menu-button pattern; it is for **actions**, not
 for a menubar or a general-purpose listbox.
 
-- Package version: **0.3.5**
+- Package version: **0.4.0**
 - Requires: **Angular `^22.0.0`** (`@angular/core`).
 - `@rivinia/menu` exports the headless controller and its types.
 - `@rivinia/menu/ui` exports the standalone menu component and item directive.
@@ -21,7 +21,8 @@ for a menubar or a general-purpose listbox.
 
 - **Headless first.** The controller is the product; pixels are yours.
 - **APG menu-button.** Arrow keys, Home/End, Enter/Space, Escape, and a
-  non-modal Tab that steps past the menu instead of trapping focus.
+  non-modal Tab that steps past the menu instead of trapping focus. A click
+  opens without pre-selecting a row; the keyboard does the selecting.
 - **Two levels of use.** Declarative (`[items]` + `(picked)`) or composable
   (`rvMenuItem` markup) — both routed through the same directives, so the
   keyboard, focus and registration exist once.
@@ -190,25 +191,48 @@ For projected rows, `rvMenuItem` also accepts:
 
 Disabled rows remain visible but cannot be activated. For a native disabled
 `button`, the directive also recognizes the element's native disabled state.
-Data-driven rows are rendered as buttons and use the `id`, `label`, and
-`disabled` fields from `RiviniaMenuItemData`.
+Data-driven rows are rendered as `<button type="button">` — an implicit
+`submit` inside a form would navigate away on every pick — and use the `id`,
+`label`, and `disabled` fields from `RiviniaMenuItemData`.
 
 The UI supplies basic layout and styling. Override its CSS custom properties
 such as `--rv-menu-bg`, `--rv-menu-fg`, `--rv-menu-border`,
-`--rv-menu-radius`, `--rv-menu-width`, and `--rv-menu-z` to theme it.
+`--rv-menu-radius`, `--rv-menu-width`, `--rv-menu-max-width`, and
+`--rv-menu-z` to theme it.
+
+Rows may contain an icon: the library sizes any `svg` (or `[data-icon]`)
+child to 16px and tones it muted, while the consumer owns the shape that
+makes it visible. Put the stroke on the icon, not on the row:
+
+```html
+<button type="button" rvMenuItem id="profile">
+  <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor">
+    <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3 14c0-2.2 2.2-4 5-4s5 1.8 5 4" />
+  </svg>
+  Profile
+</button>
+```
 Projected content remains yours to style. Where supported, the panel uses the
 browser popover top layer to avoid clipping ancestors; browsers without that
 support use the positioned-panel fallback.
 
 ## Interaction and limitations
 
-- Enter, Space, or ArrowDown opens on the first enabled item; ArrowUp opens on
-  the last. Arrow keys wrap through enabled items; Home and End jump to the
-  first and last. Printable characters perform typeahead matching.
+- **Pointer and keyboard open differently, on purpose.** A click opens the
+  panel and leaves focus on the trigger with no row selected — a glance is not
+  a choice. Enter, Space, or ArrowDown opens on the first enabled item;
+  ArrowUp opens on the last. After a click, the first ArrowDown (or Up, End,
+  Home) enters the rows at the expected end.
+- Arrow keys wrap through enabled items; Home and End jump to the first and
+  last. Printable characters perform typeahead matching.
+- **Exactly one row is ever highlighted.** Hover moves the active row through
+  the controller rather than painting a second `:hover` wash, so the row the
+  pointer is over and the row the keyboard is on can never both look chosen.
 - Escape closes and returns focus to the trigger. Selecting an item closes
   first, then emits `picked`. Outside pointer-down closes without stealing
   focus from the clicked target.
-- Tab closes and moves focus onward; the menu is non-modal. Scrolling or
+- Tab closes and moves focus onward — including right after a pointer open,
+  where focus never left the trigger. The menu is non-modal. Scrolling or
   resizing the page closes it so the panel does not drift from its trigger.
 - An empty or all-disabled menu can open, but has no active item to select.
 - The default controller starts closed during server rendering. On the client,
@@ -492,15 +516,21 @@ none of it would have moved.
 
 ### The library's own tokens
 
-| Token              | Default                       | Applies to      |
-| ------------------ | ----------------------------- | --------------- |
-| `--rv-menu-bg`     | `#ffffff`                     | panel           |
-| `--rv-menu-fg`     | `#111111`                     | panel           |
-| `--rv-menu-border` | `#e0e0e0`                     | panel + divider |
-| `--rv-menu-muted`  | `#555555`                     | icon tone       |
-| `--rv-menu-radius` | `12px`                        | panel           |
-| `--rv-menu-shadow` | `0 16px 48px rgba(0,0,0,.22)` | panel           |
-| `--rv-menu-width`  | `16rem`                       | panel min-width |
+| Token                 | Default                       | Applies to      |
+| --------------------- | ----------------------------- | --------------- |
+| `--rv-menu-bg`        | `#ffffff`                     | panel           |
+| `--rv-menu-fg`        | `#111111`                     | panel           |
+| `--rv-menu-border`    | `#e0e0e0`                     | panel + divider |
+| `--rv-menu-muted`     | `#555555`                     | icon tone       |
+| `--rv-menu-radius`    | `12px`                        | panel           |
+| `--rv-menu-shadow`    | `0 16px 48px rgba(0,0,0,.22)` | panel           |
+| `--rv-menu-width`     | `10rem`                       | panel min-width |
+| `--rv-menu-max-width` | `22rem`                       | panel max-width |
+
+Every size token describes the **visible box**: the panel is `border-box`, so
+`padding` and `border` live inside the declared width instead of adding to it.
+A label wider than the cap wraps inside its row; rows are never ellipsized,
+and a single long word breaks rather than overflowing the viewport.
 
 **No forced dark mode** — there is no `prefers-color-scheme` block in this
 package.
@@ -556,8 +586,32 @@ unencapsulated, so these selectors are global and stable:
 | `data-flipped`    | panel | it flipped to the other side   |
 | `data-positioned` | panel | it has been measured           |
 | `data-top-layer`  | panel | it is in the browser top layer |
+| `data-rtl`        | panel | the panel's current writing direction |
 
 ## Migration notes
+
+### 0.3.5 → 0.4.0
+
+This is a **minor** release: the pointer-open interaction changed on purpose.
+**Nothing to do unless you relied on a click pre-selecting the first row.**
+The panel is now `border-box` with a `22rem` cap (`--rv-menu-max-width`), and
+the `--rv-menu-width` default drops from `16rem` to `10rem`; a menu that
+already fits looks the same or narrower, and long labels wrap instead of
+stretching the panel or being clipped. If you set `--rv-menu-width` yourself,
+keep it: the token still works, it is only the default that changed.
+
+Two interaction changes:
+
+- A pointer open no longer activates the first row (`toggle('none')` through
+  the controller). If you triggered your own logic `when activeId()` became
+  non-null on open, move it to `opened` or to the first arrow key.
+- Tab now closes the menu even when focus is still on the trigger, and in
+  WebKit focus is re-seated on the trigger after a close so Shift+Tab
+  continues naturally.
+
+The `:hover` wash on rows is gone. Hover still activates the row (through the
+controller), so consumers styling `--rv-menu-item-hover-bg` should move that
+colour to `--rv-menu-item-active-bg`.
 
 ### 0.3.4 → 0.3.5
 

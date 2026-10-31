@@ -14,11 +14,17 @@
     [attr.data-flipped]="flipped()"
     [attr.data-positioned]="positioned()"
     [attr.data-top-layer]="topLayerSupported"
+    [attr.data-rtl]="isRtl()"
     (keydown)="onPanelKey($event)"
   >
     @if (dataItems().length > 0) {
       @for (item of dataItems(); track item.id) {
+        <!-- type="button": inside a <form> an implicit submit would navigate
+             away on every pick. `[id]` feeds the directive input (Angular
+             prefers it over the DOM property), so no id lands on the element;
+             identity is data-rv-id. -->
         <button
+          type="button"
           rvMenuItem
           [id]="item.id"
           [disabled]="item.disabled ?? false"
