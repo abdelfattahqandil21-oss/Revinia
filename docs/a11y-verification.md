@@ -18,6 +18,7 @@ person says **not tested**; nothing in this file was inferred.
 | `menuitemcheckbox` per-row state (multi)      | `e2e/select/a11y.spec.ts`                                              | asserted                                   |
 | Disabled row announced, never checked         | `e2e/select/a11y.spec.ts`                                              | asserted                                   |
 | Trigger name contains the visible value       | `e2e/select/a11y.spec.ts` (WCAG 2.5.3)                                 | asserted                                   |
+| No-results message is a live region           | `e2e/select/a11y.spec.ts`                                              | asserted                                   |
 | RTL roles and reading order                   | `e2e/select/a11y.spec.ts`                                              | asserted                                   |
 | Keyboard: arrows, Home/End, Enter, Escape     | `e2e/select/a11y.spec.ts`                                              | asserted                                   |
 | Keyboard: Space picks the focused row         | `e2e/select/a11y.spec.ts`                                              | asserted                                   |
@@ -40,11 +41,10 @@ what the user understands.
 | VoiceOver + Safari       | —          | not tested | —          | not tested |
 | TalkBack + Chrome        | —          | —          | not tested | —          |
 
-For each combination, the steps and the pass criteria are in
-[`HUMAN-CHECKS-1.0.md`](./HUMAN-CHECKS-1.0.md) (written at the end of the 1.0
-work, S8). In short: open the single select, arrow through the rows, pick one
-and reopen; repeat for multi, for the filter box, for the disabled row and in
-RTL.
+For each combination, the steps and the pass criteria are in the S2 section of
+[`HUMAN-CHECKS-1.0.md`](./HUMAN-CHECKS-1.0.md). In short: open the single
+select, arrow through the rows, pick one and reopen; repeat for multi, for the
+filter box, for the disabled row, for the no-results state and in RTL.
 
 ## Known limits recorded in the README
 

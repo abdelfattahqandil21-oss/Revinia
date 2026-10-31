@@ -3178,6 +3178,29 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   scrollport raises `scrollable-region-focusable` (serious). The row directive
   is internal, so the README recipe writes the attributes out.
 
+### D85 addendum 2 — the trigger's accessible name contains the visible value (WCAG 2.5.3)
+
+- Context: 0.7.1 named the trigger with `aria-label` (the caption), while the
+  button's visible text is the current value. axe
+  `label-content-name-mismatch` (serious) fires when the visible text is absent
+  from the accessible name, and it did on every open/closed single select once
+  the panel semantics moved focus into the rows. WCAG 2.5.3 "Label in Name"
+  requires the visible label to be part of the name.
+- Decision: the trigger is named by `aria-labelledby` over its caption (or an
+  `ariaLabel`-only hidden span) plus the visible value, in visual order; the
+  hidden description stays a *sibling*, not a child, so it is not read twice.
+  IDs are instance-unique, so several selects in one application root compose
+  their names independently (asserted in `e2e/select/select.spec.ts`).
+- Public consequence: the trigger no longer carries `aria-label`; its `id`s
+  (caption, value, description) are DOM-adopted by the component and the
+  accessible name now reads "Invoice status, Outstanding invoices". This is an
+  announcement change for every consumer, recorded in the CHANGELOG, and the
+  one item in this branch the owner may want to confirm as a contract decision
+  rather than an S2 acceptance fix.
+- Verified: axe `label-content-name-mismatch` at zero on the closed trigger,
+  single open, multi open, RTL and empty states; Playwright asserts the
+  composed name after a pick and across two application roots.
+
 
 ## 2026-10-31 — D86: no popup dedupe before 1.0; a conformance suite instead
 

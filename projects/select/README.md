@@ -184,8 +184,9 @@ the headless `RiviniaSelect` controller.
 
 > **Naming note:** the headless controller input is named `select` on
 > `rv-select`. It is a **controller input**, not a DOM name — the rendered
-> markup is `rv-select`, `.rv-select-trigger`, `.rv-select-popup-panel` and
-> `.rv-select-popup-item`. The package's popup shares no vocabulary with
+> markup is `rv-select`, `.rv-select-trigger`, `.rv-select-popup-panel`, the
+> inner `.rv-select-popup-menu` (the `role="menu"`), and
+> `[rvselectpopupitem]` rows. The package's popup shares no vocabulary with
 > `@rivinia/menu` and has no dependency on it — the two used to collide
 > (same `rv-menu` selector), which is why the popup is now `rv-select-popup`.
 
@@ -908,6 +909,7 @@ The selectors, and the `data-*` state hooks:
 | `.rv-select-hint`                            | an option's trailing hint   |
 | `.rv-select-check`                           | the multi-mode check mark   |
 | `.rv-select-popup-panel`                     | the opened panel            |
+| `.rv-select-popup-menu`                      | the `role="menu"` row container |
 | `.rv-select-popup-panel [rvselectpopupitem]` | an option row               |
 
 | Hook              | On      | Means                          |

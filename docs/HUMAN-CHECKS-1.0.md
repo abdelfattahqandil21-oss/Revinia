@@ -55,6 +55,8 @@ only you can fill them.
    listed in the trigger after close.
 7. Go to `#rtl-select`, open it. Expect the three rows in the order
    **Owner, Admin, Member**, in Arabic reading order.
+8. Back on `#single-select`, open it and type `zzz`. Expect the "no results"
+   message to be **announced once** as it appears, not to be silent.
 
 ### Pass means
 
