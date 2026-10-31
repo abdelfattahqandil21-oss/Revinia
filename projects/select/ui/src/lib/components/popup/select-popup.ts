@@ -52,10 +52,19 @@ export class SelectPopupItem {
   });
   /**
    * Tri-state selection (e.g. multi-select options). `null` (default) renders
-   * a plain `menuitem`; a boolean renders `menuitemcheckbox` + `aria-checked`
-   * so screen readers announce the state (the visual check alone is silent).
+   * a plain `menuitem`; a boolean renders `menuitemcheckbox` (or
+   * `menuitemradio` with `radio`) plus `aria-checked`, so screen readers
+   * announce the state — the visual check alone is silent.
    */
   readonly checked = input<boolean | null>(null);
+  /**
+   * Exclusive selection: with `checked` set, the row reads `menuitemradio`
+   * instead of `menuitemcheckbox`. The consumer owns exclusivity (checking one
+   * row unchecks the others).
+   */
+  readonly radio = input(false, {
+    transform: (v: boolean | string) => v === '' || v === true,
+  });
 
   private readonly host = inject(ElementRef<HTMLElement>, { optional: true });
   private readonly host_ = inject(SelectPopupComponent, { optional: true });
@@ -66,7 +75,8 @@ export class SelectPopupItem {
   }
 
   protected computedRole(): string {
-    return this.checked() === null ? 'menuitem' : 'menuitemcheckbox';
+    if (this.checked() === null) return 'menuitem';
+    return this.radio() ? 'menuitemradio' : 'menuitemcheckbox';
   }
 
   protected checkedAttr(): string | null {

@@ -18,6 +18,21 @@
   flex-direction: column;
   gap: 0.125rem;
 }
+/*
+ * The rows' grouping box. It exists so `role="menu"` owns rows only (see the
+ * template) and keeps the row gap the panel itself used to provide when rows
+ * were direct children.
+ */
+.rv-select-popup-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+/* The slot that carries the status rows and footer beside the menu; it stays
+   out of the layout so those boxes remain flex items of the panel. */
+.rv-select-popup-tail {
+  display: contents;
+}
 .rv-select-popup-panel hr {
   border: 0;
   border-top: 1px solid var(--rv-select-popup-border, var(--rv-select-border, var(--rv-border, #e0e0e0)));

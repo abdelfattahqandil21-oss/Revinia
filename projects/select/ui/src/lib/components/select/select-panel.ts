@@ -240,6 +240,10 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
   private readonly justOpened = signal(false);
   /** Id of the rendered caption element, referenced by the trigger. */
   protected readonly labelId = this.labelIdGenerator.allocate();
+  /** Id of the hidden ariaLabel name span, referenced by the trigger. */
+  protected readonly ariaNameId = this.labelIdGenerator.allocate();
+  /** Id of the visible value span, referenced by the trigger. */
+  protected readonly valueId = this.labelIdGenerator.allocate();
   /** Id of the hidden description element, referenced by the trigger. */
   protected readonly selectionId = this.labelIdGenerator.allocate();
   private readonly document = inject(DOCUMENT);
@@ -289,6 +293,27 @@ export class RiviniaSelectComponent implements FormValueControl<SelectChange> {
     if (c.mode !== 'multi') return 0;
     const count = c.selectedLabels().length;
     return count > 1 ? count - 1 : 0;
+  });
+
+  /**
+   * The trigger's accessible name references, in reading order.
+   *
+   * The visible value is ALWAYS part of the name: a button whose text is
+   * "Paid" and whose name is only "Invoice status" fails WCAG 2.5.3
+   * (axe `label-content-name-mismatch`, measured serious). `aria-labelledby`
+   * is used because it composes the field's name with the value;
+   * `aria-label` would replace the whole name instead.
+   *
+   * With neither a caption nor an `ariaLabel` the name stays content-based,
+   * which already contains the value — no attribute is invented.
+   */
+  protected readonly triggerLabelledBy = computed(() => {
+    const ids: string[] = [];
+    if (this.label()) ids.push(this.labelId);
+    else if (this.ariaLabel()) ids.push(this.ariaNameId);
+    else return null;
+    ids.push(this.valueId);
+    return ids.join(' ');
   });
 
   /**

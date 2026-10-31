@@ -18,8 +18,7 @@
       type="button"
       class="rv-select-trigger"
       aria-haspopup="menu"
-      [attr.aria-label]="ariaLabel()"
-      [attr.aria-labelledby]="label() ? labelId : null"
+      [attr.aria-labelledby]="triggerLabelledBy()"
       [attr.aria-expanded]="popup.open()"
       [attr.aria-describedby]="selectionDescription() ? selectionId : null"
       [attr.aria-invalid]="invalid() || errors().length > 0 ? 'true' : null"
@@ -27,7 +26,7 @@
       [attr.data-open]="popup.open()"
       [disabled]="disabled()"
     >
-      <span class="rv-select-value">{{ visibleValue() }}</span>
+      <span class="rv-select-value" [id]="valueId">{{ visibleValue() }}</span>
       @if (overflowCount() > 0) {
         <span class="rv-select-count" aria-hidden="true"><bdi dir="ltr">+{{ overflowCount() }}</bdi></span>
       }
@@ -42,22 +41,29 @@
         <path d="M4 6.5 8 10.5 12 6.5" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
     </button>
+    <!--
+      The filter box lives beside the menu, never inside it: role="menu" may
+      only own menuitem*/group/separator, and `searchbox` is an
+      `aria-required-children` violation (measured; D85 addendum). It stays in
+      the panel so it sticks to the scrollport's top edge.
+    -->
+    @if (searchable()) {
+      <div rv-select-popup-head class="rv-select-search-bar">
+        <input
+          class="rv-select-search"
+          type="text"
+          role="searchbox"
+          [attr.aria-label]="searchLabel()"
+          autocomplete="off"
+          [value]="controller().query()"
+          [placeholder]="searchPlaceholder()"
+          (input)="controller().setQuery($any($event.target).value)"
+          (keydown)="onSearchKey($event)"
+        />
+      </div>
+    }
+    <!-- The menu owns rows only. -->
     <div rv-select-popup-panel class="rv-select-panel">
-      @if (searchable()) {
-        <div class="rv-select-search-bar">
-          <input
-            class="rv-select-search"
-            type="text"
-            role="searchbox"
-            [attr.aria-label]="searchLabel()"
-            autocomplete="off"
-            [value]="controller().query()"
-            [placeholder]="searchPlaceholder()"
-            (input)="controller().setQuery($any($event.target).value)"
-            (keydown)="onSearchKey($event)"
-          />
-        </div>
-      }
       @if (listTemplate(); as list) {
         <!-- The consumer's own list — a virtualised one, typically. -->
         <ng-container
@@ -71,7 +77,8 @@
           [id]="o.id"
           [attr.data-selected]="controller().isSelected(o.id) ? 'true' : null"
           [disabled]="o.disabled ?? false"
-          [checked]="controller().mode === 'multi' ? controller().isSelected(o.id) : null"
+          [checked]="controller().isSelected(o.id)"
+          [radio]="controller().mode === 'single'"
         >
           @if (optionTemplate(); as row) {
             <!--
@@ -107,9 +114,13 @@
             }
           }
         </button>
-      } @empty {
-        <div class="rv-select-empty">{{ emptyLabel() }}</div>
       }
+      }
+    </div>
+    <!-- Status rows and the consumer's footer are not menu children. -->
+    <div rv-select-popup-tail class="rv-select-popup-tail">
+      @if (!listTemplate() && controller().filtered().length === 0) {
+        <div class="rv-select-empty">{{ emptyLabel() }}</div>
       }
       @if (loading()) {
         <div class="rv-select-loading" role="status" aria-live="polite">
@@ -129,6 +140,14 @@
     The description is a sibling of the trigger, never a child: a hidden child
     would join the trigger's content-based name and be read twice.
   -->
+  @if (ariaLabel() && !label()) {
+    <!--
+      An ariaLabel-only name is referenced, not set as `aria-label`, because
+      the trigger's name must also contain its visible value (WCAG 2.5.3) and
+      `aria-labelledby` is what can compose the two.
+    -->
+    <span class="rv-select-sr-only" [id]="ariaNameId">{{ ariaLabel() }}</span>
+  }
   @if (selectionDescription(); as description) {
     <span class="rv-select-sr-only" [id]="selectionId">{{ description }}</span>
   }

@@ -6,9 +6,6 @@
     #panel
     class="rv-select-popup-panel"
     [class]="panelClass()"
-    role="menu"
-    [attr.id]="panelId"
-    [attr.aria-label]="popupLabel()"
     [attr.popover]="topLayerSupported ? 'manual' : null"
     [attr.data-placement]="placement()"
     [attr.data-flipped]="flipped()"
@@ -17,19 +14,36 @@
     (keydown)="onPanelKey($event)"
     (scroll)="onPanelScroll($event)"
   >
-    @if (dataItems().length > 0) {
-      @for (item of dataItems(); track item.id) {
-        <button
-          rvSelectPopupItem
-          [id]="item.id"
-          [disabled]="item.disabled ?? false"
-          [checked]="checkedFor(item.id)"
-          [class]="itemClass()"
-        >
-          {{ item.label }}
-        </button>
+    <!--
+      Non-row content (a filter box, a toolbar) belongs beside the menu, not
+      inside it: role="menu" may only own menuitem*/group/separator, and a
+      searchbox child is an axe `aria-required-children` violation (measured).
+      It stays inside the panel so it scrolls and sticks with the rows.
+    -->
+    <ng-content select="[rv-select-popup-head], [rvSelectPopupHead]" />
+    <div
+      class="rv-select-popup-menu"
+      role="menu"
+      [attr.id]="panelId"
+      [attr.aria-label]="popupLabel()"
+    >
+      @if (dataItems().length > 0) {
+        @for (item of dataItems(); track item.id) {
+          <button
+            rvSelectPopupItem
+            [id]="item.id"
+            [disabled]="item.disabled ?? false"
+            [checked]="checkedFor(item.id)"
+            [class]="itemClass()"
+          >
+            {{ item.label }}
+          </button>
+        }
       }
-    }
-    <ng-content select="[rv-select-popup-panel], [rvSelectPopupPanel]"></ng-content>
+      <ng-content select="[rv-select-popup-panel], [rvSelectPopupPanel]"></ng-content>
+    </div>
+    <!-- Status rows and footers are not menu children. -->
+    <ng-content select="[rv-select-popup-tail], [rvSelectPopupTail]" />
+    <ng-content select="[rv-select-popup-footer], [rvSelectPopupFooter]" />
   </div>
 }
