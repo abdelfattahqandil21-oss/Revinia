@@ -34,7 +34,9 @@ Older releases (0.1.0 to 0.6.0) are documented in the repository
 - **Forced colors.** `@media (forced-colors: active)` gives the panel
   `Canvas`/`CanvasText`, the active row `Highlight`/`HighlightText` and a
   disabled row `GrayText` at full opacity — the UA otherwise flattens the active
-  row into invisibility and leaves the panel's shadow in place.
+  row into invisibility. The selected tick follows its row, and the active
+  row's ring is `CanvasText`, because a `Highlight` ring on a `Highlight` band
+  cannot be seen.
 
 ## 0.7.1
 

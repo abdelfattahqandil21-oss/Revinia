@@ -453,9 +453,14 @@ rv-select[data-variant='premium'] .rv-select-skeleton > i:nth-child(3) {
 }
 
 /*
- * FORCED COLORS — D87. The UA forces author colours in this mode, but it does
- * not remove `box-shadow`, and a forced background erases the premium
- * trigger's fill. System colours are the one palette an author may still name.
+ * FORCED COLORS — D87. The UA forces author colours in this mode and flattens
+ * backgrounds, which erases the premium trigger's fill. System colours are the
+ * one palette an author may still name.
+ *
+ * `box-shadow: none` is already the UA's doing in Chromium — measured on the
+ * built premium panel, its declared shadow reads back as `none` under
+ * `forcedColors: 'active'`. It stays for engines this suite cannot emulate:
+ * Playwright has no forced-colors mode in Firefox.
  */
 @media (forced-colors: active) {
   rv-select[data-variant='premium'] .rv-select-trigger {

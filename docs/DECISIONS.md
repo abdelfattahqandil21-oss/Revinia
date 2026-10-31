@@ -3302,11 +3302,18 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   `var(--rv-accent, var(--rv-select-popup-muted))` and, on the active row,
   `var(--rv-accent, currentColor)` (which resolves to the same inherited value
   the old `color: inherit` produced).
-- Forced-colors defaults are stated per component because the UA does not
-  remove `box-shadow` and it flattens author backgrounds: the active row would
-  otherwise be invisible. It does not force `opacity` either, so the disabled
-  row's 0.45 is replaced with `GrayText` at full opacity. Two corrections came
-  out of measuring it: the (0,3,1)/(0,4,1) tick rules outranked a plain
+- Forced-colors defaults are stated per component because the UA flattens
+  author backgrounds: the active row would otherwise be invisible. It does not
+  force `opacity`, so the disabled row's 0.45 is replaced with `GrayText` at
+  full opacity. It DOES force `box-shadow` to `none` in Chromium — measured on
+  the built premium panel, whose declared
+  `rgba(16, 24, 40, 0.18) 0 12px 32px -8px` reads back as `none` under
+  `forcedColors: 'active'` — so the explicit `box-shadow: none` in those
+  blocks is redundant there and kept for engines this suite cannot emulate
+  (Playwright has no forced-colors mode in Firefox). An earlier draft of this
+  entry claimed the opposite; the measurement corrected it. Two other
+  corrections came out of measuring the mode: the (0,3,1)/(0,4,1) tick rules
+  outranked a plain
   `.rv-select-check { color: CanvasText }` and Chromium measured white on
   white, so the forced block repeats both tick selectors; and a `Highlight`
   ring on a `Highlight` band is invisible, so the active row's ring is

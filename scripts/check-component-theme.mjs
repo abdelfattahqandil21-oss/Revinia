@@ -195,6 +195,11 @@ export const CASES = Object.freeze([
         ['select panel background', panel.backgroundColor, probe.canvas],
         ['select panel text', panel.color, probe.canvasText],
         ['select panel shadow', panel.boxShadow, 'none'],
+        // The premium panel declares a two-layer shadow normally; Chromium
+        // forces author shadows to `none` in this mode (measured), which is
+        // why the `box-shadow: none` in the forced blocks only backstops
+        // engines this suite cannot emulate.
+        ['select premium panel shadow', measured.menu.premiumPanel.boxShadow, 'none'],
         ['select active row background', active.backgroundColor, probe.highlight],
         ['select active row text', active.color, probe.highlightText],
         // The tick carries an accent rule at (0,3,1)/(0,4,1); if the forced
