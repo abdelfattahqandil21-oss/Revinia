@@ -30,9 +30,10 @@ Two facts the first plan did not have:
   publish them on the 0.x line, or leave them until their own specs run.
 - **`@rivinia/theme` is consumed only as a stylesheet.** Nothing in
   `projects/` imports `@rivinia/theme`; components read `--rv-*` with
-  hard-coded fallbacks instead (occurrences under `projects/*/ui`: select 192,
-  menu 50, i18n 26, table 102). A theme release therefore cannot cause a peer
-  ERESOLVE; only select → i18n can.
+  hard-coded fallbacks instead (occurrences under `projects/*/ui`, counted
+  2026-10-31 before S2/S5 added uses: select 192, menu 50, i18n 26, table 102).
+  A theme release therefore cannot cause a peer ERESOLVE; only select → i18n
+  can.
 
 ## 2. Internal edges
 
@@ -122,11 +123,12 @@ soaked on its own before the 1.0 freeze.
 
 ## 7. Consequences for the next branches
 
-- `pkg/repo/1-0-packaging` (S1 + S6 + S9 tooling): add `repository`/`homepage`/
-  `bugs` to all nine packages missing them, add `engines` (Angular's exact
-  range) to the nine missing it, add `CHANGELOG.md` to the eight missing it,
-  and extend the pack gate to require `repository`, `README.md` and
-  `CHANGELOG.md` while printing the file list.
+- `pkg/repo/1-0-packaging` (S1 + S6 + S9 tooling): **owner decision, 2026-10-31
+  — the four 1.0 packages only.** theme, select and menu gain
+  `repository`/`homepage`/`bugs`, `engines` (Angular's exact range) and a
+  `CHANGELOG.md`; i18n already had all three and only needed its README version
+  line corrected. The pack gate now requires them and prints the file list. The
+  same metadata for the six 0.x packages waits for their own specs.
 - i18n stays the only package that declares the select peer; its 1.0 manifest
   change is `^0.7.0` → `^1.0.0`, still optional.
 - The four unpublished patch bumps are out of scope for every 1.0 branch; they

@@ -20,11 +20,28 @@ Arabic is a first-class target, not an afterthought of an English layout.
 - Package version: **0.8.0**
 - Peer dependency: **`@angular/core` `^22.0.0`** (plus `@angular-devkit/schematics` for `ng add`,
   and an optional `@rivinia/select` `^0.7.0` for the `/select` entry point)
+- Node: **same as Angular 22** (`^22.22.3 || ^24.15.0 || >=26.0.0`)
 - Entry points: **`@rivinia/i18n`** (headless core), **`@rivinia/i18n/ui`**
   (the standalone language toggle) and **`@rivinia/i18n/select`** (the
   multi-language picker)
 - `sideEffects: false`; no runtime import beyond `@angular/core`; loaders are lazy chunks
 - No `HttpClient` peer — the built-in loaders use `fetch`
+
+## Compatibility
+
+`@rivinia/i18n` releases move with the rest of the ecosystem. Install a matching
+pair; the select peer is optional and only needed by the `/select` entry point.
+
+| `@rivinia/i18n` | `@angular/core` | `@rivinia/select` (optional, `/select` only) | Node |
+| --- | --- | --- | --- |
+| 0.8.x | `^22.0.0` | `^0.7.0` | same as Angular 22 |
+| 1.0.0-rc.x | `^22.0.0` | `^1.0.0-rc.1` | same as Angular 22 |
+| 1.0.x | `^22.0.0` | `^1.0.0` | same as Angular 22 |
+
+The 1.0 rows are **prepared, not published**. A pre-1.0 caret is narrow: while
+i18n is 0.8, `^0.7.0` means `>=0.7.0 <0.8.0`, so any select 0.8.0 or 1.0.0
+would produce a peer conflict for consumers of `/select` until i18n is
+republished.
 
 ## What you get
 
