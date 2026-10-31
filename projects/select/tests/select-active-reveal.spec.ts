@@ -118,6 +118,11 @@ describe('the panel reveals the active row', () => {
   let panel: HTMLElement;
   let scrollWrites: number[];
   const original = Element.prototype.scrollIntoView;
+  const rectDescriptor = Object.getOwnPropertyDescriptor(
+    Element.prototype,
+    'getBoundingClientRect',
+  );
+  const scrollTopDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop');
 
   const rect = (top: number, bottom: number): DOMRect =>
     ({
@@ -165,6 +170,10 @@ describe('the panel reveals the active row', () => {
 
   afterEach(() => {
     (Element.prototype as unknown as { scrollIntoView: unknown }).scrollIntoView = original;
+    if (rectDescriptor)
+      Object.defineProperty(Element.prototype, 'getBoundingClientRect', rectDescriptor);
+    if (scrollTopDescriptor)
+      Object.defineProperty(Element.prototype, 'scrollTop', scrollTopDescriptor);
   });
 
   function watchScrollTop(element: HTMLElement): void {
@@ -196,9 +205,49 @@ describe('the panel reveals the active row', () => {
     return fixture.nativeElement;
   }
 
+  /**
+   * The panel does not exist until the open renders, and the reveal runs in
+   * that same pass, so the geometry has to be staged on the prototype and the
+   * panel's `scrollTop` writes intercepted there rather than on an element.
+   */
+  function stageBeforeOpen(): void {
+    Element.prototype.getBoundingClientRect = function (this: Element) {
+      if (this.classList.contains('rv-select-popup-panel')) return rect(0, 100);
+      if (this.getAttribute('data-rv-id') === 'b') return rect(120, 140);
+      return rectDescriptor!.value!.call(this);
+    };
+    if (!scrollTopDescriptor?.get || !scrollTopDescriptor.set) {
+      throw new Error('scrollTop is not an accessor on Element.prototype');
+    }
+    Object.defineProperty(Element.prototype, 'scrollTop', {
+      configurable: true,
+      get(this: Element) {
+        return scrollTopDescriptor.get!.call(this);
+      },
+      set(this: Element, value: number) {
+        if (this.classList.contains('rv-select-popup-panel')) scrollWrites.push(value);
+        scrollTopDescriptor.set!.call(this, value);
+      },
+    });
+  }
+
   it('opens on the selected row', async () => {
     const { nativeElement: host } = await open();
     expect(host.querySelector('[data-active="true"]')?.textContent).toContain('Banana');
+  });
+
+  /**
+   * The reopen case from the defect report: the panel opened at `scrollTop` 0
+   * whatever the value, so a deep selection was active but out of view. This
+   * is the open path, which no key press is involved in.
+   */
+  it('reveals the selected row when it opens', async () => {
+    stageBeforeOpen();
+    const { nativeElement: host } = await open();
+
+    expect(host.querySelector('[data-active="true"]')?.textContent).toContain('Banana');
+    // 140 (row bottom) - 100 (scrollport bottom) - 0 (scroll-padding).
+    expect(scrollWrites).toEqual([40]);
   });
 
   it('scrolls the newly active row by moving the panel, not the document', async () => {
