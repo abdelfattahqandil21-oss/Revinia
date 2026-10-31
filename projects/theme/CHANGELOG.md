@@ -37,10 +37,15 @@ Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
   `--rv-accent` at 4.5:1; the four status tokens at 3:1 as indicators.
   Measured now: 18.88 / 7.46 / 5.37 (light) and 16.16 / 7.06 / 6.07 (dark) for
   text, 3.19–10.84 for indicators.
-- **README.** The token table gained a dark column, and two new sections say
-  what the switch is, what the contrast gate guarantees, and what it does not:
-  `--rv-border` is decorative (1.32:1 on white) and the status tokens are not
-  text colours.
+- **The contract is read.** Select, menu and the i18n toggle now paint their
+  focus rings, the active row, the selected tick and the toggle's held-down fill
+  with `--rv-accent`, and each ships `@media (forced-colors: active)` defaults
+  on system colours. `pnpm check:component-theme` proves it in Chromium and
+  Firefox, including that a page with no theme imported is unchanged.
+- **README.** The token table gained a dark column, and new sections say
+  what the switch is, which component surfaces read the accent, what the
+  contrast gate guarantees, and what it does not: `--rv-border` is decorative
+  (1.32:1 on white) and the status tokens are not text colours.
 
 ### Styling-stack fixes (0.2.0)
 

@@ -190,6 +190,29 @@ adapter's unlayered mapping beats the theme's `:root[data-rv-theme]` block, so
 across both engines, reading the computed background, colour, shadow and
 `color-scheme` from real pages.
 
+## What the theme restyles
+
+The import reaches the interactive layer of each component, not just surfaces:
+
+| Component | Reads `--rv-accent` for                                                       |
+| --------- | ----------------------------------------------------------------------------- |
+| select    | trigger, search and row focus rings; the active row's tint; the selected tick |
+| menu      | the row focus ring and the active row's tint                                  |
+| i18n      | the language toggle's focus ring and its held-down fill                       |
+
+Every one of those reads is `var(--rv-accent, <its previous value>)`. A page
+that imports nothing has no `--rv-accent`, so it renders exactly as it did
+before the theme shipped — `pnpm check:component-theme` compares that page
+against snapshots captured before the wiring, in Chromium and Firefox.
+
+**Forced colors.** Windows High Contrast and Firefox's forced-colours mode
+throw author colours away. The things the UA cannot force — a background it
+flattens to `Canvas`, a shadow it leaves in place, a disabled row whose only
+cue was 45% opacity — are re-stated with system colours: `Canvas`,
+`CanvasText`, `Highlight`, `HighlightText` and `GrayText`. The active row keeps
+a visible band, a disabled row turns grey at full opacity, and panels drop
+their shadow.
+
 ## Contrast
 
 The two palettes are checked, not assumed. `pnpm check:contrast` measures every
