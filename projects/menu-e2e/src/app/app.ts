@@ -12,6 +12,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
       <a routerLink="/two" routerLinkActive="on">Two</a>
       <a routerLink="/rtl" routerLinkActive="on">RTL</a>
       <a routerLink="/edge" routerLinkActive="on">Edge</a>
+      <a routerLink="/content" routerLinkActive="on">Content</a>
       <a routerLink="/styled" routerLinkActive="on">Styled</a>
     </nav>
     <main><router-outlet /></main>
