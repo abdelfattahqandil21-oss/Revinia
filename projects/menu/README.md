@@ -158,9 +158,45 @@ export class CustomAccountMenu {
 
 Every `rvMenuItem` needs a unique `id` within its menu. Items register and
 unregister automatically, including rows rendered with `@for`; changing an
-item's `id` or `disabled` state updates its registration. Non-item projected
-content (such as the heading above) is not keyboard-navigable. Use a real
-`button` for actions or an `a` with an `href` for navigation.
+item's `id` or `disabled` state updates its registration. Use a real `button`
+for actions or an `a` with an `href` for navigation.
+
+Projected content is a safe host, not a second menu:
+
+- **Row keys** (`ArrowUp`, `ArrowDown`, `Home`, `End`, `Enter`, `Space` and
+  printable-character typeahead) act only when the key comes from the panel
+  itself or from inside a registered `rvMenuItem` — including content nested
+  inside that row.
+- **Everything else stays with your control.** Typing in a projected `<input>`
+  never moves the active row and never takes focus.
+- **Dismiss keys act from anywhere in the panel.** `Escape` closes and returns
+  focus to the trigger. `Tab` / `Shift+Tab` close and step focus to the next
+  stop after the trigger, or the previous stop before it — focus is never
+  trapped and never dropped on `<body>`.
+- **A nested widget claims a key with `preventDefault()`.** The menu then does
+  nothing with that key, `Escape` and `Tab` included.
+
+After a pick the row disappears with the panel, so focus returns to the
+trigger when it was inside the panel at pick time. A pointer pick that never
+moved focus into the panel leaves focus where the browser put it.
+
+A single-choice group (languages, density, theme) uses `checked` + `radio`:
+
+```html
+<div rvMenuPanel>
+  <div role="group" aria-label="Language">
+    @for (lang of languages; track lang.id) {
+    <button rvMenuItem radio [id]="lang.id" [checked]="lang.id === current()">
+      {{ lang.label }}
+    </button>
+    }
+  </div>
+</div>
+```
+
+`role="group"` and `aria-label` are your markup — the menu only picks the row
+role. Switching the language itself is application work: no `@rivinia/i18n`
+import is required, and this recipe works with any i18n setup.
 
 `[items]` and projected `rvMenuItem` rows are alternative ways to populate a
 panel. Do not combine them: the component throws rather than silently ignore
@@ -184,10 +220,17 @@ spellings are both accepted.
 For projected rows, `rvMenuItem` also accepts:
 
 - `id` (required), `disabled` (defaults to `false`)
-- `checked: boolean | null` (defaults to `null`; a boolean uses
-  `menuitemcheckbox` semantics and sets `aria-checked`)
+- `checked: boolean | null` (defaults to `null`; a boolean sets
+  `aria-checked`)
+- `radio: boolean` (defaults to `false`; makes a checked row a radio)
 - `label: string | null` (optional explicit typeahead text; otherwise visible
   text is used)
+
+| `checked` | `radio` | Role               |
+| --------- | ------- | ------------------ |
+| `null`    | —       | `menuitem`         |
+| boolean   | `false` | `menuitemcheckbox` |
+| boolean   | `true`  | `menuitemradio`    |
 
 Disabled rows remain visible but cannot be activated. For a native disabled
 `button`, the directive also recognizes the element's native disabled state.

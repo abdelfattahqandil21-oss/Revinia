@@ -58,6 +58,14 @@ export class RiviniaMenuItem {
    */
   readonly checked = input<boolean | null>(null);
   /**
+   * Exclusive selection: with `checked` set, the row reads `menuitemradio`
+   * instead of `menuitemcheckbox`. The consumer owns exclusivity (checking one
+   * row unchecks the others) and the optional `role="group"` wrapper.
+   */
+  readonly radio = input(false, {
+    transform: (v: boolean | string) => v === '' || v === true,
+  });
+  /**
    * Optional explicit typeahead label. When set, typeahead matches on this
    * instead of the row's `textContent` (which can include icons, badges or
    * hints). Defaults to `null` → falls back to `textContent`. Mirrors
@@ -75,7 +83,8 @@ export class RiviniaMenuItem {
   }
 
   protected computedRole(): string {
-    return this.checked() === null ? 'menuitem' : 'menuitemcheckbox';
+    if (this.checked() === null) return 'menuitem';
+    return this.radio() ? 'menuitemradio' : 'menuitemcheckbox';
   }
 
   protected checkedAttr(): string | null {
@@ -480,34 +489,45 @@ export class RiviniaMenuComponent {
   }
 
   protected onPanelKey(event: KeyboardEvent): void {
+    // A projected control that claimed the key (defaultPrevented) keeps it,
+    // dismiss keys included; the menu only acts on what is left.
+    if (event.defaultPrevented) return;
     const c = this.controller();
+    // Dismiss keys act from anywhere inside the panel; row keys only from the
+    // panel itself or a registered row (see ownsRowKeys).
+    const rowKeys = this.ownsRowKeys(event);
     switch (event.key) {
       case 'Escape':
         event.preventDefault();
         this.doClose(true);
         break;
       case 'ArrowDown':
+        if (!rowKeys) return;
         event.preventDefault();
         c.activateNext();
         this.focusActive();
         break;
       case 'ArrowUp':
+        if (!rowKeys) return;
         event.preventDefault();
         c.activatePrevious();
         this.focusActive();
         break;
       case 'Home':
+        if (!rowKeys) return;
         event.preventDefault();
         c.activateFirst();
         this.focusActive();
         break;
       case 'End':
+        if (!rowKeys) return;
         event.preventDefault();
         c.activateLast();
         this.focusActive();
         break;
       case 'Enter':
       case ' ':
+        if (!rowKeys) return;
         event.preventDefault();
         this.pickFocused();
         break;
@@ -524,9 +544,37 @@ export class RiviniaMenuComponent {
         break;
       }
       default:
+        if (!this.ownsRowKeys(event)) return;
         this.onTypeahead(event);
         break;
     }
+  }
+
+  /**
+   * Whether a key press belongs to the menu's row list.
+   *
+   * The panel is a projection host: consumer markup can contain its own inputs
+   * and buttons, and their keydowns bubble here. Only the panel itself and rows
+   * that are in the registry own these keys — the `rvMenuItem` attribute alone
+   * is not enough, because a nested widget can carry its own `data-rv-id`.
+   * Membership is checked, not enabled-ness: a key pressed while a disabled row
+   * holds focus must still move on.
+   */
+  private ownsRowKeys(event: KeyboardEvent): boolean {
+    const target = event.target;
+    if (!(target instanceof Element)) return false;
+    const root = this.self.nativeElement.querySelector('.rv-menu-panel');
+    if (!root) return false;
+    if (target === root) return true;
+    const row = target.closest('[rvmenuitem]');
+    if (!row || !root.contains(row)) return false;
+    const id = row.getAttribute('data-rv-id');
+    return (
+      id !== null &&
+      this.controller()
+        .items()
+        .some((item) => item.id === id)
+    );
   }
 
   /**
@@ -568,7 +616,7 @@ export class RiviniaMenuComponent {
         .filter((i) => !i.disabled)
         .map((i) => i.id),
     );
-    const rows = [...root.querySelectorAll('[data-rv-id]')]
+    const rows = [...root.querySelectorAll('[rvmenuitem][data-rv-id]')]
       .map((el) => ({
         id: el.getAttribute('data-rv-id') ?? '',
         text: (el.getAttribute('data-rv-label') ?? el.textContent ?? '').trim().toLocaleLowerCase(),
@@ -593,7 +641,10 @@ export class RiviniaMenuComponent {
     // activate a disabled row (measured: all-disabled menu emitted `picked=one`).
     const item = c.items().find((i) => i.id === id);
     if (!item || item.disabled) return;
-    this.doClose(false);
+    // Evaluated before the close: the picked row is about to unmount, so if it
+    // held focus, hand it back to the trigger instead of <body>.
+    const inside = this.focusInsidePanel();
+    this.doClose(inside);
     this.picked.emit({ id });
   }
 
@@ -603,7 +654,8 @@ export class RiviniaMenuComponent {
    */
   pickItem(id: string): void {
     if (!this.controller().activate(id)) return;
-    this.doClose(false);
+    const inside = this.focusInsidePanel();
+    this.doClose(inside);
     this.picked.emit({ id });
   }
 
@@ -674,12 +726,19 @@ export class RiviniaMenuComponent {
     if (id === null) return;
     const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-menu-panel');
     if (!root) return;
-    const target = root.querySelector<HTMLElement>(`[data-rv-id="${CSS.escape(id)}"]`);
+    const target = root.querySelector<HTMLElement>(`[rvmenuitem][data-rv-id="${CSS.escape(id)}"]`);
     try {
       target?.focus({ preventScroll: true });
     } catch {
       // Focus is best-effort.
     }
+  }
+
+  /** Whether focus currently sits inside the panel (read before a close). */
+  private focusInsidePanel(): boolean {
+    const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-menu-panel');
+    const active = this.activeDocumentElement();
+    return !!root && !!active && root.contains(active);
   }
 
   private activeDocumentElement(): Element | null {

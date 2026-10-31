@@ -5,6 +5,42 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ## Prepared releases (unpublished)
 
+### @rivinia/menu 0.5.0
+
+The panel becomes a safe host for projected content. A language picker (or any
+consumer widget) can live inside `rv-menu-panel` without the menu stealing its
+keys, and the library gained the missing selection role it needed for it. Minor
+under the pre-1.0 rule: the keyboard contract gains rules, and `[radio]` is new.
+
+- **Projected content keeps its own keys.** Row navigation (`ArrowUp`,
+  `ArrowDown`, `Home`, `End`, `Enter`, `Space`, typeahead) only acts when the
+  key comes from the panel itself or from inside a registered `rvMenuItem` —
+  checked against the row registry, not just the attribute. Typing in a
+  projected `<input>` no longer moves the active row or pulls focus.
+- **A nested control claims a key with `preventDefault()`.** If anything
+  inside the panel already handled the key, the menu does nothing with it —
+  `Escape` and `Tab` included. No new API: the signal is the event itself.
+- **`Escape` and `Tab` act from anywhere in the panel.** `Escape` closes and
+  returns focus to the trigger; `Tab` / `Shift+Tab` close and step focus to the
+  next stop after the trigger, or the previous one before it — never trapped,
+  never dropped on `<body>`. Previously neither key was handled for projected
+  controls, so focus could leave an open panel that stayed mounted.
+- **A pick returns focus to the trigger.** The decision is taken at pick time:
+  if focus was inside the panel (a keyboard pick always is; a Chromium pointer
+  pick is, because the button takes focus on mousedown), close with the
+  existing focus-restoring path; otherwise leave focus alone. The picked row
+  used to unmount with focus still on it, which dropped focus to `<body>`.
+- **`[radio]` renders `menuitemradio`.** `checked` alone still means
+  `menuitemcheckbox`; `radio` makes the same row a `menuitemradio`, so a
+  single-choice group (languages, density, theme) is no longer announced as
+  multi-select. `role="group"` and `aria-label` stay consumer markup, and the
+  panel never invents a group of its own.
+- No change to `@rivinia/menu` headless semantics, the public controller, the
+  panel's CSS or its positioning. Proven by 59 unit tests and 66 Playwright
+  cases per engine (Chromium and Firefox, WebKit not runnable on this host)
+  over a new `/content` demo: a language picker with no `@rivinia/i18n` import,
+  where the page owns `dir`/`lang` and the menu only supplies rows.
+
 ### @rivinia/select 0.7.1 (prepared, not published)
 
 Two fixes to the multi trigger, both found in a browser and proved in a browser:

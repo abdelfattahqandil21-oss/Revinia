@@ -47,6 +47,62 @@ class DataMenuHarness {
   readonly picked: string[] = [];
 }
 
+/**
+ * Projected content: an input the consumer owns, plus a hook that lets a test
+ * decide which key that input claims for itself (`preventDefault()`).
+ */
+@Component({
+  imports: [RiviniaMenuComponent, RiviniaMenuItem],
+  template: `
+    <rv-menu [menu]="menu" menuLabel="Projected" (picked)="picked.push($event.id)">
+      <button rv-menu-trigger>Projected</button>
+      <div rv-menu-panel>
+        <input class="projected-input" type="text" (keydown)="onInputKey($event)" />
+        <div rvMenuItem id="first">
+          First <input class="row-input" (keydown)="onInputKey($event)" />
+        </div>
+        <button rvMenuItem id="second"><span class="nested">Second</span></button>
+      </div>
+    </rv-menu>
+  `,
+})
+class ProjectedMenuHarness {
+  readonly menu = new RiviniaMenu();
+  readonly picked: string[] = [];
+  /** The one key the projected control claims via `preventDefault()`. */
+  claim: string | null = null;
+
+  onInputKey(event: KeyboardEvent): void {
+    if (event.key === this.claim) event.preventDefault();
+  }
+}
+
+/**
+ * Selection roles on projected rows: a checked row is a checkbox by default
+ * and a radio when the consumer says the set is exclusive. The `role="group"`
+ * wrapper is consumer markup on purpose — the menu does not invent one.
+ */
+@Component({
+  imports: [RiviniaMenuComponent, RiviniaMenuItem],
+  template: `
+    <rv-menu [menu]="menu" menuLabel="Language" (picked)="picked.push($event.id)">
+      <button rv-menu-trigger>Language</button>
+      <div rv-menu-panel>
+        <span role="group" aria-label="Language">
+          <button rvMenuItem radio id="en" [checked]="true">English</button>
+          <button rvMenuItem radio id="ar" [checked]="false">العربية</button>
+        </span>
+        <button rvMenuItem id="strict" [checked]="true">Strict</button>
+        <button rvMenuItem id="plain">Plain</button>
+      </div>
+    </rv-menu>
+  `,
+})
+class RadioMenuHarness {
+  readonly menu = new RiviniaMenu();
+  readonly picked: string[] = [];
+}
+
 function key(target: Element, key: string): void {
   target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
 }
@@ -434,5 +490,239 @@ describe('RiviniaMenuComponent', () => {
     (again[1] as HTMLElement).click();
     expect(fixture.componentInstance.picked).toEqual(['logout']);
     expect(menu.open()).toBe(true);
+  });
+});
+
+/**
+ * The panel is a host for consumer content. The keyboard contract: a key aimed
+ * at a projected control belongs to that control; only a key aimed at the panel
+ * itself or a registered row belongs to the menu.
+ */
+describe('RiviniaMenuComponent — projected content', () => {
+  /** Pointer open: no row active, so the menu starts from a clean state. */
+  function open(fixture: ReturnType<typeof TestBed.createComponent<ProjectedMenuHarness>>): void {
+    fixture.detectChanges();
+    const trigger: HTMLElement = fixture.nativeElement.querySelector('[rv-menu-trigger]');
+    trigger.focus();
+    trigger.click();
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+  }
+
+  it('r1: typing in a projected input never reaches the menu typeahead', () => {
+    const fixture = TestBed.createComponent(ProjectedMenuHarness);
+    open(fixture);
+    const menu = fixture.componentInstance.menu;
+    expect(menu.open()).toBe(true);
+    expect(menu.activeId()).toBeNull();
+
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('.projected-input');
+    input.focus();
+    // "f" matches the "First" row: the old typeahead activated it and moved
+    // focus out of the field the user was typing in.
+    key(input, 'f');
+    expect(menu.activeId()).toBeNull();
+    expect(document.activeElement).toBe(input);
+  });
+
+  it('r2: row navigation and Enter from a projected control stay with that control', () => {
+    const fixture = TestBed.createComponent(ProjectedMenuHarness);
+    open(fixture);
+    const menu = fixture.componentInstance.menu;
+    const panel: HTMLElement = fixture.nativeElement.querySelector('.rv-menu-panel');
+    // The panel itself owns row keys: this is the documented entry path.
+    key(panel, 'ArrowDown');
+    expect(menu.activeId()).toBe('first');
+
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('.projected-input');
+    input.focus();
+    key(input, 'ArrowDown');
+    expect(menu.activeId()).toBe('first');
+    expect(document.activeElement).toBe(input);
+
+    key(input, 'Enter');
+    expect(fixture.componentInstance.picked).toEqual([]);
+    expect(menu.open()).toBe(true);
+    expect(document.activeElement).toBe(input);
+  });
+
+  it('r3: a projected control that claims Escape or Tab keeps the menu open', () => {
+    const fixture = TestBed.createComponent(ProjectedMenuHarness);
+    open(fixture);
+    const menu = fixture.componentInstance.menu;
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('.projected-input');
+    input.focus();
+
+    fixture.componentInstance.claim = 'Escape';
+    key(input, 'Escape');
+    expect(menu.open()).toBe(true);
+    expect(document.activeElement).toBe(input);
+
+    fixture.componentInstance.claim = 'Tab';
+    key(input, 'Tab');
+    expect(menu.open()).toBe(true);
+
+    // Unclaimed, the same control hands the key back to the menu.
+    fixture.componentInstance.claim = null;
+    key(input, 'Escape');
+    expect(menu.open()).toBe(false);
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('[rv-menu-trigger]'));
+  });
+
+  it('r9: a nested control claiming ArrowDown keeps the active row', () => {
+    const fixture = TestBed.createComponent(ProjectedMenuHarness);
+    open(fixture);
+    const menu = fixture.componentInstance.menu;
+    const panel: HTMLElement = fixture.nativeElement.querySelector('.rv-menu-panel');
+    key(panel, 'ArrowDown');
+    expect(menu.activeId()).toBe('first');
+
+    // The target sits inside a registered row, so the row would own the key —
+    // unless the nested control claims it first.
+    const nested: HTMLInputElement = fixture.nativeElement.querySelector('.row-input');
+    nested.focus();
+    fixture.componentInstance.claim = 'ArrowDown';
+    key(nested, 'ArrowDown');
+    expect(menu.activeId()).toBe('first');
+    expect(document.activeElement).toBe(nested);
+
+    fixture.componentInstance.claim = null;
+    key(nested, 'ArrowDown');
+    expect(menu.activeId()).toBe('second');
+  });
+
+  it('r4: picking a row from the keyboard returns focus to the trigger', () => {
+    const fixture = TestBed.createComponent(ProjectedMenuHarness);
+    open(fixture);
+    const menu = fixture.componentInstance.menu;
+    const panel: HTMLElement = fixture.nativeElement.querySelector('.rv-menu-panel');
+    key(panel, 'ArrowDown');
+    const row: HTMLElement = fixture.nativeElement.querySelector('[data-rv-id="first"]');
+    expect(document.activeElement).toBe(row);
+
+    key(row, 'Enter');
+    expect(fixture.componentInstance.picked).toEqual(['first']);
+    expect(menu.open()).toBe(false);
+    // The row is about to unmount: focus must not fall to <body>.
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('[rv-menu-trigger]'));
+    fixture.destroy();
+    expect(document.activeElement).not.toBe(document.body);
+  });
+
+  it('r5: a pointer pick only restores focus when it was inside the panel', () => {
+    const fixture = TestBed.createComponent(ProjectedMenuHarness);
+    open(fixture);
+    const menu = fixture.componentInstance.menu;
+    const trigger: HTMLElement = fixture.nativeElement.querySelector('[rv-menu-trigger]');
+    const row: HTMLElement = fixture.nativeElement.querySelector('[data-rv-id="second"]');
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    outside.focus();
+
+    (row as HTMLButtonElement).click();
+    expect(fixture.componentInstance.picked).toEqual(['second']);
+    expect(menu.open()).toBe(false);
+    // Focus was never in the panel, so the menu must leave it alone.
+    expect(document.activeElement).toBe(outside);
+
+    outside.remove();
+    // With focus on the trigger (pointer-open path) a click pick is a no-op
+    // for focus: the trigger already has it.
+    fixture.componentInstance.picked.length = 0;
+    open(fixture);
+    expect(menu.open()).toBe(true);
+    expect(document.activeElement).toBe(trigger);
+    (fixture.nativeElement.querySelector('[data-rv-id="first"]') as HTMLElement).click();
+    expect(fixture.componentInstance.picked).toEqual(['first']);
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('r5b: a pick with focus inside the panel re-seats it on the trigger', () => {
+    const fixture = TestBed.createComponent(ProjectedMenuHarness);
+    open(fixture);
+    const row: HTMLElement = fixture.nativeElement.querySelector('[data-rv-id="second"]');
+    // A real browser focuses a button on mousedown; jsdom does not, so the
+    // pick path is emulated by focusing the row before the click.
+    row.focus();
+    row.click();
+    expect(fixture.componentInstance.picked).toEqual(['second']);
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('[rv-menu-trigger]'));
+    fixture.destroy();
+    expect(document.activeElement).not.toBe(document.body);
+  });
+
+  it('r6: a projected element reusing data-rv-id is not a row', () => {
+    const fixture = TestBed.createComponent(ProjectedMenuHarness);
+    open(fixture);
+    const menu = fixture.componentInstance.menu;
+    const panel: HTMLElement = fixture.nativeElement.querySelector('.rv-menu-panel');
+    // Same identity as a registered row, but not a row: the old selectors
+    // matched it for both focus and typeahead.
+    const decoy = document.createElement('div');
+    decoy.setAttribute('data-rv-id', 'first');
+    decoy.textContent = 'apple';
+    panel.insertBefore(decoy, panel.firstChild);
+
+    key(panel, 'ArrowDown');
+    expect(menu.activeId()).toBe('first');
+    expect(document.activeElement).toBe(
+      fixture.nativeElement.querySelector('[rvmenuitem][data-rv-id="first"]'),
+    );
+
+    // Typeahead only sees registry-backed rows: nothing starts with "a".
+    key(panel, 'a');
+    expect(menu.activeId()).toBe('first');
+  });
+
+  it('r8: keys from content nested inside a registered row still navigate', () => {
+    const fixture = TestBed.createComponent(ProjectedMenuHarness);
+    open(fixture);
+    const menu = fixture.componentInstance.menu;
+    const panel: HTMLElement = fixture.nativeElement.querySelector('.rv-menu-panel');
+    key(panel, 'ArrowDown');
+    expect(menu.activeId()).toBe('first');
+
+    // The event target is the inner span, not the row: the row still owns it.
+    const nested: HTMLElement = fixture.nativeElement.querySelector('.nested');
+    key(nested, 'ArrowDown');
+    expect(menu.activeId()).toBe('second');
+    key(nested, 'Enter');
+    expect(fixture.componentInstance.picked).toEqual(['second']);
+  });
+
+  it('r7: [radio] renders a checked row as menuitemradio', () => {
+    const fixture = TestBed.createComponent(RadioMenuHarness);
+    fixture.detectChanges();
+    const menu = fixture.componentInstance.menu;
+    const trigger: HTMLElement = fixture.nativeElement.querySelector('[rv-menu-trigger]');
+    trigger.click();
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const row = (id: string): HTMLElement =>
+      fixture.nativeElement.querySelector(`[data-rv-id="${id}"]`);
+    expect(row('en').getAttribute('role')).toBe('menuitemradio');
+    expect(row('ar').getAttribute('role')).toBe('menuitemradio');
+    expect(row('en').getAttribute('aria-checked')).toBe('true');
+    expect(row('ar').getAttribute('aria-checked')).toBe('false');
+    // Unchanged without [radio].
+    expect(row('strict').getAttribute('role')).toBe('menuitemcheckbox');
+    expect(row('plain').getAttribute('role')).toBe('menuitem');
+    expect(row('plain').hasAttribute('aria-checked')).toBe(false);
+
+    // The panel and the consumer's group keep their own roles.
+    const panel: HTMLElement = fixture.nativeElement.querySelector('.rv-menu-panel');
+    expect(panel.getAttribute('role')).toBe('menu');
+    expect(fixture.nativeElement.querySelector('[role="group"]')).not.toBeNull();
+
+    // Radios are ordinary rows for navigation and picking.
+    key(panel, 'ArrowDown');
+    expect(menu.activeId()).toBe('en');
+    key(panel, 'ArrowDown');
+    expect(menu.activeId()).toBe('ar');
+    key(panel, 'Enter');
+    expect(fixture.componentInstance.picked).toEqual(['ar']);
   });
 });
