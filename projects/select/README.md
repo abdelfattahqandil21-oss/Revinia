@@ -1045,11 +1045,15 @@ selected tick. Each read is `var(--rv-accent, <its previous value>)`, so a page
 that never imports the theme looks exactly as it did before — unless you set
 `--rv-select-focus-ring`, which still wins over all of it.
 
+The tick has two fallbacks because it had two colours: `--rv-select-popup-muted`
+on an ordinary row, and the row's own ink when that row is the active one.
+
 In forced-colours mode (`@media (forced-colors: active)`, Windows High
 Contrast) the panel and rows switch to system colours: `Canvas`/`CanvasText`
 for the surface, `Highlight`/`HighlightText` for the active row — which would
 otherwise be flattened to invisible — and `GrayText` at full opacity for a
-disabled row.
+disabled row. The active row's focus ring becomes `CanvasText` (a `Highlight`
+ring on a `Highlight` band is invisible), and the tick follows its row.
 
 ### Which styling stack?
 
@@ -1306,13 +1310,15 @@ which accessibility trees — is recorded in
 - **WebKit** is verified on this machine (27.2) after installing three system
   libraries Playwright's bundle expects — `libavif16`, `libgav1-1`, `libyuv0`.
   Without root, `apt-get download` plus `dpkg -x` and an `LD_LIBRARY_PATH` (or
-  a symlink into `minibrowser-gtk/sys/lib`) is enough. `npx playwright
-install-deps webkit` does the same with root.
+  a symlink into `minibrowser-gtk/sys/lib`) is enough; with root, run
+  `npx playwright install-deps webkit`.
 - **Safari proper is not tested** — WebKit is the engine, not the browser
   chrome (Safari's own top-layer and anchor support can lag the engine).
 - **No Tailwind project** in the test suite.
-- **No forced-colors / high-contrast** handling — supply your own
-  `--rv-select-*` values under `@media (forced-colors: active)`.
+- **Forced colors** ships system-colour defaults for the panel, rows, trigger
+  and search (see [Accent and forced colors](#accent-and-forced-colors)). The
+  UA forces author colours in that mode, so a brand palette is intentionally
+  not applied; overriding a `--rv-select-*` token there does not bring it back.
 - **No explicit `ControlValueAccessor` implementation.** In Angular 22,
   `rv-select` implements `FormValueControl`; Signal Forms use `[formField]`,
   and Reactive Forms and template-driven forms are covered by the package's

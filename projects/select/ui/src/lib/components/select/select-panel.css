@@ -474,7 +474,4 @@ rv-select[data-variant='premium'] .rv-select-skeleton > i:nth-child(3) {
   rv-select[data-variant='premium'] .rv-select-search:focus {
     outline-color: Highlight;
   }
-  .rv-select-check {
-    color: CanvasText;
-  }
 }

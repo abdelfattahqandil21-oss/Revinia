@@ -71,17 +71,27 @@ describe('select theme wiring', () => {
 
   it('reads the accent only through a fallback, never bare', () => {
     expect(panel + popup).not.toMatch(/var\(--rv-accent\)/);
-    // Eight reads, one per place D87 names: the premium trigger ring, the
-    // simple and premium search rings, the check mark, both row rings, and
-    // both active-row tints.    expect(accentReads(panel) + accentReads(popup)).toBe(8);
+    // Nine reads, one per place D87 names: three panel rings (premium trigger,
+    // simple search, premium search), two row rings, two active-row tints, and
+    // the tick on and off the active row.
+    expect(accentReads(panel) + accentReads(popup)).toBe(9);
   });
 
   it('paints the selected check mark with the accent', () => {
     // The generic row-icon rule paints every row svg at (0,2,1), so the tick's
-    // rule names the row and the element to outrank it, and sits below the
-    // active-row `color: inherit` it ties with.
+    // rules name the row and the element to outrank it, and sit below the
+    // active-row `color: inherit` they tie with. Each keeps the colour the tick
+    // had before as its fallback: muted off the active row, the row's ink on it.
     expect(
       flat(block(popup, '.rv-select-popup-panel [rvselectpopupitem] svg.rv-select-check {')),
+    ).toContain('color: var(--rv-accent, var(--rv-select-popup-muted));');
+    expect(
+      flat(
+        block(
+          popup,
+          ".rv-select-popup-panel [rvselectpopupitem][data-active='true'] svg.rv-select-check {",
+        ),
+      ),
     ).toContain('color: var(--rv-accent, currentColor);');
   });
 
@@ -124,9 +134,21 @@ describe('select theme wiring', () => {
     // forced defaults have to name that selector too or a premium panel keeps
     // its shadow and its author background.
     expect(forced).toContain("rv-select-popup[data-variant='premium'] .rv-select-popup-panel");
+    // The tick is repainted here because it carries a (0,3,1)/(0,4,1) accent
+    // rule; without these two the UA forces the svg to a colour that measured
+    // white on white. The band is Highlight, so the ring must not be too.
+    expect(forced).toContain(
+      '.rv-select-popup-panel [rvselectpopupitem] svg.rv-select-check { color: CanvasText; }',
+    );
+    expect(forced).toContain(
+      ".rv-select-popup-panel [rvselectpopupitem][data-active='true'] svg.rv-select-check { color: HighlightText; }",
+    );
+    expect(forced).toContain(
+      ".rv-select-popup-panel [rvselectpopupitem][data-active='true']:focus-visible { outline-color: CanvasText; }",
+    );
   });
 
-  it('gives the trigger, search and check mark a forced-colors default', () => {
+  it('gives the trigger and search a forced-colors default', () => {
     const forced = flat(block(panel, '@media (forced-colors: active) {'));
 
     expect(forced).toMatch(/background: Canvas\b/);
