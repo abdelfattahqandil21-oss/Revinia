@@ -124,6 +124,9 @@
         Live region, rendered empty before it holds text: a `role="status"`
         created together with its content is not announced. Filtering to zero
         rows removes the list, so this message is the only signal left.
+
+        Known limit: a panel opened with zero options builds this region and
+        its text in the same frame, so that first appearance is still silent.
       -->
       <div [class.rv-select-empty]="emptyVisible()" role="status">
         @if (emptyVisible()) {
