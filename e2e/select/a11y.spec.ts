@@ -83,7 +83,13 @@ test.describe('select: structure', () => {
         (child) => child.getAttribute('role') ?? child.tagName.toLowerCase(),
       ),
     );
-    const allowed = new Set(['menuitem', 'menuitemradio', 'menuitemcheckbox', 'group', 'separator']);
+    const allowed = new Set([
+      'menuitem',
+      'menuitemradio',
+      'menuitemcheckbox',
+      'group',
+      'separator',
+    ]);
     expect(innerRoles.filter((role) => !allowed.has(role))).toEqual([]);
     expect(innerRoles).toContain('menuitemradio');
 
