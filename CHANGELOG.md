@@ -5,6 +5,59 @@ A change is listed the moment it lands on `main`, not when npm is published.
 
 ## Prepared releases (unpublished)
 
+### @rivinia/select 0.7.1 (prepared, not published)
+
+Two fixes to the multi trigger, both found in a browser and proved in a browser:
+the trigger no longer grows with every pick, and the picks it cannot show are
+still announced. No public API changed — no new input, token or export — so this
+is a patch.
+
+- **Fixed: the multi trigger grew with every pick.** `--rv-select-width` was a
+  `min-width` floor on an `inline-block` host whose value was `nowrap`, so
+  content drove the width: eight picks took the control from 272px to 637.3px
+  inside a 544px cell, and the open panel stayed at 272px while the trigger grew
+  away from it. The token is now the control's **reference width** —
+  `width: min(var(--rv-select-width, 14rem), 100%)`, `max-width: 100%`,
+  `min-width: 0` — and the trigger fills it, so the panel keeps matching it.
+  A flex row wider than the reference no longer shifts its siblings; a narrower
+  container shrinks the control instead of overflowing it (proved at 12rem,
+  96px and `--rv-select-width: 100%`).
+- **Fixed: the multi trigger showed one label and hid the rest from everyone.**
+  Multi mode now shows the first picked label plus a `+{count-1}` pill. The pill
+  is `aria-hidden`, LTR-isolated with `<bdi dir="ltr">` (so `+7` never reads
+  right-to-left), tabular and non-shrinking, and does not change the trigger's
+  height. The full list — in pick order — is exposed as the trigger's
+  **description** through `aria-describedby` and a clipped sibling, so a screen
+  reader hears every selection without the visible name being repeated.
+  Removing the first pick promotes the next label; clearing every pick removes
+  the pill, the hidden element and the `aria-describedby` attribute.
+- **The description follows the page language, live.** It is formatted with
+  `Intl.ListFormat` in `documentElement.lang`, so `en` says
+  "TypeScript, Angular, and Signals" and `ar` says "TypeScript وAngular
+  وSignals". One `MutationObserver` per instance, created after the first
+  browser render and disconnected on destroy, re-resolves the locale when
+  `<html lang>` changes — no reload, no SSR observer. Invalid locales fall back
+  to `en`, a missing `Intl.ListFormat` falls back to `join(', ')`, and the
+  formatter is memoised per locale, so returning to a locale reuses the same
+  instance. The helpers are internal: absent from `public-api.ts`, from the
+  package `exports` map and from the FESM's exported surface, and the FESM's
+  import list is unchanged.
+- **Proven by** 135 unit tests in 17 files (24 new in
+  `select-multi-summary.spec.ts`; `select-panel` and `panel-metrics` extended),
+  and 54 real-browser tests — 18 each in Chromium, Firefox and WebKit 27.2 —
+  from an SSR consumer built on the packed tarball. That matrix includes the
+  hydration case: the server HTML carries the English description with
+  `lang="en"`, the client sets `ar` in `main.ts` before bootstrap, hydration
+  raises no `NG05xx`, and the description ends in Arabic. Also checked: the
+  `@rivinia/i18n@0.8.0` picker host (inline-block, `min-inline-size: 14rem`)
+  still gives the composed select 224px and one line per row, so removing the
+  select's own floor does not regress the published picker.
+- **Sizes and artifacts.** Core FESM byte-identical to 0.7.0
+  (`rivinia-select.mjs`, 3,711 B raw / 1,279 B gzip / 1,121 B brotli); `/ui`
+  +4,523 B raw / +1,063 B gzip / +803 B brotli (81,151 → 85,674 raw). Tarball
+  70,904 B, 9 files, sha512 `bdc2ebd3…`. Version bump, tag, publish and push are
+  still pending an explicit go-ahead.
+
 ### @rivinia/i18n 0.8.0 (published 2026-10-31)
 
 The language picker: a third entry point, `@rivinia/i18n/select`, composed from
