@@ -9,9 +9,10 @@
  *
  * Fails (exit 1, one FAIL line per problem) when any of these is false:
  *  1. `README.md` and `CHANGELOG.md` are in the packed file list;
- *  2. `repository` exists, has a url and points at `projects/<pkg>`;
+ *  2. `repository` is an object with a url and `directory = projects/<pkg>`;
  *  3. `homepage` and `bugs.url` exist;
- *  4. `engines.node` exists (documented as "same as Angular 22");
+ *  4. `engines.node` exists and, when `@angular/core` is installed, equals its
+ *     `engines.node` exactly ("same as Angular 22");
  *  5. every `exports` target is in the packed file list.
  *
  * Usage: node scripts/check-pack.mjs [pkg ... | directory ...]
@@ -49,10 +50,15 @@ export function packDryRun(dir) {
 }
 
 /**
- * @param {{ dir: string, manifest: any, files: string[] }} input
+ * @param {{
+ *   dir: string,
+ *   manifest: any,
+ *   files: string[],
+ *   expectedEngines?: string | null,
+ * }} input
  * @returns {{ ok: boolean, problems: string[], files: string[] }}
  */
-export function auditPackage({ dir, manifest, files }) {
+export function auditPackage({ dir, manifest, files, expectedEngines = null }) {
   const problems = [];
   const pkg = basename(dir);
   const packed = new Set(files);
@@ -69,7 +75,11 @@ export function auditPackage({ dir, manifest, files }) {
   const repositoryUrl = typeof repository === 'string' ? repository : repository?.url;
   if (typeof repositoryUrl !== 'string' || repositoryUrl.length === 0) {
     problems.push('package.json has no repository.url');
-  } else if (typeof repository === 'object' && repository.directory !== `projects/${pkg}`) {
+  } else if (typeof repository !== 'object' || repository === null) {
+    // npm accepts the string form, but it has no `directory`, so the registry
+    // links to the repo root instead of the package and no build notices.
+    problems.push('repository must be an object with a `directory`, not a bare string');
+  } else if (repository.directory !== `projects/${pkg}`) {
     problems.push(
       `repository.directory is ${JSON.stringify(repository.directory)}, expected "projects/${pkg}"`,
     );
@@ -86,6 +96,12 @@ export function auditPackage({ dir, manifest, files }) {
 
   if (typeof manifest.engines?.node !== 'string' || manifest.engines.node.length === 0) {
     problems.push('package.json has no engines.node');
+  } else if (typeof expectedEngines === 'string' && manifest.engines.node !== expectedEngines) {
+    // Presence alone lets a loosened range through; the docs promise the exact
+    // range Angular 22 refuses to run below.
+    problems.push(
+      `engines.node is ${JSON.stringify(manifest.engines.node)}, expected ${JSON.stringify(expectedEngines)} (same as @angular/core)`,
+    );
   }
 
   for (const target of collectTargets(manifest.exports ?? {})) {
@@ -98,17 +114,32 @@ export function auditPackage({ dir, manifest, files }) {
 
 /**
  * @param {string} dir a built package directory
+ * @param {{ expectedEngines?: string | null }} [options]
  * @returns {{ ok: boolean, problems: string[], files: string[], size: number }}
  */
-export function checkPackage(dir) {
+export function checkPackage(dir, { expectedEngines = null } = {}) {
   const manifestPath = join(dir, 'package.json');
   if (!existsSync(manifestPath)) {
     return { ok: false, problems: [`${manifestPath} does not exist`], files: [], size: 0 };
   }
   const manifest = readJson(manifestPath);
   const packed = packDryRun(dir);
-  const report = auditPackage({ dir, manifest, files: packed.files });
+  const report = auditPackage({ dir, manifest, files: packed.files, expectedEngines });
   return { ...report, size: packed.size };
+}
+
+/**
+ * The `engines.node` every package must mirror: whatever the installed
+ * `@angular/core` declares. Absent install → null, so the CLI reports that the
+ * comparison was skipped instead of failing for an unrelated reason.
+ *
+ * @returns {string | null}
+ */
+function angularEngines() {
+  const path = join(ROOT, 'node_modules', '@angular', 'core', 'package.json');
+  if (!existsSync(path)) return null;
+  const engines = readJson(path).engines?.node;
+  return typeof engines === 'string' ? engines : null;
 }
 
 function readJson(path) {
@@ -141,10 +172,16 @@ if (entry === fileURLToPath(import.meta.url)) {
       : PACKAGES.map((pkg) => join(ROOT, 'dist', pkg));
 
   let failures = 0;
+  const expectedEngines = angularEngines();
+  if (expectedEngines === null) {
+    console.log(
+      'check:pack — @angular/core is not installed; engines.node was only checked for presence',
+    );
+  }
   for (const dir of targets) {
     let report;
     try {
-      report = checkPackage(dir);
+      report = checkPackage(dir, { expectedEngines });
     } catch (error) {
       console.error(`FAIL ${dir}: ${error.message}`);
       failures++;

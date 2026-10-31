@@ -51,11 +51,17 @@ const FILES = [
   'types/rivinia-select.d.ts',
 ];
 
-function audit(overrides: { manifest?: unknown; files?: string[]; dir?: string } = {}) {
+function audit(overrides: {
+  manifest?: unknown;
+  files?: string[];
+  dir?: string;
+  expectedEngines?: string | null;
+} = {}) {
   return auditPackage({
     dir: overrides.dir ?? join('/repo', 'dist', 'select'),
     manifest: 'manifest' in overrides ? overrides.manifest : MANIFEST,
     files: overrides.files ?? FILES,
+    expectedEngines: overrides.expectedEngines,
   });
 }
 
@@ -91,6 +97,15 @@ describe('auditPackage', () => {
     expect(report.problems.join('\n')).toMatch(/repository\.directory is "projects\/menu"/);
   });
 
+  // npm accepts the string form, but it carries no `directory`, so a tarball
+  // built from it links to the monorepo root instead of the package page.
+  it('fails when repository is written as a bare string', () => {
+    const report = audit({
+      manifest: { ...MANIFEST, repository: 'git+https://github.com/o/r.git' },
+    });
+    expect(report.problems.join('\n')).toMatch(/repository.*directory/);
+  });
+
   it('fails when homepage or bugs is missing', () => {
     const { homepage, bugs, ...rest } = MANIFEST;
     expect(audit({ manifest: rest }).problems.join('\n')).toMatch(/homepage/);
@@ -100,6 +115,19 @@ describe('auditPackage', () => {
   it('fails when engines.node is missing', () => {
     const { engines, ...rest } = MANIFEST;
     expect(audit({ manifest: rest }).problems.join('\n')).toMatch(/engines\.node/);
+  });
+
+  // Presence alone lets a loosened range through, while RELEASE-1.0.md says
+  // `engines.node` mirrors Angular 22 exactly. Compare when told what to expect.
+  it('fails when engines.node does not mirror @angular/core', () => {
+    const report = audit({ expectedEngines: '^22.22.3 || ^24.15.0 || >=26.0.0' });
+    expect(report.problems).toEqual([]);
+
+    const loosened = audit({
+      manifest: { ...MANIFEST, engines: { node: '>=18' } },
+      expectedEngines: '^22.22.3 || ^24.15.0 || >=26.0.0',
+    });
+    expect(loosened.problems.join('\n')).toMatch(/engines\.node is ">=18"/);
   });
 
   it('fails when an export target is not in the tarball', () => {

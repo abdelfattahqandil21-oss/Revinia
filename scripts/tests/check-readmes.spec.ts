@@ -63,6 +63,31 @@ describe('version claims', () => {
     const report = readme('Requires Angular `^22.0.0`; built with TypeScript 6.0.3.\n');
     expect(report.problems).toEqual([]);
   });
+
+  // The 1.0 rc steps ship `1.0.0-rc.1`, so a pattern that stops at the patch
+  // number would fail an ACCURATE README and pass a stale one.
+  const prerelease = (text: string) =>
+    checkReadme({
+      pkg: 'theme',
+      text,
+      manifest: { name: '@rivinia/theme', version: '1.0.0-rc.1' },
+      allowOverBudget: true,
+    });
+
+  it('accepts a prerelease version line that matches the manifest', () => {
+    expect(prerelease('- Package version: **1.0.0-rc.1**\n').problems).toEqual([]);
+  });
+
+  it('accepts the shields double-hyphen form of a prerelease', () => {
+    const text =
+      '[![v](https://img.shields.io/badge/version-1.0.0--rc.1-blue)](https://example.test)\n';
+    expect(prerelease(text).problems).toEqual([]);
+  });
+
+  it('fails when a prerelease claim disagrees with the manifest', () => {
+    const report = prerelease('- Package version: **1.0.0-rc.2**\n');
+    expect(report.problems.join('\n')).toMatch(/1\.0\.0-rc\.2/);
+  });
 });
 
 describe('link report', () => {

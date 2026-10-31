@@ -37,10 +37,38 @@ export const ALLOW_OVER_BUDGET = Object.freeze({
   i18n: true,
 });
 
+/**
+ * A claim is the package's own version, prerelease suffix included: the rc
+ * steps of the 1.0 order legitimately read `1.0.0-rc.1`, and a pattern that
+ * stopped at the patch number would reject that accurate line while accepting
+ * a stale `1.0.0`.
+ */
 const VERSION_CLAIMS = [
-  /package version\s*:?\s*(?:\*\*)?\s*v?(\d+\.\d+\.\d+)/gi,
-  /img\.shields\.io\/badge\/(?:npm|version|v)-(\d+\.\d+\.\d+)/gi,
+  /package version\s*:?\s*(?:\*\*)?\s*v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)/gi,
 ];
+
+/**
+ * Shields badge messages: `<label>-<message>-<color>`, with `-` inside the
+ * message written as `--` (`version-1.0.0--rc.1-blue`). The trailing color is
+ * arbitrary text, so the message is taken as everything after the label minus
+ * the final token when that token looks like a color.
+ *
+ * @param {string} text
+ * @returns {string[]} claimed versions, already unescaped
+ */
+function badgeClaims(text) {
+  const claims = [];
+  for (const match of text.matchAll(/img\.shields\.io\/badge\/(?:npm|version|v)-([^\s)"'?#]+)/gi)) {
+    const tokens = match[1].replace(/\.svg$/i, '').split('-');
+    const last = tokens[tokens.length - 1];
+    if (tokens.length > 1 && (/^[a-z]+$/i.test(last) || /^[0-9a-f]{6}$/i.test(last))) tokens.pop();
+    claims.push(tokens.join('-').replace(/--/g, '-'));
+  }
+  return claims;
+}
+
+/** shields renders `-` as `--`; undo it so the claim compares as semver. */
+const normaliseClaim = (claim) => claim.replace(/--/g, '-');
 
 const IGNORED_SCHEMES = /^(?:https?:|mailto:|tel:|#)/i;
 
@@ -68,12 +96,20 @@ export function checkReadme({ pkg, text, manifest, allowOverBudget = false, file
   for (const pattern of VERSION_CLAIMS) {
     pattern.lastIndex = 0;
     for (const match of text.matchAll(pattern)) {
-      const claimed = match[1];
+      const claimed = normaliseClaim(match[1]);
       if (claimed !== manifest.version) {
         problems.push(
           `${pkg}/README.md claims version ${claimed}, package.json has ${manifest.version}`,
         );
       }
+    }
+  }
+
+  for (const claimed of badgeClaims(text)) {
+    if (claimed !== manifest.version) {
+      problems.push(
+        `${pkg}/README.md badge claims version ${claimed}, package.json has ${manifest.version}`,
+      );
     }
   }
 
