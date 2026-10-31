@@ -48,6 +48,13 @@
   --rv-fg: var(--bs-body-color, #f2f2f2);
   --rv-muted: var(--bs-secondary-color, #a1a1aa);
   --rv-border: var(--bs-border-color, #3f3f46);
+  /* Bootstrap keeps these the same in both themes, so the variable reads the
+     same value either way; the fallback matters when Bootstrap is absent. */
+  --rv-accent: var(--bs-primary, #8b8bf0);
+  --rv-danger: var(--bs-danger, #f87171);
+  --rv-ok: var(--bs-success, #4ade80);
+  --rv-info: var(--bs-info, #60a5fa);
+  --rv-warning: var(--bs-warning, #fbbf24);
   /* Elevation: the light alpha of black vanishes on a dark surface. */
   --rv-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
 }
