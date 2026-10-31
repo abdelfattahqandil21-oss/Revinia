@@ -28,6 +28,9 @@ component ecosystem's colours, shapes and type.
 - **Framework-neutral.** Plain CSS, Tailwind v4, Bootstrap 5.3, Sass and Less
   all work, because the components read CSS custom properties and every one of
   those stacks can produce or consume them.
+- **Light and dark out of the box.** The OS preference is honoured, a
+  `data-rv-theme` attribute overrides it either way, and `color-scheme` follows
+  so form controls and scrollbars match.
 - **Your rules always win.** The defaults live inside `@layer rivinia-theme`,
   and unlayered declarations beat layered ones — so your `:root` mapping wins
   wherever it appears, with no import-ordering to get wrong.
@@ -69,29 +72,35 @@ bun add @rivinia/theme
   --rv-border: #e0e0e0;
 }
 
-[data-theme='dark'] {
+[data-rv-theme='dark'] {
   --rv-bg: #161616;
   --rv-fg: #f2f2f2;
-  --rv-border: #333333;
+  --rv-border: #3f3f46;
 }
 ```
 
 ## The tokens
 
-| Token          | Paints             | Default                       |
-| -------------- | ------------------ | ----------------------------- |
-| `--rv-bg`      | surface background | `#ffffff`                     |
-| `--rv-fg`      | text               | `#111111`                     |
-| `--rv-muted`   | secondary text     | `#555555`                     |
-| `--rv-border`  | borders            | `#e0e0e0`                     |
-| `--rv-radius`  | corner radius      | `10px`                        |
-| `--rv-shadow`  | elevation          | `0 16px 48px rgba(0,0,0,.22)` |
-| `--rv-font`    | font stack         | system stack                  |
-| `--rv-accent`  | brand / primary    | `#5b5bd6`                     |
-| `--rv-danger`  | destructive        | `#dc2626`                     |
-| `--rv-ok`      | success            | `#16a34a`                     |
-| `--rv-info`    | informational      | `#2563eb`                     |
-| `--rv-warning` | caution            | `#d97706`                     |
+Every colour ships in two schemes.
+
+| Token          | Paints             | Light                         | Dark                         |
+| -------------- | ------------------ | ----------------------------- | ---------------------------- |
+| `--rv-bg`      | surface background | `#ffffff`                     | `#161616`                    |
+| `--rv-fg`      | text               | `#111111`                     | `#f2f2f2`                    |
+| `--rv-muted`   | secondary text     | `#555555`                     | `#a1a1aa`                    |
+| `--rv-border`  | borders            | `#e0e0e0`                     | `#3f3f46`                    |
+| `--rv-radius`  | corner radius      | `10px`                        | same                         |
+| `--rv-shadow`  | elevation          | `0 16px 48px rgba(0,0,0,.22)` | `0 16px 48px rgba(0,0,0,.6)` |
+| `--rv-font`    | font stack         | system stack                  | same                         |
+| `--rv-accent`  | brand / primary    | `#5b5bd6`                     | `#8b8bf0`                    |
+| `--rv-danger`  | destructive        | `#dc2626`                     | `#f87171`                    |
+| `--rv-ok`      | success            | `#16a34a`                     | `#4ade80`                    |
+| `--rv-info`    | informational      | `#2563eb`                     | `#60a5fa`                    |
+| `--rv-warning` | caution            | `#d97706`                     | `#fbbf24`                    |
+
+These twelve names are the public contract: they are what every Rivinia
+component reads, and what you are meant to set. Renaming one is a breaking
+change; adding one is not.
 
 Each package also owns tokens of its own — `--rv-select-bg`,
 `--rv-menu-bg`, `--rv-modal-bg`, `--rv-toast-bg` — and they resolve as:
@@ -113,6 +122,73 @@ root value for that element's subtree, so `--rv-bg` set inside a component
 stylesheet changes that component only and stops any page-level override from
 reaching it. Set `--rv-*` on a subtree only when that scoped override is what
 you mean.
+
+## Dark mode
+
+The dark values apply from **two** places, and they are kept identical:
+
+```css
+/* 1. the OS setting, unless the page opts out */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-rv-theme='light']) {
+    --rv-bg: #161616; /* … */
+  }
+}
+
+/* 2. an explicit switch that beats a light OS setting */
+:root[data-rv-theme='dark'] {
+  --rv-bg: #161616; /* … */
+}
+```
+
+| You want                 | Do this                                |
+| ------------------------ | -------------------------------------- |
+| Follow the OS            | nothing                                |
+| Always light             | `<html data-rv-theme="light">`         |
+| Always dark              | `<html data-rv-theme="dark">`          |
+| A dark section in a page | `data-rv-theme="dark"` on that subtree |
+
+Both blocks also set `color-scheme`, so form controls, scrollbars and the
+canvas follow the palette instead of staying light under a dark surface. If you
+override the dark values yourself, set `color-scheme: dark` in the same rule.
+
+**Adapters.** The Tailwind adapter needs nothing: its utilities are `inline`
+aliases of `--rv-*`, so they follow the switch. The Bootstrap adapter maps both
+schemes from `--bs-*` and sets `color-scheme` itself — its rules are unlayered
+so that Bootstrap stays authoritative even when the OS preference says dark.
+
+`pnpm check:theme-dark` proves all of this in Chromium and Firefox: seven cases
+across both engines, reading the computed background, colour and `color-scheme`
+from real pages.
+
+## Contrast
+
+The two palettes are checked, not assumed. `pnpm check:contrast` measures every
+documented pair in both schemes and fails the build when one drops below its
+threshold:
+
+| Group      | Pairs                                                              | Threshold |
+| ---------- | ------------------------------------------------------------------ | --------- |
+| text       | `--rv-fg`, `--rv-muted`, `--rv-accent` on `--rv-bg`                | 4.5:1     |
+| indicator  | `--rv-danger`, `--rv-ok`, `--rv-info`, `--rv-warning` on `--rv-bg` | 3:1       |
+| decorative | `--rv-border` on `--rv-bg`                                         | reported  |
+
+Measured today: text is 18.88, 7.46 and 5.37 in light and 16.16, 7.06 and 6.07
+in dark; the indicators are 3.19 to 5.17 in light and 6.54 to 10.84 in dark.
+
+Two limits worth knowing:
+
+- `--rv-border` is a hairline around surfaces, not the only boundary of a
+  control, and it measures 1.32:1 on white (1.73:1 on `#161616`). It is printed
+  by the check but never fails it. If you rely on the border alone to identify
+  a control, raise it yourself — WCAG 1.4.11 wants 3:1.
+- The status tokens are guaranteed as **indicators**. On white, `--rv-ok` and
+  `--rv-warning` are 3.30 and 3.19 — enough for a border or a dot, not for text.
+  Use `--rv-fg` or `--rv-muted` for words.
+
+The Bootstrap and Tailwind adapters replace these values with your stack's, so
+the guarantee covers the palette this package ships, not the colours your
+framework supplies.
 
 ## Overrides
 
@@ -260,6 +336,12 @@ your files and can override anything the tokens expose.
   declares `--rv-bg` inside `@layer rivinia-theme`. Pass a path to check
   something else — before a release, the tarball:
   `pnpm check:theme rivinia-theme-x.y.z.tgz`.
+- `pnpm check:contrast` — reads `styles/theme.css`, proves the two dark blocks
+  agree and the light block carries the palette, then measures every documented
+  pair in both schemes against WCAG AA.
+- `pnpm check:theme-dark` — renders seven documents in Chromium and Firefox to
+  prove the cascade: OS preference, `data-rv-theme` opt-out and override, and
+  both Bootstrap directions. Needs the Playwright browsers installed.
 
 ## License
 

@@ -4,6 +4,30 @@ Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
 
 ## Unreleased
 
+### Dark mode and the contrast gate (1.0.0-rc.1)
+
+- **Dark values.** Every colour token ships a second value under
+  `@media (prefers-color-scheme: dark)`, guarded so `:root[data-rv-theme="light"]`
+  opts out, and under `:root[data-rv-theme="dark"]` so an explicit switch beats
+  a light OS setting. The two blocks are identical by construction and the new
+  gate fails if they ever drift. Proven in Chromium and Firefox on seven
+  documents (`pnpm check:theme-dark`).
+- **`color-scheme`.** The light block declares `light`, both dark blocks and the
+  Bootstrap adapter declare their scheme, so form controls, scrollbars and the
+  canvas follow the palette. Without it a dark surface kept a white scrollbar.
+- **Contrast gate.** `pnpm check:contrast` reads `styles/theme.css`, checks that
+  the three blocks carry the documented palette, and measures every documented
+  pair against WCAG AA in both schemes: `--rv-fg`, `--rv-muted` and
+  `--rv-accent` at 4.5:1; the four status tokens at 3:1 as indicators.
+  Measured now: 18.88 / 7.46 / 5.37 (light) and 16.16 / 7.06 / 6.07 (dark) for
+  text, 3.19–10.84 for indicators.
+- **README.** The token table gained a dark column, and two new sections say
+  what the switch is, what the contrast gate guarantees, and what it does not:
+  `--rv-border` is decorative (1.32:1 on white) and the status tokens are not
+  text colours.
+
+### Styling-stack fixes (0.2.0)
+
 The styling-stack fixes (SPEC-0.1.1): the Tailwind palette keeps subtree
 overrides again, and the packaged contract is checked instead of assumed.
 
