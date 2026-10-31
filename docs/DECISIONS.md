@@ -3272,8 +3272,14 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   leaving `color-scheme: light`, so a Bootstrap dark surface kept light
   scrollbars and form controls.
 - Verification: `pnpm check:contrast` (palette, drift and ratios) and
-  `pnpm check:theme-dark` (seven documents, Chromium and Firefox, computed
-  values). Both run on demand; neither is part of `pnpm test`.
+  `pnpm check:theme-dark` (eleven documents, Chromium and Firefox, computed
+  values). Both run on demand; neither is part of `pnpm test`. The browser gate
+  also proves the two claims the numbers cannot: an unlayered consumer `:root`
+  rule really does beat the layered defaults, and the adapter really reads
+  `--bs-*` rather than silently falling back to its own values.
+- Scope recorded: the switch is read on `:root` only, so a subtree goes dark by
+  setting the `--rv-*` properties and `color-scheme` on itself. The attribute
+  was never a subtree switch, and the first README draft said it was.
 
 ## 2026-10-31 — D88: 1.0 ships as `1.0.0-rc.1` on `next`, then `1.0.0`
 

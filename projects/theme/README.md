@@ -28,9 +28,9 @@ component ecosystem's colours, shapes and type.
 - **Framework-neutral.** Plain CSS, Tailwind v4, Bootstrap 5.3, Sass and Less
   all work, because the components read CSS custom properties and every one of
   those stacks can produce or consume them.
-- **Light and dark out of the box.** The OS preference is honoured, a
-  `data-rv-theme` attribute overrides it either way, and `color-scheme` follows
-  so form controls and scrollbars match.
+- **Light and dark out of the box.** The OS preference is honoured for the whole
+  page, a `data-rv-theme` attribute on `<html>` overrides it either way, and
+  `color-scheme` follows so form controls and scrollbars match.
 - **Your rules always win.** The defaults live inside `@layer rivinia-theme`,
   and unlayered declarations beat layered ones — so your `:root` mapping wins
   wherever it appears, with no import-ordering to get wrong.
@@ -89,7 +89,7 @@ Every colour ships in two schemes.
 | `--rv-fg`      | text               | `#111111`                     | `#f2f2f2`                    |
 | `--rv-muted`   | secondary text     | `#555555`                     | `#a1a1aa`                    |
 | `--rv-border`  | borders            | `#e0e0e0`                     | `#3f3f46`                    |
-| `--rv-radius`  | corner radius      | `10px`                        | same                         |
+| `--rv-radius`  | corner radius      | `0.625rem`                    | same                         |
 | `--rv-shadow`  | elevation          | `0 16px 48px rgba(0,0,0,.22)` | `0 16px 48px rgba(0,0,0,.6)` |
 | `--rv-font`    | font stack         | system stack                  | same                         |
 | `--rv-accent`  | brand / primary    | `#5b5bd6`                     | `#8b8bf0`                    |
@@ -141,12 +141,30 @@ The dark values apply from **two** places, and they are kept identical:
 }
 ```
 
-| You want                 | Do this                                |
-| ------------------------ | -------------------------------------- |
-| Follow the OS            | nothing                                |
-| Always light             | `<html data-rv-theme="light">`         |
-| Always dark              | `<html data-rv-theme="dark">`          |
-| A dark section in a page | `data-rv-theme="dark"` on that subtree |
+| You want                 | Do this                                             |
+| ------------------------ | --------------------------------------------------- |
+| Follow the OS            | nothing                                             |
+| Always light             | `<html data-rv-theme="light">`                      |
+| Always dark              | `<html data-rv-theme="dark">`                       |
+| A dark section in a page | set the `--rv-*` tokens on that element (see below) |
+
+The attribute is read on `<html>` only: the tokens are declared on `:root`, so
+an attribute lower down the tree changes nothing. To paint one section, set the
+tokens and the scheme on it:
+
+```css
+.hero-dark {
+  color-scheme: dark;
+  --rv-bg: #161616;
+  --rv-fg: #f2f2f2;
+  --rv-muted: #a1a1aa;
+  --rv-border: #3f3f46;
+  --rv-accent: #8b8bf0;
+}
+```
+
+Every Rivinia component inside that element follows those tokens, and the rest
+of the page is untouched. `pnpm check:theme-dark` renders exactly that document.
 
 Both blocks also set `color-scheme`, so form controls, scrollbars and the
 canvas follow the palette instead of staying light under a dark surface. If you
@@ -156,10 +174,13 @@ override the dark values yourself, set `color-scheme: dark` in the same rule.
 aliases of `--rv-*`, so they follow the switch. The Bootstrap adapter maps both
 schemes from `--bs-*` and sets `color-scheme` itself — its rules are unlayered
 so that Bootstrap stays authoritative even when the OS preference says dark.
+Under `bootstrap.css` the switch is Bootstrap's own `data-bs-theme`: the
+adapter's unlayered mapping beats the theme's `:root[data-rv-theme]` block, so
+`data-rv-theme` has no effect there. Use one of the two, not both.
 
-`pnpm check:theme-dark` proves all of this in Chromium and Firefox: seven cases
-across both engines, reading the computed background, colour and `color-scheme`
-from real pages.
+`pnpm check:theme-dark` proves all of this in Chromium and Firefox: eleven cases
+across both engines, reading the computed background, colour, shadow and
+`color-scheme` from real pages.
 
 ## Contrast
 
@@ -339,7 +360,7 @@ your files and can override anything the tokens expose.
 - `pnpm check:contrast` — reads `styles/theme.css`, proves the two dark blocks
   agree and the light block carries the palette, then measures every documented
   pair in both schemes against WCAG AA.
-- `pnpm check:theme-dark` — renders seven documents in Chromium and Firefox to
+- `pnpm check:theme-dark` — renders eleven documents in Chromium and Firefox to
   prove the cascade: OS preference, `data-rv-theme` opt-out and override, and
   both Bootstrap directions. Needs the Playwright browsers installed.
 

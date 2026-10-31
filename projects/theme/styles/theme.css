@@ -22,7 +22,7 @@
  * Set the semantic layer once and the whole ecosystem follows:
  *
  *   :root { --rv-bg: #fff; --rv-fg: #111; }
- *   [data-rv-theme='dark'] { --rv-bg: #161616; --rv-fg: #f2f2f2; }
+ *   :root[data-rv-theme='dark'] { --rv-bg: #161616; --rv-fg: #f2f2f2; }
  *
  * The defaults live in a @layer on purpose: unlayered declarations always beat
  * layered ones, so your own `:root { --rv-bg: … }` wins wherever it appears in
@@ -43,6 +43,11 @@
  *
  * Both blocks also set `color-scheme`, so form controls, scrollbars and the
  * canvas follow the palette instead of staying light under a dark surface.
+ *
+ * The switch is read on `:root` only. A subtree goes dark by setting these
+ * properties on itself (plus `color-scheme`), not by a `data-rv-theme`
+ * attribute — the tokens live on the root, so an attribute lower down the tree
+ * would change nothing.
  *
  * `scripts/check-contrast.mjs` fails when the two dark blocks disagree or when
  * any documented pair drops below its WCAG AA threshold; see the README.
