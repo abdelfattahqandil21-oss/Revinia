@@ -67,10 +67,10 @@ Node version Angular itself refuses to run on.
 | Theme contract | `pnpm check:theme` | `exports["."].style` and the nine-file list |
 | Docs accuracy | `pnpm check:docs` | no README mentions an unexported symbol; root table matches manifests |
 | README budget | `pnpm check:readmes` | 200-line budget (temporary allowances) and version claims |
-| Select isolation | `pnpm test:i18n` (`language-select-surface.spec.ts`) | only `i18n/select/src/language-select.ts` imports `@rivinia/select/ui` |
+| Select isolation | `pnpm ng test i18n --watch=false` (`language-select-surface.spec.ts`) | only `i18n/select/src/language-select.ts` imports `@rivinia/select/ui` |
 
 ## Out of scope
 
-`env`, `http`, `modal` and `toast` carry local patch bumps that are **not**
-part of 1.0 and are not published by this programme (owner decision,
-2026-10-31). `datepicker` and `table` stay 0.x.
+Packages outside theme, select, menu and i18n are out of scope: their local
+version bumps are **not** part of 1.0 and this programme does not publish them
+(owner decision, 2026-10-31). They stay on their current 0.x lines.
