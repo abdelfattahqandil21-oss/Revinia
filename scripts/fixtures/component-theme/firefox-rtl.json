@@ -74,6 +74,12 @@
       "boxShadow": "rgba(16, 24, 40, 0.18) 0px 12px 32px -8px, rgba(16, 24, 40, 0.1) 0px 4px 8px -4px",
       "direction": "rtl"
     },
+    "premiumActive": {
+      "backgroundColor": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.07)"
+    },
+    "premiumActiveHover": {
+      "backgroundColor": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.07)"
+    },
     "menu": {
       "panel": {
         "color": "rgb(17, 17, 17)",

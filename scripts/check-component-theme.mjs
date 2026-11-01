@@ -120,6 +120,13 @@ export const CASES = Object.freeze([
           'color(srgb 0.0666667 0.0666667 0.0666667 / 0.08)',
         ],
         ['no-theme row ring keeps the row ink', simple.active.outlineColor, simple.row.color],
+        // Premium has a hover rule of its own at the same specificity as its
+        // active-row rule: with no theme the pointer must not shift the tint.
+        [
+          'no-theme premium active row keeps its tint under the pointer',
+          measured.menu.premiumActiveHover.backgroundColor,
+          measured.menu.premiumActive.backgroundColor,
+        ],
         [
           'no-theme menu row ring keeps the row ink',
           measured.menu.menu.active.outlineColor,
@@ -171,6 +178,18 @@ export const CASES = Object.freeze([
         ],
         ['select search ring', simple.search.outlineColor, 'rgb(1, 2, 3)'],
         ['premium trigger ring', measured.menu.premiumTrigger.outlineColor, 'rgb(1, 2, 3)'],
+        // Premium's active tint is the 7% mix, and its own hover rule is the
+        // same specificity, so both readings must land on the accent.
+        [
+          'premium active row',
+          measured.menu.premiumActive.backgroundColor,
+          probes.rowPremiumActive,
+        ],
+        [
+          'premium active row under the pointer',
+          measured.menu.premiumActiveHover.backgroundColor,
+          probes.rowPremiumActive,
+        ],
         ['menu row ring', measured.menu.menu.active.outlineColor, 'rgb(1, 2, 3)'],
         ['menu active row', measured.menu.menu.active.backgroundColor, probes.rowActive],
         ['toggle ring', measured.i18n.focus.outlineColor, 'rgb(1, 2, 3)'],
@@ -210,10 +229,13 @@ export const CASES = Object.freeze([
         ['select panel background', panel.backgroundColor, probe.canvas],
         ['select panel text', panel.color, probe.canvasText],
         ['select panel shadow', panel.boxShadow, 'none'],
-        // The premium panel declares a two-layer shadow normally; Chromium
-        // forces author shadows to `none` in this mode (measured), which is
-        // why the `box-shadow: none` in the forced blocks only backstops
-        // engines this suite cannot emulate.
+        // The discriminating reading: this probe declares a shadow and belongs
+        // to no component, so `none` here is the UA forcing it away — the panels
+        // reading `none` would look the same whether or not the UA did anything,
+        // because their forced blocks declare it. That is why the explicit
+        // `box-shadow: none` only backstops engines this suite cannot emulate.
+        ['forced colors forces an author shadow', probe.authorShadow, 'none'],
+        // The premium panel declares a two-layer shadow normally.
         ['select premium panel shadow', measured.menu.premiumPanel.boxShadow, 'none'],
         ['select active row background', active.backgroundColor, probe.highlight],
         ['select active row text', active.color, probe.highlightText],
@@ -307,6 +329,23 @@ function settleFrame(page) {
   return page.evaluate(
     () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
   );
+}
+
+/**
+ * Premium rows animate `background-color` (150ms in, 250ms out), so a read two
+ * frames after the pointer moves lands mid-transition. Poll until the value
+ * stops changing: the reading is then the state the row settles into, and a
+ * hover that never settles fails with the last value it held.
+ */
+async function settledStyles(page, selector, props) {
+  let previous = null;
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const current = await styles(page, selector, props);
+    if (previous && JSON.stringify(previous) === JSON.stringify(current)) return current;
+    previous = current;
+    await page.waitForTimeout(50);
+  }
+  throw new Error(`${selector} never stops changing: ${JSON.stringify(previous)}`);
 }
 
 /**
@@ -459,6 +498,18 @@ async function measureMenu(page, testCase) {
   await page.locator('#premium-select .rv-select-popup-panel').waitFor();
   await settleFrame(page);
   const premiumPanel = await styles(page, '#premium-select .rv-select-popup-panel', PANEL_PROPS);
+  // Premium declares its OWN hover rule at (0,4,1) — the same specificity as its
+  // active-row rule — so whether the accent tint survives the pointer there is
+  // decided by source order alone. That is a thing to measure, not to argue.
+  await page.locator('#premium-select [rvselectpopupitem][data-active="true"]').waitFor();
+  const premiumActiveSelector = '#premium-select [rvselectpopupitem][data-active="true"]';
+  const premiumActive = await settledStyles(page, premiumActiveSelector, ['backgroundColor']);
+  const premiumBox = await page.locator(premiumActiveSelector).boundingBox();
+  if (!premiumBox) throw new Error('the active premium row has no box to hover');
+  await page.mouse.move(premiumBox.x + premiumBox.width / 2, premiumBox.y + premiumBox.height / 2);
+  const premiumActiveHover = await settledStyles(page, premiumActiveSelector, ['backgroundColor']);
+  await page.mouse.move(0, 0);
+  await settleFrame(page);
   await page.keyboard.press('Escape');
 
   await focusVisible(page, '#plain-menu .rv-menu-trigger button');
@@ -489,7 +540,7 @@ async function measureMenu(page, testCase) {
   };
   await page.keyboard.press('Escape');
 
-  return { simple, premiumTrigger, premiumPanel, menu, rtl };
+  return { simple, premiumTrigger, premiumPanel, premiumActive, premiumActiveHover, menu, rtl };
 }
 
 async function measureToggle(page, testCase) {
@@ -536,6 +587,7 @@ function measureAccentProbes(page) {
     const value = {
       rowActive: read('color-mix(in srgb, var(--rv-accent, currentColor) 10%, transparent)'),
       rowActiveHover: read('color-mix(in srgb, var(--rv-accent, currentColor) 8%, transparent)'),
+      rowPremiumActive: read('color-mix(in srgb, var(--rv-accent, currentColor) 7%, transparent)'),
       toggleActive: read(
         'color-mix(in srgb, var(--rv-accent, currentColor) 16%, var(--rv-i18n-toggle-bg, var(--rv-bg, transparent)))',
       ),
@@ -551,15 +603,20 @@ function measureForcedColorProbe(page) {
     probe.style.cssText = 'position:absolute;visibility:hidden';
     probe.innerHTML =
       '<i style="background:Canvas"></i><i style="background:Highlight;color:HighlightText"></i>' +
-      '<i style="color:CanvasText"></i><i style="color:GrayText"></i>';
+      '<i style="color:CanvasText"></i><i style="color:GrayText"></i>' +
+      // A shadow declared by this gate, on an element no component owns: the
+      // reading is the UA's doing alone, which is the only way to tell it apart
+      // from the `box-shadow: none` the components themselves declare.
+      '<i style="box-shadow:0 12px 32px -8px rgba(16, 24, 40, 0.18)"></i>';
     document.body.append(probe);
-    const [canvas, highlight, canvasText, grayText] = probe.children;
+    const [canvas, highlight, canvasText, grayText, authorShadow] = probe.children;
     const value = {
       canvas: getComputedStyle(canvas).backgroundColor,
       highlight: getComputedStyle(highlight).backgroundColor,
       highlightText: getComputedStyle(highlight).color,
       canvasText: getComputedStyle(canvasText).color,
       grayText: getComputedStyle(grayText).color,
+      authorShadow: getComputedStyle(authorShadow).boxShadow,
     };
     probe.remove();
     return value;

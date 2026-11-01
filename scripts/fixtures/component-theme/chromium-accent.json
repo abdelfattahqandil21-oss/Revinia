@@ -74,6 +74,12 @@
       "boxShadow": "rgba(0, 0, 0, 0.22) 0px 16px 48px 0px",
       "direction": "ltr"
     },
+    "premiumActive": {
+      "backgroundColor": "color(srgb 0.00392157 0.00784314 0.0117647 / 0.07)"
+    },
+    "premiumActiveHover": {
+      "backgroundColor": "color(srgb 0.00392157 0.00784314 0.0117647 / 0.07)"
+    },
     "menu": {
       "panel": {
         "color": "rgb(17, 17, 17)",
@@ -147,6 +153,7 @@
   "probes": {
     "rowActive": "color(srgb 0.00392157 0.00784314 0.0117647 / 0.1)",
     "rowActiveHover": "color(srgb 0.00392157 0.00784314 0.0117647 / 0.08)",
+    "rowPremiumActive": "color(srgb 0.00392157 0.00784314 0.0117647 / 0.07)",
     "toggleActive": "color(srgb 0.840627 0.841255 0.841882)"
   }
 }
