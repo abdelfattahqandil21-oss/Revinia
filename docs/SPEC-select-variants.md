@@ -64,7 +64,7 @@ unchanged.
 | `--rv-select-popup-pad`            | `0.375rem`                     | `0.3125rem`                                                              |
 | `--rv-select-item-active-bg`       | `currentColor 10%`             | `fg 7%`                                                                  |
 | `--rv-select-item-hover-bg`        | `currentColor 8%`              | `fg 5%`                                                                  |
-| `--rv-select-item-active-hover-bg` | `currentColor 8%`              | the variant's `--rv-select-item-active-bg`                               |
+| `--rv-select-item-active-hover-bg` | `currentColor 8%`              | not read: premium's own active-row rule wins instead                     |
 | `--rv-select-focus-ring`           | `2px solid currentColor`       | `2px solid fg 55%` + `--rv-select-focus-offset: 2px`                     |
 
 Notes that matter:
@@ -78,7 +78,6 @@ Notes that matter:
   under the pointer. Premium reads nothing new — its (0,4,1) active-row rules
   outrank the generic (0,4,0) hover rule, so the active tint it already declares
   is what shows.
-
 - The border is derived from the **foreground**, not from a grey: a premium
   panel on a dark background must tint toward the text, not toward a light
   grey that belongs to no theme.
