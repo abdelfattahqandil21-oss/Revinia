@@ -111,6 +111,22 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
     </div>
     <p data-testid="rtl-value">value={{ rtlValue() }}</p>
 
+    <!--
+      S5b fixtures. Both sit OUTSIDE the scoped wrappers above on purpose: the
+      theme proof needs surfaces that follow the page's --rv-* tokens, and a
+      component token set by an ancestor would mask them.
+    -->
+    <h2>Premium</h2>
+    <rv-select id="premium-select" variant="premium" [options]="premiumOptions" />
+
+    <h2>Plain menu</h2>
+    <rv-menu id="plain-menu" menuLabel="Plain menu">
+      <button rv-menu-trigger>Plain</button>
+      <div rv-menu-panel>
+        <button rvMenuItem id="p1">Plain item</button>
+      </div>
+    </rv-menu>
+
     <h2>Sizing</h2>
     <div class="size-cell size-cell--wide">
       <rv-select id="size-wide" [options]="shortOptions" />
@@ -171,6 +187,10 @@ export class SelectPage {
   readonly rtlValue = signal<string | null>(null);
   readonly shortOptions = [{ id: 'paid', label: 'Paid' }];
   readonly longOptions = [{ id: 'outstanding', label: 'Outstanding invoices' }];
+  readonly premiumOptions = [
+    { id: 'draft', label: 'Draft' },
+    { id: 'sent', label: 'Sent' },
+  ];
   readonly unusedController = new RiviniaSelect('single');
 
   // Virtualised list: 500 options, a window rendered inside the panel.

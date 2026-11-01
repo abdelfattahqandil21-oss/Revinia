@@ -172,7 +172,10 @@ rv-select[data-variant='premium'] .rv-select-trigger[aria-invalid='true'] {
 }
 /* The trigger had no visible focus ring of its own. */
 rv-select[data-variant='premium'] .rv-select-trigger:focus-visible {
-  outline: var(--rv-select-focus-ring, 2px solid color-mix(in srgb, currentColor 55%, transparent));
+  outline: var(
+    --rv-select-focus-ring,
+    2px solid var(--rv-accent, color-mix(in srgb, currentColor 55%, transparent))
+  );
   outline-offset: var(--rv-select-focus-offset, 2px);
 }
 .rv-select-value {
@@ -258,10 +261,12 @@ rv-select[data-variant='premium'] .rv-select-chevron {
   );
 }
 /*
- * Keyboard navigation scrolls the focused row into view with `block: nearest`,
- * and the pinned bar would cover it. scroll-padding keeps the row clear of the
- * search without touching any scrollTop arithmetic — `reachEnd` reads
- * scrollHeight/scrollTop/clientHeight, none of which this changes.
+ * Keyboard navigation reveals the focused row itself (`revealActive`): it reads
+ * this `scroll-padding-top` off the scrollport and shifts the panel's own
+ * `scrollTop`, so the pinned bar never covers the row. It is deliberately NOT
+ * `scrollIntoView` — that also scrolls the document, and this popup closes on
+ * an outside scroll. Nothing else reads scroll-padding, so `reachEnd` (which
+ * reads scrollHeight/scrollTop/clientHeight) is unaffected.
  *
  * The selector has to be the OUTER popup panel: the select's own panel div is
  * projected inside it, and the scrollport is the outer one (`overflow-y: auto`
@@ -291,7 +296,7 @@ rv-select[data-variant='premium'] .rv-select-chevron {
   font-size: var(--rv-select-search-size, 0.875rem);
 }
 .rv-select-search:focus {
-  outline: var(--rv-select-focus-ring, 2px solid currentColor);
+  outline: var(--rv-select-focus-ring, 2px solid var(--rv-accent, currentColor));
   outline-offset: var(--rv-select-focus-offset, -1px);
 }
 .rv-select-search::placeholder {
@@ -321,7 +326,10 @@ rv-select[data-variant='premium'] .rv-select-search:focus {
     --rv-select-border,
     var(--rv-border, color-mix(in srgb, currentColor 22%, transparent))
   );
-  outline: var(--rv-select-focus-ring, 2px solid color-mix(in srgb, currentColor 55%, transparent));
+  outline: var(
+    --rv-select-focus-ring,
+    2px solid var(--rv-accent, color-mix(in srgb, currentColor 55%, transparent))
+  );
   outline-offset: -1px;
 }
 .rv-select-check {
@@ -441,5 +449,34 @@ rv-select[data-variant='premium'] .rv-select-skeleton > i:nth-child(3) {
   }
   rv-select[data-variant='premium'] .rv-select-skeleton > i {
     animation: none;
+  }
+}
+
+/*
+ * FORCED COLORS — D87. The UA forces author colours in this mode and flattens
+ * backgrounds, which erases the premium trigger's fill. System colours are the
+ * one palette an author may still name.
+ *
+ * `box-shadow: none` is already the UA's doing in Chromium — measured on the
+ * built premium panel, its declared shadow reads back as `none` under
+ * `forcedColors: 'active'`. It stays for engines this suite cannot emulate:
+ * Playwright has no forced-colors mode in Firefox.
+ */
+@media (forced-colors: active) {
+  rv-select[data-variant='premium'] .rv-select-trigger {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+  .rv-select-search,
+  rv-select[data-variant='premium'] .rv-select-search {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+  }
+  .rv-select-search:focus,
+  rv-select[data-variant='premium'] .rv-select-search:focus {
+    outline-color: Highlight;
   }
 }

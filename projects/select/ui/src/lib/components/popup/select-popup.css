@@ -35,7 +35,8 @@
 }
 .rv-select-popup-panel hr {
   border: 0;
-  border-top: 1px solid var(--rv-select-popup-border, var(--rv-select-border, var(--rv-border, #e0e0e0)));
+  border-top: 1px solid
+    var(--rv-select-popup-border, var(--rv-select-border, var(--rv-border, #e0e0e0)));
   margin: 0.375rem 0.25rem;
 }
 /* NOTE: the :host pseudo-class does not exist without encapsulation,
@@ -99,9 +100,13 @@ rv-select-popup {
   background: var(--rv-select-popup-bg, var(--rv-select-bg, var(--rv-bg, #ffffff)));
   color: var(--rv-select-popup-fg, var(--rv-select-fg, var(--rv-fg, #111111)));
   font-family: var(--rv-select-popup-font, system-ui, -apple-system, 'Segoe UI', sans-serif);
-  border: 1px solid var(--rv-select-popup-border, var(--rv-select-border, var(--rv-border, #e0e0e0)));
+  border: 1px solid
+    var(--rv-select-popup-border, var(--rv-select-border, var(--rv-border, #e0e0e0)));
   border-radius: var(--rv-select-popup-radius, var(--rv-select-radius, var(--rv-radius, 0.75rem)));
-  box-shadow: var(--rv-select-popup-shadow, var(--rv-select-shadow, var(--rv-shadow, 0 16px 48px rgba(0, 0, 0, 0.22))));
+  box-shadow: var(
+    --rv-select-popup-shadow,
+    var(--rv-select-shadow, var(--rv-shadow, 0 16px 48px rgba(0, 0, 0, 0.22)))
+  );
   padding: var(--rv-select-popup-pad, 0.375rem);
 }
 .rv-select-popup-panel[data-placement='bottom-start'] {
@@ -195,7 +200,8 @@ rv-select-popup {
  * correct in both directions. `-moz-appearance` is the narrowest reliable
  * Firefox-only probe; remove the clause when Firefox fixes the area maths.
  */
-@supports (anchor-name: --a) and (position-area: block-end span-inline-end) and (not (-moz-appearance: none)) {
+@supports (anchor-name: --a) and (position-area: block-end span-inline-end) and
+  (not (-moz-appearance: none)) {
   /*
    * ESSENTIAL: without this every panel anchors to the LAST trigger in
    * the document, because the spec resolves a duplicate anchor-name to
@@ -288,13 +294,33 @@ rv-select-popup {
   cursor: pointer;
 }
 .rv-select-popup-panel [rvselectpopupitem][data-active='true'] {
-  background: var(--rv-select-item-active-bg, color-mix(in srgb, currentColor 10%, transparent));
+  background: var(
+    --rv-select-item-active-bg,
+    color-mix(in srgb, var(--rv-accent, currentColor) 10%, transparent)
+  );
 }
 .rv-select-popup-panel [rvselectpopupitem]:hover {
   background: var(--rv-select-item-hover-bg, color-mix(in srgb, currentColor 8%, transparent));
 }
+/*
+ * Hover ACTIVATES the row (the item calls `hoverItem`), so the pointer's row
+ * is always the active one — and the hover rule above ties the active tint at
+ * (0,3,0) and comes later, so it painted the neutral wash over the accent
+ * (measured on the built panel: `color(srgb … 0 / 0.08)` while the active
+ * tint is 0.1). This rule wins on specificity and carries the accent.
+ *
+ * The 8% fallback is the exact ink the unthemed page painted in this state
+ * before the wiring, so the identity claim still holds for a page that
+ * imports no theme; the hovered row keeps its hover weight either way.
+ */
+.rv-select-popup-panel [rvselectpopupitem][data-active='true']:hover {
+  background: var(
+    --rv-select-item-active-hover-bg,
+    color-mix(in srgb, var(--rv-accent, currentColor) 8%, transparent)
+  );
+}
 .rv-select-popup-panel [rvselectpopupitem]:focus-visible {
-  outline: var(--rv-select-focus-ring, 2px solid currentColor);
+  outline: var(--rv-select-focus-ring, 2px solid var(--rv-accent, currentColor));
   outline-offset: var(--rv-select-focus-offset, -2px);
 }
 .rv-select-popup-panel [rvselectpopupitem][aria-disabled='true'] {
@@ -313,6 +339,23 @@ rv-select-popup {
 .rv-select-popup-panel [rvselectpopupitem][data-active='true'] svg,
 .rv-select-popup-panel [rvselectpopupitem][data-active='true'] [data-icon] {
   color: inherit;
+}
+/*
+ * The selected tick keeps the accent even while its row is the active one.
+ * `svg.rv-select-check` ties (0,3,1) with the active-row rule above, so this
+ * must stay BELOW it — same file, so source order settles the tie without
+ * depending on how Angular orders the two style blocks.
+ *
+ * The fallbacks are the two colours the tick had before: `--rv-select-popup-
+ * muted` off the active row, and the row's own ink on it (the active-row rule
+ * above says `color: inherit`, and `currentColor` on the `color` property
+ * resolves to that inherited value).
+ */
+.rv-select-popup-panel [rvselectpopupitem] svg.rv-select-check {
+  color: var(--rv-accent, var(--rv-select-popup-muted));
+}
+.rv-select-popup-panel [rvselectpopupitem][data-active='true'] svg.rv-select-check {
+  color: var(--rv-accent, currentColor);
 }
 /* Opening motion (researched: Radix/shadcn/HeadlessUI pattern):
    fade + scale from the trigger edge + a small slide toward rest.
@@ -387,7 +430,11 @@ rv-select-popup[data-variant='premium'] .rv-select-popup-panel {
     --rv-select-popup-shadow,
     var(
       --rv-select-shadow,
-      var(--rv-shadow, 0 12px 32px -8px rgba(16, 24, 40, 0.18), 0 4px 8px -4px rgba(16, 24, 40, 0.1))
+      var(
+        --rv-shadow,
+        0 12px 32px -8px rgba(16, 24, 40, 0.18),
+        0 4px 8px -4px rgba(16, 24, 40, 0.1)
+      )
     )
   );
   padding: var(--rv-select-popup-pad, 0.3125rem);
@@ -410,10 +457,70 @@ rv-select-popup[data-variant='premium'] .rv-select-popup-panel [rvselectpopupite
   background: var(--rv-select-item-hover-bg, color-mix(in srgb, currentColor 5%, transparent));
   transition-duration: 150ms;
 }
-rv-select-popup[data-variant='premium'] .rv-select-popup-panel [rvselectpopupitem][data-active='true'] {
-  background: var(--rv-select-item-active-bg, color-mix(in srgb, currentColor 7%, transparent));
+rv-select-popup[data-variant='premium']
+  .rv-select-popup-panel
+  [rvselectpopupitem][data-active='true'] {
+  background: var(
+    --rv-select-item-active-bg,
+    color-mix(in srgb, var(--rv-accent, currentColor) 7%, transparent)
+  );
 }
 rv-select-popup[data-variant='premium'] .rv-select-popup-panel [rvselectpopupitem]:focus-visible {
-  outline: var(--rv-select-focus-ring, 2px solid color-mix(in srgb, currentColor 55%, transparent));
+  outline: var(
+    --rv-select-focus-ring,
+    2px solid var(--rv-accent, color-mix(in srgb, currentColor 55%, transparent))
+  );
   outline-offset: -2px;
+}
+
+/*
+ * FORCED COLORS — D87. The UA forces author colours, it flattens every
+ * background to Canvas, which erases the active row, and in Chromium it
+ * forces author shadows to `none` on its own (measured; the explicit
+ * `box-shadow: none` backstops engines this suite cannot emulate). System
+ * colours are the one palette an author may still name. The premium panel and
+ * rows override the base rules at higher specificity, so every selector that
+ * paints them is repeated here.
+ */
+@media (forced-colors: active) {
+  .rv-select-popup-panel,
+  rv-select-popup[data-variant='premium'] .rv-select-popup-panel {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+  .rv-select-popup-panel [rvselectpopupitem][data-active='true'],
+  rv-select-popup[data-variant='premium']
+    .rv-select-popup-panel
+    [rvselectpopupitem][data-active='true'] {
+    background: Highlight;
+    color: HighlightText;
+  }
+  .rv-select-popup-panel [rvselectpopupitem]:focus-visible,
+  rv-select-popup[data-variant='premium'] .rv-select-popup-panel [rvselectpopupitem]:focus-visible {
+    outline-color: Highlight;
+  }
+  /*
+   * On the active row the band itself is Highlight, so a Highlight ring is
+   * invisible; CanvasText is the colour that contrasts with that band.
+   */
+  .rv-select-popup-panel [rvselectpopupitem][data-active='true']:focus-visible,
+  rv-select-popup[data-variant='premium']
+    .rv-select-popup-panel
+    [rvselectpopupitem][data-active='true']:focus-visible {
+    outline-color: CanvasText;
+  }
+  /* The tick follows its row: CanvasText on the panel, HighlightText on the band. */
+  .rv-select-popup-panel [rvselectpopupitem] svg.rv-select-check {
+    color: CanvasText;
+  }
+  .rv-select-popup-panel [rvselectpopupitem][data-active='true'] svg.rv-select-check {
+    color: HighlightText;
+  }
+  /* 0.45 of GrayText is unreadable; the system colour already says "disabled". */
+  .rv-select-popup-panel [rvselectpopupitem][aria-disabled='true'] {
+    color: GrayText;
+    opacity: 1;
+  }
 }

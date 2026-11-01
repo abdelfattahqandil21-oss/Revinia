@@ -3285,6 +3285,75 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   setting the `--rv-*` properties and `color-scheme` on itself. The attribute
   was never a subtree switch, and the first README draft said it was.
 
+### D87 addendum 2 — component wiring, and what the snapshot actually proves
+
+- Wiring shipped: select (premium and simple) rings, active rows and the tick;
+  menu row ring and active row; i18n toggle ring and held-down fill. Every read
+  is `var(--rv-accent, <the value that shipped before>)`.
+- The tick needed specificity, not just a declaration: the generic row-icon
+  rule paints every row `svg` at (0,2,1), so `svg.rv-select-check` names the
+  element and sits below the active-row `color: inherit` it ties with, in the
+  same stylesheet so source order decides. A first attempt at `.rv-select-check`
+  (0,1,0) was measured as `rgb(17, 17, 17)` — the row ink — on both engines.
+- The tick also needed TWO fallbacks, because it had two colours: the muted
+  token on an ordinary row, and the inherited row ink while its row is the
+  active one. `var(--rv-accent, currentColor)` alone changed the off-active
+  tick from `#555555` to the row ink on an unthemed page; the shipped rules are
+  `var(--rv-accent, var(--rv-select-popup-muted))` and, on the active row,
+  `var(--rv-accent, currentColor)` (which resolves to the same inherited value
+  the old `color: inherit` produced).
+- Forced-colors defaults are stated per component because the UA flattens
+  author backgrounds: the active row would otherwise be invisible. It does not
+  force `opacity`, so the disabled row's 0.45 is replaced with `GrayText` at
+  full opacity. It DOES force `box-shadow` to `none` in Chromium — measured on
+  the built premium panel, whose declared
+  `rgba(16, 24, 40, 0.18) 0 12px 32px -8px` reads back as `none` under
+  `forcedColors: 'active'`, and the gate now proves it with a probe element that
+  declares a shadow and belongs to no component: a panel reading `none` cannot
+  tell the UA's doing from its own `box-shadow: none`. The explicit declaration
+  is therefore redundant there and kept for engines this suite cannot emulate
+  (Playwright has no forced-colors mode in Firefox). An earlier draft of this
+  entry claimed the opposite; the measurement corrected it. Two other
+  corrections came out of measuring the mode: the (0,3,1)/(0,4,1) tick rules
+  outranked a plain
+  `.rv-select-check { color: CanvasText }` and Chromium measured white on
+  white, so the forced block repeats both tick selectors; and a `Highlight`
+  ring on a `Highlight` band is invisible, so the active row's ring is
+  `CanvasText`.
+- Hover activates the row (`hoverItem` reaches `activate`), so the pointer's row
+  is always the active one. The simple `:hover` rule ties the active tint at
+  (0,3,0) and comes later in source, so it painted its neutral 8% wash over the
+  accent — a defect no snapshot of an unpainted page could show. A
+  `[data-active='true']:hover` rule at (0,4,0) now carries both:
+  `--rv-select-item-active-hover-bg`, falling back to exactly the 8% ink the
+  unthemed page painted in that state, so the identity snapshot still holds.
+  The gate measures it (pointer moved to the active row's centre, then parked at
+  0,0) in the `light` and `accent` cases. Premium needs no such rule: its
+  `rv-select-popup[data-variant='premium'] …` active-row rules are (0,4,1) and
+  outrank the generic (0,4,0) one outright.
+- Verification: `pnpm check:component-theme` renders both demo apps (real
+  components, built from `dist/`) in Chromium and Firefox — six cases on
+  Chromium (no theme, dark via `data-rv-theme`, dark via the OS preference,
+  accent, RTL, forced colors) and five on Firefox. Playwright cannot emulate
+  `forced-colors` in Firefox, so that case is Chromium-only and a Firefox
+  forced-colors check is a human item.
+- The identity claim, honestly: the `light` snapshot is the pre-wiring render,
+  and the gate's header records how to re-derive it — check out the base CSS,
+  rebuild the three packages and both demo apps, re-run `--only=light`, and
+  `git diff` the snapshot. It was re-derived that way after the wiring and
+  matched byte for byte; the case also asserts that the tick (on and off the
+  active row), the row ring and the toggle ring keep the pre-wiring ink, so a
+  hardcoded accent default fails even on a fresh checkout. The `dark`
+  snapshots did move, by design: every wired surface now takes the theme's
+  `#8b8bf0` accent.
+- Mutation checks (both caught): a hardcoded `#5b5bd6` fallback on the tick
+  fails `light` on both engines (`rgb(91, 91, 214)` instead of the row ink);
+  deleting `background: Highlight` from the popup's forced-colors block fails
+  with a 10% author tint where `Highlight` is expected.
+- The i18n toggle has no transition or animation, so `prefers-reduced-motion`
+  is a no-op; a spec asserts that and says to add the block if it ever gains
+  motion.
+
 ## 2026-10-31 — D88: 1.0 ships as `1.0.0-rc.1` on `next`, then `1.0.0`
 
 - Context: pre-1.0 caret peers make release order load-bearing. i18n has an

@@ -1,0 +1,165 @@
+{
+  "menu": {
+    "simple": {
+      "trigger": {
+        "color": "rgb(0, 0, 0)",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "borderTopColor": "rgb(0, 0, 0)",
+        "borderRadius": "4px"
+      },
+      "panel": {
+        "color": "rgb(0, 0, 0)",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "borderTopColor": "rgb(0, 0, 0)",
+        "borderRadius": "4px",
+        "boxShadow": "none",
+        "direction": "ltr"
+      },
+      "row": {
+        "color": "rgb(0, 0, 0)",
+        "backgroundColor": "rgba(255, 255, 255, 0)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "1"
+      },
+      "check": {
+        "color": "rgb(255, 255, 255)"
+      },
+      "disabled": {
+        "color": "rgb(96, 0, 0)",
+        "backgroundColor": "rgba(255, 255, 255, 0)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "1"
+      },
+      "search": {
+        "outlineColor": "rgba(5, 0, 73, 0.8)",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px"
+      },
+      "active": {
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgba(5, 0, 73, 0.8)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "1",
+        "outlineColor": "rgb(0, 0, 0)",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "focusVisible": true,
+        "row": "select",
+        "disabled": false
+      },
+      "checkIdle": {
+        "color": "rgb(0, 0, 0)"
+      },
+      "activeHover": {
+        "backgroundColor": "rgba(255, 255, 255, 0.08)"
+      },
+      "searchFill": {
+        "backgroundColor": "rgb(255, 255, 255)",
+        "color": "rgb(0, 0, 0)"
+      }
+    },
+    "premiumTrigger": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "borderTopColor": "rgb(0, 0, 0)",
+      "borderRadius": "12px",
+      "outlineColor": "rgba(5, 0, 73, 0.8)",
+      "outlineStyle": "solid",
+      "outlineWidth": "2px"
+    },
+    "premiumPanel": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "borderTopColor": "rgb(0, 0, 0)",
+      "borderRadius": "14px",
+      "boxShadow": "none",
+      "direction": "ltr"
+    },
+    "premiumActive": {
+      "backgroundColor": "rgba(5, 0, 73, 0.8)"
+    },
+    "premiumActiveHover": {
+      "backgroundColor": "rgba(5, 0, 73, 0.8)"
+    },
+    "menu": {
+      "panel": {
+        "color": "rgb(0, 0, 0)",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "borderTopColor": "rgb(0, 0, 0)",
+        "borderRadius": "12px",
+        "boxShadow": "none",
+        "direction": "ltr"
+      },
+      "row": {
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgba(5, 0, 73, 0.8)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "1"
+      },
+      "active": {
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgba(5, 0, 73, 0.8)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "1",
+        "outlineColor": "rgb(0, 0, 0)",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "focusVisible": true,
+        "row": "menu",
+        "disabled": false
+      }
+    },
+    "rtl": {
+      "panel": {
+        "color": "rgb(0, 0, 0)",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "borderTopColor": "rgb(0, 0, 0)",
+        "borderRadius": "12px",
+        "boxShadow": "none",
+        "direction": "rtl"
+      },
+      "row": {
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgba(5, 0, 73, 0.8)",
+        "textAlign": "start",
+        "direction": "rtl",
+        "opacity": "1"
+      }
+    }
+  },
+  "i18n": {
+    "host": {
+      "direction": "rtl"
+    },
+    "button": {
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "borderTopColor": "rgb(0, 0, 0)",
+      "borderRadius": "8px",
+      "boxShadow": "none",
+      "direction": "ltr"
+    },
+    "focus": {
+      "outlineColor": "rgba(5, 0, 73, 0.8)",
+      "outlineStyle": "solid",
+      "outlineWidth": "2px"
+    },
+    "active": {
+      "backgroundColor": "rgba(5, 0, 73, 0.8)",
+      "color": "rgb(255, 255, 255)"
+    }
+  },
+  "fcProbe": {
+    "canvas": "rgb(255, 255, 255)",
+    "highlight": "rgba(5, 0, 73, 0.8)",
+    "highlightText": "rgb(255, 255, 255)",
+    "canvasText": "rgb(0, 0, 0)",
+    "grayText": "rgb(96, 0, 0)",
+    "authorShadow": "none"
+  }
+}

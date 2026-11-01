@@ -218,17 +218,17 @@ the headless `RiviniaSelect` controller.
 | `ariaLabel`         | `string \| null`                  | `null`             | Explicit accessible name for the trigger; used when there is no caption.                  |
 | `popupLabel`        | `string \| null`                  | `null`             | Accessible name for the opened panel (`aria-label`); falls back to `label`.               |
 | `searchLabel`       | `string`                          | `'Search options'` | Accessible name for the filter box.                                                       |
-| `variant`           | `'simple' \| 'premium'`           | `'simple'`         | Skin. Reflected as `data-variant`; styling only, no behaviour change. See Variants.        |
+| `variant`           | `'simple' \| 'premium'`           | `'simple'`         | Skin. Reflected as `data-variant`; styling only, no behaviour change. See Variants.       |
 
 ### Outputs
 
-| Output            | Payload                                                 | When                               |
-| ----------------- | ------------------------------------------------------- | ---------------------------------- |
-| `selectionChange` | `string \| null` (single) / `readonly string[]` (multi) | A pick, or `clear()`.              |
-| `opened`          | `void`                                                  | Panel opened.                      |
-| `reachEnd`        | `void`                                                  | The panel scrolled near its end.   |
+| Output            | Payload                                                 | When                                             |
+| ----------------- | ------------------------------------------------------- | ------------------------------------------------ |
+| `selectionChange` | `string \| null` (single) / `readonly string[]` (multi) | A pick, or `clear()`.                            |
+| `opened`          | `void`                                                  | Panel opened.                                    |
+| `reachEnd`        | `void`                                                  | The panel scrolled near its end.                 |
 | `panelReady`      | `HTMLElement`                                           | The panel element — emitted again on every open. |
-| `closed`          | `void`                                                  | Panel closed.                      |
+| `closed`          | `void`                                                  | Panel closed.                                    |
 
 ### The controller
 
@@ -584,16 +584,16 @@ controller yourself and render your own markup.
 
 The contract the controller gives you:
 
-| Signal / method    | What your UI does with it                                                  |
-| ------------------ | -------------------------------------------------------------------------- |
-| `query`            | The filter box's value. Bind both ways with `setQuery`.                    |
-| `filtered`         | The rows to render, already filtered.                                      |
-| `value` / `values` | The current selection; render the check mark or radio from it.             |
+| Signal / method    | What your UI does with it                                                                |
+| ------------------ | ---------------------------------------------------------------------------------------- |
+| `query`            | The filter box's value. Bind both ways with `setQuery`.                                  |
+| `filtered`         | The rows to render, already filtered.                                                    |
+| `value` / `values` | The current selection; render the check mark or radio from it.                           |
 | `selectedLabels`   | The selected labels in pick order; the built-in trigger shows the first and a `+N` pill. |
-| `isSelected(id)`   | Per-row selected state.                                                    |
-| `select(id)`       | Single-mode pick. Returns `false` when the row is disabled — respect that. |
-| `toggle(id)`       | Multi-mode pick.                                                           |
-| `clear()`          | The clear button.                                                          |
+| `isSelected(id)`   | Per-row selected state.                                                                  |
+| `select(id)`       | Single-mode pick. Returns `false` when the row is disabled — respect that.               |
+| `toggle(id)`       | Multi-mode pick.                                                                         |
+| `clear()`          | The clear button.                                                                        |
 
 A minimal custom dropdown, single mode, with a grouped list:
 
@@ -896,21 +896,21 @@ unencapsulated, so these selectors are global and stable:
 
 The selectors, and the `data-*` state hooks:
 
-| Selector                                     | What it styles              |
-| -------------------------------------------- | --------------------------- |
-| `.rv-select-caption`                         | the label above the trigger |
-| `.rv-select-trigger`                         | the button                  |
-| `.rv-select-value`                           | the trigger's text          |
-| `.rv-select-count`                           | the multi `+N` pill         |
-| `.rv-select-sr-only`                         | the hidden multi description |
-| `.rv-select-chevron`                         | the chevron                 |
-| `.rv-select-search`                          | the filter box              |
-| `.rv-select-empty`                           | the "no results" state      |
-| `.rv-select-hint`                            | an option's trailing hint   |
-| `.rv-select-check`                           | the multi-mode check mark   |
-| `.rv-select-popup-panel`                     | the opened panel            |
+| Selector                                     | What it styles                  |
+| -------------------------------------------- | ------------------------------- |
+| `.rv-select-caption`                         | the label above the trigger     |
+| `.rv-select-trigger`                         | the button                      |
+| `.rv-select-value`                           | the trigger's text              |
+| `.rv-select-count`                           | the multi `+N` pill             |
+| `.rv-select-sr-only`                         | the hidden multi description    |
+| `.rv-select-chevron`                         | the chevron                     |
+| `.rv-select-search`                          | the filter box                  |
+| `.rv-select-empty`                           | the "no results" state          |
+| `.rv-select-hint`                            | an option's trailing hint       |
+| `.rv-select-check`                           | the multi-mode check mark       |
+| `.rv-select-popup-panel`                     | the opened panel                |
 | `.rv-select-popup-menu`                      | the `role="menu"` row container |
-| `.rv-select-popup-panel [rvselectpopupitem]` | an option row               |
+| `.rv-select-popup-panel [rvselectpopupitem]` | an option row                   |
 
 | Hook              | On      | Means                          |
 | ----------------- | ------- | ------------------------------ |
@@ -930,10 +930,10 @@ controller, same keyboard contract, same ARIA.
 <rv-select [options]="options" variant="premium" />
 ```
 
-| Value       | What you get                                                                                              |
-| ----------- | --------------------------------------------------------------------------------------------------------- |
-| `'simple'`  | The default. The pre-variant skin, unchanged — including its 160ms entrance. The flag changes nothing.     |
-| `'premium'` | A slower, softer entrance, layered shadow, thin styled scrollbar, hover/active wash, loading skeleton.    |
+| Value       | What you get                                                                                           |
+| ----------- | ------------------------------------------------------------------------------------------------------ |
+| `'simple'`  | The default. The pre-variant skin, unchanged — including its 160ms entrance. The flag changes nothing. |
+| `'premium'` | A slower, softer entrance, layered shadow, thin styled scrollbar, hover/active wash, loading skeleton. |
 
 `<rv-select>` forwards its own value to the panel it builds, so a custom
 `listTemplate` inside it still gets the premium chrome. (`<rv-select-popup>` is
@@ -1036,6 +1036,28 @@ wherever they appear.
 
 **Map it on `:root`, never on a component element** — an element-level
 declaration shadows the root value and the override silently stops working.
+
+### Accent and forced colors
+
+`--rv-accent` paints the interactive layer: the premium trigger's focus ring,
+the search field's ring, the row focus ring, the active row's tint and the
+selected tick. Each read is `var(--rv-accent, <its previous value>)`, so a page
+that never imports the theme looks exactly as it did before — unless you set
+`--rv-select-focus-ring`, which still wins over all of it.
+
+The tick has two fallbacks because it had two colours: `--rv-select-popup-muted`
+on an ordinary row, and the row's own ink when that row is the active one.
+
+Pointing at a row makes it the active row, so the tint must survive the pointer
+too — it is `--rv-select-item-active-hover-bg` while hovered, and its fallback
+is the 8% ink an unthemed page painted there before the theme was wired.
+
+In forced-colours mode (`@media (forced-colors: active)`, Windows High
+Contrast) the panel and rows switch to system colours: `Canvas`/`CanvasText`
+for the surface, `Highlight`/`HighlightText` for the active row — which would
+otherwise be flattened to invisible — and `GrayText` at full opacity for a
+disabled row. The active row's focus ring becomes `CanvasText` (a `Highlight`
+ring on a `Highlight` band is invisible), and the tick follows its row.
 
 ### Which styling stack?
 
@@ -1155,15 +1177,15 @@ none of it would have moved.
 
 ### The library's own tokens
 
-| Token                | Default                       | Applies to        |
-| -------------------- | ----------------------------- | ----------------- |
-| `--rv-select-bg`     | `#ffffff`                     | trigger + panel   |
-| `--rv-select-fg`     | `#111111`                     | trigger + panel   |
-| `--rv-select-border` | `#e0e0e0`                     | trigger + search  |
-| `--rv-select-muted`  | `#555555`                     | chevron, empty    |
-| `--rv-select-error`  | `#dc2626`                     | invalid trigger   |
-| `--rv-select-radius` | `0.625rem`                    | trigger + panel   |
-| `--rv-select-shadow` | `0 16px 48px rgba(0,0,0,.22)` | panel             |
+| Token                | Default                       | Applies to                               |
+| -------------------- | ----------------------------- | ---------------------------------------- |
+| `--rv-select-bg`     | `#ffffff`                     | trigger + panel                          |
+| `--rv-select-fg`     | `#111111`                     | trigger + panel                          |
+| `--rv-select-border` | `#e0e0e0`                     | trigger + search                         |
+| `--rv-select-muted`  | `#555555`                     | chevron, empty                           |
+| `--rv-select-error`  | `#dc2626`                     | invalid trigger                          |
+| `--rv-select-radius` | `0.625rem`                    | trigger + panel                          |
+| `--rv-select-shadow` | `0 16px 48px rgba(0,0,0,.22)` | panel                                    |
 | `--rv-select-width`  | `14rem`                       | select reference width; panel follows it |
 
 **The panel is the trigger's width.** `--rv-select-width` is the control's
@@ -1292,13 +1314,15 @@ which accessibility trees — is recorded in
 - **WebKit** is verified on this machine (27.2) after installing three system
   libraries Playwright's bundle expects — `libavif16`, `libgav1-1`, `libyuv0`.
   Without root, `apt-get download` plus `dpkg -x` and an `LD_LIBRARY_PATH` (or
-  a symlink into `minibrowser-gtk/sys/lib`) is enough. `npx playwright
-  install-deps webkit` does the same with root.
+  a symlink into `minibrowser-gtk/sys/lib`) is enough; with root, run
+  `npx playwright install-deps webkit`.
 - **Safari proper is not tested** — WebKit is the engine, not the browser
   chrome (Safari's own top-layer and anchor support can lag the engine).
 - **No Tailwind project** in the test suite.
-- **No forced-colors / high-contrast** handling — supply your own
-  `--rv-select-*` values under `@media (forced-colors: active)`.
+- **Forced colors** ships system-colour defaults for the panel, rows, trigger
+  and search (see [Accent and forced colors](#accent-and-forced-colors)). The
+  UA forces author colours in that mode, so a brand palette is intentionally
+  not applied; overriding a `--rv-select-*` token there does not bring it back.
 - **No explicit `ControlValueAccessor` implementation.** In Angular 22,
   `rv-select` implements `FormValueControl`; Signal Forms use `[formField]`,
   and Reactive Forms and template-driven forms are covered by the package's
