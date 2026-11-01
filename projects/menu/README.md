@@ -288,8 +288,8 @@ support use the positioned-panel fallback.
 - The default controller starts closed during server rendering. On the client,
   placement is measured and flipped to fit the viewport when needed.
 - Submenus, menubars, virtualization, form-control binding, and option-group
-  behavior are not provided. The menu never owns a selection set: `[checked]` is
-  yours to bind, and `radio` only chooses the row's role.
+  behavior are not provided. This component does not implement a persistent
+  multi-select menu.
 
 ## Headless usage
 
