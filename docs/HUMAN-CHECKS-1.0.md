@@ -19,14 +19,16 @@ From the repository root, on a machine with a browser:
 
 ```bash
 pnpm build select
+pnpm build menu
 pnpm build menu-e2e
 node e2e/serve.mjs dist/menu-e2e/browser 4299
 ```
 
 Then open `http://127.0.0.1:4299/select`. The page holds the fixtures the checks
 name: `#single-select` (searchable, three invoices, one disabled),
-`#multi-select` (two roles), `#rtl-select` (Arabic label, three rows) and
-`#virtual-select` (500 rows, custom list template).
+`#multi-select` (two roles), `#rtl-select` (Arabic label, three rows),
+`#virtual-select` (500 rows, custom list template) and `#plain-menu` (a menu with
+no editable element inside — S4 needs it as the counter-case).
 
 ---
 
@@ -86,10 +88,104 @@ only you can fill them.
 
 ## S4 — real device resize
 
-Pending: written with S4 (the height-only resize policy). Until then the
-real-device result is **not tested**.
+**Status: not tested on a real device.** The rule is implemented and automated
+(`e2e/popup/conformance.spec.ts` — four of its sixteen cases are resize cases),
+but every one of them is Playwright moving `viewport`, not a phone. A real
+device is the only place where a keyboard opening can change the viewport while
+the finger is in the panel, and where the browser chrome collapses on scroll.
+
+The policy being tested, from `docs/DECISIONS.md` (S4, recorded PROVISIONAL):
+the popup listens for `resize` and compares `window.innerWidth` with the width
+captured when it opened. A resize that **does not** change the width closes the
+popup **only when the focus is inside an editable element in the panel** — the
+select filter box. A width change always closes, and the menu panel always
+closes on resize because it has nothing editable in it.
+
+### Steps (repeat per device: one phone, one tablet, portrait and landscape)
+
+1. Open `#single-select` **by its filter box**: tap the trigger, then tap inside
+   the text field. Expect the on-screen keyboard to appear.
+2. Watch the panel while the keyboard opens. Expect it to **stay open**, staying
+   attached to the trigger, with the rows still reachable and nothing clipped
+   behind the keyboard.
+3. With the keyboard still up, type `out`. Expect the rows to filter and the
+   panel to stay open and correctly placed.
+4. Rotate the device to landscape. Expect the panel to **close** and focus to
+   return to the trigger — never to stay open at a stale position.
+5. Rotate back, reopen the select, and now close the keyboard by tapping the
+   panel's own row area (`← Back`/swipe-down varies). Expect no jitter, no
+   panel that repositions after the fact, and no panel that closes because the
+   keyboard went away.
+6. Open the select, then scroll the **page** with a finger, outside the panel.
+   Expect it to close. Then reopen and scroll **inside** the row list. Expect it
+   to stay open and to keep its placement.
+7. On iOS, repeat step 5 with the Safari tab bar: open the select and scroll the
+   page down far enough for the chrome to collapse and expand. Chrome collapse
+   is a `resize` with no width change and no editable focus — expect the panel
+   to close once, not to flicker open/closed as the chrome animates.
+8. Counter-case: open `#plain-menu` and trigger any keyboard-independent resize
+   (fold the device, or on a tablet switch apps so the window resizes). Expect
+   the menu to close cleanly, with no orphaned listeners: after closing, the
+   page must scroll without the menu reappearing or the trigger stealing focus.
+
+### Pass means
+
+- The panel survives the keyboard opening **and** survives typing under it.
+- The panel dies on an orientation flip, and dies once — not repeatedly.
+- Nothing about closing leaves a listener behind: after any close, page scroll,
+  tapping elsewhere and reopening all behave normally.
+- The menu (no editable inside) never stays open across a resize.
+
+### This forces a change
+
+- **The panel stays open but is clipped behind the keyboard, or is positioned
+  off-screen** — the "keep it open" half of the policy is wrong for that engine.
+  The fix is to close it on the keyboard event and reopen under the new viewport,
+  not to widen the exception.
+- **The panel closes when the keyboard opens** on a device where the keyboard
+  changes `window.innerWidth` (a font-size or density shift does this): the
+  width comparison is the wrong axis for that engine. Record device + browser +
+  version; this is the case the automated suite cannot see.
+- **The panel closes and focus does not return to the trigger**, or the trigger
+  is left in an expanded state: a close-path regression, file it against the
+  device.
+- **Rotating twice leaves the panel permanently stuck open**: the width snapshot
+  is not being re-bound.
 
 ## S7 — Safari
 
-Pending: written with S7 (the browser support matrix), together with the WebKit
-results. Until then Safari is **not tested**.
+**Status: not tested.** The automated browser matrix (S7) covers Chromium and
+Firefox, plus WebKit where the harness can launch it — on this machine WebKit is
+currently unlaunchable (`libavif.so.16` is a dangling symlink in the Playwright
+GTK bundle), so no WebKit result exists yet and macOS Safari cannot be emulated
+by anything in this repo. Until both are done, the Safari column of the matrix
+in `docs/a11y-verification.md` is **not tested**, and it is the only column that
+proves the top-layer (`popover`) path on the engine that shipped it first.
+
+### Steps
+
+1. Open `http://127.0.0.1:4299/select` in current macOS Safari.
+2. Open `#single-select`. Confirm the panel renders in the top layer: it must
+   paint **over** the `#multi-select` trigger below it, not clipped by any
+   ancestor, and the scroll under it must be inert.
+3. Repeat the S4 steps 1–5 on Safari, where the address-bar and the tab-strip
+   both resize the viewport.
+4. Run `#rtl-select` and `#virtual-select`; the virtual list is where a
+   Safari-specific `position-try`/anchor placement bug would show.
+5. With "Reduce Motion" and "Increase Contrast" both on in System Settings,
+   reopen the select. Nothing may become invisible or unreadable.
+
+### Pass means
+
+- Top-layer placement works with no fallback (Safari supports `popover`, so the
+  `topLayerSupported = false` path is never taken there).
+- Keyboard-open and rotation behave as S4 describes.
+- RTL and the virtual list place correctly.
+
+### This forces a change
+
+- **The panel clipped, or under the page content**: Safari's `popover`/anchor
+  positioning differs; the fallback placement code has to be reached on this
+  engine, and that is a product fix, not a documentation note.
+- **Any S4 step disagreeing with Chromium and Firefox**: record the version, and
+  revisit whether the resize policy should be width-based at all.

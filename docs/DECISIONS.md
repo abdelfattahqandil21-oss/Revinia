@@ -3221,6 +3221,103 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
 - Impact: a behavior broken in only one component fails the shared suite.
   Acceptance requires the suite green on both.
 
+### D86 addendum — what the suite actually measures, the resize policy, and the duplication figure
+
+- Suite: `e2e/popup/conformance.spec.ts`, one `Adapter` per component (`rv-select-popup`
+  and `rv-menu`), eight cases each, sixteen in total, green on Chromium and
+  Firefox. The fixture is `/select`, which carries both components.
+- Measured, not asserted by eye:
+  - the listener ledger counts `document:pointerdown`, `window:scroll` and
+    `window:resize` add/remove balance: 0 closed, 3 open, and back to exactly the
+    pre-open map after an in-app destroy. The destroy navigates through the app's
+    own `<nav>` link and asserts a JS marker survives, so it proves a component
+    destroy rather than a page reload that would zero the process.
+  - outside pointerdown closes and does not steal focus, fired as a raw
+    `page.mouse.click` at an empty corner: `locator.click()` on an off-screen
+    element scrolls the document first, and that scroll closes the panel, so the
+    case would have measured the scroll rule while claiming the pointer rule.
+  - scroll outside closes, scroll inside does not — the inside case fails loudly
+    if the document cannot actually move, because a parked-at-maximum `scrollBy`
+    is a no-op that would pass for nothing.
+  - the top-layer fallback deletes `HTMLElement.prototype.showPopover` in an init
+    script (the flag is read once at construction, so a mid-test delete cannot
+    work); the panel still lands on the trigger's leading edge and Enter picks.
+- Resize policy (S4), **PROVISIONAL — pending human check**: a resize is ignored
+  only when the width is unchanged AND the focus is in an editable element inside
+  that panel; every other resize closes with no focus restore. Rationale: the
+  on-screen keyboard changes height and says nothing about where the panel is
+  anchored, while width is the axis the anchor lives on, so a width change — an
+  orientation flip included — still means stale coordinates. A menu keeps closing
+  on every resize because its rows are buttons: it has no editable element, so
+  the exemption can never apply to it and both components still run one rule.
+  The real-device keyboard is not tested and is a human item.
+- Mutation checks, all caught: removing the width comparison from `onResize`
+  turns the select width case red and leaves the menu's green; forcing
+  `editableFocusInsidePanel()` true turns both height-only cases red.
+- One false red, worth recording: the select width case failed against a "clean"
+  tree because `dist/select` had been rebuilt while the mutation was still in the
+  source, and `menu-e2e` bundles the library dist. The served bundle carried the
+  mutant and the test was right to fail. Rebuilding `dist/select` and
+  `dist/menu-e2e` from the restored source turned it green; the suite never
+  builds, so a stale `dist/` masquerades as a product bug.
+- Server render is not a browser check. The eighth S3 item has its home in
+  `pnpm check:popup-ssr` (`scripts/check-popup-ssr.mjs`): plain Node, no DOM,
+  `renderApplication` from `@angular/platform-server` over the built
+  `dist/select` and `dist/menu` FESM bundles. `window` and `document` are not
+  defined there, so a *use* raises a ReferenceError and the render fails, while a
+  `typeof window === 'undefined'` guard is not a use and is not a failure —
+  that distinction is the whole claim. Eleven checks pass, including a negative
+  control whose host calls `document.createElement` and is caught. Scope: the
+  server renders the panel closed; the open state is the browser suite's job.
+- Duplication, report-only per D86. An earlier entry here quoted 6 clones over 14
+  files (162 lines, 5.02%; 1855 tokens, 7.62%) from a `pnpm dlx jscpd` invocation
+  whose scope and flags could not be re-run from the repository, so it is
+  superseded rather than compared against. The measurement is now the script
+  `pnpm check:duplication` (`scripts/check-duplication.mjs`): jscpd **pinned to
+  4.0.8**, `--min-tokens 100`, over the popup components and their utils on both
+  sides — `select/ui/src/lib/components/popup`, `select/ui/src/lib/utils`,
+  `menu/ui/src/lib/components/menu`, `menu/ui/src/lib/utils`. It reports and
+  never fails, and prints the baseline it is checked against.
+- That scope, measured on `HEAD` and on this tree with the same command:
+  **7 clones / 181 lines (6.38%) / 2,046 tokens (10.77%)** before the S4 resize
+  rule, **8 clones / 196 lines (6.75%) / 2,213 tokens (11.36%)** after it. So S4
+  added exactly one clone, 15 lines and 167 tokens: the listener-registration
+  block the two popups now share line for line (`select-popup.ts:384-399` ↔
+  `menu-panel.ts:331-346`). That is the cost D86 accepted, now measured rather
+  than asserted — and it is the argument for the post-1.0 extraction, since a
+  third `resize` policy change has to be written twice.
+- Version pinning matters more than the tree here: the same sources measured
+  **18 clones / 322 lines (11.30%)** on jscpd 5.4.2. A check that re-runs on a
+  moving detector reports drift that is only the tool changing.
+- No CI runs any of this: the repository has no `.github/workflows`, no
+  `.gitlab-ci.yml` and no other CI file (`git ls-files` finds none). D86's
+  "report-only duplication check in CI" therefore ships as a script a person runs,
+  alongside `check:popup-ssr`, `check:component-theme`, `check:contrast`,
+  `check:theme-dark`, `check:pack`, `check:readmes` and `check:docs`. Adding CI is
+  out of this plan's scope.
+- Browser totals after this change: 113 Playwright tests green on Chromium and
+  113 on Firefox. Two of them (`select: multi mode`, its a11y sibling) now click
+  rows with `{ force: true }`: Playwright's own scroll-into-view moves the
+  document for a top-layer row with no layout change and no JS-visible scroll call
+  (measured `scrollY` 70 → 389 at a constant document height), which closes the
+  panel by design. A real pointer at the same coordinates keeps it open, so this
+  is a harness artifact, and the assertions still require both picks to land.
+- One pre-existing Chromium-only failure came out of the full run and is fixed
+  here, not silenced: `e2e/menu/api.spec.ts` measures the active row's icon color
+  and read `rgb(85, 85, 85)` (muted) against a row at `rgb(17, 17, 17)`. It is a
+  race inside the test, not a product defect: `data-active` is an Angular host
+  binding (`[attr.data-active]`, `menu-panel.ts:43`) that lands on a
+  change-detection tick, while the row's `focus()` is imperative inside the key
+  handler — so `toBeFocused()` can be true while the row is still not active. It
+  passed 3/3 in isolation and failed only with the suite at four workers. The test
+  now waits for `data-active="true"` before measuring, i.e. it waits for the state
+  whose style it asserts.
+- `docs/HUMAN-CHECKS-1.0.md` carries the two human halves this plan cannot
+  execute: the S4 real-device resize steps (keyboard, orientation, iOS chrome
+  collapse, and the menu as the counter-case) and the S7 Safari steps. Both are
+  marked **not tested** and say what result would force a code change rather than
+  a documentation change.
+
 ## 2026-10-31 — D87: theme is in scope before 1.0 — dark, forced-colors, accent
 
 - Context: `@rivinia/theme@0.1.0` has no dark values and no forced-colors
