@@ -313,20 +313,34 @@ export class RiviniaMenuComponent {
         if (host && !host.contains(event.target as Node)) this.doClose(false);
       };
       document.addEventListener('pointerdown', onPointer);
-      // Coordinates go stale on outside scroll/resize — close instead of
-      // drifting (native-select-like; scrolling inside the panel is exempt).
+      // Coordinates go stale on outside scroll — close instead of drifting
+      // (native-select-like; scrolling inside the panel is exempt).
       // Like Tab-close, this is APG-consistent non-modal behavior.
       const onScroll = (event: Event) => {
         const panel = this.self.nativeElement.querySelector('.rv-menu-panel');
         if (panel && event.target instanceof Node && panel.contains(event.target)) return;
         this.doClose(false);
       };
+      // S4: a HEIGHT-only `resize` is what an on-screen keyboard fires, and it
+      // is ignored only while an editable element inside the panel owns the
+      // caret. A built-in menu has nothing editable — its rows are buttons — so
+      // for it every resize closes, exactly as before; a menu hosting projected
+      // content can hold an `<input>`, and that is the keyboard case. Width is
+      // the axis the anchor lives on, so a width change, including an
+      // orientation flip, always closes.
+      let widthAtOpen = window.innerWidth;
+      const onResize = () => {
+        const width = window.innerWidth;
+        if (width === widthAtOpen && this.editableFocusInsidePanel()) return;
+        widthAtOpen = width;
+        this.doClose(false);
+      };
       window.addEventListener('scroll', onScroll, true);
-      window.addEventListener('resize', onScroll);
+      window.addEventListener('resize', onResize);
       onCleanup(() => {
         document.removeEventListener('pointerdown', onPointer);
         window.removeEventListener('scroll', onScroll, true);
-        window.removeEventListener('resize', onScroll);
+        window.removeEventListener('resize', onResize);
       });
     });
     // APG menu-button: the trigger exposes haspopup + expanded, and
@@ -403,6 +417,27 @@ export class RiviniaMenuComponent {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Is the caret inside an editable element that this panel owns?
+   *
+   * A menu has none — its rows are `button`s — so this answers false and the
+   * resize path closes. It exists because the select popup runs the same S4
+   * rule with a filter box that DOES own the caret, and the two popups are
+   * held to one conformance suite (D86).
+   */
+  private editableFocusInsidePanel(): boolean {
+    if (typeof document === 'undefined') return false;
+    const active = document.activeElement;
+    if (!(active instanceof HTMLElement)) return false;
+    const panel = this.self.nativeElement.querySelector('.rv-menu-panel');
+    if (!panel || !panel.contains(active)) return false;
+    return (
+      active.isContentEditable ||
+      active instanceof HTMLInputElement ||
+      active instanceof HTMLTextAreaElement
+    );
   }
 
   /**
