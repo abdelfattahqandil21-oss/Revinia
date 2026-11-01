@@ -1231,6 +1231,10 @@ Single/multi share the same model:
   stays open.
 - Opening focuses the filter box (when searchable) or the first enabled
   option. Closing resets the filter and returns focus to the trigger.
+- **A resize closes the panel** — except one that changes only the height, with
+  the caret in the filter box: that is the on-screen keyboard, and taking the
+  filter away mid-word is worse than a panel that keeps its placement. Any width
+  change closes, because width is the axis the panel is anchored on.
 
 ## Accessibility
 
