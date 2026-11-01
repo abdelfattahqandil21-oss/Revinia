@@ -20,7 +20,8 @@ Older releases (0.1.0 to 0.4.0) are documented in the repository
   case. A built-in menu has nothing editable, so its behavior is unchanged:
   every resize closes, and so does any width change, because width is the axis
   the panel is anchored on. Now covered by one suite with the select popup
-  (`e2e/popup/conformance.spec.ts`, sixteen cases over both components), which
+  (`e2e/popup/conformance.spec.ts`, eight cases run against the select, the
+  built-in menu and a menu with a consumer field projected into its panel), which
   also asserts the panel's three global listeners are balanced again after a
   route change destroys an open panel.
 

@@ -3223,9 +3223,10 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
 
 ### D86 addendum — what the suite actually measures, the resize policy, and the duplication figure
 
-- Suite: `e2e/popup/conformance.spec.ts`, one `Adapter` per component (`rv-select-popup`
-  and `rv-menu`), eight cases each, sixteen in total, green on Chromium and
-  Firefox. The fixture is `/select`, which carries both components.
+- Suite: `e2e/popup/conformance.spec.ts`, one `Adapter` per host: `rv-select-popup`
+  and the built-in `rv-menu` on `/select`, plus the same `rv-menu` with a consumer
+  `<input>` projected into its panel on `/content`. Eight cases per adapter,
+  twenty-four in total, green on Chromium and Firefox (48 runs).
 - Measured, not asserted by eye:
   - the listener ledger counts `document:pointerdown`, `window:scroll` and
     `window:resize` add/remove balance: 0 closed, 3 open, and back to exactly the
@@ -3236,9 +3237,11 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
     `page.mouse.click` at an empty corner: `locator.click()` on an off-screen
     element scrolls the document first, and that scroll closes the panel, so the
     case would have measured the scroll rule while claiming the pointer rule.
-  - scroll outside closes, scroll inside does not — the inside case fails loudly
-    if the document cannot actually move, because a parked-at-maximum `scrollBy`
-    is a no-op that would pass for nothing.
+  - scroll outside closes, scroll inside does not. The outside case throws if the
+    document cannot actually move, because a parked-at-maximum `scrollBy` is a
+    no-op that would pass for nothing; `/content` ends above its own scroll fold,
+    so the suite appends a `300vh` spacer for that one case instead of changing a
+    fixture that the nine cases in `e2e/menu/projected-content.spec.ts` run against.
   - the top-layer fallback deletes `HTMLElement.prototype.showPopover` in an init
     script (the flag is read once at construction, so a mid-test delete cannot
     work); the panel still lands on the trigger's leading edge and Enter picks.
@@ -3247,13 +3250,32 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   that panel; every other resize closes with no focus restore. Rationale: the
   on-screen keyboard changes height and says nothing about where the panel is
   anchored, while width is the axis the anchor lives on, so a width change — an
-  orientation flip included — still means stale coordinates. A menu keeps closing
-  on every resize because its rows are buttons: it has no editable element, so
-  the exemption can never apply to it and both components still run one rule.
+  orientation flip included — still means stale coordinates. A *built-in* menu
+  keeps closing on every resize because its rows are buttons: it has no editable
+  element, so the exemption can never fire for it. That is why the suite needs the
+  `/content` host: the menu renders `<div class="rv-menu-panel">` itself and
+  projects consumer markup inside it, so a projected `<input>` is genuinely inside
+  the panel and the exemption applies to the menu too — one rule, both components.
   The real-device keyboard is not tested and is a human item.
-- Mutation checks, all caught: removing the width comparison from `onResize`
-  turns the select width case red and leaves the menu's green; forcing
-  `editableFocusInsidePanel()` true turns both height-only cases red.
+- Mutation checks, four mutants, each rebuilt through `dist/select` +
+  `dist/menu` + `dist/menu-e2e` before running, and each killed by exactly one
+  case and by no other:
+  - menu, exemption deleted (`if (width === widthAtOpen) return;` dropped) →
+    only the projected field's "height-only keeps the panel open" goes red.
+    Before the third adapter existed, this mutant passed the whole suite; that is
+    the hole the reviewer found and the reason `/content` is now a host.
+  - menu, exemption forced true (`&& true`) → only the built-in menu's
+    "height-only closes a panel that has nothing editable" goes red.
+  - menu, width comparison dropped (only the editable test remains) → only the
+    projected field's "width change closes it" goes red; the select and built-in
+    menu width cases stay green, as they should — one is the other component's
+    code, the other has no editable element to exempt.
+  - select, same two mutants → respectively only the select "height-only keeps
+    the panel open" and only the select "width change closes it" go red.
+  So each half of the shared rule is covered per component, not once across both.
+  The earlier note here claimed forcing `editableFocusInsidePanel()` true turned
+  *both* height-only cases red; measured, it turns one — the "closes" one — and
+  leaves the "stays open" one green, which is the direction the mutant hides in.
 - One false red, worth recording: the select width case failed against a "clean"
   tree because `dist/select` had been rebuilt while the mutation was still in the
   source, and `menu-e2e` bundles the library dist. The served bundle carried the

@@ -89,7 +89,7 @@ only you can fill them.
 ## S4 — real device resize
 
 **Status: not tested on a real device.** The rule is implemented and automated
-(`e2e/popup/conformance.spec.ts` — four of its sixteen cases are resize cases),
+(`e2e/popup/conformance.spec.ts` — six of its twenty-four cases are resize cases),
 but every one of them is Playwright moving `viewport`, not a phone. A real
 device is the only place where a keyboard opening can change the viewport while
 the finger is in the panel, and where the browser chrome collapses on scroll.
@@ -98,8 +98,10 @@ The policy being tested, from `docs/DECISIONS.md` (S4, recorded PROVISIONAL):
 the popup listens for `resize` and compares `window.innerWidth` with the width
 captured when it opened. A resize that **does not** change the width closes the
 popup **only when the focus is inside an editable element in the panel** — the
-select filter box. A width change always closes, and the menu panel always
-closes on resize because it has nothing editable in it.
+select filter box, or an `<input>` a consumer projects into a menu panel. A width
+change always closes. The built-in menu closes on every resize because its rows
+are buttons and it has nothing editable to exempt; the same menu hosting projected
+content is exempt exactly like the select.
 
 ### Steps (repeat per device: one phone, one tablet, portrait and landscape)
 
@@ -127,6 +129,11 @@ closes on resize because it has nothing editable in it.
    (fold the device, or on a tablet switch apps so the window resizes). Expect
    the menu to close cleanly, with no orphaned listeners: after closing, the
    page must scroll without the menu reappearing or the trigger stealing focus.
+9. `/content`, the menu with a consumer filter box projected into its panel: tap
+   the filter, let the keyboard open. Expect the panel to **stay open** exactly
+   like the select — this is the same rule reached through the menu's own code,
+   and the automated suite only proves it in a browser, not under a real
+   keyboard.
 
 ### Pass means
 
@@ -134,7 +141,8 @@ closes on resize because it has nothing editable in it.
 - The panel dies on an orientation flip, and dies once — not repeatedly.
 - Nothing about closing leaves a listener behind: after any close, page scroll,
   tapping elsewhere and reopening all behave normally.
-- The menu (no editable inside) never stays open across a resize.
+- The built-in menu, which has nothing editable inside, never stays open across
+  a resize; the same menu with a projected field does, and both are the one rule.
 
 ### This forces a change
 

@@ -14,9 +14,10 @@
  *     pnpm check:duplication
  * The baseline below is what the tree measured on 2026-11-01; if the run prints
  * a different number, say which way it moved. The version is pinned, because the
- * detector matters more than the tree here: the same sources measured 6 clones
- * on jscpd 4.0.8 and 18 clones (322 lines, 11.30%) on 5.4.2, and a check that
- * re-runs on a moving version reports drift that is only the tool changing.
+ * detector matters more than the tree here: the same sources at the same scope
+ * measured 8 clones on jscpd 4.0.8 and 18 clones (322 lines, 11.30%) on 5.4.2,
+ * and a check that re-runs on a moving version reports drift that is only the
+ * tool changing.
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
