@@ -28,6 +28,8 @@
     "check:contrast": "node scripts/check-contrast.mjs",
     "check:theme-dark": "node scripts/check-theme-dark.mjs",
     "check:component-theme": "node scripts/check-component-theme.mjs",
+    "check:popup-ssr": "node scripts/check-popup-ssr.mjs",
+    "check:duplication": "node scripts/check-duplication.mjs",
     "check:pack": "node scripts/check-pack.mjs",
     "check:readmes": "node scripts/check-readmes.mjs",
     "test:scripts": "vitest run scripts/tests"
