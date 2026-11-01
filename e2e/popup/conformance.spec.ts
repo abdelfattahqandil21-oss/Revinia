@@ -16,10 +16,10 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
  * in the one thing the components genuinely do not share: whether the panel has
  * an editable element inside it.
  *
- * The spec's eighth item — a server render that must not touch `window` or
- * `document` — is not here, because a browser cannot host one. It is covered by
- * `pnpm check:popup-ssr` (`scripts/check-popup-ssr.mjs`), which renders both
- * components with those globals undefined, so any actual use throws; see D86.
+ * The last of S3's seven suite bullets — a server render that must not touch
+ * `window` or `document` — is not here, because a browser cannot host one. It is
+ * covered by `pnpm check:popup-ssr` (`scripts/check-popup-ssr.mjs`), which renders
+ * both components with those globals undefined, so any actual use throws; see D86.
  */
 type Adapter = {
   readonly name: string;
@@ -265,6 +265,16 @@ for (const adapter of ADAPTERS) {
     test('Escape closes and returns focus to the trigger', async ({ page }) => {
       await gotoHost(page, adapter);
       await openFromKeyboard(page, adapter);
+
+      // The precondition the restore needs: focus must have LEFT the trigger.
+      // Opening from the keyboard leaves it there until the deferred focus
+      // lands, so without this the final assertion would also be true with the
+      // restore code deleted — the focus would simply never have moved.
+      await expect
+        .poll(() => activeElementKind(page), {
+          message: 'Escape can only prove a restore if opening moved focus into the panel',
+        })
+        .not.toContain('trigger');
 
       await page.keyboard.press('Escape');
 

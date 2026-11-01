@@ -1,6 +1,6 @@
 /**
- * pnpm check:popup-ssr — S3, item 8: a server render of both popups does not use
- * `window` or `document`.
+ * pnpm check:popup-ssr — the last of S3's seven suite bullets: a server render
+ * of both popups does not use `window` or `document`.
  *
  * This cannot be proved in a browser, and the shared Playwright suite
  * (`e2e/popup/conformance.spec.ts`) says so in its header: a browser always has
