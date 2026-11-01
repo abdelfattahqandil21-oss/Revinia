@@ -21,7 +21,7 @@ interface Language {
     <p>Projected content: the panel hosts consumer markup next to menu rows.</p>
     <div class="toolbar">
       <button type="button" class="before" (click)="noop()">Before menu</button>
-      <rv-menu [menu]="menu" menuLabel="Language" (picked)="choose($event.id)">
+      <rv-menu id="projected-menu" [menu]="menu" menuLabel="Language" (picked)="choose($event.id)">
         <button type="button" rv-menu-trigger>Language: {{ currentLabel() }}</button>
         <div rv-menu-panel>
           <input

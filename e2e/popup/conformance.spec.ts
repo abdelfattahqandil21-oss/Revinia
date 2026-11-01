@@ -10,9 +10,11 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
  * here is written once and executed per adapter, so a behavior the two
  * components disagree about fails with the disagreement in its name.
  *
- * Both hosts live on `/select` in the demo app, so the adapters differ only in
- * the selectors and the one thing the components genuinely do not share: the
- * select panel has an editable element inside it and the menu does not.
+ * Eight behaviors run against three hosts — the select popup and the plain menu
+ * on `/select`, and the same menu with a consumer input projected into its panel
+ * on `/content` — so twenty-four cases. The adapters differ in the selectors and
+ * in the one thing the components genuinely do not share: whether the panel has
+ * an editable element inside it.
  *
  * The spec's eighth item — a server render that must not touch `window` or
  * `document` — is not here, because a browser cannot host one. It is covered by
@@ -21,6 +23,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
  */
 type Adapter = {
   readonly name: string;
+  readonly route: string;
   readonly root: string;
   readonly trigger: string;
   readonly panel: string;
@@ -31,6 +34,7 @@ type Adapter = {
 
 const SELECT: Adapter = {
   name: 'select popup',
+  route: '/select',
   root: '#single-select',
   trigger: '#single-select .rv-select-trigger',
   panel: '#single-select .rv-select-popup-panel',
@@ -40,6 +44,7 @@ const SELECT: Adapter = {
 
 const MENU: Adapter = {
   name: 'menu panel',
+  route: '/select',
   root: '#plain-menu',
   trigger: '#plain-menu .rv-menu-trigger button',
   panel: '#plain-menu .rv-menu-panel',
@@ -47,7 +52,25 @@ const MENU: Adapter = {
   editable: null,
 };
 
-const ADAPTERS = [SELECT, MENU];
+/**
+ * The same menu component with a consumer `<input>` projected into its panel
+ * (`/content`), which is the ONLY host where the menu's half of the resize
+ * exemption can mean anything: the built-in panel has nothing editable, so with
+ * `MENU` alone the rule is tested only in the direction where it does nothing.
+ * Without this adapter the exemption could be deleted from `menu-panel.ts` and
+ * the suite would stay green while the README kept advertising the behavior.
+ */
+const PROJECTED_MENU: Adapter = {
+  name: 'menu panel with a projected field',
+  route: '/content',
+  root: '#projected-menu',
+  trigger: '#projected-menu .rv-menu-trigger button',
+  panel: '#projected-menu .rv-menu-panel',
+  row: '#projected-menu [rvmenuitem]',
+  editable: '#projected-menu .filter',
+};
+
+const ADAPTERS = [SELECT, MENU, PROJECTED_MENU];
 
 const POPUP_GLOBALS = ['document:pointerdown', 'window:scroll', 'window:resize'] as const;
 
@@ -98,7 +121,7 @@ const listenerLedger = () => {
 /** A fresh page with the component under test centered in the viewport. */
 async function gotoHost(page: Page, adapter: Adapter): Promise<void> {
   await page.addInitScript(listenerLedger);
-  await page.goto('/select');
+  await page.goto(adapter.route);
   // Center the component rather than parking at the document bottom: the panel
   // has to be fully visible below its trigger, and Playwright scrolls into view
   // before clicking anything that is off-screen — a document scroll closes the
@@ -111,6 +134,25 @@ async function gotoHost(page: Page, adapter: Adapter): Promise<void> {
     scrollTo(0, window.scrollY + box.top - 180);
   }, adapter.root);
   await page.waitForTimeout(50);
+}
+
+/**
+ * Give the document a scrollport before a test that scrolls it.
+ *
+ * `/content` ends a few lines below its toolbar, so a `scrollBy` there lands on
+ * its own limit, fires no event, and the case would pass by never producing the
+ * condition it claims to check. The suite appends the space rather than editing
+ * the demo page: the other menu specs click around `/content`, and a document
+ * that suddenly scrolls changes what those clicks do to an open panel. It runs
+ * for every adapter, so all three measure the scroll rule on the same fixture.
+ */
+async function makeScrollable(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const spacer = document.createElement('div');
+    spacer.id = 'rv-conformance-scrollport';
+    spacer.style.height = '300vh';
+    document.body.appendChild(spacer);
+  });
 }
 
 /** Pointer-open, then step into the rows the way a keyboard user would. */
@@ -195,6 +237,7 @@ for (const adapter of ADAPTERS) {
 
     test('scroll outside the panel closes it', async ({ page }) => {
       await gotoHost(page, adapter);
+      await makeScrollable(page);
       await openAndEnter(page, adapter);
 
       // Prove the document really moved before asserting anything closed by it:
@@ -243,10 +286,13 @@ for (const adapter of ADAPTERS) {
 
       await openAndEnter(page, adapter);
       const open = await page.evaluate(() => window.__listenerLedger());
+      // Per key, not summed: a total of 3 also matches a panel that added
+      // `scroll` twice and never registered `resize`, and that panel leaks and
+      // mis-listens while this assertion still reads "exactly three".
       expect(
-        POPUP_GLOBALS.reduce((total, key) => total + open[key], 0),
-        'an open panel registers exactly pointerdown + scroll + resize',
-      ).toBe(3);
+        POPUP_GLOBALS.map((key) => `${key}=${open[key]}`).join(' '),
+        'an open panel registers each of pointerdown + scroll + resize exactly once',
+      ).toBe(POPUP_GLOBALS.map((key) => `${key}=1`).join(' '));
 
       // A route change destroys the component. The panel never gets a chance to
       // close itself, so only the effect cleanup can release the listeners.
