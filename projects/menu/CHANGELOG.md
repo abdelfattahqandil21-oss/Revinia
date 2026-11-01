@@ -15,6 +15,14 @@ Older releases (0.1.0 to 0.4.0) are documented in the repository
   disabled row `GrayText` at full opacity — the UA otherwise flattens the
   active row into invisibility. The active row's ring is `CanvasText`, because
   a `Highlight` ring on a `Highlight` band cannot be seen.
+- **A resize that changes only the height keeps the panel open while the caret
+  is in an editable element you projected into it** — the on-screen keyboard
+  case. A built-in menu has nothing editable, so its behavior is unchanged:
+  every resize closes, and so does any width change, because width is the axis
+  the panel is anchored on. Now covered by one suite with the select popup
+  (`e2e/popup/conformance.spec.ts`, sixteen cases over both components), which
+  also asserts the panel's three global listeners are balanced again after a
+  route change destroys an open panel.
 
 ## 0.5.0
 
