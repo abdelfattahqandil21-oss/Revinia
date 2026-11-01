@@ -54,9 +54,10 @@ describe('menu theme wiring', () => {
   });
 
   /**
-   * Forced colors forces author colours but not `box-shadow`, and it flattens
-   * every background to Canvas — which erases the active row. System colours
-   * are the only palette an author may still state.
+   * Forced colors forces author colours — including `box-shadow`, which Chromium
+   * reads back as `none` — and it flattens every background to Canvas, which
+   * erases the active row. System colours are the only palette an author may
+   * still state.
    */
   it('gives the panel and rows a forced-colors default they can survive', () => {
     const forced = flat(block(source, '@media (forced-colors: active) {'));

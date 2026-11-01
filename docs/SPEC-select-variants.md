@@ -33,9 +33,9 @@ Hard constraints from the owner:
 export type RiviniaSelectVariant = 'simple' | 'premium';
 ```
 
-| Surface | Input | Default | Effect |
-| --- | --- | --- | --- |
-| `<rv-select>` | `variant` | `'simple'` | `data-variant` on the `<rv-select>` host **and** on the inner `<rv-select-popup>` |
+| Surface             | Input     | Default    | Effect                                                                                                 |
+| ------------------- | --------- | ---------- | ------------------------------------------------------------------------------------------------------ |
+| `<rv-select>`       | `variant` | `'simple'` | `data-variant` on the `<rv-select>` host **and** on the inner `<rv-select-popup>`                      |
 | `<rv-select-popup>` | `variant` | `'simple'` | `data-variant` on its own host; the select is its only caller (`SelectPopupComponent` is not exported) |
 
 - The attribute is always present (`simple` included), so consumer CSS can
@@ -52,21 +52,32 @@ Every premium value below is read through the token in the left column; the
 right column is the premium fallback. The base (simple) fallbacks are
 unchanged.
 
-| Token | simple (unchanged) | premium |
-| --- | --- | --- |
-| `--rv-select-radius` | `0.625rem` | `0.75rem` |
-| `--rv-select-trigger-padding` | `0.5rem 0.75rem` | `0.5625rem 0.8125rem` |
-| `--rv-select-trigger-shadow` | none | `0 1px 2px rgba(16, 24, 40, 0.06)` |
-| `--rv-select-border` | `--rv-border` (`#e0e0e0`) | `color-mix(in srgb, fg 14%, transparent)` |
-| `--rv-select-popup-radius` | `0.75rem` | `0.875rem` |
-| `--rv-select-popup-border` | `--rv-border` | `color-mix(in srgb, fg 10%, transparent)` |
-| `--rv-select-popup-shadow` | `0 16px 48px rgba(0,0,0,0.22)` | `0 12px 32px -8px rgba(16,24,40,.18), 0 4px 8px -4px rgba(16,24,40,.10)` |
-| `--rv-select-popup-pad` | `0.375rem` | `0.3125rem` |
-| `--rv-select-item-active-bg` | `currentColor 10%` | `fg 7%` |
-| `--rv-select-item-hover-bg` | `currentColor 8%` | `fg 5%` |
-| `--rv-select-focus-ring` | `2px solid currentColor` | `2px solid fg 55%` + `--rv-select-focus-offset: 2px` |
+| Token                              | simple (unchanged)             | premium                                                                  |
+| ---------------------------------- | ------------------------------ | ------------------------------------------------------------------------ |
+| `--rv-select-radius`               | `0.625rem`                     | `0.75rem`                                                                |
+| `--rv-select-trigger-padding`      | `0.5rem 0.75rem`               | `0.5625rem 0.8125rem`                                                    |
+| `--rv-select-trigger-shadow`       | none                           | `0 1px 2px rgba(16, 24, 40, 0.06)`                                       |
+| `--rv-select-border`               | `--rv-border` (`#e0e0e0`)      | `color-mix(in srgb, fg 14%, transparent)`                                |
+| `--rv-select-popup-radius`         | `0.75rem`                      | `0.875rem`                                                               |
+| `--rv-select-popup-border`         | `--rv-border`                  | `color-mix(in srgb, fg 10%, transparent)`                                |
+| `--rv-select-popup-shadow`         | `0 16px 48px rgba(0,0,0,0.22)` | `0 12px 32px -8px rgba(16,24,40,.18), 0 4px 8px -4px rgba(16,24,40,.10)` |
+| `--rv-select-popup-pad`            | `0.375rem`                     | `0.3125rem`                                                              |
+| `--rv-select-item-active-bg`       | `currentColor 10%`             | `fg 7%`                                                                  |
+| `--rv-select-item-hover-bg`        | `currentColor 8%`              | `fg 5%`                                                                  |
+| `--rv-select-item-active-hover-bg` | `currentColor 8%`              | the variant's `--rv-select-item-active-bg`                               |
+| `--rv-select-focus-ring`           | `2px solid currentColor`       | `2px solid fg 55%` + `--rv-select-focus-offset: 2px`                     |
 
 Notes that matter:
+
+- Since D87 the simple fallbacks above are read as
+  `color-mix(in srgb, var(--rv-accent, <the value in this table>) …)`, so the
+  table states the unthemed render, which is what a page that never imports
+  `@rivinia/theme` still gets.
+- `--rv-select-item-active-hover-bg` exists because hovering ACTIVATES a row: the
+  hover wash used to tie the active tint on specificity and repaint it neutral
+  under the pointer. Premium reads nothing new — its (0,4,1) active-row rules
+  outrank the generic (0,4,0) hover rule, so the active tint it already declares
+  is what shows.
 
 - The border is derived from the **foreground**, not from a grey: a premium
   panel on a dark background must tint toward the text, not toward a light
@@ -86,15 +97,15 @@ Notes that matter:
 Token scale from the design skills (`transitions-dev` / `transitions-polish`),
 dropdown class, not invented:
 
-| | value | token |
-| --- | --- | --- |
-| open duration | 250 ms | `--rv-select-popup-duration` (`160ms` default) |
-| open easing | `cubic-bezier(0.22, 1, 0.36, 1)` | `--rv-select-popup-easing` (`cubic-bezier(0.16, 1, 0.3, 1)` default) |
-| open pre-scale | `0.97` | `--rv-select-popup-from-scale` (new token, `0.96` default) |
-| open travel | 4 px | `--rv-select-popup-from-y` (existing) |
-| row hover in | 150 ms | literal `transition-duration` |
-| row hover out | 250 ms | `--rv-select-popup-easing` |
-| trigger/chevron turn | 250 ms in, 150 ms out | literal `cubic-bezier(0.22, 1, 0.36, 1)` |
+|                      | value                            | token                                                                |
+| -------------------- | -------------------------------- | -------------------------------------------------------------------- |
+| open duration        | 250 ms                           | `--rv-select-popup-duration` (`160ms` default)                       |
+| open easing          | `cubic-bezier(0.22, 1, 0.36, 1)` | `--rv-select-popup-easing` (`cubic-bezier(0.16, 1, 0.3, 1)` default) |
+| open pre-scale       | `0.97`                           | `--rv-select-popup-from-scale` (new token, `0.96` default)           |
+| open travel          | 4 px                             | `--rv-select-popup-from-y` (existing)                                |
+| row hover in         | 150 ms                           | literal `transition-duration`                                        |
+| row hover out        | 250 ms                           | `--rv-select-popup-easing`                                           |
+| trigger/chevron turn | 250 ms in, 150 ms out            | literal `cubic-bezier(0.22, 1, 0.36, 1)`                             |
 
 The panel tokens already existed at HEAD — the 0.6.1 entrance reads
 `--rv-select-popup-duration` (160ms) and `--rv-select-popup-easing` — so
@@ -161,15 +172,15 @@ chevron turn, the row colour transition and the shimmer (bars stay, static).
 Measured, not estimated — `ng build select` on this branch (A) and on a detached
 worktree at HEAD (B), plus `lightningcss` minification of both stylesheets.
 
-| Artifact | Before (HEAD) | After | Delta |
-| --- | --- | --- | --- |
-| `rivinia-select-ui.mjs` raw | 68,475 B | 81,151 B | **+12,676 B** |
-| `rivinia-select-ui.mjs` gzip -9 | 11,514 B | 12,806 B | **+1,292 B** |
-| `rivinia-select-ui.mjs` brotli | 9,780 B | 10,581 B | **+801 B** |
-| `rivinia-select.mjs` (headless) | 3,711 B | 3,711 B | **0** |
-| both `.css` minified raw | 9,280 B | 14,644 B | +5,364 B |
-| both `.css` minified gzip | 2,538 B | 3,318 B | +780 B |
-| both `.css` minified brotli | 2,151 B | 2,834 B | +683 B |
+| Artifact                        | Before (HEAD) | After    | Delta         |
+| ------------------------------- | ------------- | -------- | ------------- |
+| `rivinia-select-ui.mjs` raw     | 68,475 B      | 81,151 B | **+12,676 B** |
+| `rivinia-select-ui.mjs` gzip -9 | 11,514 B      | 12,806 B | **+1,292 B**  |
+| `rivinia-select-ui.mjs` brotli  | 9,780 B       | 10,581 B | **+801 B**    |
+| `rivinia-select.mjs` (headless) | 3,711 B       | 3,711 B  | **0**         |
+| both `.css` minified raw        | 9,280 B       | 14,644 B | +5,364 B      |
+| both `.css` minified gzip       | 2,538 B       | 3,318 B  | +780 B        |
+| both `.css` minified brotli     | 2,151 B       | 2,834 B  | +683 B        |
 
 The FESM delta is larger than the minified-CSS delta because Angular inlines
 component styles verbatim into the FESM — comments included — and no consumer
@@ -213,25 +224,25 @@ measurement: **+1.5 KB gzip / +1 KB brotli**, met with margin. The earlier
 Against `pack/rivinia-select-0.6.1-variants.tgz` installed into the
 `~/Desktop/i18n-testing` playground on :4300, `/skins`:
 
-| Claim | Measurement |
-| --- | --- |
-| premium entrance is 250ms on the dropdown curve | `getAnimations()[0]`: `CSSAnimation`, `duration 250`, name `rv-select-popup-in`; at t≈0 `transform: matrix(0.97, 0, 0, 0.97, 0, -4)`, `opacity: 0`; settled `none` / `1` |
-| simple entrance is untouched | same element with `simple`: `duration 160`, pre-scale `0.96` |
-| the flag reaches both hosts | `rv-select[data-variant=premium]` and its `rv-select-popup[data-variant=premium]`; flip to `simple` rewrites all four selects on the page without recreating them |
-| premium panel paint | `border-radius 12px`, `box-shadow` two layers, `padding 5px` (0 on the searchable panel's top edge, where the sticky bar carries it) |
-| trigger lift | resting `0 1px 2px rgba(16,24,40,.06)`, hover/open `0 2px 4px … .08`; simple: `none` |
-| scrollbar | `scrollbarWidth: thin`, `scrollbarColor: color(srgb … / 0.22) transparent`; simple: `auto`/`auto`. Dark theme recomputes the mix from the light text (`0.96` lightness) with no dark-specific rule |
-| skeleton | `.rv-select-skeleton` `display: flex`, 3 `<i>`, `animation: rv-select-shimmer 1.6s`; label intact; simple: `display: none` |
-| long list | 30 rows, `scrollHeight 1210` over `clientHeight 350` |
-| RTL | `dir=rtl`: panel right edge exactly the trigger's right edge (117→611 both), rows `direction: rtl` |
-| no regression | `/places` on the same tarball: 2 triggers, 10 rows, loads and opens |
+| Claim                                           | Measurement                                                                                                                                                                                        |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| premium entrance is 250ms on the dropdown curve | `getAnimations()[0]`: `CSSAnimation`, `duration 250`, name `rv-select-popup-in`; at t≈0 `transform: matrix(0.97, 0, 0, 0.97, 0, -4)`, `opacity: 0`; settled `none` / `1`                           |
+| simple entrance is untouched                    | same element with `simple`: `duration 160`, pre-scale `0.96`                                                                                                                                       |
+| the flag reaches both hosts                     | `rv-select[data-variant=premium]` and its `rv-select-popup[data-variant=premium]`; flip to `simple` rewrites all four selects on the page without recreating them                                  |
+| premium panel paint                             | `border-radius 12px`, `box-shadow` two layers, `padding 5px` (0 on the searchable panel's top edge, where the sticky bar carries it)                                                               |
+| trigger lift                                    | resting `0 1px 2px rgba(16,24,40,.06)`, hover/open `0 2px 4px … .08`; simple: `none`                                                                                                               |
+| scrollbar                                       | `scrollbarWidth: thin`, `scrollbarColor: color(srgb … / 0.22) transparent`; simple: `auto`/`auto`. Dark theme recomputes the mix from the light text (`0.96` lightness) with no dark-specific rule |
+| skeleton                                        | `.rv-select-skeleton` `display: flex`, 3 `<i>`, `animation: rv-select-shimmer 1.6s`; label intact; simple: `display: none`                                                                         |
+| long list                                       | 30 rows, `scrollHeight 1210` over `clientHeight 350`                                                                                                                                               |
+| RTL                                             | `dir=rtl`: panel right edge exactly the trigger's right edge (117→611 both), rows `direction: rtl`                                                                                                 |
+| no regression                                   | `/places` on the same tarball: 2 triggers, 10 rows, loads and opens                                                                                                                                |
 
 Honestly not verified in this run:
 
 - **The painted scrollbar.** Both headless engines here use overlay
   scrollbars and neither paints them into a screenshot (`offsetWidth −
-  clientWidth` is exactly the 2px border in both skins), so `scrollbar-width:
-  thin` has no measurable gutter and no visible thumb could be captured. What
+clientWidth` is exactly the 2px border in both skins), so `scrollbar-width:
+thin` has no measurable gutter and no visible thumb could be captured. What
   is proven is the declaration (`thin` in Chromium, `scrollbar-color` applied
   in Firefox, where the premium rule matches). A classic-scrollbar OS is
   expected — not measured — to show an ~8px gutter.

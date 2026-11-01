@@ -3308,8 +3308,10 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   full opacity. It DOES force `box-shadow` to `none` in Chromium — measured on
   the built premium panel, whose declared
   `rgba(16, 24, 40, 0.18) 0 12px 32px -8px` reads back as `none` under
-  `forcedColors: 'active'` — so the explicit `box-shadow: none` in those
-  blocks is redundant there and kept for engines this suite cannot emulate
+  `forcedColors: 'active'`, and the gate now proves it with a probe element that
+  declares a shadow and belongs to no component: a panel reading `none` cannot
+  tell the UA's doing from its own `box-shadow: none`. The explicit declaration
+  is therefore redundant there and kept for engines this suite cannot emulate
   (Playwright has no forced-colors mode in Firefox). An earlier draft of this
   entry claimed the opposite; the measurement corrected it. Two other
   corrections came out of measuring the mode: the (0,3,1)/(0,4,1) tick rules
@@ -3327,7 +3329,8 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   unthemed page painted in that state, so the identity snapshot still holds.
   The gate measures it (pointer moved to the active row's centre, then parked at
   0,0) in the `light` and `accent` cases. Premium needs no such rule: its
-  (0,4,0) rules sit later in source.
+  `rv-select-popup[data-variant='premium'] …` active-row rules are (0,4,1) and
+  outrank the generic (0,4,0) one outright.
 - Verification: `pnpm check:component-theme` renders both demo apps (real
   components, built from `dist/`) in Chromium and Firefox — six cases on
   Chromium (no theme, dark via `data-rv-theme`, dark via the OS preference,
