@@ -3256,26 +3256,49 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   `/content` host: the menu renders `<div class="rv-menu-panel">` itself and
   projects consumer markup inside it, so a projected `<input>` is genuinely inside
   the panel and the exemption applies to the menu too — one rule, both components.
-  The real-device keyboard is not tested and is a human item.
-- Mutation checks, four mutants, each rebuilt through `dist/select` +
-  `dist/menu` + `dist/menu-e2e` before running, and each killed by exactly one
-  case and by no other:
-  - menu, exemption deleted (`if (width === widthAtOpen) return;` dropped) →
-    only the projected field's "height-only keeps the panel open" goes red.
-    Before the third adapter existed, this mutant passed the whole suite; that is
-    the hole the reviewer found and the reason `/content` is now a host.
-  - menu, exemption forced true (`&& true`) → only the built-in menu's
-    "height-only closes a panel that has nothing editable" goes red.
-  - menu, width comparison dropped (only the editable test remains) → only the
-    projected field's "width change closes it" goes red; the select and built-in
-    menu width cases stay green, as they should — one is the other component's
-    code, the other has no editable element to exempt.
-  - select, same two mutants → respectively only the select "height-only keeps
-    the panel open" and only the select "width change closes it" go red.
-  So each half of the shared rule is covered per component, not once across both.
-  The earlier note here claimed forcing `editableFocusInsidePanel()` true turned
-  *both* height-only cases red; measured, it turns one — the "closes" one — and
-  leaves the "stays open" one green, which is the direction the mutant hides in.
+  The exemption recognizes three kinds of editable — `contenteditable`, `<input>`
+  and `<textarea>` — because the panel hosts whatever the consumer writes, and the
+  projected host now offers all three: a case that only ever focused the `<input>`
+  would stay green with the other two branches deleted. The resize cases run in a
+  390-by-664 viewport, the spec's "mobile viewport" and an iPhone 13/14 logical
+  width, and each one throws if `window.innerWidth` is not 390 — a case that
+  quietly inherited the desktop window would pass while proving nothing about the
+  device the rule exists for. The real-device keyboard is still not tested and is
+  a human item: no viewport emulation opens one.
+- Mutation checks: nine mutants of `menu-panel.ts` and `select-popup.ts`, each
+  rebuilt through `dist/menu` + `dist/select` + `dist/menu-e2e` before running
+  (the suite never builds, so a stale `dist/` masquerades as a product bug), and
+  each killed by the menu-host cases while the select's own cases stayed green —
+  which is the point: the behaviors are covered per component, not once across
+  both. The kill column is what a `--grep` of that case name reports red.
+  - resize exemption deleted (`if (width === widthAtOpen) return;` dropped) →
+    the projected field's height-only case. Before the third adapter existed this
+    mutant passed the whole suite; that is the hole the review found and the
+    reason `/content` is a host.
+  - resize exemption forced true (`&& true`) → the built-in menu's "closes a panel
+    that has nothing editable". An earlier note here claimed this turned *both*
+    height-only cases red; measured, it turns one and leaves the other green,
+    which is the direction the mutant hides in.
+  - width comparison dropped, editable test kept → the projected field's width
+    case (and, on the select side, the select's own width case).
+  - exemption narrowed to `HTMLInputElement` only → the textarea step
+    (`#projected-menu .note owns the caret…`); drop only `isContentEditable` →
+    the contenteditable step (`.inline-note`). Each branch has its own kill.
+  - inside-scroll exemption deleted → "scroll inside the panel leaves it open" on
+    both menu hosts.
+  - `window.addEventListener('scroll', …)` never registered → "scroll outside
+    closes" AND "destroying the open panel removes every global listener", which
+    is the pairing that answers the vacuous-pass worry: the inside case alone
+    cannot see a missing listener, the ledger case can.
+  - `onCleanup(() => …)` emptied → the destroy case on both menu hosts, and only
+    it: the open-state ledger assertion still reads one listener per key.
+  - Escape's `doClose(true)` → `doClose(false)` → "Escape closes and returns focus
+    to the trigger" on both menu hosts.
+  - outside-pointerdown close disabled (`if (false && …)`) → "outside pointerdown
+    closes without stealing focus" on both menu hosts.
+  - Same two resize directions re-run on the select: the exemption deleted and
+    the width comparison dropped kill respectively its height-only and its width
+    case.
 - One false red, worth recording: the select width case failed against a "clean"
   tree because `dist/select` had been rebuilt while the mutation was still in the
   source, and `menu-e2e` bundles the library dist. The served bundle carried the
@@ -3288,9 +3311,26 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   `dist/select` and `dist/menu` FESM bundles. `window` and `document` are not
   defined there, so a *use* raises a ReferenceError and the render fails, while a
   `typeof window === 'undefined'` guard is not a use and is not a failure —
-  that distinction is the whole claim. Eleven checks pass, including a negative
-  control whose host calls `document.createElement` and is caught. Scope: the
-  server renders the panel closed; the open state is the browser suite's job.
+  that distinction is the whole claim. **Fifteen checks pass**, including a
+  negative control whose host calls `document.createElement` and is caught. Both
+  server states are in scope, because `[menu]` is a public input: a consumer can
+  hand the server a menu that is already open, and that is the only way the effect
+  which adds `pointerdown`/`scroll`/`resize` — and reads `window.innerWidth` for
+  the resize snapshot — runs during a server render. The four `rv-menu (open)`
+  checks assert the panel actually mounted (3 `rv-menu-panel` nodes), that no
+  positioning ran (`data-positioned="true"` count 0) and that the top-layer probe
+  reports `data-top-layer="false"` instead of touching `HTMLElement.prototype`.
+  The select's own popup controller is internal, so no server render can reach it
+  open; the guard the menu is checked against is the same one `select-popup.ts:359`
+  carries. Mutation, re-measured on this tree: deleting `menu-panel.ts:306`'s
+  `if (typeof window === 'undefined') return;`, rebuilding `dist/menu`, makes the
+  gate exit 1 with exactly two failures — "the panel really mounted" (0 nodes) and
+  "the top-layer probe reports unsupported" (0) — while "renders server-side"
+  stays green, because Angular swallows an effect error during a server render and
+  the promise still resolves. So the kill here is a state assertion, never the
+  absence of a throw; restoring the guard and rebuilding returns the gate to 15
+  ok / exit 0. The browser half of the same item — the three globals added and
+  then removed — stays the suite's destroy case, which counts them for real.
 - Duplication, report-only per D86. An earlier entry here quoted 6 clones over 14
   files (162 lines, 5.02%; 1855 tokens, 7.62%) from a `pnpm dlx jscpd` invocation
   whose scope and flags could not be re-run from the repository, so it is
@@ -3317,8 +3357,14 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   alongside `check:popup-ssr`, `check:component-theme`, `check:contrast`,
   `check:theme-dark`, `check:pack`, `check:readmes` and `check:docs`. Adding CI is
   out of this plan's scope.
-- Browser totals after this change: 113 Playwright tests green on Chromium and
-  113 on Firefox. Two of them (`select: multi mode`, its a11y sibling) now click
+- Browser totals after this change: `npx playwright test` collects 121 tests per
+  project; 242 passed — 121 on Chromium and 121 on Firefox — and the whole run
+  exits 1 because the same 121 cannot execute on WebKit. That failure is not a
+  product defect: `MiniBrowser` from the installed Playwright WebKit build aborts
+  with `error while loading shared libraries: libavif.so.16` before a page opens,
+  so the Safari-family column of the S7 matrix is unrunnable on this machine and
+  stays a human item (`docs/HUMAN-CHECKS-1.0.md`). Two of the tests (`select:
+  multi mode`, its a11y sibling) click
   rows with `{ force: true }`: Playwright's own scroll-into-view moves the
   document for a top-layer row with no layout change and no JS-visible scroll call
   (measured `scrollY` 70 → 389 at a constant document height), which closes the
@@ -3334,6 +3380,19 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   passed 3/3 in isolation and failed only with the suite at four workers. The test
   now waits for `data-active="true"` before measuring, i.e. it waits for the state
   whose style it asserts.
+- Every figure above is re-runnable from the repository, which is the point of
+  recording the commands rather than the numbers alone. The suite never builds and
+  `menu-e2e` bundles the library `dist/`, so the build comes first:
+  `PNPM_CONFIG_ALLOW_BUILDS='{"@parcel/watcher":true,"esbuild":true,"lmdb":true,"msgpackr-extract":true}'`
+  then `pnpm build:select && pnpm build:menu && pnpm build:i18n && npx ng build
+  menu-e2e`, then `npx playwright test e2e/popup/conformance.spec.ts
+  --project=chromium --project=firefox` (24 cases × 2 browsers = 48 runs), `npx
+  playwright test` for the browser totals, `pnpm check:popup-ssr` (15 checks),
+  `pnpm check:duplication` (8 clones), `npx ng test menu` (63) and `npx ng test
+  select` (161). A mutation run is the same commands after editing the source and
+  rebuilding `dist/menu` + `dist/select` + `dist/menu-e2e`, and the tree is only
+  clean again once the restored source has been rebuilt — `git diff` on the
+  library is not enough, because the served bundle is a build artifact.
 - `docs/HUMAN-CHECKS-1.0.md` carries the two human halves this plan cannot
   execute: the S4 real-device resize steps (keyboard, orientation, iOS chrome
   collapse, and the menu as the counter-case) and the S7 Safari steps. Both are

@@ -98,10 +98,12 @@ The policy being tested, from `docs/DECISIONS.md` (S4, recorded PROVISIONAL):
 the popup listens for `resize` and compares `window.innerWidth` with the width
 captured when it opened. A resize that **does not** change the width closes the
 popup **only when the focus is inside an editable element in the panel** — the
-select filter box, or an `<input>` a consumer projects into a menu panel. A width
-change always closes. The built-in menu closes on every resize because its rows
-are buttons and it has nothing editable to exempt; the same menu hosting projected
-content is exempt exactly like the select.
+select filter box, or an `<input>`, `<textarea>` or `contenteditable` block a
+consumer projects into a menu panel; the automated suite drives all three kinds on
+a 390-by-664 viewport, which is a phone's logical width, not a desktop window. A
+width change always closes. The built-in menu closes on every resize because its
+rows are buttons and it has nothing editable to exempt; the same menu hosting
+projected content is exempt exactly like the select.
 
 ### Steps (repeat per device: one phone, one tablet, portrait and landscape)
 
@@ -133,7 +135,9 @@ content is exempt exactly like the select.
    the filter, let the keyboard open. Expect the panel to **stay open** exactly
    like the select — this is the same rule reached through the menu's own code,
    and the automated suite only proves it in a browser, not under a real
-   keyboard.
+   keyboard. Then repeat with the two other fields in the same panel, the note
+   `<textarea>` and the `contenteditable` block: the suite exempts all three and a
+   real keyboard is the one event no emulation produces.
 
 ### Pass means
 

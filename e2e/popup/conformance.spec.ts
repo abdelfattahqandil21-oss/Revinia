@@ -30,6 +30,13 @@ type Adapter = {
   readonly row: string;
   /** An editable element inside the panel, or null when the panel has none. */
   readonly editable: string | null;
+  /**
+   * Further editables the host offers. The exemption tests `isContentEditable`,
+   * an `<input>` and a `<textarea>`; a suite that drives only the `<input>`
+   * would stay green with the other two branches deleted, so the projected host
+   * drives all three.
+   */
+  readonly alsoEditable?: readonly string[];
 };
 
 const SELECT: Adapter = {
@@ -68,9 +75,20 @@ const PROJECTED_MENU: Adapter = {
   panel: '#projected-menu .rv-menu-panel',
   row: '#projected-menu [rvmenuitem]',
   editable: '#projected-menu .filter',
+  alsoEditable: ['#projected-menu .note', '#projected-menu .inline-note'],
 };
 
 const ADAPTERS = [SELECT, MENU, PROJECTED_MENU];
+
+/**
+ * The S4 acceptance line is a "Playwright mobile viewport test", so the resize
+ * cases run at a phone's CSS width — 390 is the iPhone 13/14 logical width — and
+ * assert it, because a case that quietly inherited the desktop window would
+ * still pass while proving nothing about the device the rule exists for. The
+ * on-screen keyboard itself is still the human item: no viewport emulation
+ * opens one.
+ */
+const PHONE = { width: 390, height: 664 } as const;
 
 const POPUP_GLOBALS = ['document:pointerdown', 'window:scroll', 'window:resize'] as const;
 
@@ -155,6 +173,24 @@ async function makeScrollable(page: Page): Promise<void> {
   });
 }
 
+/**
+ * Open the host in a phone viewport and prove the viewport is the one the case
+ * claims. A `setViewportSize` that a later navigation reset would leave the
+ * resize rule running against a desktop window, which is not the device the
+ * rule exists for.
+ */
+async function openOnPhone(page: Page, adapter: Adapter): Promise<void> {
+  await page.setViewportSize(PHONE);
+  await gotoHost(page, adapter);
+  await openAndEnter(page, adapter);
+  const width = await page.evaluate(() => window.innerWidth);
+  if (width !== PHONE.width) {
+    throw new Error(
+      `the resize case is not on a phone viewport: innerWidth ${width}, expected ${PHONE.width}`,
+    );
+  }
+}
+
 /** Pointer-open, then step into the rows the way a keyboard user would. */
 async function openAndEnter(page: Page, adapter: Adapter): Promise<void> {
   await page.locator(adapter.trigger).click();
@@ -171,14 +207,15 @@ async function openFromKeyboard(page: Page, adapter: Adapter): Promise<void> {
 }
 
 /**
- * Resize the viewport and prove the resize did not also scroll the document.
+ * Resize the phone viewport and prove the change did not also scroll the
+ * document.
  *
  * A document scroll closes the panel by design, so a clamped scroll offset
  * would close it for a reason this suite is not testing — and the "stays open"
  * case would fail while the "closes" case would pass with the policy deleted.
  * Throwing here is what keeps both tests measuring the resize rule.
  */
-async function resizeViewport(page: Page, width: number, height: number): Promise<void> {
+async function resizeWithoutScrolling(page: Page, width: number, height: number): Promise<void> {
   const before = await page.evaluate(() => window.scrollY);
   await page.setViewportSize({ width, height });
   await page.waitForTimeout(120);
@@ -190,7 +227,7 @@ async function resizeViewport(page: Page, width: number, height: number): Promis
   }
 }
 
-function activeElementData(page: Page): Promise<string> {
+function activeElementKind(page: Page): Promise<string> {
   return page.evaluate(() => {
     const element = document.activeElement;
     if (!element || element === document.body) return 'body';
@@ -210,7 +247,7 @@ for (const adapter of ADAPTERS) {
       // Focus is inside the panel, so a close that "restores" it would land it
       // on the trigger. The pointer is heading somewhere else entirely, and the
       // browser must keep it there (APG non-modal, WCAG focus-visible).
-      expect(await activeElementData(page)).not.toBe('body');
+      expect(await activeElementKind(page)).not.toBe('body');
 
       // A raw pointer event at an empty corner of the page. `locator.click()`
       // on any element outside the fold scrolls the document first, and that
@@ -221,7 +258,7 @@ for (const adapter of ADAPTERS) {
       await page.mouse.click(2, size.height - 8);
 
       await expect(page.locator(adapter.panel)).toHaveCount(0);
-      const after = await activeElementData(page);
+      const after = await activeElementKind(page);
       expect(after).not.toContain('trigger');
     });
 
@@ -232,7 +269,7 @@ for (const adapter of ADAPTERS) {
       await page.keyboard.press('Escape');
 
       await expect(page.locator(adapter.panel)).toHaveCount(0);
-      expect(await activeElementData(page)).toContain('trigger');
+      expect(await activeElementKind(page)).toContain('trigger');
     });
 
     test('scroll outside the panel closes it', async ({ page }) => {
@@ -321,29 +358,30 @@ for (const adapter of ADAPTERS) {
     });
 
     if (adapter.editable) {
-      test('a height-only resize while its filter has focus keeps the panel open', async ({
+      test('a height-only resize keeps the panel open for every editable it hosts', async ({
         page,
       }) => {
         // S4: the on-screen keyboard shrinks the viewport height without
         // changing a word about where the panel is anchored. Closing then would
-        // take the filter away from the user mid-word.
-        await gotoHost(page, adapter);
-        await openAndEnter(page, adapter);
-        await page.locator(adapter.editable!).focus();
-        const size = page.viewportSize();
-        if (!size) throw new Error('the test has no viewport to resize');
-
-        await resizeViewport(page, size.width, size.height - 160);
-        await expect(page.locator(adapter.panel)).toBeVisible();
+        // take the filter away from the user mid-word. The exemption recognizes
+        // three kinds of editable, so each one the fixture offers is driven:
+        // one case that only ever focused the `<input>` would stay green with
+        // the `<textarea>` and `contenteditable` branches deleted.
+        await openOnPhone(page, adapter);
+        const fields = [adapter.editable!, ...(adapter.alsoEditable ?? [])];
+        for (const [index, selector] of fields.entries()) {
+          await page.locator(selector).focus();
+          await resizeWithoutScrolling(page, PHONE.width, PHONE.height - 100 * (index + 1));
+          await expect(
+            page.locator(adapter.panel),
+            `${selector} owns the caret, so the height-only resize must not close the panel`,
+          ).toBeVisible();
+        }
       });
     } else {
       test('a height-only resize closes a panel that has nothing editable', async ({ page }) => {
-        await gotoHost(page, adapter);
-        await openAndEnter(page, adapter);
-        const size = page.viewportSize();
-        if (!size) throw new Error('the test has no viewport to resize');
-
-        await resizeViewport(page, size.width, size.height - 160);
+        await openOnPhone(page, adapter);
+        await resizeWithoutScrolling(page, PHONE.width, PHONE.height - 100);
         await expect(page.locator(adapter.panel)).toHaveCount(0);
       });
     }
@@ -351,14 +389,13 @@ for (const adapter of ADAPTERS) {
     test('a width change closes it, even with the filter focused', async ({ page }) => {
       // The exemption has to LOSE here: width is the axis the anchor sits on, so
       // the coordinates are stale no matter where the caret is. Without the
-      // focus step this would pass even if the width check were deleted.
-      await gotoHost(page, adapter);
-      await openAndEnter(page, adapter);
+      // focus step this would pass even if the width check were deleted — and
+      // going from a phone's portrait width to its landscape one is the real
+      // event this rule is for, an orientation flip.
+      await openOnPhone(page, adapter);
       if (adapter.editable) await page.locator(adapter.editable).focus();
-      const size = page.viewportSize();
-      if (!size) throw new Error('the test has no viewport to resize');
 
-      await resizeViewport(page, size.width - 120, size.height);
+      await resizeWithoutScrolling(page, PHONE.height, PHONE.width);
       await expect(page.locator(adapter.panel)).toHaveCount(0);
     });
 
