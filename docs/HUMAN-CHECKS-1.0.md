@@ -28,7 +28,10 @@ Then open `http://127.0.0.1:4299/select`. The page holds the fixtures the checks
 name: `#single-select` (searchable, three invoices, one disabled),
 `#multi-select` (two roles), `#rtl-select` (Arabic label, three rows),
 `#virtual-select` (500 rows, custom list template) and `#plain-menu` (a menu with
-no editable element inside — S4 needs it as the counter-case).
+no editable element inside — S4 needs it as the counter-case). Step 9 below is on
+a different route: `http://127.0.0.1:4299/content`, where `#projected-menu` is a
+menu whose panel holds consumer markup — a filter `<input>`, a `<textarea>` and a
+`contenteditable` block.
 
 ---
 
@@ -115,7 +118,11 @@ projected content is exempt exactly like the select.
 3. With the keyboard still up, type `out`. Expect the rows to filter and the
    panel to stay open and correctly placed.
 4. Rotate the device to landscape. Expect the panel to **close** and focus to
-   return to the trigger — never to stay open at a stale position.
+   return to the trigger — never to stay open at a stale position. Note the two
+   widths as you do it: the rule keys on `window.innerWidth`, not on an
+   orientation event, so a rotation that left the width unchanged with the caret
+   in the filter would be a _correct_ pass for the code and a finding against the
+   rule. If a panel survives a rotation, report the before and after widths.
 5. Rotate back, reopen the select, and now close the keyboard by tapping the
    panel's own row area (`← Back`/swipe-down varies). Expect no jitter, no
    panel that repositions after the fact, and no panel that closes because the
@@ -166,13 +173,20 @@ projected content is exempt exactly like the select.
 
 ## S7 — Safari
 
-**Status: not tested.** The automated browser matrix (S7) covers Chromium and
-Firefox, plus WebKit where the harness can launch it — on this machine WebKit is
-currently unlaunchable (`libavif.so.16` is a dangling symlink in the Playwright
-GTK bundle), so no WebKit result exists yet and macOS Safari cannot be emulated
-by anything in this repo. Until both are done, the Safari column of the matrix
-in `docs/a11y-verification.md` is **not tested**, and it is the only column that
-proves the top-layer (`popover`) path on the engine that shipped it first.
+**Status: not tested.** The automated browser matrix (S7) runs on three engines:
+Chromium, Firefox and WebKit. WebKit was unlaunchable on the machine this plan was
+executed on (`MiniBrowser` aborted on a missing `libavif.so.16`) until that library
+was installed by hand on 2026-11-01; from that date the WebKit column is measured,
+not assumed. It is still **not Safari**: WebKit is the engine, macOS Safari is the
+product, and the two differ in exactly the places this section looks — the address
+bar and tab strip that collapse during the S4 resize steps, and the system font
+metrics that move layout. Safari is also the engine that shipped `popover` first, so
+the top-layer path is only fully proven there. Until this section is run, the Safari
+column of the matrix in `docs/a11y-verification.md` stays **not tested**, and the
+one engine-specific finding the automated run did produce is recorded in
+`docs/DECISIONS.md`: WebKit lays the demo page out taller than Chromium at the same
+viewport (`scrollHeight` 1221 against 1109 at 720px), which is worth your eye when
+you repeat the steps on a real device.
 
 ### Steps
 
