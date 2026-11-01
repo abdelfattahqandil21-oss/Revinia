@@ -90,6 +90,13 @@ test.describe('public API — composable markup', () => {
     // with `color: inherit` so the icon never looks disabled.
     await page.keyboard.press('ArrowDown');
     await expect(row).toBeFocused();
+    // Wait for the state the measurement reads. `data-active` is an Angular host
+    // binding (`[attr.data-active]`) and lands on a change-detection tick, while
+    // the focus call is imperative inside the key handler: measuring after the
+    // focus alone can read the row pre-activation. That race showed up as a
+    // Chromium-only `rgb(85, 85, 85)` vs `rgb(17, 17, 17)` failure once the full
+    // suite ran four workers, and passed 3/3 in isolation.
+    await expect(row).toHaveAttribute('data-active', 'true');
     const colors = await row.evaluate((el) => {
       const svg = el.querySelector('svg') as SVGElement;
       return { row: getComputedStyle(el).color, icon: getComputedStyle(svg).color };
