@@ -125,7 +125,11 @@ test.describe('select: structure', () => {
     const rows = page.locator('#multi-select .rv-select-popup-menu [role="menuitemcheckbox"]');
     await expect(rows).toHaveCount(2);
     await expect(rows.nth(0)).toHaveAttribute('aria-checked', 'false');
-    await rows.nth(0).click();
+    // `force` for the same reason as e2e/select/select.spec.ts -> 'toggles and
+    // stays open': clicking a top-layer row without it makes Playwright scroll
+    // the document, and the outside-scroll rule then closes the panel under the
+    // assertion.
+    await rows.nth(0).click({ force: true });
     await expect(rows.nth(0)).toHaveAttribute('aria-checked', 'true');
     await expect(rows.nth(1)).toHaveAttribute('aria-checked', 'false');
   });

@@ -61,8 +61,18 @@ test.describe('select: multi mode', () => {
     const trigger = page.locator('#multi-select .rv-select-trigger');
     await trigger.click();
     const rows = page.locator('#multi-select .rv-select-popup-menu [role="menuitemcheckbox"]');
-    await rows.nth(0).click();
-    await rows.nth(1).click();
+    // `force` is not "make the test pass": it is the only way to click a row in
+    // the TOP LAYER without the harness scrolling the document first. Measured —
+    // a plain `rows.nth(0).click()` on a page parked at 70px jumped scrollY to
+    // 389 (the document maximum) with no layout change and no JS scroll call,
+    // because the scroll comes from Playwright's own scroll-into-view, which
+    // does not understand a `popover: manual` panel. The panel then closed on
+    // that scroll, and the second pick had no row to click. A real pointer at
+    // the same coordinates keeps the panel open and picks both values, which is
+    // what this test claims. The assertions below still have to see `values=a,b`
+    // and two ticks, so a click that lands nowhere fails.
+    await rows.nth(0).click({ force: true });
+    await rows.nth(1).click({ force: true });
     await expect(page.locator('#multi-select .rv-select-panel')).toBeVisible();
     await expect(page.getByTestId('multi-value')).toContainText('values=a,b');
     await expect(page.locator('#multi-select .rv-select-check')).toHaveCount(2);
