@@ -352,7 +352,14 @@ test.describe('select: RTL placement', () => {
   test('picks work in RTL and the trigger shows the label', async ({ page }) => {
     await page.goto('/select');
     await page.locator('#rtl-select .rv-select-trigger').click();
-    await page.locator('#rtl-select .rv-select-popup-menu [role="menuitemradio"]').nth(2).click();
+    // `force` for the reason recorded at the multi pick: WebKit lays this page
+    // out taller than Chromium, so the third row is below the viewport there and
+    // Playwright's scroll-into-view closes the panel before the click lands. The
+    // assertions still require the pick itself to arrive.
+    await page
+      .locator('#rtl-select .rv-select-popup-menu [role="menuitemradio"]')
+      .nth(2)
+      .click({ force: true });
     await expect(page.getByTestId('rtl-value')).toContainText('value=member');
     await expect(page.locator('#rtl-select .rv-select-value')).toContainText('Member');
   });

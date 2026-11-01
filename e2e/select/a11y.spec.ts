@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 /**
@@ -8,6 +8,26 @@ import AxeBuilder from '@axe-core/playwright';
  * depend on, so a "pass" cannot come from an element silently dropping out of
  * the accessibility tree.
  */
+
+/**
+ * Put the caret on the trigger of a page that is scrolled, without letting the
+ * harness move the document a second time.
+ *
+ * `focus()` scrolls its target into view. WebKit lays this demo page out taller
+ * than Chromium at the same viewport (measured `scrollHeight` 1221 against 1109
+ * at 720px high), so after a jump to the bottom of the document the trigger is
+ * above the viewport there and the focus scrolls — an event that arrives *after*
+ * the panel opens, which the outside-scroll rule reads as the user scrolling and
+ * answers by closing it. The keyboard assertions then find no rows at all, on
+ * Chromium never. Scrolling the trigger into view first keeps the document
+ * scrolled, which is the state under test, and makes the later `focus()` a
+ * no-op, so nothing moves once the panel exists.
+ */
+async function focusTriggerOnAScrolledPage(page: Page, trigger: Locator): Promise<void> {
+  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  await trigger.scrollIntoViewIfNeeded();
+  await trigger.focus();
+}
 
 test.describe('select: axe', () => {
   test('closed trigger', async ({ page }) => {
@@ -173,8 +193,7 @@ test.describe('select: structure', () => {
   test('keyboard: arrows, Home/End, Enter and Escape', async ({ page }) => {
     await page.goto('/select');
     const trigger = page.locator('#multi-select .rv-select-trigger');
-    await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
-    await trigger.focus();
+    await focusTriggerOnAScrolledPage(page, trigger);
     await page.keyboard.press('ArrowDown');
     const rows = page.locator('#multi-select .rv-select-popup-menu [role="menuitemcheckbox"]');
     await expect(rows.nth(0)).toBeFocused();
@@ -192,8 +211,7 @@ test.describe('select: structure', () => {
   test('keyboard: Space picks the focused row', async ({ page }) => {
     await page.goto('/select');
     const trigger = page.locator('#multi-select .rv-select-trigger');
-    await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
-    await trigger.focus();
+    await focusTriggerOnAScrolledPage(page, trigger);
     await page.keyboard.press('ArrowDown');
     const rows = page.locator('#multi-select .rv-select-popup-menu [role="menuitemcheckbox"]');
     await expect(rows.nth(0)).toBeFocused();
