@@ -86,6 +86,16 @@ only the singular `anchor-visible` value that Chromium 157 renamed. That is why
 the two CSS spec files check the prelude's *grammar* in jsdom and leave the
 support question to the browser.
 
+## Running WebKit on this machine
+
+Playwright's WebKit bundle expects three system libraries that are not installed
+by default here: `libavif16`, `libavif`'s decoder `libgav1-1`, and `libyuv0`.
+Without root, `apt-get download` plus `dpkg -x` into a scratch directory and an
+`LD_LIBRARY_PATH` pointing at it (or a symlink into
+`~/.cache/ms-playwright/minibrowser-gtk/sys/lib`) is enough; with root, the same
+thing is `npx playwright install-deps webkit`. Every WebKit number quoted in this
+repository comes from a headed run on WebKit 27.2 after that install.
+
 ## Forcing each feature off — what is actually tested
 
 | Feature | Forced off by | Where proved |
