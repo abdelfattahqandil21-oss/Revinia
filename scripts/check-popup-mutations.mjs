@@ -38,6 +38,8 @@
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const MENU = 'projects/menu/ui/src/lib/components/menu/menu-panel.ts';
 const SELECT = 'projects/select/ui/src/lib/components/popup/select-popup.ts';
@@ -247,7 +249,7 @@ function run(cmd, args, label, options = {}) {
  * build that did not land, a fixture that moved — show up as a mismatch instead
  * of quietly counting as a kill.
  */
-function failingCases(output) {
+export function failingCases(output) {
   const titles = output
     .split('\n')
     .filter((line) => line.includes('✘'))
@@ -261,7 +263,7 @@ function failingCases(output) {
   return [...new Set(titles)].sort();
 }
 
-function failingChecks(output) {
+export function failingChecks(output) {
   return [
     ...new Set(
       output
@@ -295,84 +297,90 @@ function observe(mutant) {
   return { code: result.code, failed: failingCases(result.output) };
 }
 
-const originals = new Map();
-for (const file of new Set(MUTANTS.map((mutant) => mutant.file))) {
-  originals.set(file, readFileSync(file, 'utf8'));
-}
-
-function restore() {
-  for (const [file, source] of originals) writeFileSync(file, source);
-}
-
-const results = [];
-let aborted = null;
-
-try {
-  // Control: the clean suite must be green, or a red case proves nothing.
-  const control = run('npx', ['playwright', 'test', SUITE, '--project=chromium'], 'control run');
-  const controlFailures = failingCases(control.output);
-  if (control.code !== 0 || controlFailures.length) {
-    aborted = `the clean suite is not green: ${controlFailures.join(' | ') || control.output.slice(-400)}`;
-  } else {
-    const summary = control.output.split('\n').find((line) => line.includes('passed'));
-    console.log(`control: the clean suite is green — ${(summary ?? '').trim()}`);
+// The run itself is for a direct invocation only: `scripts/tests` imports the
+// two reporter parsers out of this file, and an import must not rebuild the
+// libraries or rewrite a source file on its way through the mutants.
+const entry = process.argv[1] ? resolve(process.argv[1]) : '';
+if (entry === fileURLToPath(import.meta.url)) {
+  const originals = new Map();
+  for (const file of new Set(MUTANTS.map((mutant) => mutant.file))) {
+    originals.set(file, readFileSync(file, 'utf8'));
   }
 
-  for (const mutant of MUTANTS) {
-    if (aborted) break;
-    const source = originals.get(mutant.file);
-    const occurrences = source.split(mutant.from).length - 1;
-    if (occurrences !== 1) {
-      aborted = `${mutant.label}: its anchor occurs ${occurrences} times in ${mutant.file}`;
-      break;
+  function restore() {
+    for (const [file, source] of originals) writeFileSync(file, source);
+  }
+
+  const results = [];
+  let aborted = null;
+
+  try {
+    // Control: the clean suite must be green, or a red case proves nothing.
+    const control = run('npx', ['playwright', 'test', SUITE, '--project=chromium'], 'control run');
+    const controlFailures = failingCases(control.output);
+    if (control.code !== 0 || controlFailures.length) {
+      aborted = `the clean suite is not green: ${controlFailures.join(' | ') || control.output.slice(-400)}`;
+    } else {
+      const summary = control.output.split('\n').find((line) => line.includes('passed'));
+      console.log(`control: the clean suite is green — ${(summary ?? '').trim()}`);
     }
 
-    writeFileSync(mutant.file, source.replace(mutant.from, mutant.to));
-    const { code, failed } = observe(mutant);
+    for (const mutant of MUTANTS) {
+      if (aborted) break;
+      const source = originals.get(mutant.file);
+      const occurrences = source.split(mutant.from).length - 1;
+      if (occurrences !== 1) {
+        aborted = `${mutant.label}: its anchor occurs ${occurrences} times in ${mutant.file}`;
+        break;
+      }
 
-    const missing = mutant.expect.filter(
-      (name) => !failed.some((observed) => observed.endsWith(name)),
-    );
-    const extra = failed.filter(
-      (observed) => !mutant.expect.some((name) => observed.endsWith(name)),
-    );
-    const killed = code !== 0 && missing.length === 0 && extra.length === 0;
-    results.push({ label: mutant.label, killed, failed, missing, extra });
-    console.log(
-      `${killed ? 'KILLED  ' : 'SURVIVED'} ${mutant.label} — red: ${failed.join(' | ') || 'nothing'}`,
-    );
+      writeFileSync(mutant.file, source.replace(mutant.from, mutant.to));
+      const { code, failed } = observe(mutant);
 
+      const missing = mutant.expect.filter(
+        (name) => !failed.some((observed) => observed.endsWith(name)),
+      );
+      const extra = failed.filter(
+        (observed) => !mutant.expect.some((name) => observed.endsWith(name)),
+      );
+      const killed = code !== 0 && missing.length === 0 && extra.length === 0;
+      results.push({ label: mutant.label, killed, failed, missing, extra });
+      console.log(
+        `${killed ? 'KILLED  ' : 'SURVIVED'} ${mutant.label} — red: ${failed.join(' | ') || 'nothing'}`,
+      );
+
+      restore();
+    }
+  } finally {
     restore();
+    if (!aborted) {
+      // Leave `dist/` describing the restored source: the suite reads the bundle,
+      // not the tree, so a mutant left in `dist/` would masquerade as a product bug.
+      run('npx', ['ng', 'build', 'menu'], 'menu rebuild');
+      run('npx', ['ng', 'build', 'select'], 'select rebuild');
+      run('npx', ['ng', 'build', 'menu-e2e'], 'demo rebuild');
+    }
   }
-} finally {
-  restore();
-  if (!aborted) {
-    // Leave `dist/` describing the restored source: the suite reads the bundle,
-    // not the tree, so a mutant left in `dist/` would masquerade as a product bug.
-    run('npx', ['ng', 'build', 'menu'], 'menu rebuild');
-    run('npx', ['ng', 'build', 'select'], 'select rebuild');
-    run('npx', ['ng', 'build', 'menu-e2e'], 'demo rebuild');
-  }
-}
 
-const survivors = results.filter((result) => !result.killed);
-console.log(
-  `\ncheck:popup-mutations — ${results.length} of ${MUTANTS.length} mutants run, ${results.length - survivors.length} killed exactly as expected.`,
-);
-for (const result of survivors) {
-  const why = result.missing.length
-    ? `expected red, stayed green: ${result.missing.join(' | ')}`
-    : result.extra.length
-      ? `also red, unexpectedly: ${result.extra.join(' | ')}`
-      : 'the harness exited 0';
-  console.log(`  SURVIVED ${result.label} — ${why}`);
+  const survivors = results.filter((result) => !result.killed);
+  console.log(
+    `\ncheck:popup-mutations — ${results.length} of ${MUTANTS.length} mutants run, ${results.length - survivors.length} killed exactly as expected.`,
+  );
+  for (const result of survivors) {
+    const why = result.missing.length
+      ? `expected red, stayed green: ${result.missing.join(' | ')}`
+      : result.extra.length
+        ? `also red, unexpectedly: ${result.extra.join(' | ')}`
+        : 'the harness exited 0';
+    console.log(`  SURVIVED ${result.label} — ${why}`);
+  }
+  if (aborted) {
+    console.log(`check:popup-mutations ABORTED: ${aborted}`);
+    process.exit(1);
+  }
+  if (survivors.length || results.length !== MUTANTS.length) {
+    console.log(`check:popup-mutations FAILED (${survivors.length} surviving mutants).`);
+    process.exit(1);
+  }
+  console.log('check:popup-mutations passed.');
 }
-if (aborted) {
-  console.log(`check:popup-mutations ABORTED: ${aborted}`);
-  process.exit(1);
-}
-if (survivors.length || results.length !== MUTANTS.length) {
-  console.log(`check:popup-mutations FAILED (${survivors.length} surviving mutants).`);
-  process.exit(1);
-}
-console.log('check:popup-mutations passed.');
