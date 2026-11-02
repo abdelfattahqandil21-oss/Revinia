@@ -22,6 +22,7 @@ and the reviewer's verdict.
 | 5 | S5b component theme wiring | `pkg/repo/1-0-component-theme` | `fc13cfb` | `--no-ff` | recorded in that step's DECISIONS entry | not recorded |
 | 6 | S3 conformance + S4 resize | `pkg/repo/1-0-conformance-resize` | `011bccf` | `--squash` | 2026-11-02, on the merged tree: builds `select`/`menu`/`menu-e2e` exit 0; `npx playwright test` **363 passed** (121 × chromium, firefox, webkit); `check:popup-ssr` **15 checks**; `check:popup-mutations` **18 of 18 killed exactly as expected**; `check:duplication` **8 clones, 196 lines (6.75%), 2,213 tokens (11.36%)** — unchanged from its baseline; `ng test menu` **63**, `ng test select` **161**; `test:scripts` **70**; `check:docs` 0 failures / 243 warnings; `check:readmes` 0 problems / 4 warnings (the temporary allowances). Every exit code 0 | no blocking issue — read the note below on who reviewed |
 | 7 | S7 browser support matrix | `pkg/repo/1-0-browser-support` | `25c4cc1` | `--squash` | 2026-11-02, on the merged tree: builds `select`/`menu`/`menu-e2e` exit 0; `npx playwright test` **374 passed, 1 skipped** (125 cases × chromium, firefox, webkit; the skip is the firefox branch of the anchor-feature case, which would prove nothing there); `check:popup-ssr` **15 checks**; `check:popup-mutations` **18 of 18 killed exactly as expected**, run on the same library source the merge carries; `check:duplication` **8 clones, 196 lines (6.64%), 2,213 tokens (11.36%)** — the clones did not move, the percentage did, and the baseline comment says why; `ng test menu` **65**, `ng test select` **163**; `test:scripts` **70**; `check:docs` 0 failures / 243 warnings; `check:readmes` 0 problems / 4 warnings (the temporary allowances). Every exit code 0 | no blocking issue — the same self-review caveat as row 6 |
+| 8 | S9 README content move | `pkg/repo/1-0-readmes` | `21d9be7` | `--squash` | 2026-11-02, on the merged tree — which is byte-identical to the branch tip (`git diff --stat pkg/repo/1-0-readmes 21d9be7` prints nothing), so every number in this cell is that tree's: builds `theme`/`select`/`menu`/`i18n`/`menu-e2e` exit 0; `check:readmes` **ok, 0 warnings** — READMEs at 104 / 172 / 134 / 165 lines and `ALLOW_OVER_BUDGET` now empty; `check:docs` **0 failures / 41 warnings**, reading the 26 topic pages for the first time; `test:scripts` **83 passed** (6 files); `ng test menu` **65**, `ng test select` **163**, `ng test i18n` **376**, `pnpm test:theme` **11**; `npx playwright test` **374 passed, 1 skipped** (125 cases × chromium, firefox, webkit); `check:popup-ssr` **15 checks**; `check:popup-mutations` **18 of 18 killed exactly as expected**; `check:duplication` **8 clones, 196 lines (6.64%), 2,213 tokens (11.36%)** — the clones did not move. Every exit code 0 | no blocking issue — the same self-review substitution as rows 6 and 7; read the two notes below it |
 
 The branch column for rows 2–5 is the merged parent's `git name-rev` against
 `refs/heads/*`, read off the merge commits themselves; row 1 has no branch because
@@ -70,6 +71,57 @@ person, which is where every number in this table comes from. And the band betwe
 the two floors (Chrome 114–130, Safari 17–26.1) has never been run, because this
 machine has one version of each engine; `docs/browser-support.md` derives its
 behavior from `@supports` conditions and says so.
+
+## Row 8 — what the self-review caught, and what it did not
+
+Row 8 carries the same substitution as rows 6 and 7: the owner's instruction for
+these sessions is that no subagent runs unless he asks, so the review came from
+the agent that wrote the change. What it found and fixed before the merge:
+
+- Two `@rivinia/i18n` specs read the README's export tables — and S9 moved those
+  tables. Both were re-pointed at `docs/i18n/api.md` rather than loosened, then
+  mutation-proved: delete one row there and exactly those two cases go red. The
+  first run after the move did fail with `LanguageLike has no README table row`,
+  which is the sound outcome for a spec that still reads the old location.
+- The move exposed a hole in the gate itself: nothing at all read
+  `docs/<pkg>/`, so a topic page could name a symbol its package no longer
+  exports — the same defect class S1 and S6 found in the READMEs. D90 makes a
+  topic page a consumer document by directory rather than by allowlist, and
+  separates platform vocabulary (`Intl`, `CanvasText`, `ar-EG`, `KeyboardEvent.key`)
+  from API claims so the warning count means something: **159 warnings reading
+  four READMEs, 41 reading those READMEs plus 26 pages**.
+- An allowlist entry was not accepted until it was proved. `injectI18n` is not a
+  package export; it is a line the generator writes into the consumer's app, at
+  `projects/i18n/cli/rivinia-i18n-keys.mjs:486`. That reason is in the comment
+  next to the entry, not just in the list.
+- `@rivinia/theme` has no `ng test` target: `ng test theme` exits with "Project
+  target does not exist", and the suite is `pnpm test:theme`. Rows 6 and 7 never
+  ran it because their gate table names `ng test` for menu and select only. This
+  row does, and it is 11/11.
+- The theme suite failed once on its first run in this window — the spec that
+  spawns `pnpm check:theme <tarball>` — and passed on the four runs that followed.
+  Its stderr had already scrolled past the log before it could be read, and the
+  failure has not been reproduced. It is recorded rather than dropped: 11/11 four
+  times running is not the same as "this spec cannot be flaky".
+- One CHANGELOG sentence called 0.5.0 "unusable" in a right-to-left layout. That
+  is an inference resting on a measurement the repository already has, so the
+  sentence now carries the measurement (trigger at x=11..232, panel at
+  x=708..929 in a 929px viewport) and drops the adjective.
+
+Two template deviations ship with this row, and one commit-message error is
+corrected here rather than in history the squash already dropped. The deviations:
+no 1.0 README has the screenshot or live demo link the template's hook asks for,
+because the repository has no tracked image and no hosted demo — the hook names
+the e2e page and the build command that proves it renders instead (D90); and
+`@rivinia/i18n` keeps its three tier names in its Go-further table rather than the
+template's flat list, because that package's docs are split by reader, not by
+topic. The error: commit `cc1c0c7`'s fifth bullet describes a `@rivinia/menu`
+finding — the menu has no configurable backdrop click — that was actually
+corrected in `ad4f6b8`, whose message names it. The squash keeps the content and
+loses the boundary, so this sentence is the record.
+
+What this row does not prove: no gate compiled the snippets in the new READMEs and
+topic pages. That is S8, and S8 is the next row.
 
 ## What "gates green" means for a popup step
 
