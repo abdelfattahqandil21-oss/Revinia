@@ -48,6 +48,20 @@ Older releases (0.1.0 to 0.6.0) are documented in the repository
   row's ring is `CanvasText`, because a `Highlight` ring on a `Highlight` band
   cannot be seen.
 
+- **The CSS anchor-positioning gate now covers `anchor-scope` and
+  `position-visibility`.** The popup entered that block on any engine with
+  `anchor-name` (Chromium 125), but the scope — which stops a duplicated
+  `anchor-name` resolving to the LAST trigger laid out — is Chromium 131, and
+  `position-visibility: anchors-visible` is Safari 26.2. In those bands a panel
+  could anchor to the wrong trigger; the repository measured three selects whose
+  panels all landed on the third, up to 431px from their own. The prelude now
+  probes the newest property in each engine, so nothing inside is newer than a
+  probe, and the engines in between take the
+  component's own coordinates — the path Firefox uses and the suite already
+  measures on every run. See `docs/browser-support.md` for the two floors, and
+  note that the band between them (Chrome 114–130, Safari 17–26.1) and real
+  Safari itself were never run.
+
 ## 0.7.1
 
 Two fixes to the multi trigger, both found in a browser and proved in a browser.

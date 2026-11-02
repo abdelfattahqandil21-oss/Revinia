@@ -174,7 +174,10 @@ projected content is exempt exactly like the select.
 ## S7 — Safari
 
 **Status: not tested.** The automated browser matrix (S7) runs on three engines:
-Chromium, Firefox and WebKit. WebKit was unlaunchable on the machine this plan was
+Chromium, Firefox and WebKit, and on 2026-11-02 they are Chromium 156.0.8078.4,
+Firefox 157.0 and WebKit reporting a Safari 27.2 user agent. The floor the
+library promises and the band nobody ran (Chrome 114–130, Safari 17–26.1) are in
+`docs/browser-support.md`. WebKit was unlaunchable on the machine this plan was
 executed on (`MiniBrowser` aborted on a missing `libavif.so.16`) until that library
 was installed by hand on 2026-11-01; from that date the WebKit column is measured,
 not assumed. It is still **not Safari**: WebKit is the engine, macOS Safari is the

@@ -26,6 +26,22 @@ Older releases (0.1.0 to 0.4.0) are documented in the repository
   route change destroys an open panel. The real-device half of this is
   **not tested** and is listed in `docs/HUMAN-CHECKS-1.0.md` (S4).
 
+- **The CSS anchor-positioning gate now covers `anchor-scope` and
+  `position-visibility`.** The panel used to enter that block on any engine with
+  `anchor-name`, which Chromium gained in 125 while `anchor-scope` arrived in 131;
+  inside that six-version band a browser ignored the scope, and a duplicate
+  `anchor-name` resolves to the last trigger on the page — so a second menu
+  would open against somebody else's button. It now probes the newest property
+  in each engine, so every feature inside is no newer than some probe, and those
+  engines take the component's own coordinates,
+  which is the path Firefox uses and the suite already measures on every run.
+  The same reading corrected two comments that called anchor positioning
+  "Baseline widely-available since 2026-01": it is Baseline **low** since
+  2026-01-13, and widely available in 2028-07. `docs/browser-support.md` holds
+  the two floors this implies (Supported: Chromium/Edge 114, Firefox 125, Safari
+  17 / iOS 18.3; Enhanced: Chromium 131, Safari 26.2; Firefox never, by a measured
+  RTL bug). The band between them was never run, and real Safari is a human item.
+
 ## 0.5.0
 
 The panel becomes a safe host for projected content. A language picker (or any
