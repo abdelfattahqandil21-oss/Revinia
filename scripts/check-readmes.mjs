@@ -31,7 +31,6 @@ export const PACKAGES = Object.freeze(['theme', 'select', 'menu', 'i18n']);
  * Keep this list shrinking; an entry here is a TODO, not a policy.
  */
 export const ALLOW_OVER_BUDGET = Object.freeze({
-  select: true,
   i18n: true,
 });
 

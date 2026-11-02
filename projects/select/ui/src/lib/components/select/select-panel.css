@@ -47,7 +47,7 @@ rv-select {
  *
  * Every value is var(--rv-select-*, fallback), never a literal, so an
  * ancestor theme always wins. No forced dark mode: opting in is the
- * consumer's decision (see README -> Theming).
+ * consumer's decision (see docs/select/theming.md).
  */
 .rv-select .rv-select-popup-panel {
   --rv-select-popup-bg: var(--rv-select-bg, var(--rv-bg, #ffffff));
