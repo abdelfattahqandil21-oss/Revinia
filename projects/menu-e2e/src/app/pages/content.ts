@@ -50,7 +50,6 @@ interface Language {
           <textarea
             class="note"
             rows="2"
-            role="textbox"
             aria-label="Note about this language"
             placeholder="Note"
           ></textarea>
@@ -58,7 +57,6 @@ interface Language {
             class="inline-note"
             contenteditable="true"
             role="textbox"
-            aria-multiline="false"
             aria-label="Inline note"
             tabindex="0"
           >
