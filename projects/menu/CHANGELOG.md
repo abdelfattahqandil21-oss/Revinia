@@ -23,7 +23,8 @@ Older releases (0.1.0 to 0.4.0) are documented in the repository
   (`e2e/popup/conformance.spec.ts`, eight cases run against the select, the
   built-in menu and a menu with a consumer field projected into its panel), which
   also asserts the panel's three global listeners are balanced again after a
-  route change destroys an open panel.
+  route change destroys an open panel. The real-device half of this is
+  **not tested** and is listed in `docs/HUMAN-CHECKS-1.0.md` (S4).
 
 ## 0.5.0
 

@@ -283,7 +283,9 @@ support use the positioned-panel fallback.
   editable element **you projected into the panel**, keeps it open — that is the
   on-screen keyboard, and closing would drop the field mid-word. A built-in menu
   has nothing editable, so for it every resize closes; a width change always
-  closes, since width is the axis the panel is anchored on.
+  closes, since width is the axis the panel is anchored on. The automated half
+  lives in `e2e/popup/conformance.spec.ts`; the real-device half is **not
+  tested** and is listed in `docs/HUMAN-CHECKS-1.0.md` (S4).
 - An empty or all-disabled menu can open, but has no active item to select.
 - The default controller starts closed during server rendering. On the client,
   placement is measured and flipped to fit the viewport when needed.
