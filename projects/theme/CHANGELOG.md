@@ -1,6 +1,17 @@
 # @rivinia/theme
 
-Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
+From 1.0.0 this package follows **strict semver**: only a major may break, a new
+token or entry file is a minor, and a patch never changes what a page renders.
+The contract here is CSS, not TypeScript — **the twelve `--rv-*` names and the
+four entry files** (`theme.css`, `tailwind.css`, `bootstrap.css` and the Sass
+entry) are public API. A new token is always additive: every component reads
+`var(--rv-<own>, var(--rv-<semantic>, <previous value>))`, so a name that did not
+exist yesterday cannot change what renders today.
+
+Coming from 0.1.0: **nothing to do.** No token was renamed and no default a
+consumer could see moved. What 1.0.0 adds is the dark values, the contrast gate
+and the wiring the components now read — all of it under Unreleased below. Older
+releases followed the pre-1.0 policy, where a minor bump could break.
 
 ## Unreleased
 
