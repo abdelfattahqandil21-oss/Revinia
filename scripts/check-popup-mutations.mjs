@@ -248,6 +248,12 @@ function run(cmd, args, label, options = {}) {
  * Matching titles rather than counts is what makes an unexpected failure — a
  * build that did not land, a fixture that moved — show up as a mismatch instead
  * of quietly counting as a kill.
+ *
+ * The `✘` is the `list` reporter's glyph, which is what `playwright.config.ts`
+ * selects. Measured: `--reporter=line` prints the same tests with no `✘` at all,
+ * so a run forced onto another reporter would report every mutant as surviving.
+ * The harness never overrides the reporter, and this script's own tests use the
+ * captured `list` shape.
  */
 export function failingCases(output) {
   const titles = output
