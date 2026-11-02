@@ -28,4 +28,4 @@ Each package also owns tokens of its own, and they resolve through this layer.
 The four surface tokens named in the cascade above — `--rv-select-bg`,
 `--rv-menu-bg`, `--rv-modal-bg`, `--rv-toast-bg` — each fall back to `--rv-bg`.
 The full table for a component's own names lives in that package's docs —
-[select](select/theming.md), [menu](menu/theming.md).
+[select](../select/theming.md), [menu](../menu/theming.md).
