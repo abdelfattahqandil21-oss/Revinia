@@ -32,7 +32,6 @@ export const PACKAGES = Object.freeze(['theme', 'select', 'menu', 'i18n']);
  */
 export const ALLOW_OVER_BUDGET = Object.freeze({
   select: true,
-  menu: true,
   i18n: true,
 });
 

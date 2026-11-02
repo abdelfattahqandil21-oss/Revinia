@@ -1,8 +1,10 @@
 # @rivinia/menu
 
 Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
-Older releases (0.1.0 to 0.4.0) are documented in the repository
-[CHANGELOG](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/CHANGELOG.md).
+The full entry for every release is in the repository
+[CHANGELOG](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/CHANGELOG.md);
+this file keeps what a consumer of this package needs, including the migration
+notes for 0.4.0 and 0.3.5.
 
 ## Unreleased
 
@@ -66,3 +68,47 @@ is new.
   `role="group"` and `aria-label` stay consumer markup.
 
 No change to the headless controller, the panel's CSS or its positioning.
+
+## 0.4.0
+
+This is a **minor** release: the pointer-open interaction changed on purpose.
+**Nothing to do unless you relied on a click pre-selecting the first row.**
+The full release entry is in the repository
+[CHANGELOG](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/CHANGELOG.md);
+what a consumer needs is here.
+
+The panel is now `border-box` with a `22rem` cap (`--rv-menu-max-width`), and
+the `--rv-menu-width` default drops from `16rem` to `10rem`; a menu that
+already fits looks the same or narrower, and long labels wrap instead of
+stretching the panel or being clipped. If you set `--rv-menu-width` yourself,
+keep it: the token still works, it is only the default that changed.
+
+Two interaction changes:
+
+- A pointer open no longer activates the first row (`toggle('none')` through
+  the controller). If you triggered your own logic when `activeId()` became
+  non-null on open, move it to `opened` or to the first arrow key.
+- Tab now closes the menu even when focus is still on the trigger, and in
+  WebKit focus is re-seated on the trigger after a close so Shift+Tab
+  continues naturally.
+
+The `:hover` wash on rows is gone. Hover still activates the row (through the
+controller), so consumers styling `--rv-menu-item-hover-bg` should move that
+colour to `--rv-menu-item-active-bg`.
+
+## 0.3.5
+
+**Nothing to do.** No API changed, no token was renamed, no class was renamed.
+
+The only difference is that the panel now stays attached to its trigger in
+right-to-left layouts, where it used to drift to the edge of the viewport. If
+you styled the panel by targeting its markup, the selectors are unchanged:
+
+```css
+.rv-menu-panel {
+  /* unchanged */
+}
+.rv-menu-panel [rvmenuitem] {
+  /* unchanged */
+}
+```
