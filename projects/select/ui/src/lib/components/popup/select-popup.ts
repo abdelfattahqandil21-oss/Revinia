@@ -366,20 +366,34 @@ export class SelectPopupComponent {
         if (host && !host.contains(event.target as Node)) this.doClose(false);
       };
       document.addEventListener('pointerdown', onPointer);
-      // Coordinates go stale on outside scroll/resize — close instead of
-      // drifting (native-select-like; scrolling inside the panel is exempt).
+      // Coordinates go stale on outside scroll — close instead of drifting
+      // (native-select-like; scrolling inside the panel is exempt).
       // Like Tab-close, this is APG-consistent non-modal behavior.
       const onScroll = (event: Event) => {
         const panel = this.self.nativeElement.querySelector('.rv-select-popup-panel');
         if (panel && event.target instanceof Node && panel.contains(event.target)) return;
         this.doClose(false);
       };
+      // S4: the on-screen keyboard fires a HEIGHT-only `resize` while the user
+      // types in the panel's own filter, and closing took that input away
+      // mid-word. Width is the axis the anchor lives on, so a width change —
+      // including an orientation flip — still means stale coordinates and
+      // closes. The height-only exemption needs the focus to be in an editable
+      // element INSIDE this panel; a menu-like panel has none, so it keeps
+      // closing on every resize.
+      let widthAtOpen = window.innerWidth;
+      const onResize = () => {
+        const width = window.innerWidth;
+        if (width === widthAtOpen && this.editableFocusInsidePanel()) return;
+        widthAtOpen = width;
+        this.doClose(false);
+      };
       window.addEventListener('scroll', onScroll, true);
-      window.addEventListener('resize', onScroll);
+      window.addEventListener('resize', onResize);
       onCleanup(() => {
         document.removeEventListener('pointerdown', onPointer);
         window.removeEventListener('scroll', onScroll, true);
-        window.removeEventListener('resize', onScroll);
+        window.removeEventListener('resize', onResize);
       });
     });
     // APG menu-button: the trigger exposes haspopup + expanded. The trigger
@@ -527,6 +541,26 @@ export class SelectPopupComponent {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Is the caret inside an editable element that this panel owns?
+   *
+   * The searchable filter box is the case S4 exists for. A row is a `button`
+   * and a menu-like panel has no editable element at all, so both answer false
+   * and the resize closes as it always did.
+   */
+  private editableFocusInsidePanel(): boolean {
+    if (typeof document === 'undefined') return false;
+    const active = document.activeElement;
+    if (!(active instanceof HTMLElement)) return false;
+    const panel = this.self.nativeElement.querySelector('.rv-select-popup-panel');
+    if (!panel || !panel.contains(active)) return false;
+    return (
+      active.isContentEditable ||
+      active instanceof HTMLInputElement ||
+      active instanceof HTMLTextAreaElement
+    );
   }
 
   /**

@@ -27,6 +27,13 @@ Older releases (0.1.0 to 0.6.0) are documented in the repository
 - **Fixed: Enter did nothing right after filtering.** The active row was the
   one the filter had just removed, and nothing took over; activation now falls
   to the top remaining row.
+- **Fixed: the filter box vanished mid-word on a phone.** Any `resize` closed the
+  panel, and an on-screen keyboard opening is exactly that — a `resize` with the
+  height the only thing that changed. A height-only resize is now ignored while
+  the caret is inside the panel's filter box; a width change still always closes,
+  because width is the axis the panel is anchored on. Automated in
+  `e2e/popup/conformance.spec.ts`; the real-device half of this is
+  **not tested** and is listed in `docs/HUMAN-CHECKS-1.0.md` (S4).
 - **The theme's accent now reaches the control.** `--rv-accent` paints the
   trigger, search and row focus rings, the active row's tint and the selected
   tick. Every read is `var(--rv-accent, <previous value>)`, so a page that does

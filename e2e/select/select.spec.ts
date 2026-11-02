@@ -61,8 +61,18 @@ test.describe('select: multi mode', () => {
     const trigger = page.locator('#multi-select .rv-select-trigger');
     await trigger.click();
     const rows = page.locator('#multi-select .rv-select-popup-menu [role="menuitemcheckbox"]');
-    await rows.nth(0).click();
-    await rows.nth(1).click();
+    // `force` is not "make the test pass": it is the only way to click a row in
+    // the TOP LAYER without the harness scrolling the document first. Measured —
+    // a plain `rows.nth(0).click()` on a page parked at 70px jumped scrollY to
+    // 389 (the document maximum) with no layout change and no JS scroll call,
+    // because the scroll comes from Playwright's own scroll-into-view, which
+    // does not understand a `popover: manual` panel. The panel then closed on
+    // that scroll, and the second pick had no row to click. A real pointer at
+    // the same coordinates keeps the panel open and picks both values, which is
+    // what this test claims. The assertions below still have to see `values=a,b`
+    // and two ticks, so a click that lands nowhere fails.
+    await rows.nth(0).click({ force: true });
+    await rows.nth(1).click({ force: true });
     await expect(page.locator('#multi-select .rv-select-panel')).toBeVisible();
     await expect(page.getByTestId('multi-value')).toContainText('values=a,b');
     await expect(page.locator('#multi-select .rv-select-check')).toHaveCount(2);
@@ -342,7 +352,14 @@ test.describe('select: RTL placement', () => {
   test('picks work in RTL and the trigger shows the label', async ({ page }) => {
     await page.goto('/select');
     await page.locator('#rtl-select .rv-select-trigger').click();
-    await page.locator('#rtl-select .rv-select-popup-menu [role="menuitemradio"]').nth(2).click();
+    // `force` for the reason recorded at the multi pick: WebKit lays this page
+    // out taller than Chromium, so the third row is below the viewport there and
+    // Playwright's scroll-into-view closes the panel before the click lands. The
+    // assertions still require the pick itself to arrive.
+    await page
+      .locator('#rtl-select .rv-select-popup-menu [role="menuitemradio"]')
+      .nth(2)
+      .click({ force: true });
     await expect(page.getByTestId('rtl-value')).toContainText('value=member');
     await expect(page.locator('#rtl-select .rv-select-value')).toContainText('Member');
   });
