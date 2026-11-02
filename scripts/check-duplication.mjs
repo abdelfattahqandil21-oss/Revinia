@@ -39,6 +39,13 @@ const PATHS = [
 // resize rule measured 7 clones / 181 lines (6.38%) / 2,046 tokens (10.77%) at
 // the identical scope, so S4 added exactly one clone: the listener-registration
 // block the two popups now share line for line.
+//
+// One shared block is NOT in that count and the reason is measured:
+// `editableFocusInsidePanel()` exists in both popups, 12 lines each differing on
+// the one selector line. At 4.0.8's `--min-tokens 40` it is still invisible; at
+// `--min-tokens 20` it appears as two fragments of 75 and 63 tokens. That one
+// differing line splits the shared text below this check's 100-token threshold,
+// so read the figure as 8 clones reported and 9 shared blocks present.
 const BASELINE = { clones: 8, lines: '196 (6.75%)', tokens: '2213 (11.36%)' };
 
 for (const path of PATHS) {

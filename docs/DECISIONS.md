@@ -3359,14 +3359,18 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   server states are in scope, because `[menu]` is a public input: a consumer can
   hand the server a menu that is already open, and that is the only way the effect
   which adds `pointerdown`/`scroll`/`resize` — and reads `window.innerWidth` for
-  the resize snapshot — runs during a server render. Of the four `rv-menu (open)`
+  the resize snapshot — is reached during a server render at all. Reached is not
+  read: the guard at `menu-panel.ts:306` returns first, so what the gate measures
+  is that the guard holds, and the mutation below is what shows the read behind it
+  would fail. Of the four `rv-menu (open)`
   checks, one asserts that the panel class is present and prints what it counted
   (3 `rv-menu-panel` nodes), one that no positioning ran (`data-positioned="true"`
   count 0), one that the top-layer probe reports `data-top-layer="false"` instead
   of touching `HTMLElement.prototype`, and one that the render did not throw.
   The select's own popup controller is internal, so no server render can reach it
-  open; the guard the menu is checked against is the same one `select-popup.ts:359`
-  carries. Mutation, re-measured on this tree: deleting `menu-panel.ts:306`'s
+  open and `select-popup.ts:384`'s read is never exercised on the server — that
+  half is asserted by inspection, not measurement: the guard the menu is checked
+  against, `menu-panel.ts:306`, is the byte-identical line `select-popup.ts:359`. Mutation, re-measured on this tree: deleting `menu-panel.ts:306`'s
   `if (typeof window === 'undefined') return;`, rebuilding `dist/menu`, makes the
   gate exit 1 with exactly two failures — "the panel really mounted" (0 nodes) and
   "the top-layer probe reports unsupported" (0) — while "renders server-side"
@@ -3394,6 +3398,17 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   text and not one line wider). That is the cost D86 accepted, now measured
   rather than asserted — and it is the argument for the post-1.0 extraction,
   since a third `resize` policy change has to be written twice.
+- The detector under-reports that shared text, and the reason is measured rather
+  than assumed. `editableFocusInsidePanel()` is a second S4 body the two popups
+  share: `menu-panel.ts:430-441` and `select-popup.ts:553-564`, 12 lines each,
+  differing on exactly one line (`diff` reports `5c5`, the
+  `'.rv-menu-panel'` / `'.rv-select-popup-panel'` selector). It is not one of the
+  8 clones above. Re-running the same pinned 4.0.8 on the two files at
+  `--min-tokens 40` still misses it, and at `--min-tokens 20` it appears as two
+  fragments of 75 and 63 tokens — so the one differing line splits the shared text
+  below the 100-token threshold the check is run at. The honest reading of the
+  figure is therefore 8 clones reported and 9 shared blocks present, and the
+  extraction argument is one line stronger, not weaker, than the number says.
 - Version pinning matters more than the tree here: the same sources measured
   **18 clones / 322 lines (11.30%)** on jscpd 5.4.2. A check that re-runs on a
   moving detector reports drift that is only the tool changing.
