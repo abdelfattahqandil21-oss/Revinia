@@ -28,11 +28,10 @@ export const PACKAGES = Object.freeze(['theme', 'select', 'menu', 'i18n']);
 
 /**
  * Temporary allowances, removed package by package as the content move lands.
- * Keep this list shrinking; an entry here is a TODO, not a policy.
+ * Keep this list shrinking; an entry here is a TODO, not a policy. Empty since
+ * the S9 move: every 1.0 package now fits the budget on its own.
  */
-export const ALLOW_OVER_BUDGET = Object.freeze({
-  i18n: true,
-});
+export const ALLOW_OVER_BUDGET = Object.freeze({});
 
 /**
  * A claim is the package's own version, prerelease suffix included: the rc
@@ -80,7 +79,12 @@ function badgeClaims(text) {
     const tokens = match[1].replace(/\.svg$/i, '').split('-');
     const last = tokens[tokens.length - 1].toLowerCase();
     if (tokens.length > 1 && (BADGE_COLOURS.has(last) || /^[0-9a-f]{6}$/i.test(last))) tokens.pop();
-    claims.push(tokens.join('-').replace(/--/g, '-').replace(/^v(?=\d)/i, ''));
+    claims.push(
+      tokens
+        .join('-')
+        .replace(/--/g, '-')
+        .replace(/^v(?=\d)/i, ''),
+    );
   }
   return claims;
 }
@@ -100,7 +104,13 @@ const IGNORED_SCHEMES = /^(?:https?:|mailto:|tel:|#)/i;
  * }} input
  * @returns {{ ok: boolean, problems: string[], warnings: string[], lines: number }}
  */
-export function checkReadme({ pkg, text, manifest, allowOverBudget = false, fileExists = existsSync }) {
+export function checkReadme({
+  pkg,
+  text,
+  manifest,
+  allowOverBudget = false,
+  fileExists = existsSync,
+}) {
   const problems = [];
   const warnings = [];
   const lines = text.replace(/\n$/, '').split('\n').length;
@@ -138,7 +148,8 @@ export function checkReadme({ pkg, text, manifest, allowOverBudget = false, file
     const path = target.split('#')[0].split('?')[0];
     if (path.length === 0) continue;
     const resolved = resolve(base, path);
-    if (!fileExists(resolved)) warnings.push(`${pkg}/README.md links ${target}, which does not exist`);
+    if (!fileExists(resolved))
+      warnings.push(`${pkg}/README.md links ${target}, which does not exist`);
   }
 
   return { ok: problems.length === 0, problems, warnings, lines };

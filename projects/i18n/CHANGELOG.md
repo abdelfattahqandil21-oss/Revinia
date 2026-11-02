@@ -1,6 +1,10 @@
 # @rivinia/i18n
 
 Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
+The README is the start-here tier; everyday patterns and the reference live in
+[`docs/i18n/`](https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/docs/i18n),
+one topic per page. This file keeps what a consumer of this package needs,
+including the migration notes for 0.6.0 and 0.4.0.
 
 ## Unreleased
 
@@ -231,6 +235,23 @@ names were removed instead of carried to 1.0.
 - **Behaviour:** none intended. The characterization test (`fallback-after-init`)
   and the SSR smoke suite were added before the split and pass unchanged after it.
 
+Migration from 0.5.0 — three names, and the core split is internal:
+
+1. **The pipe is `rvTranslate`.** `RTranslatePipe` (`rTranslate`) was removed with
+   no alias to keep:
+
+   ```html
+   <!-- before -->
+   {{ 'booking.seats' | rTranslate: { count: seats } }}
+   <!-- after -->
+   {{ 'booking.seats' | rvTranslate: { count: seats } }}
+   ```
+
+2. **`languageChanged` is gone.** It was the same signal as `currentLanguage`;
+   switch your reads to `currentLanguage`.
+3. **`loadTranslations(id, { silent })` is now `loadTranslations(id)`.** `silent`
+   never did anything — background loads are an internal concern.
+
 ## 0.5.0
 
 The 0.4.0 code-review set. 0.4.1 was never published, so its fixes ship here;
@@ -317,6 +338,21 @@ The production-hardening release. Additive API; two behaviour changes.
 
 Behaviour changes: `#` inside a plural uses the locale's digits
 (`ar-EG`: `٣`), and an unresolved key warns once per session in dev mode.
+
+Migration from 0.3.3 — everything below is additive; no export was removed and no
+import path changed. Two behaviour changes are worth reading:
+
+1. **`#` in a plural now uses the locale's digits.** It is formatted with
+   `Intl.NumberFormat(locale)` instead of the raw number, so a locale whose default
+   numbering system is not Latin (for example `ar-EG`) renders `٣` where it used to
+   render `3`. `en` and `ar` are unchanged.
+2. **Missing keys warn in dev mode.** A key that resolves to nothing now logs
+   `[rivinia/i18n] missing key "…"` once per session when `isDevMode()` is true. Set
+   `warnOnMissingKey: false`, or pass `onMissingKey`, to control it.
+
+The default loader is unchanged (`i18n/{language}.json`); `jsonLoader({ path:
+'assets/i18n' })` keeps the old layout. The internal source layout moved
+(models/services/utils/providers/pipes), but nothing under `src/` was ever exported.
 
 ## 0.3.0
 

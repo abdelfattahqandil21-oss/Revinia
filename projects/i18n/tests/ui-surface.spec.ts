@@ -8,7 +8,8 @@ import { describe, expect, it } from 'vitest';
  */
 const UI_SRC = resolve(process.cwd(), 'projects/i18n/ui/src');
 const PUBLIC_API = join(UI_SRC, 'public-api.ts');
-const README = resolve(process.cwd(), 'projects/i18n/README.md');
+/** The README links here; the export tables moved with the S9 content move. */
+const API_REFERENCE = resolve(process.cwd(), 'docs/i18n/api.md');
 
 function exportedNames(source: string): string[] {
   const names: string[] = [];
@@ -37,9 +38,9 @@ function typescriptFiles(dir: string): string[] {
 }
 
 describe('@rivinia/i18n/ui — public surface', () => {
-  it('lists every public export in a README table row', () => {
+  it('lists every public export in an API-reference table row', () => {
     const names = exportedNames(readFileSync(PUBLIC_API, 'utf8'));
-    const rows = readFileSync(README, 'utf8')
+    const rows = readFileSync(API_REFERENCE, 'utf8')
       .split('\n')
       .filter((line) => line.trimStart().startsWith('|'))
       .map((line) => line.split('|')[1] ?? '');
@@ -47,7 +48,7 @@ describe('@rivinia/i18n/ui — public surface', () => {
     expect(names.length).toBeGreaterThan(0);
     for (const name of names) {
       const listed = rows.some((cell) => new RegExp(`\`[^\`]*\\b${name}\\b[^\`]*\``).test(cell));
-      expect(listed, `${name} has no README table row`).toBe(true);
+      expect(listed, `${name} has no table row in docs/i18n/api.md`).toBe(true);
     }
   });
 
