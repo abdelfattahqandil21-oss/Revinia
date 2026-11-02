@@ -124,8 +124,10 @@ those names are unchanged.
 ```
 
 **Everything else is additive**: the DI helpers, the loader, `reachEnd`, the
-footer slot, `listTemplate`, the frozen options — and the RTL fix, which is why
-0.5.0 was unusable in a right-to-left layout.
+footer slot, `listTemplate`, the frozen options — and the RTL fix, which 0.5.0
+needed badly: there the panel pinned itself to the viewport edge instead of its
+trigger's (measured: trigger at x=11..232, panel at x=708..929 in a 929px
+viewport).
 
 ## 0.5.0
 
