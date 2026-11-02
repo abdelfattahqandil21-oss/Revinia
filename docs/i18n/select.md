@@ -26,8 +26,10 @@ applies the select's premium skin.
 0.8.0: `RiviniaLanguageSelect`, `languageSelectOptions`, `LanguageSelectOption`, and
 the re-exported `LanguageLike` / `RiviniaLanguageManager` (so a consumer importing
 only `/select` needs no `@rivinia/i18n/ui` on the side). The select is a composition
-over `@rivinia/select/ui`; its public surface may follow that package's pre-1.0
-changes.
+over `@rivinia/select/ui`, and that surface is now frozen for 1.0 — see
+[`docs/API-SURFACE-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/API-SURFACE-1.0.md).
+The exports here stay Experimental until the 1.0 review promotes them; what they are
+composed over no longer moves under them.
 
 ## Managed, with `RiviniaI18n`
 
@@ -172,7 +174,7 @@ readonly options = computed(() => languageSelectOptions(this.i18n.languages()));
 
 ```json
 {
-  "peerDependencies": { "@rivinia/select": "^0.7.0" },
+  "peerDependencies": { "@rivinia/select": "^1.0.0-rc.1" },
   "peerDependenciesMeta": { "@rivinia/select": { "optional": true } }
 }
 ```

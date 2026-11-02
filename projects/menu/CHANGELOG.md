@@ -19,7 +19,7 @@ The full entry for every release is in the repository
 this file keeps what a consumer of this package needs, including the migration
 notes for 0.4.0 and 0.3.5.
 
-## Unreleased
+## 1.0.0-rc.1 — prepared, not yet published
 
 - **The theme's accent now reaches the panel.** `--rv-accent` paints the row
   focus ring and the active row's tint. Both read

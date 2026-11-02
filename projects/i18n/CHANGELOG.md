@@ -20,8 +20,14 @@ The README is the start-here tier; everyday patterns and the reference live in
 one topic per page. This file keeps what a consumer of this package needs,
 including the migration notes for 0.6.0 and 0.4.0.
 
-## Unreleased
+## 1.0.0-rc.1 — prepared, not yet published
 
+- **The optional `@rivinia/select` peer is now `^1.0.0-rc.1`** (it was `^0.7.0`, a
+  pre-1.0 caret so narrow that a select 0.8 or 1.0 conflicted with it). The range
+  admits every select 1.x release, the rc and the final alike, and excludes a 2.0 —
+  verified with `semver.satisfies` against the installed semver 7.8.5. Nothing
+  changes for an app that never imports `@rivinia/i18n/select`: the peer stays
+  `optional` in `peerDependenciesMeta`.
 - **The toggle reads the theme's accent.** `--rv-accent` paints the focus ring
   and the held-down fill (16% over the button's own background). Both read
   `var(--rv-accent, currentColor)`, so a page that does not import

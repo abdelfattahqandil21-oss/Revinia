@@ -10,7 +10,7 @@
 Angular dropdown menus: an optional ready-made UI and the headless controller
 behind it. The menu follows the WAI-ARIA menu-button pattern; it is for
 **actions**, not for a menubar or a general-purpose listbox.
-Package version: **0.5.0**.
+Package version: **1.0.0-rc.1**.
 
 ```ts
 import { Component } from '@angular/core';

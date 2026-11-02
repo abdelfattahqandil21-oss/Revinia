@@ -13,7 +13,7 @@ consumer could see moved. What 1.0.0 adds is the dark values, the contrast gate
 and the wiring the components now read — all of it under Unreleased below. Older
 releases followed the pre-1.0 policy, where a minor bump could break.
 
-## Unreleased
+## 1.0.0-rc.1 — prepared, not yet published
 
 ### Dark mode and the contrast gate (1.0.0-rc.1)
 

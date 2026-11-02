@@ -11,7 +11,7 @@ A headless Angular language manager built on signals: key-based JSON
 dictionaries, inline translations, RTL/LTR document attributes, lazy loaders, ICU
 plural/select messages, browser-language detection, and `Intl` number/date
 formatting — with SSR that actually works and no runtime dependency beyond
-Angular. Package version: **0.8.0**.
+Angular. Package version: **1.0.0-rc.1**.
 
 Concretely: the text lives in JSON files, components ask for a key, and the whole
 app — text, direction, dates, numbers — follows the language the user picked.
@@ -142,10 +142,11 @@ above. The **Enhanced** row belongs to the picker's popup, which is
 `@rivinia/select`'s; the toggle is a plain button and is unaffected.
 `document.startViewTransition` is used only if you opt into `viewTransition` — the
 service feature-detects it and applies the change without a transition where it is
-absent. Peers: `@angular/core` `^22.0.0`, plus `@rivinia/select` `^0.7.0` for the
-`/select` entry only; a pre-1.0 caret is narrow, so a select 0.8 or 1.0 conflicts
-until this package is republished. The floor dates, the `@supports` gate and what
-has never been run (including real Safari) are in
+absent. Peers: `@angular/core` `^22.0.0`, plus `@rivinia/select` `^1.0.0-rc.1` for
+the `/select` entry only — optional, so an app that never imports
+`@rivinia/i18n/select` does not install it. The caret admits every select 1.x
+release, the rc and the final alike, and excludes a 2.0. The floor dates, the
+`@supports` gate and what has never been run (including real Safari) are in
 [browser support](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/browser-support.md).
 
 ## Go further

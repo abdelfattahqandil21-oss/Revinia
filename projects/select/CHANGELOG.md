@@ -19,7 +19,7 @@ The full entry for every release is in the repository
 this file keeps what a consumer of this package needs, including the migration
 notes for 0.6.0, 0.5.0 and 0.2.0.
 
-## Unreleased
+## 1.0.0-rc.1 — prepared, not yet published
 
 - **Single rows are `menuitemradio` with `aria-checked`.** They were plain
   `menuitem`, so the selected option was not announced as selected (D85).
