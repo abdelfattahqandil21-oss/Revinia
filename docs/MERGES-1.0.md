@@ -20,7 +20,7 @@ and the reviewer's verdict.
 | 3 | S2 select ARIA | `pkg/select/aria-radio` | `03f6664` | `--no-ff` | recorded in that step's DECISIONS entry | not recorded |
 | 4 | S5a theme dark mode + contrast | `pkg/theme/1-0-dark` | `cc3789e` | `--no-ff` | recorded in that step's DECISIONS entry | not recorded |
 | 5 | S5b component theme wiring | `pkg/repo/1-0-component-theme` | `fc13cfb` | `--no-ff` | recorded in that step's DECISIONS entry | not recorded |
-| 6 | S3 conformance + S4 resize | `pkg/repo/1-0-conformance-resize` | pending | `--squash` | pending | pending |
+| 6 | S3 conformance + S4 resize | `pkg/repo/1-0-conformance-resize` | `011bccf` | `--squash` | 2026-11-02, on the merged tree: builds `select`/`menu`/`menu-e2e` exit 0; `npx playwright test` **363 passed** (121 × chromium, firefox, webkit); `check:popup-ssr` **15 checks**; `check:popup-mutations` **18 of 18 killed exactly as expected**; `check:duplication` **8 clones, 196 lines (6.75%), 2,213 tokens (11.36%)** — unchanged from its baseline; `ng test menu` **63**, `ng test select` **161**; `test:scripts` **70**; `check:docs` 0 failures / 243 warnings; `check:readmes` 0 problems / 4 warnings (the temporary allowances). Every exit code 0 | no blocking issue — read the note below on who reviewed |
 
 The branch column for rows 2–5 is the merged parent's `git name-rev` against
 `refs/heads/*`, read off the merge commits themselves; row 1 has no branch because
@@ -37,6 +37,18 @@ now part of the branch. From row 6 on, the squash rule applies.
 the reviews ran, but their verdicts were written into the conversation and into
 `docs/DECISIONS.md` rather than into a per-merge record, so they cannot be
 quoted here with a precision the repository does not hold.
+
+Row 6's verdict needs the same honesty. The rule asks for a **fresh-context**
+reviewer, and this step was reviewed by the agent that wrote it, at the owner's
+instruction for that session. What that review found and fixed before the merge:
+the mutation harness read the `list` reporter's glyphs and nothing else, a fact it
+had never stated, so it does now (`scripts/check-popup-mutations.mjs`) with a test
+per parsed shape (`scripts/tests/check-popup-mutations.spec.ts`); the height-only
+exemption had no host that could exercise the menu's half of it, which is what
+`/content`'s projected fields are for; and the projected fixture taught two
+redundant ARIA declarations. What no self-review can do is see the code without
+the author's assumptions — so the verdict above means "no blocking issue found by
+the author", not "independently signed off".
 
 ## What "gates green" means for a popup step
 
