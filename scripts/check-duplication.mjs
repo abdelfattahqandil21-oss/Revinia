@@ -46,7 +46,20 @@ const PATHS = [
 // `--min-tokens 20` it appears as two fragments of 75 and 63 tokens. That one
 // differing line splits the shared text below this check's 100-token threshold,
 // so read the figure as 8 clones reported and 9 shared blocks present.
-const BASELINE = { clones: 8, lines: '196 (6.75%)', tokens: '2213 (11.36%)' };
+//
+// S7 (2026-11-02) moved the line PERCENTAGE and nothing else. The anchor-gate
+// prose added to both popup CSS files grew the same scope from 2,904 to 2,950
+// lines, so 196 duplicated lines are now 6.64% instead of 6.75%; 2,213 tokens
+// are still 11.36% and the clone count is still 8. The new text is comments in
+// `.css` files, which jscpd reads into the denominator but does not match — the
+// css format row reports 0 clones — so it documents the shared `@supports` gate
+// without duplicating behaviour.
+const BASELINE = {
+  measured: '2026-11-02',
+  clones: 8,
+  lines: '196 (6.64%)',
+  tokens: '2213 (11.36%)',
+};
 
 for (const path of PATHS) {
   if (!existsSync(join(ROOT, path))) {
@@ -76,7 +89,7 @@ console.log(plain.trim());
 console.log('');
 console.log('This check reports; it does not gate (D86).');
 console.log(
-  `Baseline 2026-11-01: ${BASELINE.clones} clones, ${BASELINE.lines} lines, ${BASELINE.tokens} tokens.`,
+  `Baseline ${BASELINE.measured}: ${BASELINE.clones} clones, ${BASELINE.lines} lines, ${BASELINE.tokens} tokens.`,
 );
 console.log(
   clones === undefined
