@@ -93,8 +93,14 @@ rv-menu {
 /*
  * CSS ANCHOR POSITIONING.
  *
- * Baseline widely-available since 2026-01, so the top-layer panel can
- * be tethered to its trigger with no JavaScript coordinates at all.
+ * Baseline LOW since 2026-01-13 — Chrome 125, Firefox 147, Safari 26 — which is
+ * not the same as widely available, the low date plus thirty months and so
+ * 2028-07-13 (mdn/browser-compat-data and the Baseline definitions, read
+ * 2026-11-02). That difference is why this whole block is an enhancement behind
+ * `@supports` and never a requirement: below it the panel is placed by the
+ * component's own coordinates, which the conformance suite measures on all three
+ * engines. With it, the top-layer panel is tethered to its trigger with no
+ * JavaScript coordinates at all.
  * position-area takes LOGICAL keywords, which makes the placement
  * direction-correct in RTL for free — the asymmetry that broke the JS
  * path cannot reappear here.
@@ -129,8 +135,24 @@ rv-menu {
  * Firefox therefore keeps the JS positioning path, which is measured
  * correct in both directions. `-moz-appearance` is the narrowest reliable
  * Firefox-only probe; remove the clause when Firefox fixes the area maths.
+ *
+ * WHY EVERY ANCHOR PROPERTY THE BLOCK USES IS PROBED: the four conditions are
+ * four different engines' floors, not one feature. Chrome 125-130 accepts a
+ * prelude on `anchor-name` alone but ignores `anchor-scope`, which is six
+ * Chromium versions younger, so it enters this block and resolves the duplicated
+ * `anchor-name` to the LAST trigger laid out on the page — the exact failure the
+ * comment below calls ESSENTIAL. The probes are the newest thing in each engine
+ * (browser-compat-data, read 2026-11-02): `anchor-name` 125/147/26,
+ * `position-area`'s span form 129/147/26, `anchor-scope: all` 131/147/26,
+ * `position-visibility: anchors-visible` 125/147/26.2. `position-anchor`,
+ * `anchor-size()` and `position-try-fallbacks` get no clause of their own for a
+ * reason that is arithmetic, not taste: each is no younger than a probe the
+ * prelude already carries — 125 against `anchor-name`'s 125, 128 against
+ * `position-area`'s 129 — so an engine that passes the four probes has them.
+ * Guarded by tests/menu-panel-css.spec.ts, which recomputes that.
  */
-@supports (anchor-name: --a) and (position-area: block-end span-inline-end) and
+@supports (anchor-name: --a) and (anchor-scope: all) and
+  (position-area: block-end span-inline-end) and (position-visibility: anchors-visible) and
   (not (-moz-appearance: none)) {
   /*
    * ESSENTIAL: without this every panel anchors to the LAST trigger in
