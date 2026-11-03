@@ -7,7 +7,9 @@ dist-tag on 2026-11-03, from the `theme/v1.0.0-rc.1` and `select/v1.0.0-rc.1`
 tags, which point at `3cb8b51` and `1e78c6c` — both tips of
 `release/1.0-integration`. `latest` still answers `0.1.0` and `0.7.1`. The agent
 that prepared the rcs published nothing, created no tag and pushed no tag: every
-command below is still a human action, and `menu` and `i18n` are unrun.
+command below is still a human action, and `menu` and `i18n` are unrun. **Step 1
+is a separate line: `release/1.0-integration` merged into `main` locally on
+2026-11-03 at `173f150`, and `origin/main` has not been touched — see step 1.**
 
 | Package           | rc on `next`             | Registry verification                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ----------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -111,9 +113,15 @@ after the rc plus `npm dist-tag add @rivinia/theme@0.2.0 latest`, which moves
 
 ## Step 1 — the precondition: the rc commit has to be on `main`
 
-`release/1.0-integration` carries rows 1–9 and has never been merged to `main`; the
-program's rule was that the agent never touches `main`. Tags are cut from `main`,
-so this step is yours.
+**Done locally on 2026-11-03, and not pushed.** `release/1.0-integration` is in
+`main` as the `--no-ff` merge `173f150`, parents `6b51eba` (main) + `89bf4c0`
+(integration). It ran in `../Revinia-select-summary`, the worktree that already
+holds `main`, because git refuses to check out a branch another worktree has;
+that worktree was clean, so nothing of yours could be overwritten. `origin/main`
+still answers `6b51eba` — pushing `main` is a separate OK and has not happened.
+
+`release/1.0-integration` was **78** commits ahead of `main`, `main` 2 ahead of
+it, and those 2 touch only root `CHANGELOG.md` and `README.md`.
 
 **What actually happened for theme.** The merge to `main` did not come first:
 `theme/v1.0.0-rc.1` was cut on `3cb8b51`, which is the **tip of
@@ -128,6 +136,23 @@ commits ahead of `main`, so step 1 is still the step that should happen; and tho
 two root files disagree with each other now (integration's `CHANGELOG.md` says
 `@rivinia/menu 0.5.0`, `main`'s says `0.5.0 (published 2026-10-31)`), which means
 the merge will conflict there by construction.
+
+**That last clause was wrong, and the correction matters for how a conflict is
+read here.** The merge conflicted in `README.md` and **not** in `CHANGELOG.md`,
+because integration never touched the root changelog at all — `git diff --stat
+df3a444 release/1.0-integration -- CHANGELOG.md README.md` prints one line, for
+`README.md`. So `main`'s `0.5.0 (published 2026-10-31)` came through the auto-merge
+untouched, and the merged `CHANGELOG.md` is byte-identical to `main`'s. The
+`README.md` conflict was one table, and the integration side already contained
+everything `main`'s `6b51eba` had put there (menu `[0.5.0]`, select `[0.7.1]`);
+the only column that differed was `Workspace`, which is the rc bump the merge
+exists to bring. Taking the integration side therefore lost nothing, and
+`git diff --name-only release/1.0-integration HEAD` after the merge prints exactly
+one path: `CHANGELOG.md`.
+
+A `git merge-tree --write-tree main release/1.0-integration` dry run before
+touching anything is what said so — read-only, no worktree, no index, and it
+listed `README.md` as the only conflict. Worth doing on any merge of this size.
 
 ```bash
 git fetch origin
@@ -144,12 +169,30 @@ git checkout main && git pull --ff-only
 git rev-parse HEAD                                            # the rc commit
 ```
 
+Gates re-run **on the merged tree**, in the `main` worktree, on 2026-11-03:
+`pnpm check:docs` 0 failures / 41 warnings, `pnpm check:readmes` ok / 0 warnings,
+`pnpm test:scripts` **95 passed** (7 files), `ng build` of all four exit 0 with each
+`dist/*/package.json` at `1.0.0-rc.1`, `ng test menu` **65**, `ng test select`
+**163**, `ng test i18n` **376**, `pnpm test:theme` **11** — every number identical
+to row 9's, which is the expected result when the only content difference between
+the two trees is one root markdown file. Not re-run on `main`: Playwright (374 / 1
+skipped), `check:popup-ssr` and `check:duplication`; they ran on the identical
+integration tree and nothing in the merge touches popup or e2e source.
+
 ## Step 2 — per package, in this order
 
 For each of `theme`, `select`, `menu`, `i18n`, in that order. Run the whole block
 for one package before starting the next: `@rivinia/i18n`'s optional peer is
 `^1.0.0-rc.1` on select, so select's rc must already be on the registry when a
 consumer installs i18n.
+
+`theme` and `select` are done — their tags exist, both on origin
+(`theme/v1.0.0-rc.1` → `3cb8b51`, `select/v1.0.0-rc.1` → `1e78c6c`), and both are
+published. `menu/v1.0.0-rc.1` and `i18n/v1.0.0-rc.1` **do not exist yet**, and
+step 1 changes where they should be cut: from `main` now, which is what this
+document always asked for. The `main` tree is the integration tree plus one root
+markdown file, so a tag cut there produces the same package bytes a tag cut on
+integration would — root `CHANGELOG.md` is not in any tarball.
 
 ```bash
 PKG=theme          # then select, menu, i18n
