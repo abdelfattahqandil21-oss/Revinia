@@ -1,11 +1,21 @@
 ---
-name: Rivinia release
+name: rivinia-release
 description: Release a Rivinia package — build, test, inspect the tarball, prove it in a clean consumer, and publish. Use when the user asks to publish, release, ship, cut a version, or tag a package.
 metadata:
   opencode/autoinvoke: false
+  role: maintainer
+  package_scope: repository-wide
+  supported_ranges_ref: docs/engineering/VERSIONING.md
+  verified_versions_ref: exact release evidence only
+  documentation_refs: docs/engineering/VERSIONED-DOCUMENTATION.md
+  verification_refs: docs/engineering/TESTING-ARCHITECTURE.md
 ---
 
 # Releasing a Rivinia package
+
+Invoke this skill explicitly for release work. It is hidden from automatic
+selection in OpenCode and Codex; the repository playbook and root policy point
+to it. Skill guidance never grants release approval.
 
 The gates live in `AGENTS.md` ("Workflow gates"). This skill turns them into a
 runnable sequence. **A release is not done until every gate below passes** —
@@ -13,16 +23,27 @@ and a gate that was not run is reported as _not run_, never as _passed_.
 
 ## Before anything
 
-1. Read `AGENTS.md` and the newest `docs/DECISIONS.md` entry for the package.
+1. Read `AGENTS.md`, `docs/engineering/README.md`, the newest relevant
+   `docs/DECISIONS.md` entry, and the version, documentation, changelog and
+   testing policies under `docs/engineering/`.
 2. Confirm the working tree state and the version in
    `projects/<pkg>/package.json`.
 3. **Never modify a published version.** A published version is immutable; a
-   fix ships as a NEW version (AGENTS.md gate 8).
+   fix ships as a new version.
+4. For `menu`, `select`, `theme` or `i18n`, verify all four manifests use the
+   same version and treat them as one release set. Other packages remain
+   independently versioned. `release-groups.json` is the machine-readable
+   membership record; `pnpm check:governance` validates it.
+5. Distinguish maintainer-approved supported ranges from exact package
+   versions actually verified. Read the exact consumer/package version before
+   recommending version-specific APIs; minor features are not present across
+   an entire major by assumption.
 
 ## 1 — Build (production)
 
 ```sh
-pnpm build <pkg>          # ng-packagr, production configuration
+pnpm build:<pkg>          # when the package has a build:<pkg> script
+pnpm exec ng build <pkg>  # otherwise, Angular production package build
 ```
 
 The build must succeed with no errors. Note the `dist/<pkg>` path it reports.
@@ -36,10 +57,29 @@ pnpm test <pkg>           # or: npx ng test <pkg> --no-watch
 Every test must pass. If a spec is not being executed (a glob that excludes
 it — this has happened), say so explicitly rather than counting it as green.
 
+Before packing, validate the built candidate README and changelog against the
+exact version and tag reference:
+
+```sh
+node scripts/check-versioned-doc-links.mjs @rivinia/<pkg> <exact-version> --package-dir=dist/<pkg>
+```
+
+This checks the built package directory's manifest, README and CHANGELOG,
+accepts only GitHub blob/tree file links pinned to `<pkg>/v<exact-version>`,
+and verifies linked files exist in the candidate source tree. It does not prove
+that the tag exists. After packing from the approved tagged commit, run the
+same checker with `--tarball=<file.tgz> --verify-tag-snapshot` so it validates
+the README, manifest and changelog bytes that will ship, verifies the tag
+manifest matches the candidate, and checks linked paths in that immutable tag
+tree. `check:pack` still verifies required archive metadata/files. In the clean
+tag worktree, add `--require-tag`; it requires the tag to resolve to HEAD and
+the worktree to be clean.
+
 ## 3 — Inspect the tarball
 
 ```sh
 npm pack ./dist/<pkg>
+node scripts/check-versioned-doc-links.mjs @rivinia/<pkg> <exact-version> --tarball=./<pkg>-<exact-version>.tgz --verify-tag-snapshot
 ```
 
 Then inspect the tarball's `package.json`:
@@ -108,6 +148,10 @@ npm view <pkg> version dist-tags
 Confirm the registry state. A FIRST publish of a new name goes through npm's
 staged review and needs manual approval in the browser (D22) — budget for
 that, and tell the user to expect it.
+
+Build each E2E app and its package prerequisites before running browser gates;
+a stale `dist/` is not test evidence. Never point published package docs at
+`main` or an unversioned site.
 
 ## Reporting
 
