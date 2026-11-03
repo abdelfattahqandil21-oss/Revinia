@@ -1,25 +1,26 @@
 # Publish runbook — Rivinia 1.0
 
-**Status: running — step 2 has been done for `@rivinia/theme` and
-`@rivinia/select`, and for nothing else.** The owner published
-`@rivinia/theme@1.0.0-rc.1` and `@rivinia/select@1.0.0-rc.1` to the `next`
-dist-tag on 2026-11-03, from the `theme/v1.0.0-rc.1` and `select/v1.0.0-rc.1`
-tags, which point at `3cb8b51` and `1e78c6c` — both tips of
-`release/1.0-integration`. `latest` still answers `0.1.0` and `0.7.1`. The agent
-that prepared the rcs published nothing, created no tag and pushed no tag: every
-command below is still a human action, and `menu` and `i18n` are unrun. **Step 1
+**Status: running — step 2 has been done for `@rivinia/theme`, `@rivinia/select`
+and `@rivinia/menu`, and for nothing else.** The owner published
+`@rivinia/theme@1.0.0-rc.1`, `@rivinia/select@1.0.0-rc.1` and
+`@rivinia/menu@1.0.0-rc.1` to the `next` dist-tag on 2026-11-03, from the
+`theme/v1.0.0-rc.1`, `select/v1.0.0-rc.1` and `menu/v1.0.0-rc.1` tags — the first
+two point at tips of `release/1.0-integration` (`3cb8b51`, `1e78c6c`), the third at
+`d5d7f91`, which is `main`. `latest` still answers `0.1.0`, `0.7.1` and `0.5.0`. The
+agent that prepared the rcs published nothing, created no tag and pushed no tag:
+every command below is still a human action, and `i18n` is unrun. **Step 1
 is done and pushed: `release/1.0-integration` is in `main` at `173f150`, and
 `origin/main` answers the same commit as local `main` — see step 1.** `menu`'s
-tagged build was pre-flight packed and measured on 2026-11-03, with no tag
-created; the expected numbers are under the table.
+tagged build reproduced the pre-flight tarball byte for byte; the expected numbers
+for `i18n` are under the table.
 
-| Package           | rc on `next`             | Registry verification                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ----------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@rivinia/theme`  | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `76fbabd7…`; the downloaded tarball `cmp`-identical to `/tmp/rv-rc-theme/rivinia-theme-1.0.0-rc.1.tgz` (8,396 B, 9 files); `npm install @rivinia/theme@next` in a scratch consumer resolved all six `exports`, and `diff -r` of the installed tree against the inspected tarball printed nothing                                                                         |
-| `@rivinia/select` | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `9e268244…`; the downloaded tarball `cmp`-identical to `/tmp/rv-rc-select/rivinia-select-1.0.0-rc.1.tgz` (66,787 B, 9 files); `dist-tags` `{"latest":"0.7.1","next":"1.0.0-rc.1"}`; `npm install @rivinia/select@next` resolved all three `exports` in a scratch consumer; the barrels carry the freeze's counts — `.` 7 names, `./ui` 10. Read the note under the table |
-| `@rivinia/menu`   | not published            | pre-flight packed 2026-11-03, twice, byte-identical — the expected values are in the menu subsection under the table. No tag exists yet                                                                                                                                                                                                                                                                                                           |
-| `@rivinia/i18n`   | not published            | —                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| the soak, `1.0.0` | not started              | it cannot start before the four rcs exist                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Package           | rc on `next`             | Registry verification                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ----------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@rivinia/theme`  | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `76fbabd7…`; the downloaded tarball `cmp`-identical to `/tmp/rv-rc-theme/rivinia-theme-1.0.0-rc.1.tgz` (8,396 B, 9 files); `npm install @rivinia/theme@next` in a scratch consumer resolved all six `exports`, and `diff -r` of the installed tree against the inspected tarball printed nothing                                                                                                                                                                           |
+| `@rivinia/select` | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `9e268244…`; the downloaded tarball `cmp`-identical to `/tmp/rv-rc-select/rivinia-select-1.0.0-rc.1.tgz` (66,787 B, 9 files); `dist-tags` `{"latest":"0.7.1","next":"1.0.0-rc.1"}`; `npm install @rivinia/select@next` resolved all three `exports` in a scratch consumer; the barrels carry the freeze's counts — `.` 7 names, `./ui` 10. Read the note under the table                                                                                                   |
+| `@rivinia/menu`   | **published** 2026-11-03 | tagged `menu/v1.0.0-rc.1` → `d5d7f91`, which is `main`; built in `../Revinia-rc-menu` from that tag with every gate green (65 tests, `check:pack` 9 files, `check:docs` 0 failures); `npm pack` answered shasum `cddc5e4b…` and integrity `sha512-PiFdu…`, the pre-flight's own numbers, and `cmp` against `/tmp/rv-rc-menu-prep/…` printed nothing; publish answered `+ @rivinia/menu@1.0.0-rc.1` with no `--otp`. The 2.5 registry-side checks are **not run yet**: `dist.integrity`, `dist-tags`, a downloaded `cmp`, a `@next` consumer install |
+| `@rivinia/i18n`   | not published            | pre-flight run twice from clean trees and re-measured from `main` on 2026-11-03: 93,239 B, 20 files, shasum `59efe407…`, peers and both optional flags asserted from the tarball — the expected values are in the i18n subsections under the table. No tag exists yet                                                                                                                                                                                                                                                                               |
+| the soak, `1.0.0` | not started              | it cannot start before the four rcs exist                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 The select row's last clause needs spelling out, because it is the one check a
 future verifier could get wrong. `@rivinia/select` imports cleanly in bare Node
@@ -38,30 +39,6 @@ One more number: the published select tarball is 66,787 B against row 9's 66,814
 The 27-byte difference is the CHANGELOG heading fix (`## 1.0.0-rc.1 — prepared, not
 yet published` → `## 1.0.0-rc.1`) shipping — the heading inside the registry
 tarball reads `## 1.0.0-rc.1`, which is the proof that the correction landed.
-
-### Pre-flight for the i18n rc, run 2026-11-03 — nothing here published anything
-
-`@rivinia/i18n@1.0.0-rc.1` declares the optional peer `@rivinia/select:
-^1.0.0-rc.1` (`projects/i18n/package.json`, `peerDependenciesMeta` marks both
-`@angular-devkit/schematics` and `@rivinia/select` optional). That range had
-**nothing to resolve against** until select's rc went live, which is the whole
-reason i18n is last. With select on `next`, the two installs S1 asked for were run
-against a local i18n tarball and the **registry** select, in `/tmp`, with no
-`@rivinia/*` path mapping:
-
-| Install                                                                   | Contents                                                     | Result                                                                                                                |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| i18n rc + `@rivinia/select@next` + `@rivinia/theme@next` + Angular 22.2.3 | the local `rivinia-i18n-1.0.0-rc.1.tgz` (93,239 B, 20 files) | `npm install` exit **0**, stderr **empty** — zero peer warnings; the three installed manifests read `1.0.0-rc.1`      |
-| i18n rc + `@angular/core@22.2.3`, no select                               | same tarball                                                 | exit **0**, stderr empty, and `node_modules/@rivinia` contains **only `i18n`** — the optional peer really is optional |
-
-The tarball's root barrel exports **35** names, which is the freeze's count for
-`@rivinia/i18n`, and a bare-Node `import` of it throws for the same JIT reason as
-select's `./ui` (`The service 'ViewTransitionService' needs to be compiled using
-the JIT compiler`), so that failure is not evidence about the package either.
-Two consequences for the remaining two publishes: `menu` can go now, and `i18n` can
-go immediately after it — its peer no longer points at a version that does not
-exist. Both were published from a **local** i18n build, so the numbers above
-predict the rc; they are not a substitute for `check:pack` on the tagged build.
 
 ### Pre-flight for the menu rc, run 2026-11-03 — no tag created, nothing published
 
@@ -114,6 +91,89 @@ the registry: the nine paths above are all under `projects/menu`, so a docs-only
 commit on `main` after this writing cannot move these bytes — the packaging does not
 read the root files. A real difference would be in `projects/menu/**`, and the honest
 answer then is to publish the build that was actually inspected, whatever its hash.
+
+### What the owner ran for menu, 2026-11-03 — the pre-flight reproduced exactly
+
+`menu/v1.0.0-rc.1` was cut as a **lightweight tag at `d5d7f91`**, which is `main`
+and `origin/main`, and pushed with it (`* [new tag] menu/v1.0.0-rc.1`); `main` did
+not move. The two docs-record commits that were sitting on
+`release/1.0-integration` (`590c7ef`, `3ffa5d6`) were **not** fast-forwarded onto
+`main` first, so the tag is the tree without those records — root markdown only,
+which is exactly the case the pre-flight argued could not change the package bytes.
+`git for-each-ref` still says all three rc tags are lightweight.
+
+In `../Revinia-rc-menu`, built from that tag: `pnpm install --frozen-lockfile`
+(Done in 325 ms), `pnpm build:menu`, `pnpm check:pack menu` → **ok, 9 files**,
+`pnpm test:scripts` → **95 passed** (7 files), `pnpm check:readmes` → ok / 0
+warnings (104/172/134/166), `pnpm check:docs` → **0 failures / 41 warnings**,
+`npx ng test menu --watch=false` → **65 passed** (7 files). The one compiler message
+is the pre-existing `NG8113: RiviniaMenuItem is not used within the template of
+DataDrivenHarness` in `projects/menu/tests/consumer-api.spec.ts`, a test harness
+import, not a package defect.
+
+Then `npm pack` into `/tmp/rv-rc-menu` answered **36.9 kB, 131.0 kB unpacked, 9
+files, shasum `cddc5e4bbfbb2eba404ca9316d1f6c00b53017a4`, integrity
+`sha512-PiFduNZTSoDKU[…]ICZyH9z/ZlXeA==`** — every one of those values is the
+pre-flight's — and `cmp /tmp/rv-rc-menu/rivinia-menu-1.0.0-rc.1.tgz
+/tmp/rv-rc-menu-prep/rivinia-menu-1.0.0-rc.1.tgz` printed **nothing**, which is the
+byte-level proof. `npm whoami` answered `abdelfattahqandil21`, the web-auth URL was
+approved, and publish printed **`+ @rivinia/menu@1.0.0-rc.1`**. No `--otp` was used.
+
+### Pre-flight for the i18n rc, run 2026-11-03 — nothing here published anything
+
+`@rivinia/i18n@1.0.0-rc.1` declares the optional peer `@rivinia/select:
+^1.0.0-rc.1` (`projects/i18n/package.json`, `peerDependenciesMeta` marks both
+`@angular-devkit/schematics` and `@rivinia/select` optional). That range had
+**nothing to resolve against** until select's rc went live, which is the whole
+reason i18n is last. With select on `next`, the two installs S1 asked for were run
+against a local i18n tarball and the **registry** select, in `/tmp`, with no
+`@rivinia/*` path mapping:
+
+| Install                                                                   | Contents                                                     | Result                                                                                                                |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| i18n rc + `@rivinia/select@next` + `@rivinia/theme@next` + Angular 22.2.3 | the local `rivinia-i18n-1.0.0-rc.1.tgz` (93,239 B, 20 files) | `npm install` exit **0**, stderr **empty** — zero peer warnings; the three installed manifests read `1.0.0-rc.1`      |
+| i18n rc + `@angular/core@22.2.3`, no select                               | same tarball                                                 | exit **0**, stderr empty, and `node_modules/@rivinia` contains **only `i18n`** — the optional peer really is optional |
+
+The tarball's root barrel exports **35** names, which is the freeze's count for
+`@rivinia/i18n`, and a bare-Node `import` of it throws for the same JIT reason as
+select's `./ui` (`The service 'ViewTransitionService' needs to be compiled using
+the JIT compiler`), so that failure is not evidence about the package either.
+Two consequences, as they read then: `menu` could go, and it did (see its run above),
+and `i18n` can go next — its peer no longer points at a version that does not
+exist. Both installs were run against a **local** i18n build, so the numbers above
+predict the rc; they are not a substitute for `check:pack` on the tagged build, which
+is why the re-measurement below exists.
+
+### The i18n tarball, re-measured from `main` on 2026-11-03 — still nothing published
+
+The install test above used a build from an earlier tree. The tagged build will be
+cut from `main`, so `d5d7f91` was packed again in its own throwaway worktree
+(`../Revinia-rc-i18n-prep`, `pnpm install --frozen-lockfile`) and then removed, the
+same way menu's pre-flight ran. Result: `pnpm build:i18n` exit **0**, `pnpm
+check:pack i18n` **ok, 20 files**, `npx ng test i18n --watch=false` **376 passed**
+(36 files), `pnpm test:scripts` **95**. The tarball is
+
+```text
+size              93,239 B across 20 files, 347.3 kB unpacked
+dist.shasum       59efe407dbf42d9a97b92971a06095e78526006d
+dist.integrity    sha512-ijBK0eZE8RPnnoBKZaiuzFFjQ6PFRfw6f90WjXTFDnYaS3oCWsBZmmkL7oN4AtfAQRuDfz4mHqTKD8N1O9/2bw==
+peerDependencies  @angular/core ^22.0.0 · @angular-devkit/schematics ^22.0.0 · @rivinia/select ^1.0.0-rc.1
+peerDependenciesMeta  @angular-devkit/schematics optional · @rivinia/select optional
+dependencies      tslib ^2.3.0 · sideEffects false
+engines.node      ^22.22.3 || ^24.15.0 || >=26.0.0
+exports           ./package.json · . · ./select · ./ui — every target present, plus schematics/collection.json
+schematics        ./schematics/collection.json, with ng-add/index.cjs and ng-add/schema.json in the file list
+cli               ./cli/rivinia-i18n-keys.mjs is in the tarball
+barrel names      35 on `.` · 5 on `./ui` · 5 on `./select` — the freeze's counts for all three
+CHANGELOG.md      line 23 reads '## 1.0.0-rc.1', bare
+```
+
+The runtime imports of the three FESM bundles are `@angular/core` and
+`@rivinia/select/ui`, which is the optional peer's entry point and nothing else —
+no `@rivinia/theme` import, no internal path. `i18n` is the only one of the four
+with a `schematics` key, so its 20 files are the expected count where menu's 9 are
+his; `check:pack` is what proves it either way. `/tmp/rv-rc-i18n-prep/…tgz` is kept
+for a `cmp` after his run, exactly like menu's.
 
 This file is S8 step 5 of
 [`specs/1.0-readiness.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/specs/1.0-readiness.md).

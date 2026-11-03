@@ -1,10 +1,11 @@
 # Release order for 1.0 (S1)
 
-Status: **rows 2 and 3 below have run, and the runbook's step 1 (this branch onto
+Status: **rows 2, 3 and 4 below have run, and the runbook's step 1 (this branch onto
 `main`) has run and is pushed.** The owner published
-`@rivinia/theme@1.0.0-rc.1` and `@rivinia/select@1.0.0-rc.1` to the `next`
-dist-tag on 2026-11-03; `latest` still answers `0.1.0` and `0.7.1`, and rows
-4–7 have not run. The merge landed at `173f150` and is **pushed as `6b51eba..9173de3`,
+`@rivinia/theme@1.0.0-rc.1`, `@rivinia/select@1.0.0-rc.1` and
+`@rivinia/menu@1.0.0-rc.1` to the `next`
+dist-tag on 2026-11-03; `latest` still answers `0.1.0`, `0.7.1` and `0.5.0`, and rows
+5–7 have not run. The merge landed at `173f150` and is **pushed as `6b51eba..9173de3`,
 a fast-forward, no force**; the D92 record commit `d5d7f91` went on top of it the same
 day. Publishing, tags and dist-tags are
 human steps. The two documents S8 was going to write both exist now, on
@@ -19,7 +20,7 @@ keeps the running record of what has been executed and what has not.
 | 1 | `@rivinia/theme` | `0.2.0` | `latest` | **Skipped on 2026-11-03.** The plan said ship SPEC-0.1.1 before any 1.0 work; Option A in the runbook was taken instead and the `@theme inline` adapter ships inside `1.0.0-rc.1` |
 | 2 | `@rivinia/theme` | `1.0.0-rc.1` | `next` | **Done 2026-11-03.** S5a dark mode + contrast; the token contract froze at `3cb8b51`, tagged `theme/v1.0.0-rc.1` |
 | 3 | `@rivinia/select` | `1.0.0-rc.1` | `next` | **Done 2026-11-03.** S2 ARIA + S3/S4 popup work; tagged `select/v1.0.0-rc.1` at `1e78c6c` |
-| 4 | `@rivinia/menu` | `1.0.0-rc.1` | `next` | S3 conformance parity with select. **Pre-flight 2026-11-03:** packed twice, byte-identical, 36,861 B — the expected registry answers are in the runbook. No tag cut, nothing published |
+| 4 | `@rivinia/menu` | `1.0.0-rc.1` | `next` | S3 conformance parity with select. **Done 2026-11-03.** Tagged `menu/v1.0.0-rc.1` at `d5d7f91` (a lightweight tag, like the other two rcs), built from the tag, published from the inspected tarball. The pre-flight's shasum and integrity matched byte for byte; the registry-side checks are still owed — see the runbook |
 | 5 | `@rivinia/i18n` | `1.0.0-rc.1` | `next` | peers on select; must point at a select that exists. **Pre-flight 2026-11-03:** `^1.0.0-rc.1` now resolves against the registry, and installs clean with and without select |
 | 6 | — | soak | — | criteria written by S8, in the human-checks document (not in this branch) |
 | 7 | all four | `1.0.0` | `latest` | same order as 2–5 |
