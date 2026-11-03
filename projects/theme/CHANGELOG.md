@@ -8,6 +8,8 @@ entry) are public API. A new token is always additive: every component reads
 `var(--rv-<own>, var(--rv-<semantic>, <previous value>))`, so a name that did not
 exist yesterday cannot change what renders today.
 
+## 0.1.0 → 1.0.0
+
 Coming from `0.1.0` — **there is something to read.** None of the twelve `--rv-*`
 names moved, but `0.1.0` is still the newest tarball on npm, so everything merged
 since lands inside this major: a page with no switch now follows the OS dark
