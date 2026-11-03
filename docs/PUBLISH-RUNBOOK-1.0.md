@@ -265,8 +265,19 @@ check, not a SHA copied from here. One mechanical note: `main` is checked out in
 — and it was clean and gated there on 2026-11-03, so `git rev-parse HEAD` there
 before tagging is the fastest confirmation that nothing moved.
 
+**One thing to decide before 2.1, and it is the owner's call, not the block's.**
+`git for-each-ref --format='%(objecttype)'` says the two rc tags already on origin
+are **lightweight** (`theme/v1.0.0-rc.1` and `select/v1.0.0-rc.1` → `commit`), while
+every 0.x tag in the repo is **annotated** (`menu/v0.5.0`, `select/v0.7.1`,
+`theme/v0.1.0` → `tag`). The block below is literal to what theme and select
+actually did, so it stays lightweight for consistency inside the rc line. `git tag
+-a -m …` would instead match the program's release history, which the owner
+confirmed as the default form once already. A tag is immutable, so whichever he
+picks, `menu` and `i18n` are decided together and the two existing rc tags stay
+lightweight forever.
+
 ```bash
-PKG=theme          # then select, menu, i18n
+PKG=menu           # theme and select are done; i18n is last
 VER=1.0.0-rc.1
 
 # 2.1 tag the rc commit — after an explicit OK
@@ -292,6 +303,13 @@ cd "/tmp/rv-rc-$PKG" && tar -tzf rivinia-$PKG-$VER.tgz
 ls -l rivinia-$PKG-$VER.tgz && sha1sum rivinia-$PKG-$VER.tgz && sha512sum rivinia-$PKG-$VER.tgz
 tar -xOf rivinia-$PKG-$VER.tgz package/package.json | head -40
 ```
+
+For menu there is a free extra check while that file still exists: `cmp
+/tmp/rv-rc-menu/rivinia-menu-1.0.0-rc.1.tgz
+/tmp/rv-rc-menu-prep/rivinia-menu-1.0.0-rc.1.tgz` — the second is the pre-flight
+tarball, and silence means the tagged build reproduced it exactly. It is a
+cross-check, not a gate: `/tmp` does not survive a reboot, and the gate is the
+manifest assertion below.
 
 Assert the manifest before publishing: `name`, `version`, `peerDependencies`
 (`@angular/core` `^22.0.0`), `peerDependenciesMeta` (for i18n: `@rivinia/select`
