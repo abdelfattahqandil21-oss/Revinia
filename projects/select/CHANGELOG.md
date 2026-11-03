@@ -10,7 +10,10 @@ a `status` region. Moving to a `combobox` pattern, or renaming a token, is a
 major. A new token is always additive: every rule reads
 `var(--rv-select-<name>, var(--rv-<semantic>, <previous value>))`.
 
-Coming from 0.7.1: **nothing to do** — 1.0.0 removes no name and renames none.
+Coming from 0.7.1: **no import to change** — 1.0.0 removes no name and renames
+none. One thing to check, though: the popup's rows are `menuitemradio` in single
+mode where 0.7.1 emitted `menuitem`, so CSS or a test that selected
+`[role="menuitem"]` inside the panel has to follow the role (first bullet below).
 The breaking changes a consumer already migrated through are 0.6.0's popup rename
 and 0.2.0's token rename, both recorded below, and the freeze that fixed what
 ships is [`docs/API-SURFACE-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/API-SURFACE-1.0.md).

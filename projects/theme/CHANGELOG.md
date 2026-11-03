@@ -8,10 +8,13 @@ entry) are public API. A new token is always additive: every component reads
 `var(--rv-<own>, var(--rv-<semantic>, <previous value>))`, so a name that did not
 exist yesterday cannot change what renders today.
 
-Coming from 0.1.0: **nothing to do.** No token was renamed and no default a
-consumer could see moved. What 1.0.0 adds is the dark values, the contrast gate
-and the wiring the components now read — all of it under Unreleased below. Older
-releases followed the pre-1.0 policy, where a minor bump could break.
+Coming from `0.1.0` — **there is something to read.** None of the twelve `--rv-*`
+names moved, but `0.1.0` is still the newest tarball on npm, so everything merged
+since lands inside this major: a page with no switch now follows the OS dark
+setting (`0.1.0` had no dark values at all), the switch attribute is
+`data-rv-theme`, and the Tailwind adapter is `@theme inline`, so an element-level
+`--color-rv-*` override no longer repaints a `bg-rv-*` utility. Older releases
+followed the pre-1.0 policy, where a minor bump could break.
 
 ## 1.0.0-rc.1 — prepared, not yet published
 
@@ -99,5 +102,7 @@ an element-level `--color-rv-bg` no longer repaints `bg-rv-bg`. A later
 token then stops following `--rv-bg` for the rest of the stylesheet — including
 subtree overrides.
 
-Because a released version is never modified, this behaviour change ships as a
-minor: **0.2.0**.
+Because a released version is never modified, this behaviour change was planned as
+a minor: **0.2.0**. That bump was never published — `0.1.0` remains the only
+release on npm — so the change ships inside `1.0.0-rc.1`, where a major already
+tells a consumer to read the breaking notes.
