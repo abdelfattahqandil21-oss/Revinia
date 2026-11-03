@@ -1,0 +1,153 @@
+{
+  "menu": {
+    "simple": {
+      "trigger": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "rgb(224, 242, 254)",
+        "borderTopColor": "rgb(56, 189, 248)",
+        "borderRadius": "4px"
+      },
+      "panel": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "rgb(224, 242, 254)",
+        "borderTopColor": "rgb(56, 189, 248)",
+        "borderRadius": "4px",
+        "boxShadow": "rgba(0, 0, 0, 0.22) 0px 16px 48px 0px",
+        "direction": "ltr"
+      },
+      "row": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "1"
+      },
+      "check": {
+        "color": "rgb(17, 17, 17)"
+      },
+      "disabled": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "0.45"
+      },
+      "search": {
+        "outlineColor": "rgb(17, 17, 17)",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px"
+      },
+      "active": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.1)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "1",
+        "outlineColor": "rgb(17, 17, 17)",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "focusVisible": true,
+        "row": "select",
+        "disabled": false
+      },
+      "checkIdle": {
+        "color": "rgb(85, 85, 85)"
+      },
+      "activeHover": {
+        "backgroundColor": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.08)"
+      }
+    },
+    "premiumTrigger": {
+      "color": "rgb(17, 17, 17)",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "borderTopColor": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.14)",
+      "borderRadius": "12px",
+      "outlineColor": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.55)",
+      "outlineStyle": "solid",
+      "outlineWidth": "2px"
+    },
+    "premiumPanel": {
+      "color": "rgb(17, 17, 17)",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "borderTopColor": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.1)",
+      "borderRadius": "14px",
+      "boxShadow": "rgba(16, 24, 40, 0.18) 0px 12px 32px -8px, rgba(16, 24, 40, 0.1) 0px 4px 8px -4px",
+      "direction": "ltr"
+    },
+    "premiumActive": {
+      "backgroundColor": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.07)"
+    },
+    "premiumActiveHover": {
+      "backgroundColor": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.07)"
+    },
+    "menu": {
+      "panel": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "borderTopColor": "rgb(224, 224, 224)",
+        "borderRadius": "12px",
+        "boxShadow": "rgba(0, 0, 0, 0.22) 0px 16px 48px 0px",
+        "direction": "ltr"
+      },
+      "row": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.1)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "1"
+      },
+      "active": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.1)",
+        "textAlign": "start",
+        "direction": "ltr",
+        "opacity": "1",
+        "outlineColor": "rgb(17, 17, 17)",
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "focusVisible": true,
+        "row": "menu",
+        "disabled": false
+      }
+    },
+    "rtl": {
+      "panel": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "borderTopColor": "rgb(224, 224, 224)",
+        "borderRadius": "12px",
+        "boxShadow": "rgba(0, 0, 0, 0.22) 0px 16px 48px 0px",
+        "direction": "rtl"
+      },
+      "row": {
+        "color": "rgb(17, 17, 17)",
+        "backgroundColor": "color(srgb 0.0666667 0.0666667 0.0666667 / 0.1)",
+        "textAlign": "start",
+        "direction": "rtl",
+        "opacity": "1"
+      }
+    }
+  },
+  "i18n": {
+    "host": {
+      "direction": "rtl"
+    },
+    "button": {
+      "color": "rgb(22, 22, 26)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderTopColor": "rgb(22, 22, 26)",
+      "borderRadius": "8px",
+      "boxShadow": "none",
+      "direction": "ltr"
+    },
+    "focus": {
+      "outlineColor": "rgb(22, 22, 26)",
+      "outlineStyle": "solid",
+      "outlineWidth": "2px"
+    },
+    "active": {
+      "backgroundColor": "color(srgb 0.0862745 0.0862745 0.101961 / 0.16)",
+      "color": "rgb(22, 22, 26)"
+    }
+  }
+}

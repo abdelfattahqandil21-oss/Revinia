@@ -11,9 +11,13 @@ import {
   input,
   output,
   signal,
+  untracked,
 } from '@angular/core';
 import type { SelectPopupController, SelectPopupItemData } from '../../models/select-popup.types';
-import type { RiviniaSelectVariant, SelectPopupUiPlacement } from '../../models/select-popup.ui-types';
+import type {
+  RiviniaSelectVariant,
+  SelectPopupUiPlacement,
+} from '../../models/select-popup.ui-types';
 import { SelectPopupControllerImpl } from '../../services/select-popup';
 import { computeSelectPopupPosition } from '../../utils/select-popup-position';
 
@@ -52,10 +56,20 @@ export class SelectPopupItem {
   });
   /**
    * Tri-state selection (e.g. multi-select options). `null` (default) renders
-   * a plain `menuitem`; a boolean renders `menuitemcheckbox` + `aria-checked`
-   * so screen readers announce the state (the visual check alone is silent).
+   * a plain `menuitem`; a boolean renders `menuitemcheckbox` (or
+   * `menuitemradio` with `radio`) plus `aria-checked`, so screen readers
+   * announce the state — the visual check alone is silent.
    */
   readonly checked = input<boolean | null>(null);
+  /**
+   * Exclusive selection: with `checked` set, the row reads `menuitemradio`
+   * instead of `menuitemcheckbox`. Applies to projected rows; the `[items]`
+   * mode has no radio flag and always renders checkboxes, so an exclusive
+   * list driven that way must project its own rows to get radio semantics.
+   */
+  readonly radio = input(false, {
+    transform: (v: boolean | string) => v === '' || v === true,
+  });
 
   private readonly host = inject(ElementRef<HTMLElement>, { optional: true });
   private readonly host_ = inject(SelectPopupComponent, { optional: true });
@@ -66,7 +80,8 @@ export class SelectPopupItem {
   }
 
   protected computedRole(): string {
-    return this.checked() === null ? 'menuitem' : 'menuitemcheckbox';
+    if (this.checked() === null) return 'menuitem';
+    return this.radio() ? 'menuitemradio' : 'menuitemcheckbox';
   }
 
   protected checkedAttr(): string | null {
@@ -109,13 +124,14 @@ export class SelectPopupItem {
     // panels. The effect only handles SUBSEQUENT changes.
     effect(() => {
       const id = this.id();
-      const menu = this.host_;
+      const disabled = this.isDisabled();
       if (this.registeredId === null) return;
-      if (this.registeredId !== id) this.host_?.unregisterItem(this.registeredId);
-      // Re-register unconditionally: covers a `disabled` flip as well as an
-      // id rename (register is idempotent by id).
-      this.host_?.registerItem({ id, disabled: this.isDisabled() });
+      const previous = this.registeredId;
       this.registeredId = id;
+      // Re-register unconditionally: a `disabled` flip must reach the registry
+      // (idempotent by id). Only a rename needs the activation hand-back.
+      if (previous === id) this.host_?.registerItem({ id, disabled });
+      else this.host_?.renameItem(previous, id, disabled);
     });
   }
 
@@ -275,9 +291,9 @@ export class SelectPopupComponent {
 
   /**
    * Checkbox semantics only when a consumer supplied an external controller
-   * with `multi`-style values; a single-select menu keeps plain `menuitem`
-   * roles. Kept a method (not a computed) so it stays cheap and reactive via
-   * template reads.
+   * with `multi`-style values; a plain `rv-select-popup` menu without one
+   * keeps plain `menuitem` rows. Kept a method (not a computed) so it stays
+   * cheap and reactive via template reads.
    */
   protected checkedFor(id: string): boolean | null {
     const c = this.controller() as SelectPopupController & {
@@ -309,6 +325,28 @@ export class SelectPopupComponent {
     this.controller().unregister(id);
   }
 
+  /**
+   * Called by {@link SelectPopupItem} directives when their `id` binding
+   * changes. Unregistering alone hands activation to a neighbour, and the
+   * re-registration cannot take it back (the registry is never empty), so the
+   * row that kept its place would be demoted and Enter would pick a neighbour.
+   * The owned controller renames in place; an external one has no such hook,
+   * so it gets the remove-and-re-add fallback (activation kept, row moves last).
+   */
+  renameItem(from: string, to: string, disabled: boolean): void {
+    const controller = this.controller();
+    if (controller === this.owned) {
+      this.owned.rename(from, to, disabled);
+      return;
+    }
+    untracked(() => {
+      const wasActive = controller.pickActive() === from;
+      controller.unregister(from);
+      controller.register({ id: to, disabled });
+      if (wasActive) controller.activate(to);
+    });
+  }
+
   constructor() {
     effect(() => {
       if (!this.ambiguous()) return;
@@ -328,20 +366,34 @@ export class SelectPopupComponent {
         if (host && !host.contains(event.target as Node)) this.doClose(false);
       };
       document.addEventListener('pointerdown', onPointer);
-      // Coordinates go stale on outside scroll/resize — close instead of
-      // drifting (native-select-like; scrolling inside the panel is exempt).
+      // Coordinates go stale on outside scroll — close instead of drifting
+      // (native-select-like; scrolling inside the panel is exempt).
       // Like Tab-close, this is APG-consistent non-modal behavior.
       const onScroll = (event: Event) => {
         const panel = this.self.nativeElement.querySelector('.rv-select-popup-panel');
         if (panel && event.target instanceof Node && panel.contains(event.target)) return;
         this.doClose(false);
       };
+      // S4: the on-screen keyboard fires a HEIGHT-only `resize` while the user
+      // types in the panel's own filter, and closing took that input away
+      // mid-word. Width is the axis the anchor lives on, so a width change —
+      // including an orientation flip — still means stale coordinates and
+      // closes. The height-only exemption needs the focus to be in an editable
+      // element INSIDE this panel; a menu-like panel has none, so it keeps
+      // closing on every resize.
+      let widthAtOpen = window.innerWidth;
+      const onResize = () => {
+        const width = window.innerWidth;
+        if (width === widthAtOpen && this.editableFocusInsidePanel()) return;
+        widthAtOpen = width;
+        this.doClose(false);
+      };
       window.addEventListener('scroll', onScroll, true);
-      window.addEventListener('resize', onScroll);
+      window.addEventListener('resize', onResize);
       onCleanup(() => {
         document.removeEventListener('pointerdown', onPointer);
         window.removeEventListener('scroll', onScroll, true);
-        window.removeEventListener('resize', onScroll);
+        window.removeEventListener('resize', onResize);
       });
     });
     // APG menu-button: the trigger exposes haspopup + expanded. The trigger
@@ -492,6 +544,26 @@ export class SelectPopupComponent {
   }
 
   /**
+   * Is the caret inside an editable element that this panel owns?
+   *
+   * The searchable filter box is the case S4 exists for. A row is a `button`
+   * and a menu-like panel has no editable element at all, so both answer false
+   * and the resize closes as it always did.
+   */
+  private editableFocusInsidePanel(): boolean {
+    if (typeof document === 'undefined') return false;
+    const active = document.activeElement;
+    if (!(active instanceof HTMLElement)) return false;
+    const panel = this.self.nativeElement.querySelector('.rv-select-popup-panel');
+    if (!panel || !panel.contains(active)) return false;
+    return (
+      active.isContentEditable ||
+      active instanceof HTMLInputElement ||
+      active instanceof HTMLTextAreaElement
+    );
+  }
+
+  /**
    * Mark an opening pass: deferred focus + re-measurement.
    *
    * `positioned` is reset unconditionally (not only in top-layer mode) so the
@@ -626,7 +698,8 @@ export class SelectPopupComponent {
   }
 
   private matchTypeahead(buffer: string): string | null {
-    const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-select-popup-panel');
+    const root: HTMLElement | null =
+      this.self.nativeElement.querySelector('.rv-select-popup-panel');
     if (!root) return null;
     const enabled = new Set(
       this.controller()
@@ -701,7 +774,8 @@ export class SelectPopupComponent {
     // `open` never changes again — the second pass is the retry.
     const ready = this.positioned();
     if (!ready || !this.controller().open() || !this.focusPending) return;
-    const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-select-popup-panel');
+    const root: HTMLElement | null =
+      this.self.nativeElement.querySelector('.rv-select-popup-panel');
     // Panel not committed yet: keep the flag so the next pass retries. Clearing
     // it here is what used to strand focus on <body> (measured: Playwright
     // "received: inactive" on every arrow assertion).
@@ -718,7 +792,8 @@ export class SelectPopupComponent {
 
   private focusActive(): void {
     const id = this.controller().activeId();
-    const root: HTMLElement | null = this.self.nativeElement.querySelector('.rv-select-popup-panel');
+    const root: HTMLElement | null =
+      this.self.nativeElement.querySelector('.rv-select-popup-panel');
     if (!root) return;
     const target = id
       ? root.querySelector<HTMLElement>(`[data-rv-id="${CSS.escape(id)}"]`)
@@ -737,15 +812,33 @@ export class SelectPopupComponent {
    * deep value (measured: always `scrollTop` 0) and Home/End/typeahead left
    * the cursor active but off-screen.
    *
-   * `nearest` scrolls only when the row is outside the scrollport, and the
-   * scrollport's `scroll-padding-top` keeps it clear of the pinned search bar.
-   * A virtualised list that does not render the active row has no element to
-   * reveal — the consumer owns scrolling there.
+   * Only the panel's own `scrollTop` may change. `scrollIntoView({block:
+   * 'nearest'})` also scrolls the DOCUMENT once Chromium paints the panel in
+   * the top layer, and this popup closes on an outside scroll (stale
+   * coordinates): measured on a page scrolled to 389px, pressing ArrowDown
+   * scrolled it to 325 and the panel unmounted under the keyboard. A panel
+   * scroll is exempt from that listener by design.
+   *
+   * The scrollport's `scroll-padding` keeps the row clear of the pinned search
+   * bar. A virtualised list that does not render the active row has no element
+   * to reveal — the consumer owns scrolling there.
    */
   private revealActive(target: HTMLElement | null): void {
     if (!target || !this.controller().open()) return;
+    const panel = this.self.nativeElement.querySelector(
+      '.rv-select-popup-panel',
+    ) as HTMLElement | null;
+    if (!panel || !panel.contains(target)) return;
     try {
-      target.scrollIntoView({ block: 'nearest' });
+      const style = getComputedStyle(panel);
+      const paddingTop = Number.parseFloat(style.scrollPaddingTop) || 0;
+      const paddingBottom = Number.parseFloat(style.scrollPaddingBottom) || 0;
+      const row = target.getBoundingClientRect();
+      const box = panel.getBoundingClientRect();
+      const above = box.top + paddingTop - row.top;
+      const below = row.bottom - (box.bottom - paddingBottom);
+      if (above > 0) panel.scrollTop -= above;
+      else if (below > 0) panel.scrollTop += below;
     } catch {
       // Revealing is best-effort.
     }

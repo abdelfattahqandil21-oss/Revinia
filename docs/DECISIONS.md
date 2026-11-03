@@ -3102,3 +3102,720 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   animation (the panel's `getAnimations()` is empty) never scrolls. The gate
   opens panels by scrolling the trigger into view first and waiting for the
   animation, which is both realistic and deterministic.
+
+## 2026-10-31 — D85: select's single rows are `menuitemradio`, not plain `menuitem`
+
+- Context: in 0.7.1 the single-select panel renders every row as
+  `role="menuitem"` (`select-popup.ts`, `checked() === null` branch), so the
+  selected governorate is not announced as selected. Multi already ships
+  `menuitemcheckbox` + `aria-checked`, and `@rivinia/menu@0.5.0` already ships
+  `menuitemradio` for exclusive rows (`menu-panel.ts`, D80/D83). Verified by
+  source read on 2026-10-31; no screen reader run yet.
+- Decision (option A): keep the button + `role="menu"` model and its focus
+  behavior. In single mode each option renders `role="menuitemradio"` with
+  `aria-checked="true|false"`. The trigger keeps `aria-haspopup="menu"`,
+  `aria-expanded` and `aria-controls`. Multi stays `menuitemcheckbox`.
+- Open sub-decision: the searchable variant puts an `input[role="searchbox"]`
+  inside the `role="menu"` panel (`select-panel.html`). The alternative
+  (moving the filter out of the menu semantics) is decided in the S2 ADR
+  addendum only after the accessibility-tree check; no change before that.
+- Rejected: option B, a select-only combobox + listbox with
+  `aria-activedescendant`. It is the stricter pattern but a full focus-model
+  rewrite, deferred to post-1.0.
+- Impact: ARIA roles are public contract, so this ships in select `1.0.0`.
+  README "Accessibility" and the a11y verification doc must state exactly what
+  was tested; Playwright asserts roles and `aria-checked` toggling for single,
+  multi, searchable, disabled rows and RTL, and axe stays at zero violations.
+
+### D85 addendum — the filter box lives beside `role="menu"` (PROVISIONAL — pending human check)
+
+- Measured, not assumed. Chromium 156.0.8078.4, 1280×900, snapshots committed
+  under `docs/a11y-snapshots/` (produced by `scripts/capture-a11y-tree.mjs`).
+  With the select open, in document order, the tree is:
+
+  ```
+  button "Invoice status Select…"  hasPopup=menu expanded=true controls=rv-select-popup-panel-1
+  group
+    searchbox "Search options"
+    menu "Invoice status options"
+      menuitemradio "Outstanding invoices"  checked=false
+      menuitemradio "Overdue"               checked=false disabled=true
+      menuitemradio "Paid"                  checked=false
+  ```
+
+  The menu owns rows and nothing else; the filter box is a sibling inside the
+  same panel, so it still scrolls and sticks with the rows. The 0.7.1 shape
+  (searchbox as a DOM child of `role="menu"`) fails axe
+  `aria-required-children` (critical, measured; `role="menu"` may own only
+  `menuitem*`/`group`/`separator`). After the move, axe reports zero violations
+  on six states: closed, single, multi, RTL, a custom `listTemplate` and the
+  empty state.
+- Decision: option 1, **the searchbox stays outside the menu** and keeps
+  `role="searchbox"` with its own name. This is the lowest-risk option because
+  it changes no focus behavior (the box is still focused on open; Tab still
+  moves into the rows) and leaves every ARIA role exactly as D85 chose.
+  S2.4 defers the *final* call to the screen-reader pass; this is the shape the
+  code ships until that pass contradicts it, and the whole entry stays marked
+  PROVISIONAL for that reason.
+- Alternative considered and recorded (option 2): wrap the filter box and the
+  rows in `role="group"` *inside* the menu, which is what a naive reading of
+  the required-children rule suggests. Not chosen: in the accessibility tree
+  the searchbox would then be a descendant of the menu, so assistive technology
+  announces an editable control as menu content, a shape neither the APG menu
+  pattern nor the select-only combobox pattern defines. The group layer would
+  exist purely to satisfy a linter, and the same wrapper would be needed again
+  for the empty/loading rows.
+- Alternative considered and recorded (option 3): option B from D85, a
+  select-only combobox + listbox with `aria-activedescendant`. Still the
+  strictest model and still post-1.0: it is a focus-model rewrite.
+- **PROVISIONAL — pending human check.** The tree proves structure, not
+  announcement. If the screen-reader pass (`docs/HUMAN-CHECKS-1.0.md`) shows
+  the filter box announced as menu content, or that focus moving from the box
+  into the rows reads as leaving the control, the fallback is option 3.
+- Consequence for consumers: a custom `listTemplate` must give its rows a
+  `menuitem*` role and `tabindex="-1"`. Measured on the 500-row virtual fixture:
+  bare `div` rows raise `aria-required-children` (critical) and an unfocusable
+  scrollport raises `scrollable-region-focusable` (serious). The row directive
+  is internal, so the README recipe writes the attributes out.
+
+### D85 addendum 2 — the trigger's accessible name contains the visible value (WCAG 2.5.3)
+
+- Context: 0.7.1 named the trigger with `aria-label` (the caption), while the
+  button's visible text is the current value. axe
+  `label-content-name-mismatch` (serious) fires when the visible text is absent
+  from the accessible name, and it did on every open/closed single select once
+  the panel semantics moved focus into the rows. WCAG 2.5.3 "Label in Name"
+  requires the visible label to be part of the name.
+- Decision: the trigger is named by `aria-labelledby` over its caption (or an
+  `ariaLabel`-only hidden span) plus the visible value, in visual order; the
+  hidden description stays a *sibling*, not a child, so it is not read twice.
+  IDs are instance-unique, so several selects in one application root compose
+  their names independently (asserted in `e2e/select/select.spec.ts`).
+- Public consequence: the trigger no longer carries `aria-label`; its `id`s
+  (caption, value, description) are DOM-adopted by the component and the
+  accessible name now reads "Invoice status, Outstanding invoices". This is an
+  announcement change for every consumer, recorded in the CHANGELOG, and the
+  one item in this branch the owner may want to confirm as a contract decision
+  rather than an S2 acceptance fix.
+- Verified: axe `label-content-name-mismatch` at zero on the closed trigger,
+  single open, multi open, RTL and empty states; Playwright asserts the
+  composed name after a pick and across two application roots.
+
+
+## 2026-10-31 — D86: no popup dedupe before 1.0; a conformance suite instead
+
+- Context: select popup and menu panel duplicate outside-pointerdown close,
+  scroll/resize close, top-layer placement, anchor positioning and the
+  controller registry. Fixes can land in one and miss the other.
+- Decision: do **not** extract a shared popup core before 1.0. Add one
+  conformance suite parametrized over both components now, plus a report-only
+  duplication check (`jscpd`) in CI. The extraction ships after 1.0 as a
+  non-breaking refactor.
+- Suite covers: outside pointerdown closes without stealing focus; Escape
+  closes and restores trigger focus; outside scroll closes, inside scroll does
+  not; the resize policy from S4; forced `topLayerSupported = false`; balanced
+  `addEventListener`/`removeEventListener` after destroy; no `window`/`document`
+  access during server render.
+- Rejected: extracting an internal module/package now. It adds a new surface
+  to freeze for no public API gain.
+- Impact: a behavior broken in only one component fails the shared suite.
+  Acceptance requires the suite green on both.
+
+### D86 addendum — what the suite actually measures, the resize policy, and the duplication figure
+
+- Suite: `e2e/popup/conformance.spec.ts`, one `Adapter` per host: `rv-select-popup`
+  and the built-in `rv-menu` on `/select`, plus the same `rv-menu` with a consumer
+  `<input>` projected into its panel on `/content`. Eight cases per adapter,
+  twenty-four in total, green on Chromium, Firefox and WebKit (72 runs).
+- Measured, not asserted by eye:
+  - the listener ledger counts `document:pointerdown`, `window:scroll` and
+    `window:resize` add/remove balance: 0 closed, 3 open, and back to exactly the
+    pre-open map after an in-app destroy. The destroy navigates through the app's
+    own `<nav>` link and asserts a JS marker survives, so it proves a component
+    destroy rather than a page reload that would zero the process.
+  - outside pointerdown closes and does not steal focus, fired as a raw
+    `page.mouse.click` at an empty corner: `locator.click()` on an off-screen
+    element scrolls the document first, and that scroll closes the panel, so the
+    case would have measured the scroll rule while claiming the pointer rule.
+  - scroll outside closes, scroll inside does not. The outside case throws if the
+    document cannot actually move, because a parked-at-maximum `scrollBy` is a
+    no-op that would pass for nothing; `/content` ends above its own scroll fold,
+    so the suite appends a `300vh` spacer for that one case instead of changing a
+    fixture that the nine cases in `e2e/menu/projected-content.spec.ts` run against.
+  - Escape closes and restores the trigger, and the case asserts its own
+    precondition first: opening from the keyboard leaves focus on the trigger
+    until the deferred focus lands, so the case polls until the active element is
+    *not* the trigger before pressing Escape. Without that, the final assertion
+    would still be true with the restore code deleted — the focus simply never
+    moved. This is the difference between the Escape mutant being killed and
+    merely reported as killed.
+  - the top-layer fallback deletes `HTMLElement.prototype.showPopover` in an init
+    script (the flag is read once at construction, so a mid-test delete cannot
+    work); the panel still lands on the trigger's leading edge and Enter picks.
+- Resize policy (S4), **PROVISIONAL — pending human check**: a resize is ignored
+  only when the width is unchanged AND the focus is in an editable element inside
+  that panel; every other resize closes with no focus restore. Rationale: the
+  on-screen keyboard changes height and says nothing about where the panel is
+  anchored, while width is the axis the anchor lives on, so a width change — an
+  orientation flip included — still means stale coordinates. A *built-in* menu
+  keeps closing on every resize because its rows are buttons: it has no editable
+  element, so the exemption can never fire for it. That is why the suite needs the
+  `/content` host: the menu renders `<div class="rv-menu-panel">` itself and
+  projects consumer markup inside it, so a projected `<input>` is genuinely inside
+  the panel and the exemption applies to the menu too — one rule, both components.
+  The exemption recognizes three kinds of editable — `contenteditable`, `<input>`
+  and `<textarea>` — because the panel hosts whatever the consumer writes, and the
+  projected host now offers all three: a case that only ever focused the `<input>`
+  would stay green with the other two branches deleted. The resize cases run in a
+  390-by-664 viewport, the spec's "mobile viewport" and an iPhone 13/14 logical
+  width, and each one throws if `window.innerWidth` is not 390 — a case that
+  quietly inherited the desktop window would pass while proving nothing about the
+  device the rule exists for. The real-device keyboard is still not tested and is
+  a human item: no viewport emulation opens one. Two edges of that rule are worth
+  stating plainly. An orientation flip closes the panel because a phone's two
+  widths differ — the exemption keys on `innerWidth`, not on an orientation event,
+  so a hypothetical viewport that rotated to the *same* width with a field holding
+  the caret would stay open; the suite's width case is therefore the portrait to
+  landscape flip (390×664 → 664×390), the real event. And the order is not the
+  order S4 wrote: the spec puts the human reproduction first and the fix second,
+  while this branch ships the fix under a PROVISIONAL label because the standing
+  instruction for this plan is to decide the provisional points and keep going
+  rather than stop for them. If the human run disagrees with the rule, the rule
+  changes; the tests are the thing that would have to be re-read, not the device.
+- Mutation checks are a command now, not a memory:
+  `pnpm check:popup-mutations` (`scripts/check-popup-mutations.mjs`). A green
+  conformance suite proves nothing by itself — a case can pass because the
+  behavior it names is not the behavior it measures — so the gate breaks one
+  documented rule at a time in the library source, rebuilds what the server
+  actually serves, runs the suite, and requires the red set to equal the expected
+  set **exactly**: a missing red is a surviving mutant, an extra red is a case that
+  passes for the wrong reason. The control run goes first and must be green (`24
+  passed`) or nothing after it counts as evidence. An anchor that does not occur
+  exactly once aborts the run instead of editing the wrong line; every mutant is
+  restored in a `finally`, including on a crash; and the last action of the run is
+  a rebuild of `menu`, `select` and `menu-e2e` from the clean source, so `dist/`
+  never outlives the mutation that produced it. **18 mutants, 18 killed** — the
+  kill column below is the harness output, and each label is the exact string the
+  script rewrites.
+  - Resize, menu host (5): the exemption never fires → the projected field's
+    height-only case. The exemption ignoring editability → the built-in menu's
+    "closes a panel that has nothing editable"; an earlier note here claimed this
+    turned *both* height-only cases red, measured it turns one and leaves the other
+    green, which is the direction the mutant hides in. The exemption ignoring the
+    width axis → the projected field's width case. Only `<input>` counting as
+    editable, and `isContentEditable` dropped → the same height-only case, which
+    loops every editable the host holds, so each branch break has its own kill
+    inside that one title.
+  - Scroll and cleanup, menu host (3): the inside-scroll exemption testing the
+    wrong side of the panel → the inside *and* outside scroll cases on both menu
+    hosts (4 titles). The `scroll` listener never registered → "scroll outside
+    closes" plus the listener-ledger case on both hosts, which is the pairing that
+    answers the vacuous-pass worry: the inside case alone cannot see a missing
+    listener, the ledger case can. `onCleanup` emptied → the destroy case on both
+    hosts and only it, so the ledger assertion stays a claim about teardown rather
+    than a restatement of the open state.
+  - Close paths, menu host (2): Escape closing without restoring focus → the
+    Escape case on both hosts. An outside `pointerdown` closing nothing → the
+    outside-pointer case on both hosts.
+  - The same shapes on the select (7): the exemption never fires, the exemption
+    ignoring width, the scroll exemption on the wrong side, the listener never
+    registered, the cleanup removing nothing, Escape without restore, and the
+    outside pointerdown — each killed only by `popup conformance: select popup` and
+    leaving every menu title green, and the ten menu mutants do the reverse. That
+    is the per-component claim, measured rather than asserted.
+  - Server render, not a browser (1): deleting `menu-panel.ts`'s
+    `if (typeof window === 'undefined') return;` from the listener effect is run
+    against `pnpm check:popup-ssr` instead, because that is the only harness where a
+    missing `window` guard is observable. It reddens exactly two checks — "the panel
+    really mounted" and "the top-layer probe reports unsupported instead of
+    crashing" — while "renders server-side" stays green (see the bullet above:
+    Angular swallows the effect error).
+- Two kinds of break are absent on the select and the reason is its own DOM, not an
+  oversight: forcing the height-only exemption to always fire, and the two
+  editable-branch breaks, cannot be seen there because the select's panel always
+  contains the filter `<input>` — "has nothing editable" and "the caret is in a
+  `<textarea>`" are states that popup cannot reach. The menu host is where those
+  three live, which is why the list is 10 + 7 + 1 rather than eighteen copies.
+- One false red, worth recording: the select width case failed against a "clean"
+  tree because `dist/select` had been rebuilt while the mutation was still in the
+  source, and `menu-e2e` bundles the library dist. The served bundle carried the
+  mutant and the test was right to fail. Rebuilding `dist/select` and
+  `dist/menu-e2e` from the restored source turned it green; the suite never
+  builds, so a stale `dist/` masquerades as a product bug. The harness was bitten by
+  exactly this on its own first run — six select mutants reported SURVIVED because
+  only the mutated library was rebuilt, so `dist/menu` still carried the previous
+  menu break into every select run. `observe()` now rebuilds both libraries and the
+  demo on every observation, whatever was edited; the strict expected set is what
+  made the bug visible instead of passing it off as six surviving mutants.
+- Server render is not a browser check. The seventh S3 bullet — the one no browser
+  can prove, since a browser always has both globals — has its home in
+  `pnpm check:popup-ssr` (`scripts/check-popup-ssr.mjs`): plain Node, no DOM,
+  `renderApplication` from `@angular/platform-server` over the built
+  `dist/select` and `dist/menu` FESM bundles. `window` and `document` are not
+  defined there, so a *use* raises a ReferenceError and the render fails, while a
+  `typeof window === 'undefined'` guard is not a use and is not a failure —
+  that distinction is the whole claim. **Fifteen checks pass**, including a
+  negative control whose host calls `document.createElement` and is caught. Both
+  server states are in scope, because `[menu]` is a public input: a consumer can
+  hand the server a menu that is already open, and that is the only way the effect
+  which adds `pointerdown`/`scroll`/`resize` — and reads `window.innerWidth` for
+  the resize snapshot — is reached during a server render at all. Reached is not
+  read: the guard at `menu-panel.ts:306` returns first, so what the gate measures
+  is that the guard holds, and the mutation below is what shows the read behind it
+  would fail. Of the four `rv-menu (open)`
+  checks, one asserts that the panel class is present and prints what it counted
+  (3 `rv-menu-panel` nodes), one that no positioning ran (`data-positioned="true"`
+  count 0), one that the top-layer probe reports `data-top-layer="false"` instead
+  of touching `HTMLElement.prototype`, and one that the render did not throw.
+  The select's own popup controller is internal, so no server render can reach it
+  open and `select-popup.ts:384`'s read is never exercised on the server — that
+  half is asserted by inspection, not measurement: the guard the menu is checked
+  against, `menu-panel.ts:306`, is the byte-identical line `select-popup.ts:359`. Mutation, re-measured on this tree: deleting `menu-panel.ts:306`'s
+  `if (typeof window === 'undefined') return;`, rebuilding `dist/menu`, makes the
+  gate exit 1 with exactly two failures — "the panel really mounted" (0 nodes) and
+  "the top-layer probe reports unsupported" (0) — while "renders server-side"
+  stays green, because Angular swallows an effect error during a server render and
+  the promise still resolves. So the kill here is a state assertion, never the
+  absence of a throw; restoring the guard and rebuilding returns the gate to 15
+  ok / exit 0. The browser half of the same item — the three globals added and
+  then removed — stays the suite's destroy case, which counts them for real.
+- Duplication, report-only per D86. An earlier entry here quoted 6 clones over 14
+  files (162 lines, 5.02%; 1855 tokens, 7.62%) from a `pnpm dlx jscpd` invocation
+  whose scope and flags could not be re-run from the repository, so it is
+  superseded rather than compared against. The measurement is now the script
+  `pnpm check:duplication` (`scripts/check-duplication.mjs`): jscpd **pinned to
+  4.0.8**, `--min-tokens 100`, over the popup components and their utils on both
+  sides — `select/ui/src/lib/components/popup`, `select/ui/src/lib/utils`,
+  `menu/ui/src/lib/components/menu`, `menu/ui/src/lib/utils`. It reports and
+  never fails, and prints the baseline it is checked against.
+- That scope, measured on `HEAD` and on this tree with the same command:
+  **7 clones / 181 lines (6.38%) / 2,046 tokens (10.77%)** before the S4 resize
+  rule, **8 clones / 196 lines (6.75%) / 2,213 tokens (11.36%)** after it. So S4
+  added exactly one clone, 15 lines and 167 tokens: the listener-registration
+  block the two popups now share line for line, `select-popup.ts:384-398`
+  byte-for-byte `menu-panel.ts:331-345` (`diff` of those two ranges reports no
+  difference; the lines just outside them differ, so the range is the shared
+  text and not one line wider). That is the cost D86 accepted, now measured
+  rather than asserted — and it is the argument for the post-1.0 extraction,
+  since a third `resize` policy change has to be written twice.
+- The detector under-reports that shared text, and the reason is measured rather
+  than assumed. `editableFocusInsidePanel()` is a second S4 body the two popups
+  share: `menu-panel.ts:430-441` and `select-popup.ts:553-564`, 12 lines each,
+  differing on exactly one line (`diff` reports `5c5`, the
+  `'.rv-menu-panel'` / `'.rv-select-popup-panel'` selector). It is not one of the
+  8 clones above. Re-running the same pinned 4.0.8 on the two files at
+  `--min-tokens 40` still misses it, and at `--min-tokens 20` it appears as two
+  fragments of 75 and 63 tokens — so the one differing line splits the shared text
+  below the 100-token threshold the check is run at. The honest reading of the
+  figure is therefore 8 clones reported and 9 shared blocks present, and the
+  extraction argument is one line stronger, not weaker, than the number says.
+- Version pinning matters more than the tree here: the same sources measured
+  **18 clones / 322 lines (11.30%)** on jscpd 5.4.2. A check that re-runs on a
+  moving detector reports drift that is only the tool changing.
+- No CI runs any of this: the repository has no `.github/workflows`, no
+  `.gitlab-ci.yml` and no other CI file (`git ls-files` finds none). D86's
+  "report-only duplication check in CI" therefore ships as a script a person runs,
+  alongside `check:popup-ssr`, `check:popup-mutations`, `check:component-theme`,
+  `check:contrast`, `check:theme-dark`, `check:pack`, `check:readmes` and
+  `check:docs`. Adding CI is out of this plan's scope.
+- Browser totals after this change: `npx playwright test` collects 121 tests per
+  project and **363 pass — 121 on Chromium, 121 on Firefox, 121 on WebKit — with
+  the run exiting 0**. WebKit was not in that sentence a day earlier: `MiniBrowser`
+  aborted before a page opened with `error while loading shared libraries:
+  libavif.so.16`, and the library was installed by hand on 2026-11-01
+  (`apt-get install libavif16 libgav1-1 libyuv0`, the three the Playwright
+  `install-deps --dry-run` report names for video decoding). The first real WebKit
+  run produced three failures, all in `e2e/select`, and they are an engine
+  difference the suite had never been able to see, not a product defect: **WebKit
+  lays this demo page out taller than Chromium at the same viewport — measured
+  `scrollHeight` 1221 against 1109 at 720px high** (system font metrics). Two of
+  the failing cases scroll to the bottom of the document before opening, which on
+  WebKit leaves the trigger *above* the viewport (`bottom = -53`), so
+  `locator.focus()` scrolls the page itself — and that scroll arrives one frame
+  later than on Chromium, after the panel exists, and the documented
+  outside-scroll-closes rule fires. The instrumented log is the evidence: six
+  document scroll events climbing 457 → 501 with `popupExists: false` and
+  `rowCount: 0` on WebKit, against one scroll event and the panel still open with
+  `activeRole="menuitemcheckbox"` on Chromium. The RTL case is the same mechanism
+  reached through Playwright's click scroll-into-view instead of `focus()`. Fixed
+  on the harness side, keeping the state under test: a
+  `focusTriggerOnAScrolledPage()` helper scrolls the trigger into view *before*
+  focusing, so the document stays scrolled and nothing moves once the panel
+  exists, and the RTL pick uses the `{ force: true }` that the two multi-mode
+  picks already documented. No library line changed for WebKit. Two of the tests
+  (`select: multi mode`, its a11y sibling) click
+  rows with `{ force: true }`: Playwright's own scroll-into-view moves the
+  document for a top-layer row with no layout change and no JS-visible scroll call
+  (measured `scrollY` 70 → 389 at a constant document height), which closes the
+  panel by design. A real pointer at the same coordinates keeps it open, so this
+  is a harness artifact, and the assertions still require both picks to land.
+- One pre-existing Chromium-only failure came out of the full run and is fixed
+  here, not silenced: `e2e/menu/api.spec.ts` measures the active row's icon color
+  and read `rgb(85, 85, 85)` (muted) against a row at `rgb(17, 17, 17)`. It is a
+  race inside the test, not a product defect: `data-active` is an Angular host
+  binding (`[attr.data-active]`, `menu-panel.ts:43`) that lands on a
+  change-detection tick, while the row's `focus()` is imperative inside the key
+  handler — so `toBeFocused()` can be true while the row is still not active. It
+  passed 3/3 in isolation and failed only with the suite at four workers. The test
+  now waits for `data-active="true"` before measuring, i.e. it waits for the state
+  whose style it asserts.
+- Every figure above is re-runnable from the repository, which is the point of
+  recording the commands rather than the numbers alone. The suite never builds and
+  `menu-e2e` bundles the library `dist/`, so the build comes first:
+  `PNPM_CONFIG_ALLOW_BUILDS='{"@parcel/watcher":true,"esbuild":true,"lmdb":true,"msgpackr-extract":true}'`
+  then `pnpm build:select && pnpm build:menu && npx ng build menu-e2e`, then `npx
+  playwright test e2e/popup/conformance.spec.ts --project=chromium
+  --project=firefox --project=webkit` (24 cases × 3 engines = 72 runs), `npx
+  playwright test` for
+  the browser totals, `pnpm check:popup-ssr` (15 checks), `pnpm check:duplication`
+  (8 clones), `npx ng test menu` (63) and `npx ng test select` (161). The whole
+  mutation table is one command, `pnpm check:popup-mutations`, and `i18n` is not
+  in any of them because the popup suite does not import it — the demo pulls
+  `@rivinia/menu` and `@rivinia/select` only. A mutation run is those same commands
+  after editing the source and rebuilding `dist/menu` + `dist/select` +
+  `dist/menu-e2e`, and the tree is only clean again once the restored source has
+  been rebuilt — `git diff` on the library is not enough, because the served
+  bundle is a build artifact.
+- `docs/HUMAN-CHECKS-1.0.md` carries the two human halves this plan cannot
+  execute: the S4 real-device resize steps (keyboard, orientation, iOS chrome
+  collapse, and the menu as the counter-case) and the S7 Safari steps. Both are
+  marked **not tested** and say what result would force a code change rather than
+  a documentation change.
+
+## 2026-10-31 — D87: theme is in scope before 1.0 — dark, forced-colors, accent
+
+- Context: `@rivinia/theme@0.1.0` has no dark values and no forced-colors
+  defaults; `--rv-accent` is declared (`theme.css`, `@layer rivinia-theme`) but
+  read by none of select, menu or the i18n toggle. Only `table/ui` handles
+  `forced-colors` today.
+- Decision: add dark values under `@media (prefers-color-scheme: dark)` guarded
+  by `:root:not([data-rv-theme="light"])` and under `:root[data-rv-theme="dark"]`,
+  keeping defaults in `@layer rivinia-theme`; add `@media (forced-colors: active)`
+  defaults using system colors (`Canvas`, `CanvasText`, `Highlight`,
+  `GrayText`); wire `--rv-accent` into the focus-visible ring, the
+  selected/active indicator and the language toggle's active state. With no
+  theme imported the rendered result must be identical to today (snapshot).
+- Also: a contrast script checks WCAG AA (4.5:1 text, 3:1 non-text) for every
+  token pair in both schemes; the language toggle honors
+  `prefers-reduced-motion` if it gains motion; every `--rv-*` token is listed
+  as public contract in the theme README.
+- Rejected: dark-only scope (leaves `--rv-accent` dead and half the contract
+  unread); deferring the theme entirely (1.0 would document a contract the libs
+  do not read).
+- Impact: touches theme, select, menu and i18n `/ui`; visual snapshots for
+  light, dark, forced-colors and RTL. Version for this work is decided at
+  release, not here.
+
+### D87 addendum — the contrast matrix is explicit, and the border is not in it
+
+- Context: D87 says "WCAG AA (4.5:1 text, 3:1 non-text) for every token pair in
+  both schemes". Taken literally, `--rv-border` on `--rv-bg` fails: 1.32:1 on
+  white and 1.73:1 on `#161616`. Reaching 3:1 would repaint the hairline around
+  every select trigger, menu panel, modal and toast — a consumer-visible design
+  change that D87 did not scope, and one that cannot be judged for looks
+  without the owner.
+- Decision: the gate enforces three explicit groups — text (`--rv-fg`,
+  `--rv-muted`, `--rv-accent` at 4.5:1), indicators (the four status tokens at
+  3:1) and decorative (`--rv-border`, measured and printed, never failing).
+  `--rv-accent` counts as text because S5b paints selected/active labels with
+  it.
+- Why not "text everywhere": on white, `--rv-ok` is 3.30:1 and `--rv-warning`
+  3.19:1. The components use them as borders and tinted backgrounds — select
+  paints its error border with `--rv-danger`, datepicker tints with
+  `--rv-warning` — and none paints text with them.
+- Accepted gap: a consumer who paints text in a status token, or who relies on
+  the border alone to identify a control (WCAG 1.4.11), gets a low-contrast
+  result. The README says so next to the token table; changing either is a
+  palette decision for the owner, not something 1.0 does silently.
+- Also recorded: the Bootstrap adapter's mapping rules stay **unlayered** and
+  must set `color-scheme` themselves. Unlayered declarations beat the layered
+  `@media (prefers-color-scheme: dark)` block, which is what keeps Bootstrap's
+  palette authoritative; the probe caught the adapter mapping colours but
+  leaving `color-scheme: light`, so a Bootstrap dark surface kept light
+  scrollbars and form controls. The same probe found the dark block mapping
+  four tokens only, so the accent and the four status tokens kept their light
+  values on a dark surface; both mappings now carry all nine colours plus
+  `--rv-shadow`.
+- Verification: `pnpm check:contrast` (palette, drift and ratios) and
+  `pnpm check:theme-dark` (eleven documents, Chromium and Firefox, computed
+  values). Both run on demand; neither is part of `pnpm test`. The browser gate
+  also proves the two claims the numbers cannot: an unlayered consumer `:root`
+  rule really does beat the layered defaults, and the adapter really reads
+  `--bs-*` rather than silently falling back to its own values.
+- Scope recorded: the switch is read on `:root` only, so a subtree goes dark by
+  setting the `--rv-*` properties and `color-scheme` on itself. The attribute
+  was never a subtree switch, and the first README draft said it was.
+
+### D87 addendum 2 — component wiring, and what the snapshot actually proves
+
+- Wiring shipped: select (premium and simple) rings, active rows and the tick;
+  menu row ring and active row; i18n toggle ring and held-down fill. Every read
+  is `var(--rv-accent, <the value that shipped before>)`.
+- The tick needed specificity, not just a declaration: the generic row-icon
+  rule paints every row `svg` at (0,2,1), so `svg.rv-select-check` names the
+  element and sits below the active-row `color: inherit` it ties with, in the
+  same stylesheet so source order decides. A first attempt at `.rv-select-check`
+  (0,1,0) was measured as `rgb(17, 17, 17)` — the row ink — on both engines.
+- The tick also needed TWO fallbacks, because it had two colours: the muted
+  token on an ordinary row, and the inherited row ink while its row is the
+  active one. `var(--rv-accent, currentColor)` alone changed the off-active
+  tick from `#555555` to the row ink on an unthemed page; the shipped rules are
+  `var(--rv-accent, var(--rv-select-popup-muted))` and, on the active row,
+  `var(--rv-accent, currentColor)` (which resolves to the same inherited value
+  the old `color: inherit` produced).
+- Forced-colors defaults are stated per component because the UA flattens
+  author backgrounds: the active row would otherwise be invisible. It does not
+  force `opacity`, so the disabled row's 0.45 is replaced with `GrayText` at
+  full opacity. It DOES force `box-shadow` to `none` in Chromium — measured on
+  the built premium panel, whose declared
+  `rgba(16, 24, 40, 0.18) 0 12px 32px -8px` reads back as `none` under
+  `forcedColors: 'active'`, and the gate now proves it with a probe element that
+  declares a shadow and belongs to no component: a panel reading `none` cannot
+  tell the UA's doing from its own `box-shadow: none`. The explicit declaration
+  is therefore redundant there and kept for engines this suite cannot emulate
+  (Playwright has no forced-colors mode in Firefox). An earlier draft of this
+  entry claimed the opposite; the measurement corrected it. Two other
+  corrections came out of measuring the mode: the (0,3,1)/(0,4,1) tick rules
+  outranked a plain
+  `.rv-select-check { color: CanvasText }` and Chromium measured white on
+  white, so the forced block repeats both tick selectors; and a `Highlight`
+  ring on a `Highlight` band is invisible, so the active row's ring is
+  `CanvasText`.
+- Hover activates the row (`hoverItem` reaches `activate`), so the pointer's row
+  is always the active one. The simple `:hover` rule ties the active tint at
+  (0,3,0) and comes later in source, so it painted its neutral 8% wash over the
+  accent — a defect no snapshot of an unpainted page could show. A
+  `[data-active='true']:hover` rule at (0,4,0) now carries both:
+  `--rv-select-item-active-hover-bg`, falling back to exactly the 8% ink the
+  unthemed page painted in that state, so the identity snapshot still holds.
+  The gate measures it (pointer moved to the active row's centre, then parked at
+  0,0) in the `light` and `accent` cases. Premium needs no such rule: its
+  `rv-select-popup[data-variant='premium'] …` active-row rules are (0,4,1) and
+  outrank the generic (0,4,0) one outright.
+- Verification: `pnpm check:component-theme` renders both demo apps (real
+  components, built from `dist/`) in Chromium and Firefox — six cases on
+  Chromium (no theme, dark via `data-rv-theme`, dark via the OS preference,
+  accent, RTL, forced colors) and five on Firefox. Playwright cannot emulate
+  `forced-colors` in Firefox, so that case is Chromium-only and a Firefox
+  forced-colors check is a human item.
+- The identity claim, honestly: the `light` snapshot is the pre-wiring render,
+  and the gate's header records how to re-derive it — check out the base CSS,
+  rebuild the three packages and both demo apps, re-run `--only=light`, and
+  `git diff` the snapshot. It was re-derived that way after the wiring and
+  matched byte for byte; the case also asserts that the tick (on and off the
+  active row), the row ring and the toggle ring keep the pre-wiring ink, so a
+  hardcoded accent default fails even on a fresh checkout. The `dark`
+  snapshots did move, by design: every wired surface now takes the theme's
+  `#8b8bf0` accent.
+- Mutation checks (both caught): a hardcoded `#5b5bd6` fallback on the tick
+  fails `light` on both engines (`rgb(91, 91, 214)` instead of the row ink);
+  deleting `background: Highlight` from the popup's forced-colors block fails
+  with a 10% author tint where `Highlight` is expected.
+- The i18n toggle has no transition or animation, so `prefers-reduced-motion`
+  is a no-op; a spec asserts that and says to add the block if it ever gains
+  motion.
+
+## 2026-10-31 — D88: 1.0 ships as `1.0.0-rc.1` on `next`, then `1.0.0`
+
+- Context: pre-1.0 caret peers make release order load-bearing. i18n has an
+  optional peer on select (`^0.7.0`), so select must reach 1.0 before i18n can
+  peer on `^1.0.0`. The registry state on 2026-10-31 is i18n 0.8.0,
+  select 0.7.1, menu 0.5.0, theme 0.1.0.
+- Decision: publish `1.0.0-rc.1` on dist-tag `next` in the order theme →
+  select → menu → i18n; keep it there through a soak period; then promote to
+  `latest` as `1.0.0`. i18n's peer becomes `@rivinia/select: ^1.0.0`, still
+  optional via `peerDependenciesMeta`. Every publish stays a human gate with
+  explicit confirmation of name, version, access and tarball contents.
+- Also: document the i18n × select compatibility table, and the `@angular/*`
+  peer policy, in the i18n README.
+- Rejected: straight to `1.0.0` with no soak; staying on 0.x (the peer-range
+  trap only gets worse with the next select minor).
+- Impact: `rc` and `1.0.0` share the same public contract (exported TS API,
+  `--rv-*` names, documented ARIA roles). Theme's unreleased SPEC-0.1.1 work
+  must be versioned before the order starts.
+
+## 2026-11-02 — D89: two browser floors, and the anchor gate probes every property its block uses
+
+- Context: S7 found the repository stating, in two shipped CSS comments
+  (`menu-panel.css:96`, `select-popup.css:161`), that CSS anchor positioning is
+  "Baseline widely-available since 2026-01". Read against mdn/browser-compat-data
+  on 2026-11-02 that is wrong in the direction that matters: anchor positioning
+  reached Baseline **low** on 2026-01-13 (Chrome 125, Firefox 147, Safari 26),
+  and Baseline "widely available" is the low date plus 30 months, i.e.
+  2028-07-13. A library that documented a hard floor from that sentence would be
+  promising support it has not built.
+- The same reading found a live defect. The `@supports` prelude guarding the
+  anchor block tested `anchor-name` and `position-area` but not `anchor-scope`,
+  which is six Chrome versions younger (131 against 125). A Chrome 125-130 engine
+  therefore enters the block, ignores the scope, and resolves the duplicated
+  `anchor-name: --rv-menu-anchor` to the LAST trigger laid out on the page. That
+  failure is not hypothetical: `select-popup.css:232` records three selects whose
+  panels all landed on the third trigger, up to 431px from their own.
+  `position-visibility: anchors-visible` has the same shape on Safari 26.0-26.1
+  (the value is 26.2): the declaration is dropped, so the panel keeps its anchor
+  placement but stops hiding when its trigger scrolls away.
+- Decision: two floors, in `docs/browser-support.md` — **Supported** Chrome/Edge
+  114, Firefox 125, Safari 17 (iOS 18.3): the popup opens, closes, filters, picks,
+  is keyboard-operable and loses only the top layer; **Enhanced** additionally
+  Chrome 131, Safari 26.2: the panel is placed by CSS anchor positioning. Firefox
+  is Enhanced **never**, by an existing measured engine bug in `justify-self`
+  inside a `span-inline-*` area, so it permanently uses the component's own
+  coordinates. Each package README links the table when its content moves in S9.
+- Decision: `(anchor-scope: all)` and `(position-visibility: anchors-visible)` are
+  added to both preludes. Engines between the floors now take the JS path — the
+  path the Firefox project already proves correct on every run — so the fix is a
+  gate widened, not a new code path.
+- Decision: the two CSS spec files assert the rule that generalises this: every
+  anchor feature the block writes must either be probed in the prelude or be no
+  younger than some probe in all three engines, and a feature the table does not
+  know fails until its dates are added. `position-anchor`, `anchor-size()` and
+  `position-try-fallbacks` therefore keep no clause of their own — 125 against
+  `anchor-name`'s 125 and 128 against `position-area`'s 129.
+- Decision: the support question is answered by the engines, not by jsdom. The
+  installed Chromium 156.0.8078.4 and WebKit 27.2 accept the whole widened
+  condition and Firefox 157 rejects exactly the `-moz-appearance` clause; jsdom
+  knows `anchor-scope: all` but not `position-visibility: anchors-visible`, so the
+  unit specs check the prelude's grammar and `e2e/popup/anchor-gate.spec.ts`
+  reads the condition out of the loaded stylesheet, asks that engine, and proves
+  the block is live from the `anchor-scope` and `position-anchor` computed values
+  that no other rule sets.
+- Rejected: raising the floor to the enhanced line — Chrome 131 / Safari 26.2 in
+  November 2026 excludes Safari 17-18 users from a menu, a larger product
+  decision than a support table. Leaving the prelude alone and documenting the
+  Chrome 125-130 break — the break is a menu opening across the page, and the fix
+  is two parseable conditions. Shipping a `vh` fallback for `dvh` — every engine
+  above the Supported floor has it (108/101/15.4), so the duplicate declaration
+  would be dead weight.
+- Impact: the comments that said "widely-available" are corrected in the same
+  commits as the preludes, so the source cannot contradict the table. The
+  `@supports` prelude is now the contract between the two placement paths and is
+  treated as such: a future anchor property added inside the block has to be
+  added to the prelude, and the spec test fails if it is not. Neither floor is a
+  promise about an engine nobody ran — real Safari and the band between the floors
+  (Chrome 114-130, Safari 17-26.1) are recorded as **not tested**, Safari is a
+  human item in `docs/HUMAN-CHECKS-1.0.md`, and S7's "CI runs three engines"
+  ships as a Playwright config a person runs, because this repository has no CI.
+
+## 2026-11-02 — D90: a topic page is a consumer document; the hook ships a built page, not a screenshot
+
+- Context: S9 moved the reference out of the four READMEs — 26 topic pages under
+  `docs/<pkg>/`, 3,518 lines, with the READMEs left at 104, 172, 134 and 165
+  lines. That emptied `ALLOW_OVER_BUDGET`, which was the finish line of the
+  content move. Two things the move exposed had no rule yet. First, no gate read
+  those pages: `check:docs` audited `projects/<pkg>/README.md` and `RECIPES.md`
+  only, so a topic page could name a symbol its package no longer exports — the
+  exact defect class S1 and S6 found in the READMEs — and nothing would say so.
+  Second, the template asked every hook for "a screenshot or gif (or live demo
+  link)", and the repository has neither: no tracked image asset, no hosted
+  demo. The choice was to invent a URL or to record what was actually shipped.
+- Decision: a consumer document is `projects/<pkg>/README.md`, `RECIPES.md` and
+  every `docs/<pkg>/*.md`, derived from the directory layout by
+  `consumerDocuments(pkg)` — a new page is audited without a list being updated,
+  and the rule that governs it is the same rule 1 that governs the README.
+  Everything else in `docs/` is repo-internal and out of scope **by directory,
+  not by allowlist**: `DECISIONS.md`, the AUDITs, the SPECs and `MERGES-1.0.md`
+  name removed and `@internal` symbols on purpose, which is precisely what a
+  consumer document may not do.
+- Decision: rule 2 now asks for the lowercase half of CamelCase. `ar-EG`,
+  `::currency/XXX` and `T12:30Z` in `docs/i18n/` are a region subtag, a currency
+  code and pattern letters; they can never be a Rivinia export, and a symbol typo
+  (`RiviniaLanagugeSelect`) still has lowercase letters, so it is still reported.
+  `PLATFORM_TERMS` carries the vocabulary that is true but not exported — `Intl`
+  and its constructors, the forced-colours system colours, the `KeyboardEvent.key`
+  names, engines and JS builtins — plus two entries each with its reason beside
+  it: `injectI18n`, which `rivinia-i18n-keys init` writes into the application,
+  and `L`, the language-id type parameter.
+- Decision: the hook is proved by the page the suites already drive, not by an
+  image. select, menu and i18n name `projects/menu-e2e/src/app/pages/…` or
+  `projects/i18n-e2e/src/app` and the command that builds it; theme, which renders
+  nothing, ends its hook with the observable result. `docs/README-TEMPLATE.md`
+  says this in place of the screenshot line, together with the filing convention
+  that actually shipped — `docs/<pkg>/<topic>.md`, with the three tiers labelled
+  in the README's `## Go further` table rather than split into the
+  `docs/guide.md`/`docs/reference.md` pair the template first proposed.
+- Rejected: scanning all of `docs/**/*.md` — it hard-fails on the internal
+  documents above, and allowlisting those files one by one would hide the real
+  rule. Committing a screenshot: a binary in every tarball, with no gate to tell
+  us it went stale, and the README budget is for prose. Pointing at the owner's
+  live playgrounds (`rv-tailwind`, the governorate demo): those are not built from
+  this repository's tags, so a link would be a promise about someone's machine.
+- Impact: `check:docs` reports 0 failures and 41 warnings on the merged tree —
+  down from 159 warnings while reading the READMEs alone, now reading 26 pages
+  more — because the all-caps tokens and the platform vocabulary left the
+  complainable set and the eight prose words that remain (`It`, `Don`, `En`,
+  `English`, `Seats`) are English, not symbols.
+  `scripts/tests/check-docs.spec.ts` proves both halves are killable — the
+  topic-page scope by moving the directory it reads, the CamelCase refinement by
+  dropping the lowercase requirement. The four READMEs now satisfy S9's acceptance
+  line within budget. **What this does not prove:** a reader still cannot see the
+  components without building something, which is the cost of shipping no image,
+  and the tier naming for i18n departs from the spec's own file names — the owner
+  can overrule either in the 1.0 review.
+
+## 2026-11-03 — D91: theme's `1.0.0-rc.1` publishes to `next` straight after `0.1.0`; the planned `0.2.0` never exists
+
+- Context: D88 fixed the release shape, and `docs/RELEASE-1.0.md` step 1 promised a
+  `@rivinia/theme@0.2.0` on `latest` carrying SPEC-0.1.1 (the `@theme inline`
+  Tailwind adapter) before any 1.0 work. That bump was never made — the manifest
+  went `0.1.0` → `1.0.0-rc.1` inside the 1.0 branch, so the published rc either
+  silently absorbs a promised release or the tree gets a `0.2.0` after the fact.
+  `docs/PUBLISH-RUNBOOK-1.0.md` step 0 laid the two honest options in front of the
+  owner rather than picking one in a commit message.
+- Decision: **Option A — skip `0.2.0`**, executed by the owner on 2026-11-03.
+  `theme/v1.0.0-rc.1` was cut at `3cb8b51` (the tip of `release/1.0-integration`)
+  and pushed, then `@rivinia/theme@1.0.0-rc.1` published with `--tag next --access
+  public --registry=https://registry.npmjs.org/` and no OTP, authenticated through
+  npm's web-auth URL. Verified against the registry rather than the publish log:
+  `dist.integrity` `sha512-3Ks5wRdr3AGCeXKpG9YDjPPylRivyG2vMuZ9cn/TtyVVqTZCKmX+b/MK81Hq/HPQpexSi8ruCvKLumLcfOdUoQ==`
+  equals base64 of the local `sha512sum` (`dcab39c1…754a1`) character for
+  character; `dist.shasum` `76fbabd7…a46e`; the downloaded tarball `cmp`-identical
+  to the inspected 8,396 B / 9-file artifact; `diff -r` of the tree installed by
+  `npm install @rivinia/theme@next` against that same tarball empty; all six
+  `exports` targets resolving through `createRequire`; and `dist-tags` reading
+  `{latest: 0.1.0, next: 1.0.0-rc.1}` — `latest` unmoved, so nobody is forced off
+  the library by an upgrade.
+- Rejected: **Option B**, a `0.2.0` + `theme/v0.2.0` + a `latest` publish before the
+  rc — it makes the older document true and costs a whole release cycle, and it
+  delays the only build that carries dark mode. Rejected too: publishing the rc to
+  `latest`, which would make a prerelease the default install for every consumer,
+  and re-tagging or overwriting `1.0.0-rc.1` to fix the wording problem below —
+  versions are immutable, which is the rule this release exists to demonstrate.
+- Impact: four documents moved with the fact, in this commit — the runbook's header
+  became a status table (`theme` published, `select`/`menu`/`i18n` not),
+  `docs/RELEASE-1.0.md` step 1 reads **Skipped** and step 2 **Done**, its stale
+  "nothing here has been published" line and its claim that the two S8 documents
+  do not exist are corrected, and `docs/API-SURFACE-1.0.md` no longer says the
+  runbook is unrun. The root README's **Latest on npm** column keeps theme at
+  `0.1.0`, because that column is `latest` and `latest` did not move.
+- Impact, the three things this publish taught: `git tag` exiting
+  `fatal: tag … already exists` stopped the `&&` chain, so the build and pack ran
+  in the main repository instead of the tag's worktree (right bytes this time —
+  that repository's HEAD **is** the tag's commit — wrong procedure);
+  `npm install <pkg>@next` returned `ETARGET notarget` ninety seconds after a
+  successful publish while a direct `curl` of the version endpoint already answered
+  200, which is npm's own packument cache and not a failed publish; and
+  `projects/theme/CHANGELOG.md:19` still reads `## 1.0.0-rc.1 — prepared, not yet
+  published` **inside the published tarball**, immutably false from the moment of
+  publish, so the other three CHANGELOG headings must be corrected before their
+  tags are cut.
+- **What this does not prove:** step 2.6 stopped at resolution — no Angular
+  production build has run against the published `next` tag, only against the local
+  tarball; `dist.attestations` is absent, so there is no provenance, as with every
+  earlier Rivinia release; the tag sits on a commit `main` does not contain
+  (`git diff --stat df3a444 refs/heads/main` — the merge-base against `main` —
+  prints only root `CHANGELOG.md` and `README.md`, so no library code is missing
+  from what shipped, but the merge will conflict in exactly those two files);
+  the soak cannot begin before the other three rcs exist; and the `Decide` verdicts
+  in `docs/API-SURFACE-1.0.md` — five rows, which are really two decisions: the
+  `@rivinia/select/ui` alias group (`computeSelectPosition`, `SELECT_GAP` and the
+  four aliased types), and the `RiviniaMenuItem` type-versus-directive collision —
+  are still the owner's to settle before any `1.0.0` tag.
+
+### D91 addendum — the same day, the heading claim was removed from all four CHANGELOGs
+
+D91 above says the remaining three headings must be corrected before their tags.
+They were, and so was theme's in the repository: each `## 1.0.0-rc.1 — prepared, not
+yet published` became `## 1.0.0-rc.1`, in four per-package `docs(<pkg>)` commits.
+No version heading in this ecosystem now asserts a registry state, because a publish
+is exactly the event that would invalidate it — and the published theme rc keeps the
+old line forever, which is the proof the rule needed.

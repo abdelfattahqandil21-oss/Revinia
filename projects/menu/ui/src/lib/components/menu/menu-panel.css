@@ -39,7 +39,10 @@ rv-menu {
   overflow-y: auto;
   background: var(--rv-menu-bg, var(--rv-bg, #ffffff));
   color: var(--rv-menu-fg, var(--rv-fg, #111111));
-  font-family: var(--rv-menu-font, var(--rv-font, system-ui, -apple-system, 'Segoe UI', sans-serif));
+  font-family: var(
+    --rv-menu-font,
+    var(--rv-font, system-ui, -apple-system, 'Segoe UI', sans-serif)
+  );
   border: 1px solid var(--rv-menu-border, var(--rv-border, #e0e0e0));
   border-radius: var(--rv-menu-radius, var(--rv-radius, 0.75rem));
   box-shadow: var(--rv-menu-shadow, var(--rv-shadow, 0 16px 48px rgba(0, 0, 0, 0.22)));
@@ -90,8 +93,14 @@ rv-menu {
 /*
  * CSS ANCHOR POSITIONING.
  *
- * Baseline widely-available since 2026-01, so the top-layer panel can
- * be tethered to its trigger with no JavaScript coordinates at all.
+ * Baseline LOW since 2026-01-13 — Chrome 125, Firefox 147, Safari 26 — which is
+ * not the same as widely available, the low date plus thirty months and so
+ * 2028-07-13 (mdn/browser-compat-data and the Baseline definitions, read
+ * 2026-11-02). That difference is why this whole block is an enhancement behind
+ * `@supports` and never a requirement: below it the panel is placed by the
+ * component's own coordinates, which the conformance suite measures on all three
+ * engines. With it, the top-layer panel is tethered to its trigger with no
+ * JavaScript coordinates at all.
  * position-area takes LOGICAL keywords, which makes the placement
  * direction-correct in RTL for free — the asymmetry that broke the JS
  * path cannot reappear here.
@@ -126,8 +135,25 @@ rv-menu {
  * Firefox therefore keeps the JS positioning path, which is measured
  * correct in both directions. `-moz-appearance` is the narrowest reliable
  * Firefox-only probe; remove the clause when Firefox fixes the area maths.
+ *
+ * WHY EVERY ANCHOR PROPERTY THE BLOCK USES IS PROBED: the four conditions are
+ * four different engines' floors, not one feature. Chrome 125-130 accepts a
+ * prelude on `anchor-name` alone but ignores `anchor-scope`, which is six
+ * Chromium versions younger, so it enters this block and resolves the duplicated
+ * `anchor-name` to the LAST trigger laid out on the page — the exact failure the
+ * comment below calls ESSENTIAL. The probes are the newest thing in each engine
+ * (browser-compat-data, read 2026-11-02): `anchor-name` 125/147/26,
+ * `position-area`'s span form 129/147/26, `anchor-scope: all` 131/147/26,
+ * `position-visibility: anchors-visible` 125/147/26.2. `position-anchor`,
+ * `anchor-size()` and `position-try-fallbacks` get no clause of their own for a
+ * reason that is arithmetic, not taste: each is no younger than a probe the
+ * prelude already carries — 125 against `anchor-name`'s 125, 128 against
+ * `position-area`'s 129 — so an engine that passes the four probes has them.
+ * Guarded by tests/menu-panel-css.spec.ts, which recomputes that.
  */
-@supports (anchor-name: --a) and (position-area: block-end span-inline-end) and (not (-moz-appearance: none)) {
+@supports (anchor-name: --a) and (anchor-scope: all) and
+  (position-area: block-end span-inline-end) and (position-visibility: anchors-visible) and
+  (not (-moz-appearance: none)) {
   /*
    * ESSENTIAL: without this every panel anchors to the LAST trigger in
    * the document, because the spec resolves a duplicate anchor-name to
@@ -217,10 +243,13 @@ rv-menu {
    the controller, so a separate :hover wash painted a second row at the same
    time (measured: the hovered row stayed washed after the arrows moved). */
 .rv-menu-panel [rvmenuitem][data-active='true'] {
-  background: var(--rv-menu-item-active-bg, color-mix(in srgb, currentColor 10%, transparent));
+  background: var(
+    --rv-menu-item-active-bg,
+    color-mix(in srgb, var(--rv-accent, currentColor) 10%, transparent)
+  );
 }
 .rv-menu-panel [rvmenuitem]:focus-visible {
-  outline: var(--rv-menu-focus-ring, 2px solid currentColor);
+  outline: var(--rv-menu-focus-ring, 2px solid var(--rv-accent, currentColor));
   outline-offset: var(--rv-menu-focus-offset, -2px);
 }
 .rv-menu-panel [rvmenuitem][aria-disabled='true'] {
@@ -290,5 +319,40 @@ rv-menu {
   from {
     opacity: 0;
     transform: translateY(var(--rv-menu-from-y, -0.375rem)) scale(0.96);
+  }
+}
+
+/*
+ * FORCED COLORS — D87. The UA forces author colours, it flattens every
+ * background to Canvas, which erases the active row, and in Chromium it
+ * forces author shadows to `none` on its own (measured; the explicit
+ * `box-shadow: none` backstops engines this suite cannot emulate). System
+ * colours are the one palette an author may still name.
+ */
+@media (forced-colors: active) {
+  .rv-menu-panel {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+  .rv-menu-panel [rvmenuitem][data-active='true'] {
+    background: Highlight;
+    color: HighlightText;
+  }
+  .rv-menu-panel [rvmenuitem]:focus-visible {
+    outline-color: Highlight;
+  }
+  /*
+   * On the active row the band itself is Highlight, so a Highlight ring is
+   * invisible; CanvasText is the colour that contrasts with that band.
+   */
+  .rv-menu-panel [rvmenuitem][data-active='true']:focus-visible {
+    outline-color: CanvasText;
+  }
+  /* 0.45 of GrayText is unreadable; the system colour already says "disabled". */
+  .rv-menu-panel [rvmenuitem][aria-disabled='true'] {
+    color: GrayText;
+    opacity: 1;
   }
 }

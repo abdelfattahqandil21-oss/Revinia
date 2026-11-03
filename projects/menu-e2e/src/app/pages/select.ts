@@ -111,6 +111,22 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
     </div>
     <p data-testid="rtl-value">value={{ rtlValue() }}</p>
 
+    <!--
+      S5b fixtures. Both sit OUTSIDE the scoped wrappers above on purpose: the
+      theme proof needs surfaces that follow the page's --rv-* tokens, and a
+      component token set by an ancestor would mask them.
+    -->
+    <h2>Premium</h2>
+    <rv-select id="premium-select" variant="premium" [options]="premiumOptions" />
+
+    <h2>Plain menu</h2>
+    <rv-menu id="plain-menu" menuLabel="Plain menu">
+      <button rv-menu-trigger>Plain</button>
+      <div rv-menu-panel>
+        <button rvMenuItem id="p1">Plain item</button>
+      </div>
+    </rv-menu>
+
     <h2>Sizing</h2>
     <div class="size-cell size-cell--wide">
       <rv-select id="size-wide" [options]="shortOptions" />
@@ -132,7 +148,18 @@ import { RiviniaMenuComponent, RiviniaMenuItem } from '@rivinia/menu/ui';
     <ng-template #virtualList>
       <div class="virtual-list" [style.height.px]="virtualTotalHeight">
         @for (row of virtualRows(); track row.id) {
-          <div class="virtual-row" [style.transform]="'translateY(' + row.top + 'px)'">
+          <!--
+            A custom row still has to BE a menu item: role="menu" may only own
+            menuitem*/group/separator, and the scrollport needs a focusable
+            descendant. The row directive is internal, so the attributes are
+            written out (see the README recipe).
+          -->
+          <div
+            class="virtual-row"
+            role="menuitem"
+            tabindex="-1"
+            [style.transform]="'translateY(' + row.top + 'px)'"
+          >
             {{ row.label }}
           </div>
         }
@@ -160,6 +187,10 @@ export class SelectPage {
   readonly rtlValue = signal<string | null>(null);
   readonly shortOptions = [{ id: 'paid', label: 'Paid' }];
   readonly longOptions = [{ id: 'outstanding', label: 'Outstanding invoices' }];
+  readonly premiumOptions = [
+    { id: 'draft', label: 'Draft' },
+    { id: 'sent', label: 'Sent' },
+  ];
   readonly unusedController = new RiviniaSelect('single');
 
   // Virtualised list: 500 options, a window rendered inside the panel.

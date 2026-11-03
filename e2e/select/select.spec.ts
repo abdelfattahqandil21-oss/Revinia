@@ -8,8 +8,8 @@ test.describe('select: single mode', () => {
     const panel = page.locator('#single-select .rv-select-panel');
     await expect(panel).toBeVisible();
 
-    // accessible name from menuLabel
-    await expect(page.locator('#single-select .rv-select-popup-panel')).toHaveAttribute(
+    // accessible name from menuLabel, on the element that owns role="menu"
+    await expect(page.locator('#single-select .rv-select-popup-menu')).toHaveAttribute(
       'aria-label',
       'Invoice status options',
     );
@@ -17,7 +17,7 @@ test.describe('select: single mode', () => {
     // searchable: filter
     const search = page.locator('#single-select .rv-select-search');
     await search.fill('paid');
-    await expect(page.locator('#single-select .rv-select-popup-panel [role="menuitem"]')).toHaveCount(1);
+    await expect(page.locator('#single-select .rv-select-popup-menu [role="menuitemradio"]')).toHaveCount(1);
 
     await page.keyboard.press('Enter');
     await expect(page.locator('#single-select .rv-select-panel')).toBeHidden();
@@ -28,7 +28,7 @@ test.describe('select: single mode', () => {
   test('disabled option is never picked', async ({ page }) => {
     await page.goto('/select');
     await page.locator('#single-select .rv-select-trigger').click();
-    const rows = page.locator('#single-select .rv-select-popup-panel [role="menuitem"]');
+    const rows = page.locator('#single-select .rv-select-popup-menu [role="menuitemradio"]');
     await expect(rows).toHaveCount(3);
     await expect(rows.nth(1)).toHaveAttribute('aria-disabled', 'true');
     await rows
@@ -60,9 +60,19 @@ test.describe('select: multi mode', () => {
     await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
     const trigger = page.locator('#multi-select .rv-select-trigger');
     await trigger.click();
-    const rows = page.locator('#multi-select .rv-select-popup-panel [role="menuitemcheckbox"]');
-    await rows.nth(0).click();
-    await rows.nth(1).click();
+    const rows = page.locator('#multi-select .rv-select-popup-menu [role="menuitemcheckbox"]');
+    // `force` is not "make the test pass": it is the only way to click a row in
+    // the TOP LAYER without the harness scrolling the document first. Measured —
+    // a plain `rows.nth(0).click()` on a page parked at 70px jumped scrollY to
+    // 389 (the document maximum) with no layout change and no JS scroll call,
+    // because the scroll comes from Playwright's own scroll-into-view, which
+    // does not understand a `popover: manual` panel. The panel then closed on
+    // that scroll, and the second pick had no row to click. A real pointer at
+    // the same coordinates keeps the panel open and picks both values, which is
+    // what this test claims. The assertions below still have to see `values=a,b`
+    // and two ticks, so a click that lands nowhere fails.
+    await rows.nth(0).click({ force: true });
+    await rows.nth(1).click({ force: true });
     await expect(page.locator('#multi-select .rv-select-panel')).toBeVisible();
     await expect(page.getByTestId('multi-value')).toContainText('values=a,b');
     await expect(page.locator('#multi-select .rv-select-check')).toHaveCount(2);
@@ -96,13 +106,18 @@ test.describe('select: theme isolation', () => {
 });
 
 test.describe('select: accessibility names', () => {
-  test('caption becomes the trigger aria-labelledby and the panel name', async ({ page }) => {
+  test('caption and value compose the trigger name, and menuLabel names the menu', async ({
+    page,
+  }) => {
     await page.goto('/select');
     const trigger = page.locator('#single-select .rv-select-trigger');
     await expect(trigger).toHaveAttribute('aria-labelledby', /.+/);
     await trigger.click();
-    const panel = page.locator('#single-select .rv-select-popup-panel');
-    await expect(panel).toHaveAttribute('aria-label', 'Invoice status options');
+    const menu = page.locator('#single-select .rv-select-popup-menu');
+    await expect(menu).toHaveAttribute('aria-label', 'Invoice status options');
+    // WCAG 2.5.3: the visible value must appear in the accessible name.
+    const value = (await page.locator('#single-select .rv-select-value').textContent())!.trim();
+    await expect(trigger).toHaveAccessibleName(new RegExp(`Invoice status.*${value}`));
   });
 
   test('keeps label IDs and accessible names unique across application roots', async ({ page }) => {
@@ -114,12 +129,10 @@ test.describe('select: accessibility names', () => {
     // to the first caption.
     await page.goto('/select-multi-root');
 
-    const first = page.getByRole('button', { name: 'First application label' });
-    const second = page.getByRole('button', { name: 'Second application label' });
+    const first = page.getByRole('button', { name: /^First application label/ });
+    const second = page.getByRole('button', { name: /^Second application label/ });
     await expect(first).toHaveCount(1);
     await expect(second).toHaveCount(1);
-    await expect(first).toHaveAccessibleName('First application label');
-    await expect(second).toHaveAccessibleName('Second application label');
 
     const documentIds = await page.locator('[id]').evaluateAll((elements) =>
       elements.map((element) => element.id).filter((id) => id.length > 0),
@@ -133,16 +146,27 @@ test.describe('select: accessibility names', () => {
     expect(ids).toHaveLength(2);
     expect(new Set(ids).size).toBe(2);
 
-    await expect(first).toHaveAttribute('aria-labelledby', ids[0]);
-    await expect(second).toHaveAttribute('aria-labelledby', ids[1]);
+    // The caption comes first; the value span follows it (WCAG 2.5.3).
+    for (const [trigger, captionId] of [
+      [first, ids[0]],
+      [second, ids[1]],
+    ] as const) {
+      const labelledBy = (await trigger.getAttribute('aria-labelledby'))!.split(/\s+/);
+      expect(labelledBy[0]).toBe(captionId);
+      expect(labelledBy.length).toBe(2);
+    }
     expect(
       await first.evaluate((trigger) =>
-        document.getElementById(trigger.getAttribute('aria-labelledby')!)?.textContent?.trim(),
+        document
+          .getElementById(trigger.getAttribute('aria-labelledby')!.split(/\s+/)[0])!
+          .textContent?.trim(),
       ),
     ).toBe('First application label');
     expect(
       await second.evaluate((trigger) =>
-        document.getElementById(trigger.getAttribute('aria-labelledby')!)?.textContent?.trim(),
+        document
+          .getElementById(trigger.getAttribute('aria-labelledby')!.split(/\s+/)[0])!
+          .textContent?.trim(),
       ),
     ).toBe('Second application label');
   });
@@ -328,7 +352,14 @@ test.describe('select: RTL placement', () => {
   test('picks work in RTL and the trigger shows the label', async ({ page }) => {
     await page.goto('/select');
     await page.locator('#rtl-select .rv-select-trigger').click();
-    await page.locator('#rtl-select .rv-select-popup-panel [role="menuitem"]').nth(2).click();
+    // `force` for the reason recorded at the multi pick: WebKit lays this page
+    // out taller than Chromium, so the third row is below the viewport there and
+    // Playwright's scroll-into-view closes the panel before the click lands. The
+    // assertions still require the pick itself to arrive.
+    await page
+      .locator('#rtl-select .rv-select-popup-menu [role="menuitemradio"]')
+      .nth(2)
+      .click({ force: true });
     await expect(page.getByTestId('rtl-value')).toContainText('value=member');
     await expect(page.locator('#rtl-select .rv-select-value')).toContainText('Member');
   });

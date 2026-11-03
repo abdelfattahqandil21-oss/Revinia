@@ -78,8 +78,8 @@ describe('RiviniaSelectComponent (single, searchable)', () => {
     expect(fixture.componentInstance.changes).toEqual(['paid']);
     expect(fixture.componentInstance.select.value()).toBe('paid');
     expect(fixture.nativeElement.querySelector('.rv-select-popup-panel')).toBeNull();
-    expect(items[0].getAttribute('role')).toBe('menuitem');
-    expect(items[0].hasAttribute('aria-checked')).toBe(false);
+    expect(items[0].getAttribute('role')).toBe('menuitemradio');
+    expect(items[0].getAttribute('aria-checked')).toBe('true');
     expect(fixture.nativeElement.querySelector('.rv-select-value').textContent).toContain('Paid');
   });
 

@@ -1,5 +1,9 @@
 import { signal, untracked } from '@angular/core';
-import type { SelectPopupController, SelectPopupFocus, SelectPopupItem } from '../models/select-popup.types';
+import type {
+  SelectPopupController,
+  SelectPopupFocus,
+  SelectPopupItem,
+} from '../models/select-popup.types';
 
 /**
  * Headless per-menu controller. Owns open state, the registered items and
@@ -64,12 +68,39 @@ export class SelectPopupControllerImpl implements SelectPopupController {
     });
   }
 
-  /** Remove an item; clears `activeId` when it pointed at it. */
+  /**
+   * Remove an item. When the active row goes away (a filter dropped it, the
+   * option list changed under the panel) activation falls to the top remaining
+   * enabled row, so Enter always has a target — leaving it null made Enter pick
+   * nothing. A row that merely renames its id keeps its activation through
+   * the popup's `renameItem`, which hands it back after re-registering.
+   */
   unregister(id: string): void {
     untracked(() => {
       this._items.update((list) => list.filter((i) => i.id !== id));
       if (this.requestedId === id) this.requestedId = null;
-      if (this.activeId() === id) this.activeId.set(null);
+      if (this.activeId() === id) this.activeId.set(firstEnabled(this._items()));
+    });
+  }
+
+  /**
+   * Re-point a registered item from `from` to `to`, keeping both its position
+   * in the registry and its activation. `register` cannot do this on its own:
+   * it appends a new id (moving the row last, which reorders arrow navigation)
+   * and refuses to claim activation while another row holds it.
+   */
+  rename(from: string, to: string, disabled: boolean): void {
+    untracked(() => {
+      const at = this._items().findIndex((i) => i.id === from);
+      if (at === -1) {
+        this.register({ id: to, disabled });
+        return;
+      }
+      this._items.update((list) =>
+        list.map((item, index) => (index === at ? { id: to, disabled } : item)),
+      );
+      if (this.requestedId === from) this.requestedId = to;
+      if (this.activeId() === from) this.activeId.set(to);
     });
   }
 

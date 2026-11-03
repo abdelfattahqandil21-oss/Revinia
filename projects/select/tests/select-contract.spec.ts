@@ -279,10 +279,17 @@ describe('accessible names (0.2.0)', () => {
 
     const named = q(host, 'rv-select#named');
     expect(q(named, '.rv-select-caption').textContent).toContain('Invoice status');
-    expect(q(named, '.rv-select-trigger').getAttribute('aria-labelledby')).not.toBeNull();
-    expect(q(named, '.rv-select-trigger').getAttribute('aria-label')).toBe(
-      'Invoice status, screen-reader only',
+    // Name = caption + visible value (WCAG 2.5.3); aria-label would replace
+    // the whole name, so it is not used.
+    const references = (q(named, '.rv-select-trigger').getAttribute('aria-labelledby') ?? '')
+      .split(/\s+/)
+      .filter(Boolean);
+    expect(references.length).toBe(2);
+    expect(q(named, `.rv-select-caption[id="${references[0]}"]`).textContent).toContain(
+      'Invoice status',
     );
+    expect(q(named, `.rv-select-value[id="${references[1]}"]`)).toBeTruthy();
+    expect(q(named, '.rv-select-trigger').hasAttribute('aria-label')).toBe(false);
 
     // No caption and no ariaLabel: the trigger must not invent a name.
     const plain = q(host, 'rv-select#plain');
@@ -297,7 +304,7 @@ describe('accessible names (0.2.0)', () => {
 
     q(host, 'rv-select#named .rv-select-trigger').click();
     await settle(fixture);
-    expect(q(host, '#named .rv-select-popup-panel').getAttribute('aria-label')).toBe(
+    expect(q(host, '#named .rv-select-popup-menu').getAttribute('aria-label')).toBe(
       'Invoice status options',
     );
     q(host, 'rv-select#named .rv-select-trigger').click();
@@ -306,14 +313,16 @@ describe('accessible names (0.2.0)', () => {
     // A caption alone is enough to name the panel.
     q(host, 'rv-select#auto .rv-select-trigger').click();
     await settle(fixture);
-    expect(q(host, '#auto .rv-select-popup-panel').getAttribute('aria-label')).toBe('Only a caption');
+    expect(q(host, '#auto .rv-select-popup-menu').getAttribute('aria-label')).toBe(
+      'Only a caption',
+    );
     q(host, 'rv-select#auto .rv-select-trigger').click();
     await settle(fixture);
 
     // Unnamed stays unnamed — asserted so the fallback is not accidental.
     q(host, 'rv-select#plain .rv-select-trigger').click();
     await settle(fixture);
-    expect(q(host, '#plain .rv-select-popup-panel').hasAttribute('aria-label')).toBe(false);
+    expect(q(host, '#plain .rv-select-popup-menu').hasAttribute('aria-label')).toBe(false);
   });
 
   it('keeps the documented menu semantics, not combobox', async () => {
@@ -324,15 +333,17 @@ describe('accessible names (0.2.0)', () => {
     q(host, 'rv-select#named .rv-select-trigger').click();
     await settle(fixture);
 
-    const panel = q(host, '#named .rv-select-popup-panel');
-    expect(panel.getAttribute('role')).toBe('menu');
+    const menu = q(host, '#named .rv-select-popup-menu');
+    expect(menu.getAttribute('role')).toBe('menu');
     expect(q(host, 'rv-select#named .rv-select-trigger').getAttribute('aria-haspopup')).toBe(
       'menu',
     );
-    expect(q(panel, '[rvselectpopupitem]').getAttribute('role')).toBe('menuitem');
+    // Single-select rows announce their checked state (D85).
+    expect(q(menu, '[rvselectpopupitem]').getAttribute('role')).toBe('menuitemradio');
+    expect(q(menu, '[rvselectpopupitem]').getAttribute('aria-checked')).toBe('false');
     // A combobox would require these; their absence is the documented model.
-    expect(panel.hasAttribute('aria-activedescendant')).toBe(false);
-    expect(panel.getAttribute('role')).not.toBe('listbox');
+    expect(menu.hasAttribute('aria-activedescendant')).toBe(false);
+    expect(menu.getAttribute('role')).not.toBe('listbox');
   });
 
   it('exposes a configurable name for the filter box', async () => {
@@ -374,7 +385,10 @@ describe('multiple Select label associations (RIV-001)', () => {
     ]);
     for (let index = 0; index < selects.length; index += 1) {
       expect(triggers[index].hasAttribute('aria-label')).toBe(false);
-      expect(triggers[index].getAttribute('aria-labelledby')).toBe(captionIds[index]);
+      // The name starts with its own caption and then the visible value.
+      expect(triggers[index].getAttribute('aria-labelledby')).toMatch(
+        new RegExp(`^${captionIds[index]}\\s+\\S+$`),
+      );
       expect(selects[index].querySelector(`#${captionIds[index]}`)).toBe(captions[index]);
     }
   });

@@ -304,7 +304,17 @@ describe('description per name source', () => {
     fixture.componentInstance.picked.set(OPTIONS.map((o) => o.id));
     await settle(fixture);
 
-    expect(trigger(host).getAttribute('aria-label')).toBe('Skills, screen-reader only');
+    // ariaLabel is referenced rather than set, so the name can also carry the
+    // visible value (WCAG 2.5.3).
+    expect(trigger(host).hasAttribute('aria-label')).toBe(false);
+    const name = (trigger(host).getAttribute('aria-labelledby') ?? '')
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((id) => host.ownerDocument.getElementById(id)?.textContent?.trim() ?? '')
+      .join(' ');
+    expect(name).toContain('Skills, screen-reader only');
+    expect(name).toContain('TypeScript');
+
     const text = descriptionText(host);
     expect(text).toContain('TypeScript');
     expect(text).toContain('Tailwind');

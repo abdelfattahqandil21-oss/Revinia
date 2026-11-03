@@ -24,7 +24,16 @@
     "test:schematics": "vitest run projects/http/schematics projects/toast/schematics projects/i18n/schematics projects/modal/schematics projects/env/schematics",
     "test:theme": "vitest run projects/theme/tests",
     "check:docs": "node scripts/check-docs.mjs",
-    "check:theme": "node scripts/check-theme-package.mjs"
+    "check:theme": "node scripts/check-theme-package.mjs",
+    "check:contrast": "node scripts/check-contrast.mjs",
+    "check:theme-dark": "node scripts/check-theme-dark.mjs",
+    "check:component-theme": "node scripts/check-component-theme.mjs",
+    "check:popup-ssr": "node scripts/check-popup-ssr.mjs",
+    "check:popup-mutations": "node scripts/check-popup-mutations.mjs",
+    "check:duplication": "node scripts/check-duplication.mjs",
+    "check:pack": "node scripts/check-pack.mjs",
+    "check:readmes": "node scripts/check-readmes.mjs",
+    "test:scripts": "vitest run scripts/tests"
   },
   "private": true,
   "packageManager": "pnpm@12.8.1",

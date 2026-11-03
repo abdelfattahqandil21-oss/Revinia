@@ -38,12 +38,16 @@
 .rv-language-toggle__button:active {
   background-color: var(
     --rv-i18n-toggle-active-bg,
-    color-mix(in srgb, currentColor 16%, var(--rv-i18n-toggle-bg, var(--rv-bg, transparent)))
+    color-mix(
+      in srgb,
+      var(--rv-accent, currentColor) 16%,
+      var(--rv-i18n-toggle-bg, var(--rv-bg, transparent))
+    )
   );
 }
 
 .rv-language-toggle__button:focus-visible {
-  outline: var(--rv-i18n-toggle-focus-ring, 2px solid currentColor);
+  outline: var(--rv-i18n-toggle-focus-ring, 2px solid var(--rv-accent, currentColor));
   outline-offset: var(--rv-i18n-toggle-focus-offset, 0.125rem);
 }
 
@@ -76,4 +80,38 @@
 
 .rv-language-toggle__name {
   white-space: nowrap;
+}
+
+/*
+ * FORCED COLORS — D87. The UA forces author colours, it flattens every
+ * background to Canvas, which erases both the held-down tint and the disabled
+ * cue, and in Chromium it forces author shadows to `none` on its own
+ * (measured; the explicit `box-shadow: none` backstops engines this suite
+ * cannot emulate). System colours are the one palette an author may still
+ * name.
+ */
+@media (forced-colors: active) {
+  .rv-language-toggle__button {
+    background-color: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+  .rv-language-toggle__button:active {
+    background-color: Highlight;
+    color: HighlightText;
+  }
+  /* Held down the fill is Highlight, so the ring must not also be Highlight. */
+  .rv-language-toggle__button:active:focus-visible {
+    outline-color: CanvasText;
+  }
+  .rv-language-toggle__button:focus-visible {
+    outline-color: Highlight;
+  }
+  /* 0.45 of GrayText is unreadable; the system colour already says "disabled". */
+  :host([data-disabled]) .rv-language-toggle__button,
+  :host([data-languages='many']) .rv-language-toggle__button[aria-disabled='true'] {
+    color: GrayText;
+    opacity: 1;
+  }
 }

@@ -22,19 +22,48 @@
  * Set the semantic layer once and the whole ecosystem follows:
  *
  *   :root { --rv-bg: #fff; --rv-fg: #111; }
- *   [data-theme='dark'] { --rv-bg: #161616; --rv-fg: #f2f2f2; }
+ *   :root[data-rv-theme='dark'] { --rv-bg: #161616; --rv-fg: #f2f2f2; }
  *
  * The defaults live in a @layer on purpose: unlayered declarations always beat
  * layered ones, so your own `:root { --rv-bg: … }` wins wherever it appears in
  * your stylesheet, with no import-ordering to get wrong.
  *
- * One thing to avoid: do not map the semantic layer ON a component element. An
- * element-level declaration shadows the root value for that subtree, and the
- * override silently stops working. Map it on `:root` (or `html`).
+ * One thing to avoid: do not map the semantic layer ON a Rivinia component's
+ * element. That declaration shadows the root value inside that one component,
+ * so a later change to the page palette silently stops reaching it. Map it on
+ * `:root` for the page, or on a section when scoping a region is the intent.
+ *
+ * A component token set on the root (`--rv-select-bg`) still shadows a
+ * section's `--rv-bg` inside that section: the component reads its own token
+ * first, wherever it is.
+ *
+ * DARK MODE
+ *
+ * The dark values apply from two places, and they are kept identical:
+ *
+ *   - `@media (prefers-color-scheme: dark)` — the OS setting, unless the page
+ *     opts out with `:root[data-rv-theme='light']`;
+ *   - `:root[data-rv-theme='dark']` — an explicit switch that wins over a light
+ *     OS setting.
+ *
+ * Both blocks also set `color-scheme`, so form controls, scrollbars and the
+ * canvas follow the palette instead of staying light under a dark surface.
+ *
+ * The switch is read on `:root` only. A subtree goes dark by setting these
+ * properties on itself (plus `color-scheme`), not by a `data-rv-theme`
+ * attribute — the tokens live on the root, so an attribute lower down the tree
+ * would change nothing.
+ *
+ * `scripts/check-contrast.mjs` fails when the two dark blocks disagree or when
+ * a measured pair drops below its WCAG AA threshold. `--rv-border` is measured
+ * and printed but never failed: it is a hairline, not a control's only edge.
+ * See the README.
  */
 
 @layer rivinia-theme {
   :root {
+    color-scheme: light;
+
     /* Surfaces */
     --rv-bg: #ffffff;
     --rv-fg: #111111;
@@ -54,5 +83,47 @@
     --rv-ok: #16a34a;
     --rv-info: #2563eb;
     --rv-warning: #d97706;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-rv-theme='light']) {
+      color-scheme: dark;
+
+      /* Surfaces */
+      --rv-bg: #161616;
+      --rv-fg: #f2f2f2;
+      --rv-muted: #a1a1aa;
+      --rv-border: #3f3f46;
+
+      /* Elevation: black at the light alpha vanishes on a dark surface. */
+      --rv-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+
+      /* Status */
+      --rv-accent: #8b8bf0;
+      --rv-danger: #f87171;
+      --rv-ok: #4ade80;
+      --rv-info: #60a5fa;
+      --rv-warning: #fbbf24;
+    }
+  }
+
+  :root[data-rv-theme='dark'] {
+    color-scheme: dark;
+
+    /* Surfaces */
+    --rv-bg: #161616;
+    --rv-fg: #f2f2f2;
+    --rv-muted: #a1a1aa;
+    --rv-border: #3f3f46;
+
+    /* Elevation: black at the light alpha vanishes on a dark surface. */
+    --rv-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+
+    /* Status */
+    --rv-accent: #8b8bf0;
+    --rv-danger: #f87171;
+    --rv-ok: #4ade80;
+    --rv-info: #60a5fa;
+    --rv-warning: #fbbf24;
   }
 }

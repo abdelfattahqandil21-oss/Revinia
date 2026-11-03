@@ -11,7 +11,8 @@ interface Language {
 /**
  * Projected content: a language picker written entirely by the consumer.
  * The menu owns the panel, its trigger association and row behavior; the
- * filter field, the radio group and the shortcuts row are page markup.
+ * filter field, the radio group, the shortcuts row and the two note fields are
+ * page markup.
  */
 @Component({
   selector: 'e2e-content',
@@ -21,7 +22,7 @@ interface Language {
     <p>Projected content: the panel hosts consumer markup next to menu rows.</p>
     <div class="toolbar">
       <button type="button" class="before" (click)="noop()">Before menu</button>
-      <rv-menu [menu]="menu" menuLabel="Language" (picked)="choose($event.id)">
+      <rv-menu id="projected-menu" [menu]="menu" menuLabel="Language" (picked)="choose($event.id)">
         <button type="button" rv-menu-trigger>Language: {{ currentLabel() }}</button>
         <div rv-menu-panel>
           <input
@@ -42,6 +43,25 @@ interface Language {
           <button type="button" class="shortcuts" (keydown)="onShortcutsKey($event)">
             Keyboard shortcuts
           </button>
+          <!-- Two more kinds of editable, because the panel hosts whatever the
+               consumer writes and the resize exemption has to survive all of
+               them: a textarea and a contenteditable block. The conformance
+               suite focuses each one under a height-only resize. -->
+          <textarea
+            class="note"
+            rows="2"
+            aria-label="Note about this language"
+            placeholder="Note"
+          ></textarea>
+          <div
+            class="inline-note"
+            contenteditable="true"
+            role="textbox"
+            aria-label="Inline note"
+            tabindex="0"
+          >
+            Edit me
+          </div>
         </div>
       </rv-menu>
       <button type="button" class="after" (click)="noop()">After menu</button>

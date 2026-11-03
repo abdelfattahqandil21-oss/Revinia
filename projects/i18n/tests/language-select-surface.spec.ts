@@ -12,7 +12,8 @@ const ROOT = process.cwd();
 const I18N = resolve(ROOT, 'projects/i18n');
 const SELECT_SRC = join(I18N, 'select/src');
 const SELECT_PUBLIC_API = join(SELECT_SRC, 'public-api.ts');
-const README = join(I18N, 'README.md');
+/** The README links here; the export tables moved with the S9 content move. */
+const API_REFERENCE = resolve(ROOT, 'docs/i18n/api.md');
 
 function exportedNames(source: string): string[] {
   const names: string[] = [];
@@ -62,18 +63,18 @@ describe('@rivinia/i18n/select — public surface', () => {
     );
   });
 
-  it('lists every select export in a README table row that names /select', () => {
+  it('lists every select export in an API-reference row that names /select', () => {
     const names = exportedNames(readFileSync(SELECT_PUBLIC_API, 'utf8'));
     // The entry point sits in the table's *second* cell, so the row as a whole
     // is what must name `/select`.
-    const rows = readFileSync(README, 'utf8')
+    const rows = readFileSync(API_REFERENCE, 'utf8')
       .split('\n')
       .filter((line) => line.trimStart().startsWith('|') && line.includes('`/select`'));
 
     expect(names.length).toBeGreaterThan(0);
     for (const name of names) {
       const listed = rows.some((row) => new RegExp(`\`[^\`]*\\b${name}\\b[^\`]*\``).test(row));
-      expect(listed, `${name} has no README row that names /select`).toBe(true);
+      expect(listed, `${name} has no row naming /select in docs/i18n/api.md`).toBe(true);
     }
   });
 
@@ -123,7 +124,7 @@ describe('@rivinia/i18n/select — packaging', () => {
       dependencies?: Record<string, string>;
     };
 
-    expect(pkg.peerDependencies?.['@rivinia/select']).toBe('^0.7.0');
+    expect(pkg.peerDependencies?.['@rivinia/select']).toBe('^1.0.0-rc.1');
     expect(pkg.peerDependenciesMeta?.['@rivinia/select']?.optional).toBe(true);
     expect(pkg.dependencies?.['@rivinia/select']).toBeUndefined();
   });
