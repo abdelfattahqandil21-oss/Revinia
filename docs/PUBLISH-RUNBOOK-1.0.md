@@ -126,7 +126,8 @@ byte-level proof. `npm whoami` answered `abdelfattahqandil21`, the web-auth URL 
 approved, and publish printed **`+ @rivinia/menu@1.0.0-rc.1`**. No `--otp` was used.
 
 **2.5 and 2.6 ran on 2026-11-03 and are green.** The packument answers
-`dist-tags {"latest":"0.5.0","next":"1.0.0-rc.1"}` — `latest` was not moved — with
+`dist-tags {"latest":"0.5.0","next":"1.0.0-rc.1"}` — `latest` was not moved **at that
+read**, which D93 reversed hours later — with
 `1.0.0-rc.1` in the version list at `published-at 2026-11-03T10:02:31.761Z`, and
 `npm view @rivinia/menu version` says `0.5.0`. The registry's `dist.integrity` is
 `sha512-PiFduNZTSoDKUcu2PUMYKArZJoyR8MuJxUfOUQ3qr9FHm+sDpEw+DHv3c0SlnZ26YARRPymCJICZyH9z/ZlXeA==`,
@@ -232,7 +233,8 @@ answered `abdelfattahqandil21`, the web-auth URL was approved, and publish print
 **`+ @rivinia/i18n@1.0.0-rc.1`**. No `--otp` was used.
 
 **2.5 and 2.6 ran on 2026-11-03 and are green.** The packument answers `dist-tags
-{"latest":"0.8.0","next":"1.0.0-rc.1"}` — `latest` was not moved, and `npm view
+{"latest":"0.8.0","next":"1.0.0-rc.1"}` — `latest` was not moved **as this was read**,
+and `npm view
 @rivinia/i18n version` says `0.8.0` — with `1.0.0-rc.1` in the version list at
 `published-at 2026-11-03T10:36:00.306Z`. `dist.integrity` is the base64 of the local
 `sha512sum`, byte for byte, and `dist.shasum` is `59efe407dbf42d9a97b92971a06095e78526006d`;
@@ -317,10 +319,12 @@ the branch is prepared for.
 onto the 1.0 tree and published the rc, so `0.2.0` does not exist and will not.
 Two consequences, both recorded in D91: `docs/RELEASE-1.0.md` step 1 is now
 marked skipped rather than completed, and a consumer who wants the `@theme inline`
-Tailwind adapter fix without a `next` tag has to take the rc — `latest` stays
-`0.1.0` with no fix. If that ever matters, the remedy is a `0.2.0` release cut
-after the rc plus `npm dist-tag add @rivinia/theme@0.2.0 latest`, which moves
-`latest` to a version with no dark mode; it is not a small trade.
+Tailwind adapter fix without a `next` tag has to take the rc — `latest` stayed
+`0.1.0` with no fix until **D93 moved `latest` onto the rc the same afternoon**, which
+closed that gap for a bare install and left only the deprecated 0.x behind. The remedy
+D91 named — a `0.2.0` release cut after the rc plus
+`npm dist-tag add @rivinia/theme@0.2.0 latest` — would now move `latest` _backwards_,
+onto a version with no dark mode, so it is off the table.
 
 ## Step 1 — the precondition: the rc commit has to be on `main`
 
