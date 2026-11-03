@@ -1,20 +1,39 @@
 # Publish runbook — Rivinia 1.0
 
-**Status: running — step 2 has been done for `@rivinia/theme`, and for nothing
-else.** The owner published `@rivinia/theme@1.0.0-rc.1` to the `next` dist-tag
-on 2026-11-03, from the `theme/v1.0.0-rc.1` tag, which points at `3cb8b51` — the
-tip of `release/1.0-integration`. `latest` still answers `0.1.0`. The agent that
-prepared the rcs published nothing, created no tag and pushed no tag: every
-command below is still a human action, and `select`, `menu` and `i18n` are
-unrun.
+**Status: running — step 2 has been done for `@rivinia/theme` and
+`@rivinia/select`, and for nothing else.** The owner published
+`@rivinia/theme@1.0.0-rc.1` and `@rivinia/select@1.0.0-rc.1` to the `next`
+dist-tag on 2026-11-03, from the `theme/v1.0.0-rc.1` and `select/v1.0.0-rc.1`
+tags, which point at `3cb8b51` and `1e78c6c` — both tips of
+`release/1.0-integration`. `latest` still answers `0.1.0` and `0.7.1`. The agent
+that prepared the rcs published nothing, created no tag and pushed no tag: every
+command below is still a human action, and `menu` and `i18n` are unrun.
 
-| Package           | rc on `next`             | Registry verification                                                                                                                                                                                                                                                                                                                                                     |
-| ----------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@rivinia/theme`  | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `76fbabd7…`; the downloaded tarball `cmp`-identical to `/tmp/rv-rc-theme/rivinia-theme-1.0.0-rc.1.tgz` (8,396 B, 9 files); `npm install @rivinia/theme@next` in a scratch consumer resolved all six `exports`, and `diff -r` of the installed tree against the inspected tarball printed nothing |
-| `@rivinia/select` | not published            | —                                                                                                                                                                                                                                                                                                                                                                         |
-| `@rivinia/menu`   | not published            | —                                                                                                                                                                                                                                                                                                                                                                         |
-| `@rivinia/i18n`   | not published            | —                                                                                                                                                                                                                                                                                                                                                                         |
-| the soak, `1.0.0` | not started              | it cannot start before the four rcs exist                                                                                                                                                                                                                                                                                                                                 |
+| Package           | rc on `next`             | Registry verification                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ----------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@rivinia/theme`  | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `76fbabd7…`; the downloaded tarball `cmp`-identical to `/tmp/rv-rc-theme/rivinia-theme-1.0.0-rc.1.tgz` (8,396 B, 9 files); `npm install @rivinia/theme@next` in a scratch consumer resolved all six `exports`, and `diff -r` of the installed tree against the inspected tarball printed nothing                                                                         |
+| `@rivinia/select` | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `9e268244…`; the downloaded tarball `cmp`-identical to `/tmp/rv-rc-select/rivinia-select-1.0.0-rc.1.tgz` (66,787 B, 9 files); `dist-tags` `{"latest":"0.7.1","next":"1.0.0-rc.1"}`; `npm install @rivinia/select@next` resolved all three `exports` in a scratch consumer; the barrels carry the freeze's counts — `.` 7 names, `./ui` 10. Read the note under the table |
+| `@rivinia/menu`   | not published            | —                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `@rivinia/i18n`   | not published            | —                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| the soak, `1.0.0` | not started              | it cannot start before the four rcs exist                                                                                                                                                                                                                                                                                                                                                                                                         |
+
+The select row's last clause needs spelling out, because it is the one check a
+future verifier could get wrong. `@rivinia/select` imports cleanly in bare Node
+and gives its 4 runtime names (`RiviniaSelect`, `RIVINIA_SELECT`,
+`provideRiviniaSelect`, `injectRiviniaSelect`); the other 3 of the 7 are the
+type-only re-exports in `types/rivinia-select.d.ts`. A bare-Node runtime `import`
+of `./ui` **throws** — `The injectable 'PlatformLocation' needs to be compiled
+using the JIT compiler, but '@angular/compiler' is not available`. That is
+`@angular/common` needing Angular's compiler outside a build, and every Angular
+library behaves this way; it is not a defect in the tarball. `./ui` is proven by
+the SSR and consumer production builds in row 9 of `docs/MERGES-1.0.md`, which do
+compile it, and by the `.` + `./ui` resolution above. Do not treat a Node `import`
+of a UI entry point as a publish gate.
+
+One more number: the published select tarball is 66,787 B against row 9's 66,814 B.
+The 27-byte difference is the CHANGELOG heading fix (`## 1.0.0-rc.1 — prepared, not
+yet published` → `## 1.0.0-rc.1`) shipping — the heading inside the registry
+tarball reads `## 1.0.0-rc.1`, which is the proof that the correction landed.
 
 This file is S8 step 5 of
 [`specs/1.0-readiness.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/specs/1.0-readiness.md).

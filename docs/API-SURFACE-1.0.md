@@ -15,9 +15,12 @@ the commands are in
 and the soak that promotes an rc to `1.0.0` is **S8 — the soak** in
 [`docs/HUMAN-CHECKS-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/HUMAN-CHECKS-1.0.md).
 Neither has been run — except that the runbook's step 2 ran for
-`@rivinia/theme` on 2026-11-03: `1.0.0-rc.1` is live on `next`, cut from the tag
-`theme/v1.0.0-rc.1` at `3cb8b51`, and these 79 names are now what a consumer
-installs. `select`, `menu` and `i18n` are unpublished and the soak has not
+`@rivinia/theme` and `@rivinia/select` on 2026-11-03: `1.0.0-rc.1` of each is
+live on `next`, cut from the tags `theme/v1.0.0-rc.1` at `3cb8b51` and
+`select/v1.0.0-rc.1` at `1e78c6c`. Of the 79 names, **17 are now what a consumer
+installs** — select's 7 on `.` and 10 on `./ui`; theme contributes none, because
+its contract is CSS custom properties, not TypeScript exports. `menu` and `i18n`
+are unpublished and the soak has not
 started; the running record is the status table at the top of the runbook.
 
 ## How to read a verdict
