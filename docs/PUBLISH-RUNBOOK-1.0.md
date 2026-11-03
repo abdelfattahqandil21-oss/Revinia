@@ -614,7 +614,12 @@ main..release/1.0-integration`, and treat a merge onto `main` as its own approva
 3. **No Angular production build has run against any published rc.** Step 2.6 in all
    four rows is resolution plus `diff -r` of the installed tree; the only production
    builds in this program compiled local tarballs (row 9). The soak is where that
-   changes.
+   changes. And **no single consumer has installed all four rcs together**: the attempt
+   on 2026-11-03 stalled when `registry.npmjs.org` became unreachable again, so `npm i
+@rivinia/theme@next @rivinia/select@next @rivinia/menu@next @rivinia/i18n@next` is
+   **not run** — the closest that did run is i18n's consumer, which took theme, select
+   and i18n from the registry in one tree with empty stderr. Menu has its own consumer
+   row, so the four-way install is the soak's to do, not evidence this file holds.
 4. **The two `Decide` items in `docs/API-SURFACE-1.0.md`** are still open and gate the
    `1.0.0` tag, not the rc: select's alias group (`computeSelectPosition`, `SELECT_GAP`,
    `PanelCoordinates`/`PanelSize`/`TriggerRect`/`ViewportSize`) and the `RiviniaMenuItem`
