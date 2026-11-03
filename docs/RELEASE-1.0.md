@@ -4,8 +4,8 @@ Status: **rows 2 and 3 below have run, and the runbook's step 1 (this branch ont
 `main`) has run locally.** The owner published
 `@rivinia/theme@1.0.0-rc.1` and `@rivinia/select@1.0.0-rc.1` to the `next`
 dist-tag on 2026-11-03; `latest` still answers `0.1.0` and `0.7.1`, and rows
-4–7 have not run. The merge landed at `173f150`, and **only locally:
-`origin/main` still answers `6b51eba`.** Publishing, tags and dist-tags are
+4–7 have not run. The merge landed at `173f150` and is **pushed: `origin/main`
+answers `9173de3`, a fast-forward from `6b51eba`, no force.** Publishing, tags and dist-tags are
 human steps. The two documents S8 was going to write both exist now, on
 `release/1.0-integration`: `docs/HUMAN-CHECKS-1.0.md` (the hand-run checks) and
 [`docs/PUBLISH-RUNBOOK-1.0.md`](PUBLISH-RUNBOOK-1.0.md), which is the file that

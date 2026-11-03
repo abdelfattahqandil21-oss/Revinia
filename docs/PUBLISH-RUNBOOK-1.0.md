@@ -8,8 +8,8 @@ tags, which point at `3cb8b51` and `1e78c6c` — both tips of
 `release/1.0-integration`. `latest` still answers `0.1.0` and `0.7.1`. The agent
 that prepared the rcs published nothing, created no tag and pushed no tag: every
 command below is still a human action, and `menu` and `i18n` are unrun. **Step 1
-is a separate line: `release/1.0-integration` merged into `main` locally on
-2026-11-03 at `173f150`, and `origin/main` has not been touched — see step 1.**
+is done and pushed: `release/1.0-integration` is in `main` at `173f150`, and
+`origin/main` answers `9173de3` — see step 1.**
 
 | Package           | rc on `next`             | Registry verification                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ----------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -113,22 +113,26 @@ after the rc plus `npm dist-tag add @rivinia/theme@0.2.0 latest`, which moves
 
 ## Step 1 — the precondition: the rc commit has to be on `main`
 
-**Done locally on 2026-11-03, and not pushed.** `release/1.0-integration` is in
+**Done on 2026-11-03, and pushed.** `release/1.0-integration` is in
 `main` as the `--no-ff` merge `173f150`, parents `6b51eba` (main) + `89bf4c0`
-(integration). It ran in `../Revinia-select-summary`, the worktree that already
+(integration), with the record commit `9173de3` on top. It ran in
+`../Revinia-select-summary`, the worktree that already
 holds `main`, because git refuses to check out a branch another worktree has;
-that worktree was clean, so nothing of yours could be overwritten. `origin/main`
-still answers `6b51eba` — pushing `main` is a separate OK and has not happened.
+that worktree was clean, so nothing of yours could be overwritten. The push was
+**`6b51eba..9173de3`, a fast-forward — `git merge-base --is-ancestor origin/main main`
+said so before it ran, and no force was used.** `origin/main` and
+`origin/release/1.0-integration` both now answer `9173de3`.
 
 `release/1.0-integration` was **78** commits ahead of `main`, `main` 2 ahead of
 it, and those 2 touch only root `CHANGELOG.md` and `README.md`.
 
 **What actually happened for theme.** The merge to `main` did not come first:
 `theme/v1.0.0-rc.1` was cut on `3cb8b51`, which is the **tip of
-`release/1.0-integration`**, and that tag is now on origin. `main` still answers
-`6b51eba`. That did not put unpublished code on the registry, because the two
-branches' only content difference is in root files: `git diff --stat
-df3a444 refs/heads/main` (the merge-base against `main`) prints **`CHANGELOG.md`
+`release/1.0-integration`**, and that tag is on origin. At that moment `main`
+answered `6b51eba`; it does not any more, and this paragraph is history, not the
+current state. What happened did not put unpublished code on the registry, because
+the two branches' only content difference then was in root files: `git diff --stat
+df3a444 6b51eba` (the merge-base against `main`) printed **`CHANGELOG.md`
 and `README.md`, 2 files** — the integration base already carries the menu 0.5.0
 projected-content work, and `main` moved only its publish annotations since.
 Two consequences to handle before the next tag: `release/1.0-integration` is 70
@@ -192,7 +196,12 @@ published. `menu/v1.0.0-rc.1` and `i18n/v1.0.0-rc.1` **do not exist yet**, and
 step 1 changes where they should be cut: from `main` now, which is what this
 document always asked for. The `main` tree is the integration tree plus one root
 markdown file, so a tag cut there produces the same package bytes a tag cut on
-integration would — root `CHANGELOG.md` is not in any tarball.
+integration would — root `CHANGELOG.md` is not in any tarball. `origin/main`
+answers `9173de3`, so the block's `git push origin main refs/tags/…` has something
+to push. One mechanical note: `main` is checked out in
+`../Revinia-select-summary`, not in this repo, so the tag is cut in that directory
+— and it was clean and gated there on 2026-11-03, so `git rev-parse HEAD` there
+before tagging is the fastest confirmation that nothing moved.
 
 ```bash
 PKG=theme          # then select, menu, i18n
