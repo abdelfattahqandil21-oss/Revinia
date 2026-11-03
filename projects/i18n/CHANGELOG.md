@@ -20,7 +20,7 @@ The README is the start-here tier; everyday patterns and the reference live in
 one topic per page. This file keeps what a consumer of this package needs,
 including the migration notes for 0.6.0 and 0.4.0.
 
-## 1.0.0-rc.1 — prepared, not yet published
+## 1.0.0-rc.1
 
 - **The optional `@rivinia/select` peer is now `^1.0.0-rc.1`** (it was `^0.7.0`, a
   pre-1.0 caret so narrow that a select 0.8 or 1.0 conflicted with it). The range
