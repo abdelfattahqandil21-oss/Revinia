@@ -13,6 +13,7 @@
 - Organized repository documentation by responsibility and release lifecycle, retaining compatibility pointers for previous paths; strengthened the package README checker to fail on missing local links.
 - Added a ten-library ownership map and colocated the i18n-owned app, Playwright suites, and SSR smoke under `projects/i18n/testing/` while retaining the independent `i18n-e2e` Angular project and its output paths.
 - Moved package-owned i18n, Menu, Select, Table, and theme specifications under each package's `specifications/` directory; kept one cross-library index and compatibility pointers for historical links.
+- Added `consumer:smoke`, a temporary Angular consumer workflow that installs exact packed tarballs, checks selected public imports/optional-peer absence, records versions and SHA-256, and cleans up after success or failure.
 - Verified the i18n move from an empty `dist/`: select/i18n production builds, 376 unit tests, CSR/SSR builds, 36 SSR checks, 96 browser tests (Chromium, Chrome, Firefox), API-surface test, docs/governance/skills/README checks, and a 20-file i18n pack with no harness files.
 - No runtime, public API, package version, release tag or registry state changed.
 - Evidence: `docs/engineering/MIGRATION-PLAN.md`; task details remain in the task owner's private journal.

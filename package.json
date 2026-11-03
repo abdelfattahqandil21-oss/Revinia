@@ -32,6 +32,7 @@
     "check:popup-mutations": "node scripts/check-popup-mutations.mjs",
     "check:duplication": "node scripts/check-duplication.mjs",
     "check:pack": "node scripts/check-pack.mjs",
+    "consumer:smoke": "node scripts/consumer-smoke.mjs",
     "check:readmes": "node scripts/check-readmes.mjs",
     "check:governance": "node scripts/check-governance.mjs",
     "check:skills": "node scripts/check-skill-compatibility.mjs",
