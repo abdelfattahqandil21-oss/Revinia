@@ -2,7 +2,7 @@
 
 **Owner:** Repository maintainers
 **Purpose:** sequence governance adoption and later structural work with measurable rollback points.
-**Status:** Phases A and B completed; owner-authorized documentation organization is in progress; source/configuration migrations remain separately gated.
+**Status:** governance and documentation organization are complete; the owner-authorized i18n testing colocation pilot is verified; broader ownership-based organization is underway.
 
 ## Phase A — baseline and specification
 
@@ -29,14 +29,17 @@ No public API, package version, runtime source, package export, release tag, reg
 | Release-tagged README docs links | Exact next release version/tag and current docs content | Link/path checker; example build against exact tarball; packed README inspection | Revert before release; published artifacts immutable | Planned for next unpublished releases |
 | API snapshots beyond four current 1.0 packages | Owner-approved API baselines | Per-package export comparison and consumer imports | Revert snapshot/tooling change | Deferred |
 | Hosted docs platform or directory reorganization | Platform/ownership decisions and configuration compatibility proof | Build/link/redirect checks on before/after snapshots | Keep tag source snapshots; restore previous routing | **REQUIRES PRODUCT DECISION** |
+| Colocate the exclusive i18n harness | Preserve `i18n-e2e` as a separate Angular project and keep its build outputs and browser behavior | i18n unit suite, CSR/SSR builds, SSR runtime, configured browser matrix, package build/pack, docs and compatibility checks | Revert the path/config/docs commit; retain the old report bytes | **Verified 2026-11-03** |
 
-The repository owner explicitly authorized a documentation-only organization on `main` on 2026-11-03. The execution groups release records under `docs/releases/1.0/`, verification material under `docs/testing/`, research under `docs/research/`, theme guidance under `docs/theme/`, and historical audits under `docs/repository-architecture/`. Old documentation paths remain short compatibility pointers; append-only `docs/DECISIONS.md` and the linked `docs/a11y-snapshots/` baseline remain in place. This authorization does not include package/source/test topology, Angular or Playwright configuration, release scripts, published package artifacts, or protected schematics. Those changes still require their own impact review and gate matrix.
+The owner first authorized documentation-only organization on `main` on 2026-11-03. The execution groups release records under `docs/releases/1.0/`, verification material under `docs/testing/`, research under `docs/research/`, theme guidance under `docs/theme/`, and historical audits under `docs/repository-architecture/`. Old documentation paths remain short compatibility pointers; append-only `docs/DECISIONS.md` and the linked `docs/a11y-snapshots/` baseline remain in place. A later owner direction authorized ownership-based project moves, beginning with the verified i18n testing pilot. That does not authorize changes to published artifacts, package versions, registry state, tags, or protected `projects/env/schematics/`.
 
 ## Current-state verification
 
 At the initial audit checkpoint, branch `chore/repository-architecture` was at the audited base SHA and the source worktree was under `/tmp`. A cross-filesystem `git worktree move` failed with `Invalid cross-device link`. The later preservation procedure created a durable sibling worktree using Git-native registration, transferred tracked diffs and inventoried untracked/ignored content without copying Git metadata, and verified the inventories. The original source worktree remains intact and must not be removed without owner approval. The primary checkout remained untouched during that review. The owner subsequently authorized direct-main organization; the validated governance/docs commits have been integrated and pushed to `origin/main`.
 
 On 2026-11-03, all four release-group manifests were `1.0.0-rc.2`; npm `latest` was rc.2 for all four. npm `next` was rc.1 for menu/select and rc.2 for theme/i18n. Package READMEs currently point many docs links at moving `main`; the versioned-doc gate is for future versions and is not claimed to pass against already-published rc.2.
+
+The i18n pilot moved its exclusive app, assets, Playwright suite/config and SSR smoke under `projects/i18n/testing/`; Angular project name `i18n-e2e`, CSR/SSR output paths, and package entry points remain unchanged. The pre-existing ignored Playwright report was moved, byte-compared, and restored after browser verification; the new run's report was kept outside the checkout. Verification from an empty `dist/` rebuilt select and i18n before running the 376 i18n unit tests, 9 i18n schematic tests, 96 Playwright tests in configured Chromium/Chrome/Firefox projects, 36 SSR checks, CSR and SSR app builds, i18n package build and 20-file pack. The packed i18n artifact contains no testing harness. Public API snapshot checks passed. The source README link now points at the new app path; the already-published rc.2 tarball and registry metadata were not changed. The rc.2 versioned-doc check reports 17 issues involving moving `main` links and the absent rc.2 changelog heading; this check fails and remains a release-readiness item, not a passing gate.
 
 Executed for this governance follow-up:
 

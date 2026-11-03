@@ -224,7 +224,7 @@ punctuation inside the element that holds the name and keep the whole label in o
 element. As the first character of an LTR fragment a comma is pushed to the far edge
 of an RTL button, far from the name it closes, and the button's `gap` then separates
 it from that name in both directions. The proof page under
-[`projects/i18n-e2e`](https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/projects/i18n-e2e/src/app/toggle)
+[`projects/i18n/testing/app/src`](https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/projects/i18n/testing/app/src/app/toggle)
 renders exactly this case.
 
 ## SSR and the language name

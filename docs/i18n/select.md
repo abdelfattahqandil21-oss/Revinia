@@ -119,7 +119,7 @@ to one character per line (`English` becomes `En / gli / sh`). That is what this
 exists for — it was caught in the packed build in a browser, not by a build or a test
 double. Widen it with ordinary CSS — `rv-language-select { inline-size: 100% }` in a
 form row — and the panel follows the trigger within `rv-select`'s own limits. The
-[`i18n-e2e` suite](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/projects/i18n-e2e/e2e/language-select.spec.ts)
+[`i18n-e2e` suite](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/projects/i18n/testing/e2e/language-select.spec.ts)
 measures the host, the panel and the row line count in Chromium and Firefox, and both
 geometry tests fail when the floor is removed.
 

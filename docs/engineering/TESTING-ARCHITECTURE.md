@@ -10,7 +10,7 @@
 | --- | --- | --- | --- |
 | Unit/component | Current implementation behavior and local accessibility/state contracts | Package tests under `projects/<package>` | Configured unit runner; record exact package and command |
 | Browser E2E | Real browser interaction, focus, layout, ARIA and cross-component composition | Shared `e2e/menu`, `e2e/select`, `e2e/popup`; app in `projects/menu-e2e` | Build package dependencies and exact app first, then Playwright in named browser |
-| i18n browser | Translation, direction, language selection and SSR/CSR integration | `projects/i18n-e2e/e2e` and `projects/i18n-e2e` app | Build i18n, build correct CSR/SSR target, then configured suite |
+| i18n browser | Translation, direction, language selection and SSR/CSR integration | `projects/i18n/testing/e2e` and independent `i18n-e2e` app under `projects/i18n/testing/app` | Build i18n, build correct CSR/SSR target, then configured suite |
 | Cross-package integration | Public package imports/optional peer composition | Current i18n/select integration and consumer fixtures | Import only documented package exports; test with/without optional peer when relevant |
 | API compatibility | Exported symbols/types/entry points | `scripts/api-surface.mjs` currently snapshots four 1.0 packages | Review snapshots against the base/tag; do not auto-accept regenerated output |
 | Packed consumer | What npm actually ships | `npm pack`, package check scripts, clean fixtures | Install exact tarball (not workspace/file link), resolve imports, production build |

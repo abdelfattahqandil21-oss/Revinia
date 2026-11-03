@@ -404,28 +404,28 @@
           "skipTests": true
         }
       },
-      "root": "projects/i18n-e2e",
-      "sourceRoot": "projects/i18n-e2e/src",
+      "root": "projects/i18n/testing",
+      "sourceRoot": "projects/i18n/testing/app/src",
       "prefix": "app",
       "architect": {
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "browser": "projects/i18n-e2e/src/main.ts",
-            "server": "projects/i18n-e2e/src/main.server.ts",
-            "tsConfig": "projects/i18n-e2e/tsconfig.app.json",
+            "browser": "projects/i18n/testing/app/src/main.ts",
+            "server": "projects/i18n/testing/app/src/main.server.ts",
+            "tsConfig": "projects/i18n/testing/app/tsconfig.app.json",
             "assets": [
               {
                 "glob": "**/*",
-                "input": "projects/i18n-e2e/public"
+                "input": "projects/i18n/testing/app/public"
               }
             ],
             "styles": [
-              "projects/i18n-e2e/src/styles.css"
+              "projects/i18n/testing/app/src/styles.css"
             ],
             "outputMode": "server",
             "ssr": {
-              "entry": "projects/i18n-e2e/src/server.ts"
+              "entry": "projects/i18n/testing/app/src/server.ts"
             }
           },
           "configurations": {

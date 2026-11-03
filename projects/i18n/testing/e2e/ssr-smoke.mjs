@@ -2,7 +2,7 @@
  * SSR smoke test — the part of the proof Playwright cannot do, because it
  * needs the server process's own stdout.
  *
- *   node projects/i18n-e2e/e2e/ssr-smoke.mjs
+ *   node projects/i18n/testing/e2e/ssr-smoke.mjs
  *
  * Prerequisite: `npx ng build i18n && npx ng build i18n-e2e` (the default
  * configuration, which emits browser/ AND server/).

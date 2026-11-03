@@ -1,7 +1,7 @@
 /* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
 /* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../../../tsconfig.json",
   "compilerOptions": {
     /*
      * The SSR host (`src/server.ts`) is part of this project's build, so the
@@ -10,5 +10,5 @@
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.spec.ts", "e2e/**/*.ts", "playwright.config.ts"]
+  "exclude": ["src/**/*.spec.ts", "../e2e/**/*.ts", "../playwright.config.ts"]
 }

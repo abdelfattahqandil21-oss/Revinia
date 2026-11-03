@@ -31,9 +31,9 @@
 | --- | --- | --- | --- |
 | `projects/<library>/src`, `ui/`, `package.json`, `ng-package.json` | Publishable source, exports, package metadata | Maintainers of that library; changes stay inside public package boundaries | Package unit/build/pack/consumer gates; package README and CHANGELOG |
 | `projects/<library>/tests` or colocated specs | Unit/component contract for that library | Same library owner | `ng test <package>` or its configured test runner |
-| `projects/menu-e2e`, `projects/i18n-e2e` | Angular browser harness applications; not packages | Harness owner, coordinated with affected package owners | Production harness build before dependent Playwright suite |
+| `projects/menu-e2e`, `projects/i18n/testing` | Independent Angular browser harness applications; not packages (`i18n-e2e` is package-exclusive and colocated) | Shared harness owner for Menu/Select; i18n package owner for its harness | Production harness build before dependent Playwright suite |
 | `e2e/menu`, `e2e/select`, `e2e/popup` | Cross-component browser behavior and popup conformance | E2E suite owner; package owners review contract changes | Root Playwright config and current built harness |
-| `projects/i18n-e2e/e2e` | i18n consumer/browser workflows | i18n + harness owners | i18n production build, CSR harness build, configured Playwright suite |
+| `projects/i18n/testing/e2e` | i18n consumer/browser workflows | i18n package owner | i18n production build, CSR harness build, configured Playwright suite |
 | `docs/<topic>`, `projects/<library>/README.md` | Consumer documentation and examples | Relevant package owner; shared docs have maintainer review | `check:docs`, exact-version link check at release, example build where applicable |
 | `projects/<library>/CHANGELOG.md` | User-visible package release history | Package/release owner | Entry matches actual released version and release evidence |
 | `.agents/skills/` | Agent procedures shared by Codex and OpenCode | Maintainers | Skill role/version metadata checks; examples against declared versions |
@@ -57,8 +57,8 @@ menu/select popup behavior
   └─ suites: e2e/menu, e2e/select, e2e/popup
 
 i18n browser behavior
-  ├─ browser app: projects/i18n-e2e
-  └─ suites: projects/i18n-e2e/e2e
+  ├─ independent Angular app: projects/i18n/testing/app (project name: i18n-e2e)
+  └─ suites: projects/i18n/testing/e2e
 
 consumer-facing docs: projects/<library>/README.md + docs/<topic>/
 shared checks: scripts/ + root package scripts

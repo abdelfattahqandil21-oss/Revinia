@@ -113,8 +113,8 @@ initializer that loads the initial language before first paint, and SSR waits fo
 it through `PendingTasks`.
 
 A complete, runnable host lives in
-[`projects/i18n-e2e`](https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/projects/i18n-e2e)
+[`i18n testing app`](https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/projects/i18n/testing/app)
 (`node:http` + `renderApplication`, no Express), with
-[`e2e/ssr-smoke.mjs`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/projects/i18n-e2e/e2e/ssr-smoke.mjs)
+[`ssr-smoke.mjs`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/projects/i18n/testing/e2e/ssr-smoke.mjs)
 asserting the raw HTML, the server log, the transfer payload, the absence of a
 client refetch, and hydration.
