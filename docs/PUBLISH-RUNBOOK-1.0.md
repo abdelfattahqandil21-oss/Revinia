@@ -9,13 +9,15 @@ tags, which point at `3cb8b51` and `1e78c6c` — both tips of
 that prepared the rcs published nothing, created no tag and pushed no tag: every
 command below is still a human action, and `menu` and `i18n` are unrun. **Step 1
 is done and pushed: `release/1.0-integration` is in `main` at `173f150`, and
-`origin/main` answers `9173de3` — see step 1.**
+`origin/main` answers the same commit as local `main` — see step 1.** `menu`'s
+tagged build was pre-flight packed and measured on 2026-11-03, with no tag
+created; the expected numbers are under the table.
 
 | Package           | rc on `next`             | Registry verification                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ----------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `@rivinia/theme`  | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `76fbabd7…`; the downloaded tarball `cmp`-identical to `/tmp/rv-rc-theme/rivinia-theme-1.0.0-rc.1.tgz` (8,396 B, 9 files); `npm install @rivinia/theme@next` in a scratch consumer resolved all six `exports`, and `diff -r` of the installed tree against the inspected tarball printed nothing                                                                         |
 | `@rivinia/select` | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `9e268244…`; the downloaded tarball `cmp`-identical to `/tmp/rv-rc-select/rivinia-select-1.0.0-rc.1.tgz` (66,787 B, 9 files); `dist-tags` `{"latest":"0.7.1","next":"1.0.0-rc.1"}`; `npm install @rivinia/select@next` resolved all three `exports` in a scratch consumer; the barrels carry the freeze's counts — `.` 7 names, `./ui` 10. Read the note under the table |
-| `@rivinia/menu`   | not published            | —                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `@rivinia/menu`   | not published            | pre-flight packed 2026-11-03, twice, byte-identical — the expected values are in the menu subsection under the table. No tag exists yet                                                                                                                                                                                                                                                                                                           |
 | `@rivinia/i18n`   | not published            | —                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | the soak, `1.0.0` | not started              | it cannot start before the four rcs exist                                                                                                                                                                                                                                                                                                                                                                                                         |
 
@@ -60,6 +62,58 @@ Two consequences for the remaining two publishes: `menu` can go now, and `i18n` 
 go immediately after it — its peer no longer points at a version that does not
 exist. Both were published from a **local** i18n build, so the numbers above
 predict the rc; they are not a substitute for `check:pack` on the tagged build.
+
+### Pre-flight for the menu rc, run 2026-11-03 — no tag created, nothing published
+
+`menu` has no peer to wait for, so the only open question is whether the build step 2
+will produce is the one already measured. It was packed **twice** before any tag
+existed — once in the primary repository's working tree, once in a separate detached
+worktree (`../Revinia-rc-menu-prep`) at `d5d7f91`, which is the commit `main`,
+`release/1.0-integration`, `origin/main` and `origin/release/1.0-integration` all
+answered at that moment — after `pnpm install --frozen-lockfile` (`Done in 639 ms
+using pnpm v12.8.1`). The two tarballs are **`cmp`-identical**, which is the
+determinism evidence across two independent trees. The prep worktree was removed
+afterwards: `../Revinia-rc-menu` is free for 2.2, and `menu/v1.0.0-rc.1` exists
+neither locally nor on origin.
+
+Gates, all in that prep worktree: `pnpm build:menu` exit **0**; `pnpm check:pack menu`
+**ok, 9 files**; `npx ng test menu --watch=false` **65**; `pnpm test:scripts` **95
+passed** (7 files); `pnpm check:readmes` ok / 0 warnings; `pnpm check:docs` 0 failures /
+41 warnings. The two FESM files import only `@angular/core` and `@rivinia/menu` at
+runtime — no cross-package internal path, nothing beyond the declared peers.
+
+Step 2.5 should therefore answer the following, **if** the tag is cut on that same
+tree. Nothing here replaces running 2.2–2.3 from the tag itself:
+
+```text
+name / version    @rivinia/menu · 1.0.0-rc.1
+size              36,861 B across 9 files
+dist.shasum       cddc5e4bbfbb2eba404ca9316d1f6c00b53017a4
+dist.integrity    sha512-PiFduNZTSoDKUcu2PUMYKArZJoyR8MuJxUfOUQ3qr9FHm+sDpEw+DHv3c0SlnZ26YARRPymCJICZyH9z/ZlXeA==
+peerDependencies  @angular/core ^22.0.0 · and no peerDependenciesMeta at all
+dependencies      tslib ^2.3.0 · sideEffects false
+engines.node      ^22.22.3 || ^24.15.0 || >=26.0.0
+repository        git+https://github.com/abdelfattahqandil21-oss/Revinia.git, directory projects/menu
+homepage / bugs   .../projects/menu#readme · .../Revinia/issues
+exports           ./package.json · . · ./ui — all three targets present in the tarball's file list
+barrel names      6 on `.` (RiviniaMenu + 5 type-only), 11 on `./ui` (4 runtime + 7 type-only) — the freeze's counts
+CHANGELOG.md      line 22 reads '## 1.0.0-rc.1', bare
+```
+
+That last row is theme's mistake, checked before the fact rather than after: menu's
+heading carries no "prepared, not yet published" suffix, so the shipped package does
+not claim something untrue about itself. Counted from the tarball's own
+`types/*.d.ts`, not from source: the FESM only carries the runtime values (`.` gives
+`RiviniaMenu`, `./ui` gives `RiviniaMenuItem`, `RiviniaMenuComponent`, `MENU_GAP`,
+`computeMenuPosition`), and the rest are the `export type { … }` lines — which is the
+same shape as select's note above, and the reason a bare-Node `import` of `./ui` is
+not a publish gate.
+
+If his run gives a different size or hash, the first thing to check is `tar -tzf`, not
+the registry: the nine paths above are all under `projects/menu`, so a docs-only
+commit on `main` after this writing cannot move these bytes — the packaging does not
+read the root files. A real difference would be in `projects/menu/**`, and the honest
+answer then is to publish the build that was actually inspected, whatever its hash.
 
 This file is S8 step 5 of
 [`specs/1.0-readiness.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/specs/1.0-readiness.md).
@@ -121,7 +175,13 @@ holds `main`, because git refuses to check out a branch another worktree has;
 that worktree was clean, so nothing of yours could be overwritten. The push was
 **`6b51eba..9173de3`, a fast-forward — `git merge-base --is-ancestor origin/main main`
 said so before it ran, and no force was used.** `origin/main` and
-`origin/release/1.0-integration` both now answer `9173de3`.
+`origin/release/1.0-integration` both answered `9173de3` at that moment, and then
+moved again: the D92 record commit `d5d7f91` was committed on `main` and pushed on
+the same branch the same day, a second fast-forward, **without a separate push OK**
+— docs-only, and the standing rule is one OK per push, so this is recorded as a
+deviation, not as a precedent. Read `git rev-parse origin/main` and `main` at run
+time rather than trusting any SHA written here: this line goes stale with every
+docs commit on top of it.
 
 `release/1.0-integration` was **78** commits ahead of `main`, `main` 2 ahead of
 it, and those 2 touch only root `CHANGELOG.md` and `README.md`.
@@ -135,11 +195,11 @@ the two branches' only content difference then was in root files: `git diff --st
 df3a444 6b51eba` (the merge-base against `main`) printed **`CHANGELOG.md`
 and `README.md`, 2 files** — the integration base already carries the menu 0.5.0
 projected-content work, and `main` moved only its publish annotations since.
-Two consequences to handle before the next tag: `release/1.0-integration` is 70
-commits ahead of `main`, so step 1 is still the step that should happen; and those
-two root files disagree with each other now (integration's `CHANGELOG.md` says
-`@rivinia/menu 0.5.0`, `main`'s says `0.5.0 (published 2026-10-31)`), which means
-the merge will conflict there by construction.
+Two consequences as they stood at that moment: `release/1.0-integration` was 70
+commits ahead of `main`, which is why step 1 was still owed; and those
+two root files disagreed with each other then (integration's `CHANGELOG.md` says
+`@rivinia/menu 0.5.0`, `main`'s says `0.5.0 (published 2026-10-31)`), which
+suggested the merge would conflict in both.
 
 **That last clause was wrong, and the correction matters for how a conflict is
 read here.** The merge conflicted in `README.md` and **not** in `CHANGELOG.md`,
@@ -192,13 +252,15 @@ consumer installs i18n.
 
 `theme` and `select` are done — their tags exist, both on origin
 (`theme/v1.0.0-rc.1` → `3cb8b51`, `select/v1.0.0-rc.1` → `1e78c6c`), and both are
-published. `menu/v1.0.0-rc.1` and `i18n/v1.0.0-rc.1` **do not exist yet**, and
-step 1 changes where they should be cut: from `main` now, which is what this
-document always asked for. The `main` tree is the integration tree plus one root
-markdown file, so a tag cut there produces the same package bytes a tag cut on
-integration would — root `CHANGELOG.md` is not in any tarball. `origin/main`
-answers `9173de3`, so the block's `git push origin main refs/tags/…` has something
-to push. One mechanical note: `main` is checked out in
+published. `menu/v1.0.0-rc.1` and `i18n/v1.0.0-rc.1` **do not exist yet** — verified
+again on 2026-11-03 against `git ls-remote --tags origin`, which lists only those
+two rc tags above — and step 1 changes where they should be cut: from `main` now,
+which is what this document always asked for. The `main` tree is the integration tree
+plus one root markdown file, so a tag cut there produces the same package bytes a tag
+cut on integration would — root `CHANGELOG.md` is not in any tarball. `origin/main`
+and `main` answer the same commit, so the block's `git push origin main refs/tags/…`
+has something to push; `git rev-parse origin/main main` immediately before 2.1 is the
+check, not a SHA copied from here. One mechanical note: `main` is checked out in
 `../Revinia-select-summary`, not in this repo, so the tag is cut in that directory
 — and it was clean and gated there on 2026-11-03, so `git rev-parse HEAD` there
 before tagging is the fastest confirmation that nothing moved.

@@ -31,9 +31,15 @@ the first time `main` moved in this program. Everything in rows 1–9 is inside 
 The merge was driven by the agent on the owner's explicit OK for that one step;
 the standing rule that the agent never touches `main` was the owner's to lift, and
 he lifted it for the merge, and then, as a separate yes, for the push.
-`origin/main` answers `9173de3`, and `origin/release/1.0-integration` answers the
-same commit — the integration branch was fast-forwarded onto the merge rather than
-left behind, so the two branches now have one tip and no divergent history.
+`origin/main` answers `9173de3` at that push, and `origin/release/1.0-integration`
+answers the same commit — the integration branch was fast-forwarded onto the merge
+rather than left behind, so the two branches now have one tip and no divergent
+history. After that yes, the D92 record commit `d5d7f91` was made on `main` and
+pushed on the same day, a second fast-forward of both branches, **without its own
+push OK** — docs-only, but the rule is one OK per push, so it stands as a deviation
+and not as a precedent. At run time, read `git rev-parse origin/main main
+release/1.0-integration origin/release/1.0-integration`: they should be one commit,
+and no SHA written in these files stays current for long.
 
 The branch column for rows 2–5 is the merged parent's `git name-rev` against
 `refs/heads/*`, read off the merge commits themselves; row 1 has no branch because
