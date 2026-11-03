@@ -1,100 +1,38 @@
 # Rivinia — Agent Rules
 
-Production-ready Angular library ecosystem. Correctness over speed. Never sacrifice
-dependency boundaries or publishing correctness for convenience.
+Production-ready Angular library ecosystem. Correctness over speed; never sacrifice dependency boundaries or publishing correctness for convenience.
 
-## Baseline (verified 2026-10-28)
+## Authority and startup
 
-- Angular stable: **22.2.3** (released 2026-10-14). Sources: `npm view @angular/core`,
-  https://angular.dev/reference/releases. Major 22 active until 2027-06, LTS until 2028-06.
-  Angular 23 does not exist: the `next` tag is `22.3.0-next.2`.
-- CLI / ng-packagr aligned on major 22 (`@angular/cli` + `@angular/build` 22.2.4,
-  `@angular-devkit/*` 22.2.4, ng-packagr 22.2.5 installed).
-- `@Service()` — CONFIRMED stable in `@angular/core` (exported, used by i18n-egy v2.2.0).
-- `injectAsync` — CONFIRMED stable since v22.0 (`core.d.ts` exports it, `prefetch: onIdle` supported).
-- Signal Forms — CONFIRMED stable: `@angular/forms@22.2.3` exports `./signals` + `./signals/compat`.
-- TypeScript pinned by `@angular/compiler-cli` peers: `>=6.0 <6.1` (6.0.3 installed).
-- Peer policy: `@angular/*` pinned exact within major (`@angular/compiler: 22.2.3`);
-  libraries declare `peerDependencies: {"@angular/core": "^22.0.0"}`, `tslib` as runtime dep.
-- Package manager: **pnpm** (matches i18n-egy precedent; `pnpm 12.8.1` available).
+Within higher-level instructions, repository precedence is: (1) explicit current task and owner-approved decisions, (2) this root policy, (3) nearest directory `AGENTS.md`, (4) invoked maintainer skill, (5) task memory/history. Memory never overrides policy. If authoritative rules conflict, stop the affected action and report both sources.
 
-## Skill routing
+For non-trivial work, explicitly invoke repository skill `rivinia-playbook` from `.agents/skills/`: use `$rivinia-playbook` in Codex or the native `skill` tool with ID `rivinia-playbook` in OpenCode, then state the route. Read `docs/engineering/README.md`, relevant `docs/DECISIONS.md` entries/runbooks, and applicable directory instructions. Start and update a task record per `docs/engineering/TASK-MEMORY.md`; report branch, worktree, base/HEAD, paths, actual checks, blockers and next safe action. Skill files are discoverable instructions, not a substitute for this policy.
 
-- Start every non-trivial task by loading the `rivinia-playbook` skill
-  (`.opencode/skills/rivinia-playbook/SKILL.md`) and stating the route in one
-  line. It maps task → skill: bug → `diagnosing-bugs`, new logic → `tdd`,
-  UI → `impeccable`, public page → `design-taste-frontend`, release →
-  `rivinia-release` (hidden — load by exact ID), review → `code-review`,
-  API facts → `research`, OpenCode itself → `opencode`.
-- A skill body never overrides this file or `docs/DECISIONS.md`; the user
-  overrides both. A gate that was not run is reported as not run.
-- `pnpm build` / `ng test` / `npm pack` are development gates. A version bump,
-  a tag, or a registry publish is a release: `rivinia-release` plus explicit
-  confirmation (gate 7).
+## Ownership and boundaries
 
-## Architecture boundaries (enforceable)
+- Use the package manager version pinned in root `package.json`; read toolchain/API versions from current manifests and lockfiles rather than cached baseline prose.
+- `projects/<library>/` owns that publishable package's manifest, API entry points, source, unit tests, README and package CHANGELOG. `projects/*-e2e/` are harness apps, not libraries; shared menu/select/popup suites live under `e2e/`.
+- Keep workspace, package and entry-point boundaries distinct. Core never imports UI; no cycles or cross-package source imports. Use public package exports only.
+- Angular framework packages are peers, never runtime dependencies. Preserve `sideEffects: false` for side-effect-free libraries; packages shipping CSS/SCSS must explicitly retain their style side-effect patterns (currently theme).
+- Add only single-purpose secondary entry points with demonstrated need. An entry point is an export boundary, not a lazy chunk; prove chunks in production builds. For async splitting, follow the established `LoaderDescriptor.resolve() → dynamic import()` pattern. Reuse these i18n-egy patterns: `provideX(config)` with `makeEnvironmentProviders`; root `@Service()` singletons and `injectX()`; readonly signals/computed state with explicit write methods; impure pipes only when delegating to signals and with a documented reason; async loader descriptors with Map cache/inflight deduplication and monotonic last-wins request tokens; SSR-safe browser guards.
+- Do not change public exports/contracts without compatibility review, exact public-import tests, and release documentation.
 
-- Workspace (`Revinia/`) ≠ publishable package (`projects/<pkg>/package.json`) ≠
-  entry point (`src/public-api.ts` + `ng-package.json` per secondary).
-- Core NEVER imports UI. No circular deps. No cross-package internal imports —
-  public API only (`@rivinia/<pkg>` or `@rivinia/<pkg>/<entry>`).
-- `@angular/core` etc. are `peerDependencies`, never `dependencies`.
-- `sideEffects: false` in every library `package.json`.
-- Single-purpose secondary entry points only when proven necessary
-  (e.g. `@rivinia/modal/core`, `@rivinia/modal/ui`). A secondary entry point is an
-  npm export boundary, NOT an automatic lazy chunk — prove chunks with production builds.
-- Async code-splitting inside a package uses the proven `LoaderDescriptor.resolve() →
-dynamic import()` pattern from i18n-egy, not speculative abstractions.
+## Skills, facts and decisions
 
-## Reusable patterns from i18n-egy v2.2.0 (do not duplicate its functionality)
+Use the playbook's task-to-skill route. A skill cannot override this file or `docs/DECISIONS.md`; explicit current owner instructions can. Verify Angular/npm/tool APIs against installed types and authoritative docs, recording source/date. Experimental APIs need a risk note before becoming core dependencies. Foundational policy changes require owner approval and a `docs/DECISIONS.md` entry. Report passed, failed and not-run checks separately.
 
-- `provideX(config)` → `makeEnvironmentProviders([{provide: X_CONFIG, useValue}])`.
-- `@Service()` root singletons + `injectX()` shorthand.
-- Readonly signals/computed for public state; writes only via explicit methods.
-- SSR-safe guards (`typeof window/document === 'undefined'` + try/catch).
-- `TranslatePipe`-style impure pipe only when delegating to signals; document why.
-- Pluggable async loaders via descriptor + `Map` cache + `Map` inflight dedupe +
-  monotonic request token (last-wins). See `docs/DECISIONS.md`.
+## Verification gates
 
-## Workflow gates (a change is NOT done until all pass)
+Run every applicable verification gate before calling a change done. For package changes, run a production package build and relevant unit tests. Build the exact harness before browser tests; layout, focus, RTL and geometry require a real browser, not jsdom. Keep assertions intact and treat `dist/` as disposable/stale until rebuilt.
 
-1. `pnpm build <pkg>` (ng-packagr production) succeeds.
-2. Unit tests pass (`ng test` / vitest via `@angular/build:unit-test`).
-3. `npm pack` tarball inspected: `exports`, `types`, `peerDependencies`, files.
-   Grep dist FESM for runtime imports — any import beyond declared
-   peers/allowances (e.g. an actual `tslib` import) fails the release.
-   (ng-packagr injects an unused `tslib` dep entry by default; see D20.)
-   For @rivinia/theme, also run `node scripts/check-theme-package.mjs <tarball>`; it must exit 0.
-   For theme, select, menu and i18n, also run `pnpm check:pack <pkg>`: it fails
-   when the tarball drops `README.md`, `CHANGELOG.md`, `repository`, `homepage`,
-   `bugs`, `engines` or an `exports` target, and prints the shipped file list.
-   `pnpm check:readmes` checks the 200-line README budget (the four 1.0
-   packages are temporarily allowlisted until the S9 move) and the version line.
-4. Tarball installed in a clean consumer fixture; consumer production build succeeds.
-5. Public imports tested exactly as consumer uses them.
-6. Bundle sizes recorded (baseline → core-only → core+UI sync → UI lazy).
-7. No credential/token ever committed. No publish without explicit user confirmation
-   showing exact name, version, access, and tarball contents.
-8. Never modify a published version — new version only.
+Before release approval, explicitly invoke `rivinia-release` (`$rivinia-release` in Codex; OpenCode native `skill` tool ID `rivinia-release`) and inspect the exact packed tarball: exports, types, peers, file list and FESM runtime imports. Also run `node scripts/check-theme-package.mjs <exact-theme.tgz>` for theme, `check:pack` for theme/select/menu/i18n, and `check:readmes`. Install the exact tarball in a clean consumer, production-build it, test documented imports and record required bundle sizes. A workspace build or pack alone is not consumer proof.
 
-## Decision discipline
+Never commit credentials, tokens/OTPs, `dist/`, `pack/` or `node_modules/`. Never alter a published version. A version bump, tag, or publish is a release action and requires the release skill plus explicit owner approval; publishing approval must state package(s), exact version(s), registry/access and inspected tarball contents. Publish only from the approved immutable tag and exact inspected tarball.
 
-- Never invent Angular APIs, CLI flags, schematics options, or npm behaviors.
-  Verify against installed `node_modules` types + official docs, record source + date.
-- Experimental APIs require a risk note before becoming a core dependency.
-- Foundational rule changes need user approval + `docs/DECISIONS.md` entry.
-- Report what succeeded, what failed, what remains unverified. Never claim an
-  unexecuted build/test/publish/bundle measurement succeeded.
+## Git and worktrees
 
-## Git workflow (trunk-based, per-package releases)
+Keep `main` releasable. Use a short-lived task-owned branch/worktree (`pkg/<package>/<topic>` for package work); one owner per worktree, explicit shared-path ownership, no cross-worktree edits. Preserve existing work; no destructive cleanup of another task. Revalidate after rebase/integration and rerun affected gates. Human integration uses `--no-ff`; no automatic commit, merge or push.
 
-- `main` is always releasable. Work in short-lived branches:
-  `pkg/<package>/<topic>` (e.g. `pkg/http/retry-policy`); merge with `--no-ff`.
-- Conventional Commits, scope = package: `feat(http): …`, `fix(toast): …`,
-  `chore(repo): …`, `docs(http): …`, `test(modal): …`, `build(repo): …`.
-- One logical change per commit; never mix packages in one commit.
-- Release with namespaced tags on `main`: `<pkg>/v<semver>` (e.g. `http/v0.2.0`).
-  Tags are immutable — fixes ship as new versions. Pre-1.0: minor bump = breaking.
-- Never commit `dist/`, `pack/`, `node_modules/`, credentials, or OTPs (ignored
-  by `.gitignore`, but stay vigilant with `git add -A`).
-- Publish only from a tagged commit, from the exact inspected tarball.
+Use Conventional Commits with package/repo scope and one logical change per commit. Release tags are immutable and namespaced `<package>/v<semver>` on `main`; a fix ships as a new version. Before 1.0, a minor bump is breaking. Never commit generated artifacts, credentials or OTPs; publish only from the tagged commit and exact inspected tarball.
+
+The initial synchronized release group is exactly `@rivinia/menu`, `@rivinia/select`, `@rivinia/theme`, and `@rivinia/i18n`; they share one version. Other packages remain independently versioned. See `docs/engineering/VERSIONING.md` and `release-groups.json`. Do not modify protected `projects/env/schematics/` without explicit owner approval.

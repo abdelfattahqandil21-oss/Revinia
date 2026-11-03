@@ -1,26 +1,25 @@
 ---
 name: rivinia-playbook
-description: Route any task in the Rivinia repo to the right skill before acting — bug, feature, UI/CSS, packaging, release, review, research, docs, OpenCode config. Holds the per-skill catalogue, the skills that must NOT be used here, the verification ladder, and the known-trap index (symptom → D-entry). Load this first when a task starts, or when unsure which skill applies.
+description: Route Rivinia repository work to the smallest applicable skill and repository procedure. Use at task start or when choosing among architecture, implementation, UI, tests, docs, review, or release workflows.
 ---
 
 # Rivinia playbook — pick the skill before the work
 
-OpenCode advertises a skill by ID, name and description only; the body is read
-when the skill is loaded. This skill is the index that turns a request into a
-route.
+Codex and OpenCode discover this repository skill from `.agents/skills/` and
+load its body on demand. Discovery does not guarantee invocation: use the
+runtime's skill selector or explicit invocation when routing is unclear. The
+reference matrix and task routes live in `docs/engineering/SKILLS-*.md`.
 
 ## How "automatic" works
 
-There is no per-turn hook in OpenCode V2 (verified 2026-10-28 against
-<https://opencode.ai/v2/docs/skills/>). Three things make this fire by itself:
+The root `AGENTS.md` points to this skill, and its description supports
+automatic selection. If the runtime does not select it, invoke it explicitly.
+State the selected route once, then continue with the task.
 
-1. `AGENTS.md` names this skill in its first section, so the pointer is in
-   every prompt.
-2. The description above matches ordinary task language.
-3. This file states the route for each kind of work, so the first action is
-   already the right one.
-
-If a task starts without a route line, stop and choose one.
+Only `rivinia-playbook` and `rivinia-release` are repository-owned. Other IDs
+below are optional host skills: use one only if the active agent lists it, and
+otherwise follow the repository procedure. A name in this table does not
+install or grant access to a skill.
 
 ## Hard rules
 
@@ -30,10 +29,10 @@ If a task starts without a route line, stop and choose one.
    the user overrides both.
 3. **Two skills per phase, maximum.** A third means the task is not
    decomposed yet.
-4. **Hidden skills are loaded by exact ID.** `rivinia-release` sets
-   `opencode/autoinvoke: false`, so it appears in no advertised list — this
-   table is its only pointer.
-5. **One route line, then work.** `route: diagnosing-bugs → browser`. No
+4. **Release is explicit-only.** `rivinia-release` opts out of automatic
+   selection in OpenCode and Codex; the root policy and this route table point
+   to its explicit invocation.
+5. **One route line, then work.** `route: diagnosing-bugs → playwright-cli`. No
    skill theatre: loading a skill is not doing the work.
 6. **Not run ≠ passed.** A gate that was not executed is reported as not run,
    never as green.
@@ -43,8 +42,8 @@ If a task starts without a route line, stop and choose one.
 | The request looks like | Load, in this order | Do not load |
 | --- | --- | --- |
 | Any non-trivial task | `rivinia-playbook` (this) | — |
-| Bug, regression, "مش شغال", failing test, slow render | `diagnosing-bugs` → `browser` when the symptom is visual | `impeccable` before the cause is known |
-| New logic with a clear contract | `tdd` → `test-verification` | `prototype` |
+| Bug, regression, "مش شغال", failing test, slow render | `diagnosing-bugs` → `playwright-cli` or an available browser tool when needed | `impeccable` before the cause is known |
+| New logic with a clear contract | `tdd` → `test-verification` when available | `prototype` |
 | New module, entry point, or public API shape | `codebase-design` (+ `domain-modeling` when the vocabulary is new) | `tdd` first |
 | UI component, tokens, RTL, a11y, "make it feel premium" (app screens) | `impeccable` | `design-taste-frontend` |
 | Landing / marketing / portfolio / demo page, "looks AI-made" | `design-taste-frontend` | `impeccable` |
@@ -53,18 +52,19 @@ If a task starts without a route line, stop and choose one.
 | Throwaway experiment to answer a design question | `prototype` | `tdd` |
 | Review a branch, PR, or WIP since X | `code-review` | `pr` |
 | Write a PR body | `pr` | `code-review` |
-| Release, publish, tag, version bump, "انشر" | `rivinia-release` (hidden, exact ID) | nothing else; it owns the sequence |
+| Release, publish, tag, version bump, "انشر" | explicitly invoke `rivinia-release` | nothing else; it owns the sequence |
 | Architecture decision, breaking change, new package | `domain-modeling` + a `docs/DECISIONS.md` entry (next D-number) | `rivinia-release` |
+| Repository governance, `AGENTS.md`, task memory, worktrees or compatibility policy | `writing-for-agents` for instruction files; consult `docs/engineering/` | — |
 | Stress-test a plan or a risky decision | `grilling` | — |
 | API/library/standard facts, "does Angular support X" | `research` (+ `opencode` if the subject is OpenCode) | memory |
 | Edit `AGENTS.md`, a `SKILL.md`, or agent docs | `writing-for-agents` | — |
-| OpenCode config, skills, permissions, plugins, CLI | `opencode` | `report` |
-| An OpenCode bug (not a Rivinia bug) | `report` | — |
+| OpenCode config, skills, permissions, plugins, CLI | `opencode` only if listed; otherwise official OpenCode docs and CLI help | — |
+| An OpenCode bug (not a Rivinia bug) | OpenCode issue tracker/docs if available | — |
 | Pre-commit hooks (Husky, lint-staged) | `setup-pre-commit` | — |
 | Steps only a human can perform (provisioning, credentials) | `wizard` | — |
-| Browser inspection, screenshot, console/network, focus | `browser` (required before the first browser tool call) | `playwright-cli` |
-| A repeatable browser suite or fixture | `playwright-cli` | `browser` |
-| Cross-browser proof on the machine's real engines | `desktop-browsers` (+ `playwright-cli`) | claiming WebKit or system Firefox |
+| One-off browser inspection, screenshot, console/network, focus | an available browser tool/skill | `playwright-cli` unless the flow must be repeated |
+| A repeatable browser suite or fixture | `playwright-cli` when available | — |
+| Cross-browser proof on the machine's real engines | `desktop-browsers` when available | claiming an unavailable engine |
 | Replace `as` with shoehorn in test files | `migrate-to-shoehorn` | — |
 
 ## Never in this repo
@@ -127,7 +127,6 @@ passed (with the command), what failed, and what was not run. That is the
 
 ## References
 
-- `references/skill-catalog.md` — every available skill: what it does, when it
-  fires, when it must not, advertised or hidden.
 - `references/known-traps.md` — symptom → `DECISIONS.md` entry, for the defects
   this repo has already paid for.
+- `docs/engineering/SKILLS-ROUTING.md` — task-to-skill map and safe fallback.

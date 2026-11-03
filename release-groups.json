@@ -1,0 +1,14 @@
+{
+  "groups": [
+    {
+      "id": "rivinia-1.0",
+      "policy": "synchronized-version",
+      "packages": [
+        "@rivinia/menu",
+        "@rivinia/select",
+        "@rivinia/theme",
+        "@rivinia/i18n"
+      ]
+    }
+  ]
+}

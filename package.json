@@ -33,6 +33,9 @@
     "check:duplication": "node scripts/check-duplication.mjs",
     "check:pack": "node scripts/check-pack.mjs",
     "check:readmes": "node scripts/check-readmes.mjs",
+    "check:governance": "node scripts/check-governance.mjs",
+    "check:skills": "node scripts/check-skill-compatibility.mjs",
+    "check:versioned-doc-links": "node scripts/check-versioned-doc-links.mjs",
     "test:scripts": "vitest run scripts/tests"
   },
   "private": true,
