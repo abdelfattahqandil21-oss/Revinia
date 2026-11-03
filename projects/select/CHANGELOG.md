@@ -1,12 +1,28 @@
 # @rivinia/select
 
-Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
+From 1.0.0 this package follows **strict semver**: only a major may break, a new
+input, output, token or export is a minor, and a patch never changes what a page
+renders or what an assistive technology announces. Two things are public API here
+rather than implementation detail: **the `--rv-select-*` and `--rv-*` token
+names**, and **the roles the popup emits** — `menu` with `menuitemradio` rows in
+single mode, `menuitemcheckbox` in multi, plus the `searchbox` on the filter and
+a `status` region. Moving to a `combobox` pattern, or renaming a token, is a
+major. A new token is always additive: every rule reads
+`var(--rv-select-<name>, var(--rv-<semantic>, <previous value>))`.
+
+Coming from 0.7.1: **no import to change** — 1.0.0 removes no name and renames
+none. One thing to check, though: the popup's rows are `menuitemradio` in single
+mode where 0.7.1 emitted `menuitem`, so CSS or a test that selected
+`[role="menuitem"]` inside the panel has to follow the role (first bullet below).
+The breaking changes a consumer already migrated through are 0.6.0's popup rename
+and 0.2.0's token rename, both recorded below, and the freeze that fixed what
+ships is [`docs/API-SURFACE-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/API-SURFACE-1.0.md).
 The full entry for every release is in the repository
 [CHANGELOG](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/CHANGELOG.md);
 this file keeps what a consumer of this package needs, including the migration
 notes for 0.6.0, 0.5.0 and 0.2.0.
 
-## Unreleased
+## 1.0.0-rc.1 — prepared, not yet published
 
 - **Single rows are `menuitemradio` with `aria-checked`.** They were plain
   `menuitem`, so the selected option was not announced as selected (D85).

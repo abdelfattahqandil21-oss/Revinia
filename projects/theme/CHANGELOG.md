@@ -1,8 +1,22 @@
 # @rivinia/theme
 
-Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
+From 1.0.0 this package follows **strict semver**: only a major may break, a new
+token or entry file is a minor, and a patch never changes what a page renders.
+The contract here is CSS, not TypeScript — **the twelve `--rv-*` names and the
+four entry files** (`theme.css`, `tailwind.css`, `bootstrap.css` and the Sass
+entry) are public API. A new token is always additive: every component reads
+`var(--rv-<own>, var(--rv-<semantic>, <previous value>))`, so a name that did not
+exist yesterday cannot change what renders today.
 
-## Unreleased
+Coming from `0.1.0` — **there is something to read.** None of the twelve `--rv-*`
+names moved, but `0.1.0` is still the newest tarball on npm, so everything merged
+since lands inside this major: a page with no switch now follows the OS dark
+setting (`0.1.0` had no dark values at all), the switch attribute is
+`data-rv-theme`, and the Tailwind adapter is `@theme inline`, so an element-level
+`--color-rv-*` override no longer repaints a `bg-rv-*` utility. Older releases
+followed the pre-1.0 policy, where a minor bump could break.
+
+## 1.0.0-rc.1 — prepared, not yet published
 
 ### Dark mode and the contrast gate (1.0.0-rc.1)
 
@@ -88,5 +102,7 @@ an element-level `--color-rv-bg` no longer repaints `bg-rv-bg`. A later
 token then stops following `--rv-bg` for the rest of the stylesheet — including
 subtree overrides.
 
-Because a released version is never modified, this behaviour change ships as a
-minor: **0.2.0**.
+Because a released version is never modified, this behaviour change was planned as
+a minor: **0.2.0**. That bump was never published — `0.1.0` remains the only
+release on npm — so the change ships inside `1.0.0-rc.1`, where a major already
+tells a consumer to read the breaking notes.

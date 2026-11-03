@@ -1,13 +1,33 @@
 # @rivinia/i18n
 
-Pre-1.0 policy: a minor bump may break, a patch is a bug fix.
+From 1.0.0 this package follows **strict semver**: only a major may break, a new
+config key, export, token or loader hook is a minor, and a patch never changes
+what a page renders. The contract is wider than the export list: **the
+`provideRiviniaI18n` config keys**, the pipe name (`rvTranslate`), **the loader
+descriptor contract — including the `LoaderContext` a custom loader receives**,
+the ICU placeholder rules, the `--rv-i18n-*` token names, and the declaration
+shape `rivinia-i18n-keys` generates (`RiviniaI18nKeyRegistry`). Changing any of
+those is a major; adding one is a minor. A new token is always additive — the
+toggle and the picker read `var(--rv-i18n-<name>, var(--rv-<semantic>, <previous
+value>))`.
+
+Coming from 0.8.0: **nothing to do** — 1.0.0 removes no name and renames none.
+The removals a consumer already met were in 0.6.0 (`RTranslatePipe` /
+`rTranslate`), recorded below, and the freeze that fixed what ships is
+[`docs/API-SURFACE-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/API-SURFACE-1.0.md).
 The README is the start-here tier; everyday patterns and the reference live in
 [`docs/i18n/`](https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/docs/i18n),
 one topic per page. This file keeps what a consumer of this package needs,
 including the migration notes for 0.6.0 and 0.4.0.
 
-## Unreleased
+## 1.0.0-rc.1 — prepared, not yet published
 
+- **The optional `@rivinia/select` peer is now `^1.0.0-rc.1`** (it was `^0.7.0`, a
+  pre-1.0 caret so narrow that a select 0.8 or 1.0 conflicted with it). The range
+  admits every select 1.x release, the rc and the final alike, and excludes a 2.0 —
+  verified with `semver.satisfies` against the installed semver 7.8.5. Nothing
+  changes for an app that never imports `@rivinia/i18n/select`: the peer stays
+  `optional` in `peerDependenciesMeta`.
 - **The toggle reads the theme's accent.** `--rv-accent` paints the focus ring
   and the held-down fill (16% over the button's own background). Both read
   `var(--rv-accent, currentColor)`, so a page that does not import

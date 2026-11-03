@@ -9,7 +9,7 @@
 
 Angular select fields: an optional ready-made UI and the headless controller
 behind it — an option registry, an accent-insensitive filter, and a single or
-multi value. Package version: **0.7.1**.
+multi value. Package version: **1.0.0-rc.1**.
 
 ```ts
 import { Component } from '@angular/core';

@@ -166,7 +166,11 @@ code for long lists.
 
 Every export is classified so the 1.0 freeze is predictable. **Internal** symbols
 exist only so the package's own tests can import them; they may move to an
-`@rivinia/i18n/internal` entry point (or disappear) before 1.0.
+`@rivinia/i18n/internal` entry point (or disappear) before 1.0. The freeze
+([`docs/API-SURFACE-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/API-SURFACE-1.0.md))
+kept the four that are published — `parseCookie`, `serializeCookie`,
+`browserLanguages`, `detectBrowserLanguage` — on their current paths and says out
+loud that a patch release may still change them.
 
 | Export                                                                                         | Kind                | Tier         |
 | ---------------------------------------------------------------------------------------------- | ------------------- | ------------ |
