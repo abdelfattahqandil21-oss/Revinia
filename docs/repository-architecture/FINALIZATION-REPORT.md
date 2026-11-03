@@ -41,7 +41,7 @@ The skill validator verifies metadata syntax and traceability only. It does not 
 | `npm run check:theme-dark` | Passed in Chromium and Firefox |
 | `npm run check:component-theme` | Passed in Chromium and Firefox |
 | Clean packed-consumer `npm run build` | Passed against the exact four rc.2 local tarballs; Angular production build emitted the application bundles successfully |
-| `npm run check:popup-mutations` | In progress at report creation. Fresh clean control was green: 24 passed. Mutation cases were being killed as expected. Final result and restored-tree check are required before integration. |
+| `npm run check:popup-mutations` | Passed: fresh clean control 24/24; 18/18 mutants killed exactly as expected. Exit code 0; harness restored its temporary source changes and rebuilt the affected outputs. |
 | Other Playwright suites | Not run: no component runtime, package source, E2E specs, or harness config changed. |
 | `pnpm install` / build-script approvals | Not run; unresolved approvals were not granted. |
 
@@ -49,4 +49,4 @@ The npm package versions and registry dist-tags were not changed. Existing rc.2 
 
 ## Integration boundary
 
-No commit or merge is considered complete by this report alone. Before integration, finish the popup mutation gate, confirm its source mutations were restored, review the complete staged diff and ensure generated/cache/private files are excluded. Then create coherent local commits, re-run governance/script checks on the committed tree, confirm the primary `main` checkout is clean and non-divergent, merge locally with `--no-ff`, and verify the resulting `main`. No remote push, tag, release, publish, or worktree removal is authorized.
+The complete diff was reviewed and staged in two coherent local commits: `34a52c9` (governance verification gates) and `8c8675a` (architecture guidance). No generated/cache/private files were staged. The popup harness restored temporary source changes. Re-run governance/script/docs checks on the committed tree, confirm the primary `main` checkout is clean and non-divergent, merge locally with `--no-ff`, and verify the resulting `main`. No remote push, tag, release, publish, or worktree removal is authorized.
