@@ -189,14 +189,17 @@ cd - > /dev/null && git worktree remove "../Revinia-rc-$PKG"   # last, when the 
   publish: `npm cache clean --force` plus `--prefer-online` installed it in 2 s.
 - **No provenance.** The published record has `dist.attestations` absent, as with
   every earlier Rivinia release. Nothing in this runbook creates it.
-- **A CHANGELOG heading goes stale inside the tarball.** `projects/theme/CHANGELOG.md:19`
-  reads `## 1.0.0-rc.1 — prepared, not yet published`, and the published rc ships
-  that sentence: `tar -xzOf <registry tarball> package/CHANGELOG.md` shows it. It is
-  false from the moment of publish onward, and `1.0.0-rc.1` is immutable, so theme
-  carries it forever. **Fix the other three before their tags:** change the heading
-  in `projects/<pkg>/CHANGELOG.md` to `## 1.0.0-rc.1 - 2026-11-03` in a
-  `docs(<pkg>)` commit on `release/1.0-integration`, then cut `<pkg>/v1.0.0-rc.1`
-  from that commit.
+- **A CHANGELOG heading went stale inside the first tarball.** The published
+  `@rivinia/theme@1.0.0-rc.1` ships `## 1.0.0-rc.1 — prepared, not yet published`
+  (`tar -xzOf <registry tarball> package/CHANGELOG.md` shows it), and that sentence
+  has been false since the second it was published — immutable, so theme carries it
+  forever. The four source headings now read `## 1.0.0-rc.1`, so the remaining three
+  tags cannot repeat the mistake. The heading style across the files was already
+  mixed — `## 0.5.0` bare in menu and select, `## 0.8.0 - 2026-10-31` dated in i18n,
+  and theme has one `##` line at all, with `###` sections under it — the point is not
+  the format, it is that a heading must not assert anything a publish can invalidate.
+  Whether a version is on the registry is this file's status table, not a heading's
+  job.
 - **What `cmp` proves, and what it does not.** The registry tarball was
   byte-identical to the inspected file, so the P9e consumer measurements describe
   the published bytes. It does not complete step 2.6: that build installed the
@@ -218,7 +221,7 @@ Only from an rc that passed the soak, and in the same order.
 ```bash
 # one commit per package, or one commit for the four:
 #   version 1.0.0-rc.1 -> 1.0.0 in projects/<pkg>/package.json
-#   the CHANGELOG heading '## 1.0.0-rc.1 — prepared, not yet published' -> '## 1.0.0 - <date>'
+#   the CHANGELOG heading '## 1.0.0-rc.1' -> '## 1.0.0'
 #   the package README 'Package version: **1.0.0-rc.1**' -> **1.0.0**
 #   the root README Workspace column -> 1.0.0
 # and in projects/i18n/package.json: the optional peer becomes '^1.0.0'

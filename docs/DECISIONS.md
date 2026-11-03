@@ -3810,3 +3810,12 @@ Evidence and plan in `docs/SPEC-select-multi-summary.md` (frozen before code).
   `@rivinia/select/ui` alias group (`computeSelectPosition`, `SELECT_GAP` and the
   four aliased types), and the `RiviniaMenuItem` type-versus-directive collision —
   are still the owner's to settle before any `1.0.0` tag.
+
+### D91 addendum — the same day, the heading claim was removed from all four CHANGELOGs
+
+D91 above says the remaining three headings must be corrected before their tags.
+They were, and so was theme's in the repository: each `## 1.0.0-rc.1 — prepared, not
+yet published` became `## 1.0.0-rc.1`, in four per-package `docs(<pkg>)` commits.
+No version heading in this ecosystem now asserts a registry state, because a publish
+is exactly the event that would invalidate it — and the published theme rc keeps the
+old line forever, which is the proof the rule needed.
