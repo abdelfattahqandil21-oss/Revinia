@@ -70,12 +70,13 @@ pnpm exec ng test http --watch=false
 pnpm check:docs
 ```
 
-Every package has a `build:<package>` script — for example `pnpm build:i18n`
-or `pnpm build:table`. HTTP, toast, modal, i18n and environment builds also
-compile their `ng add` schematics; `pnpm test:schematics` runs those suites.
-Run a package's unit tests with
-`pnpm exec ng test <project-name> --watch=false`, for example
-`pnpm exec ng test select --watch=false`. The browser suites build first:
+Build aliases exist for http, toast, i18n, modal, env, menu, select, theme, and
+datepicker. Table has no alias; build it with `pnpm exec ng build table`.
+HTTP, toast, modal, i18n, and env builds also compile their `ng add`
+schematics; `pnpm test:schematics` runs those suites. Run Angular package unit
+tests with `pnpm exec ng test <project-name> --watch=false`, for example
+`pnpm exec ng test select --watch=false`. Theme uses `pnpm test:theme`.
+The browser suites build first:
 `npx ng build i18n && npx ng build i18n-e2e --configuration csr`, then
 `npx playwright test --config projects/i18n-e2e/playwright.config.ts`.
 
