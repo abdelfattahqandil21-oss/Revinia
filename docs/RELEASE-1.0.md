@@ -20,7 +20,7 @@ keeps the running record of what has been executed and what has not.
 | 1 | `@rivinia/theme` | `0.2.0` | `latest` | **Skipped on 2026-11-03.** The plan said ship SPEC-0.1.1 before any 1.0 work; Option A in the runbook was taken instead and the `@theme inline` adapter ships inside `1.0.0-rc.1` |
 | 2 | `@rivinia/theme` | `1.0.0-rc.1` | `next` | **Done 2026-11-03.** S5a dark mode + contrast; the token contract froze at `3cb8b51`, tagged `theme/v1.0.0-rc.1` |
 | 3 | `@rivinia/select` | `1.0.0-rc.1` | `next` | **Done 2026-11-03.** S2 ARIA + S3/S4 popup work; tagged `select/v1.0.0-rc.1` at `1e78c6c` |
-| 4 | `@rivinia/menu` | `1.0.0-rc.1` | `next` | S3 conformance parity with select. **Done 2026-11-03.** Tagged `menu/v1.0.0-rc.1` at `d5d7f91` (a lightweight tag, like the other two rcs), built from the tag, published from the inspected tarball. The pre-flight's shasum and integrity matched byte for byte; the registry-side checks are still owed — see the runbook |
+| 4 | `@rivinia/menu` | `1.0.0-rc.1` | `next` | S3 conformance parity with select. **Done 2026-11-03, verified against the registry the same day.** Tagged `menu/v1.0.0-rc.1` at `d5d7f91` (lightweight, like the other two rcs), built from the tag, published from the inspected tarball; the registry tarball is `cmp`-identical to it and `latest` still answers `0.5.0` |
 | 5 | `@rivinia/i18n` | `1.0.0-rc.1` | `next` | peers on select; must point at a select that exists. **Pre-flight 2026-11-03:** `^1.0.0-rc.1` now resolves against the registry, and installs clean with and without select |
 | 6 | — | soak | — | criteria written by S8, in the human-checks document (not in this branch) |
 | 7 | all four | `1.0.0` | `latest` | same order as 2–5 |

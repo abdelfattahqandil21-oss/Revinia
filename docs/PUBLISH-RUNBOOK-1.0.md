@@ -14,13 +14,13 @@ is done and pushed: `release/1.0-integration` is in `main` at `173f150`, and
 tagged build reproduced the pre-flight tarball byte for byte; the expected numbers
 for `i18n` are under the table.
 
-| Package           | rc on `next`             | Registry verification                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| ----------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@rivinia/theme`  | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `76fbabd7…`; the downloaded tarball `cmp`-identical to `/tmp/rv-rc-theme/rivinia-theme-1.0.0-rc.1.tgz` (8,396 B, 9 files); `npm install @rivinia/theme@next` in a scratch consumer resolved all six `exports`, and `diff -r` of the installed tree against the inspected tarball printed nothing                                                                                                                                                                           |
-| `@rivinia/select` | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `9e268244…`; the downloaded tarball `cmp`-identical to `/tmp/rv-rc-select/rivinia-select-1.0.0-rc.1.tgz` (66,787 B, 9 files); `dist-tags` `{"latest":"0.7.1","next":"1.0.0-rc.1"}`; `npm install @rivinia/select@next` resolved all three `exports` in a scratch consumer; the barrels carry the freeze's counts — `.` 7 names, `./ui` 10. Read the note under the table                                                                                                   |
-| `@rivinia/menu`   | **published** 2026-11-03 | tagged `menu/v1.0.0-rc.1` → `d5d7f91`, which is `main`; built in `../Revinia-rc-menu` from that tag with every gate green (65 tests, `check:pack` 9 files, `check:docs` 0 failures); `npm pack` answered shasum `cddc5e4b…` and integrity `sha512-PiFdu…`, the pre-flight's own numbers, and `cmp` against `/tmp/rv-rc-menu-prep/…` printed nothing; publish answered `+ @rivinia/menu@1.0.0-rc.1` with no `--otp`. The 2.5 registry-side checks are **not run yet**: `dist.integrity`, `dist-tags`, a downloaded `cmp`, a `@next` consumer install |
-| `@rivinia/i18n`   | not published            | pre-flight run twice from clean trees and re-measured from `main` on 2026-11-03: 93,239 B, 20 files, shasum `59efe407…`, peers and both optional flags asserted from the tarball — the expected values are in the i18n subsections under the table. No tag exists yet                                                                                                                                                                                                                                                                               |
-| the soak, `1.0.0` | not started              | it cannot start before the four rcs exist                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Package           | rc on `next`             | Registry verification                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ----------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@rivinia/theme`  | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `76fbabd7…`; the downloaded tarball `cmp`-identical to `/tmp/rv-rc-theme/rivinia-theme-1.0.0-rc.1.tgz` (8,396 B, 9 files); `npm install @rivinia/theme@next` in a scratch consumer resolved all six `exports`, and `diff -r` of the installed tree against the inspected tarball printed nothing                                                                                                                                                         |
+| `@rivinia/select` | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `9e268244…`; the downloaded tarball `cmp`-identical to `/tmp/rv-rc-select/rivinia-select-1.0.0-rc.1.tgz` (66,787 B, 9 files); `dist-tags` `{"latest":"0.7.1","next":"1.0.0-rc.1"}`; `npm install @rivinia/select@next` resolved all three `exports` in a scratch consumer; the barrels carry the freeze's counts — `.` 7 names, `./ui` 10. Read the note under the table                                                                                 |
+| `@rivinia/menu`   | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `cddc5e4b…`; the registry-downloaded tarball `cmp`-identical to both the published-from tarball and the pre-flight one (36,861 B, 9 files); `dist-tags` `{"latest":"0.5.0","next":"1.0.0-rc.1"}` — `latest` unmoved; `npm i @rivinia/menu@next` in a scratch consumer resolved all three `exports` and `diff -r` of the installed tree against the inspected tarball printed nothing; `published-at` `2026-11-03T10:02:31.761Z`. Read the menu run below |
+| `@rivinia/i18n`   | not published            | pre-flight run twice from clean trees and re-measured from `main` on 2026-11-03: 93,239 B, 20 files, shasum `59efe407…`, peers and both optional flags asserted from the tarball — the expected values are in the i18n subsections under the table. No tag exists yet                                                                                                                                                                                                                                                             |
+| the soak, `1.0.0` | not started              | it cannot start before the four rcs exist                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 The select row's last clause needs spelling out, because it is the one check a
 future verifier could get wrong. `@rivinia/select` imports cleanly in bare Node
@@ -118,6 +118,31 @@ pre-flight's — and `cmp /tmp/rv-rc-menu/rivinia-menu-1.0.0-rc.1.tgz
 /tmp/rv-rc-menu-prep/rivinia-menu-1.0.0-rc.1.tgz` printed **nothing**, which is the
 byte-level proof. `npm whoami` answered `abdelfattahqandil21`, the web-auth URL was
 approved, and publish printed **`+ @rivinia/menu@1.0.0-rc.1`**. No `--otp` was used.
+
+**2.5 and 2.6 ran on 2026-11-03 and are green.** The packument answers
+`dist-tags {"latest":"0.5.0","next":"1.0.0-rc.1"}` — `latest` was not moved — with
+`1.0.0-rc.1` in the version list at `published-at 2026-11-03T10:02:31.761Z`, and
+`npm view @rivinia/menu version` says `0.5.0`. The registry's `dist.integrity` is
+`sha512-PiFduNZTSoDKUcu2PUMYKArZJoyR8MuJxUfOUQ3qr9FHm+sDpEw+DHv3c0SlnZ26YARRPymCJICZyH9z/ZlXeA==`,
+which is base64 of the local `sha512sum` and not merely a matching size, and
+`dist.shasum` is `cddc5e4bbfbb2eba404ca9316d1f6c00b53017a4`. The tarball downloaded
+from `registry.npmjs.org` is `cmp`-identical to `/tmp/rv-rc-menu/…` (the file that
+was published) **and** to `/tmp/rv-rc-menu-prep/…` (the pre-flight) — 36,861 B, 9
+files. In a scratch consumer, `npm i @rivinia/menu@next` added 7 packages, `npm ls`
+reports `@rivinia/menu@1.0.0-rc.1`, `import.meta.resolve` resolved
+`.`, `./ui` and `./package.json` to files that exist, and `diff -r` of the installed
+tree against the inspected tarball printed nothing.
+
+Two things worth saying about that gap between the publish and this verification.
+`registry.npmjs.org` was unreachable from this machine for roughly the first
+half-hour after the publish — `curl` timed out on IPv4 and IPv6 alike while
+`github.com` and `npmmirror` answered normally — so the check is honest about its
+own timing; the poll took 28 attempts. And nothing here was a consumer production
+build: the published sources differ from the ones row 9's consumer build compiled by
+exactly one file. `git log --oneline 9122a2a..d5d7f91 -- projects/menu` is one
+commit, `904e55b`, whose only diff is `projects/menu/CHANGELOG.md` — the publication
+claim dropped from the heading. No menu code changed after the freeze, so the
+published artifact is the frozen artifact plus that line.
 
 ### Pre-flight for the i18n rc, run 2026-11-03 — nothing here published anything
 
@@ -407,7 +432,7 @@ npm pack @rivinia/$PKG@1.0.0-rc.1 --registry=https://registry.npmjs.org/ \
 cd - > /dev/null && git worktree remove "../Revinia-rc-$PKG"   # last, when the package is done
 ```
 
-### What theme's run taught, in case the next three go the same way
+### What theme's run taught, in case the last one goes the same way
 
 - **A failed `git tag` silently relocates the whole block.** `theme/v1.0.0-rc.1`
   and `../Revinia-rc-theme` already existed from an earlier pass, so 2.1 exited

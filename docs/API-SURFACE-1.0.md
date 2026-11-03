@@ -19,9 +19,10 @@ Neither has been run — except that the runbook's step 2 ran for
 of each is on `next`, cut from the tags `theme/v1.0.0-rc.1` at `3cb8b51`,
 `select/v1.0.0-rc.1` at `1e78c6c` and `menu/v1.0.0-rc.1` at `d5d7f91`. Of the 79
 names, **34 are now what a consumer installs** — select's 7 on `.` and 10 on `./ui`,
-menu's 6 on `.` and 11 on `./ui` (npm accepted menu's publish and answered
-`+ @rivinia/menu@1.0.0-rc.1`; the runbook's 2.5 registry-side checks were still owed
-when this line was written); theme contributes none, because
+menu's 6 on `.` and 11 on `./ui`. Both are verified on the registry: menu's
+`dist.integrity` equals base64 of the local `sha512sum`, a consumer installing
+`@rivinia/menu@next` resolves `.` and `./ui`, and `diff -r` of that installed tree
+against the inspected tarball printed nothing; theme contributes none, because
 its contract is CSS custom properties, not TypeScript exports. `i18n`
 is unpublished and the soak has not
 started; the running record is the status table at the top of the runbook.
