@@ -1,6 +1,6 @@
 # Spans and size — how `colSpan` / `rowSpan` work, and what they cost
 
-Companion to `docs/table-design.md`. This document answers two questions that
+Companion to `docs/specifications/table-design.md`. This document answers two questions that
 had to be settled before any code:
 
 1. **What can a consumer express with spans, and in what shape?**
@@ -531,7 +531,7 @@ editing entry present, exactly the core figure). Entry points earn their keep
 through (a) lazy loading, (b) an explicit public contract, and (c) forcing the
 wiring decision. Saying "we split it to save bytes" would be false.
 
-### 9.6 Budget check against `table-design.md` §8
+### 9.6 Budget check against `docs/specifications/table-design.md` §8
 
 | Target | Budget | Prototype |
 | --- | --- | --- |

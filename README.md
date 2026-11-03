@@ -42,6 +42,9 @@ serve the Playwright suites; they are not packages and are never published.
 `pnpm check:docs` fails when a package is missing from this table or when the
 version column drifts from its manifest.
 
+For architecture, feature specifications, testing, release workflows, and
+historical reports, start at the [documentation map](./docs/README.md).
+
 ## Install and configure
 
 Install only the package(s) you plan to use. For example:

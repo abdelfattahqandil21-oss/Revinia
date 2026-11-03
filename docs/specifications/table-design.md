@@ -7,7 +7,7 @@ from, and anything unmeasured is labelled as such.
 **Baseline:** Angular **22.2.2** (`@angular/core` installed in this workspace),
 ng-packagr 22.2.4, pnpm, the packaging rules in `AGENTS.md` (D04, D20, D21).
 
-**Companion:** `docs/table-spans-and-size.md` — the measured design of
+**Companion:** `docs/specifications/table-spans-and-size.md` — the measured design of
 `colSpan`/`rowSpan` and the entry-point/size strategy. Its conclusions are
 folded into T11/T12, §4.4, §5.3 and §6; the companion holds the full evidence.
 
@@ -385,7 +385,7 @@ export interface TableColumn<T, V = unknown> {
   readonly aggregation?: AggregationKind | ((rows: readonly T[]) => unknown);
   readonly hidden?: boolean;
 
-  // spans — see docs/table-spans-and-size.md
+  // spans — see docs/specifications/table-spans-and-size.md
   readonly merge?: 'equal' | ((row: T, anchor: T) => boolean);          // row-span sugar
   readonly colSpan?: number | ((context: SpanContext<T>) => number);    // Infinity = rest of region
   readonly span?: (context: SpanContext<T>) => CellSpan | null | undefined; // escape hatch, both axes
@@ -966,7 +966,7 @@ Measured prototype sizes (not yet the implementation): core FESM **4.88 kB**
 gzip with spans, UI **5.29 kB**, editing **1.03 kB**; real-app deltas **+8.48
 kB** (core), **+8.75 kB** (UI), **+0.56 kB** (editing, static import). The span
 engine itself is **1,199 B gzip**. Full method and numbers:
-`docs/table-spans-and-size.md`.
+`docs/specifications/table-spans-and-size.md`.
 
 Techniques: staged computeds (T4), precomputed sort keys, cached `Intl.Collator`
 per locale, one rAF-coalesced scroll handler, `OnPush` + signals, `@for` tracked
@@ -1150,7 +1150,7 @@ Grouped by whether they block Phase 0. My recommendation is in each line, so
 - WAI-ARIA 1.2, `aria-colspan`: https://www.w3.org/TR/wai-aria-1.2/#aria-colspan
 - WAI-ARIA 1.2, `aria-rowspan` (`0` = rest of the row group): https://www.w3.org/TR/wai-aria-1.2/#aria-rowspan
 - WAI-ARIA 1.2, `aria-colindex` (required when any cell spans): https://www.w3.org/TR/wai-aria-1.2/#aria-colindex
-- Span and size companion: `docs/table-spans-and-size.md`
+- Span and size companion: `docs/specifications/table-spans-and-size.md`
 - TanStack Virtual: https://tanstack.com/virtual/latest/docs/api/virtualizer
 - PrimeNG Table: https://primeng.org/table
 - Angular CDK table: https://material.angular.dev/cdk/table/overview
