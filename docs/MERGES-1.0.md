@@ -23,6 +23,7 @@ and the reviewer's verdict.
 | 6 | S3 conformance + S4 resize | `pkg/repo/1-0-conformance-resize` | `011bccf` | `--squash` | 2026-11-02, on the merged tree: builds `select`/`menu`/`menu-e2e` exit 0; `npx playwright test` **363 passed** (121 × chromium, firefox, webkit); `check:popup-ssr` **15 checks**; `check:popup-mutations` **18 of 18 killed exactly as expected**; `check:duplication` **8 clones, 196 lines (6.75%), 2,213 tokens (11.36%)** — unchanged from its baseline; `ng test menu` **63**, `ng test select` **161**; `test:scripts` **70**; `check:docs` 0 failures / 243 warnings; `check:readmes` 0 problems / 4 warnings (the temporary allowances). Every exit code 0 | no blocking issue — read the note below on who reviewed |
 | 7 | S7 browser support matrix | `pkg/repo/1-0-browser-support` | `25c4cc1` | `--squash` | 2026-11-02, on the merged tree: builds `select`/`menu`/`menu-e2e` exit 0; `npx playwright test` **374 passed, 1 skipped** (125 cases × chromium, firefox, webkit; the skip is the firefox branch of the anchor-feature case, which would prove nothing there); `check:popup-ssr` **15 checks**; `check:popup-mutations` **18 of 18 killed exactly as expected**, run on the same library source the merge carries; `check:duplication` **8 clones, 196 lines (6.64%), 2,213 tokens (11.36%)** — the clones did not move, the percentage did, and the baseline comment says why; `ng test menu` **65**, `ng test select` **163**; `test:scripts` **70**; `check:docs` 0 failures / 243 warnings; `check:readmes` 0 problems / 4 warnings (the temporary allowances). Every exit code 0 | no blocking issue — the same self-review caveat as row 6 |
 | 8 | S9 README content move | `pkg/repo/1-0-readmes` | `21d9be7` | `--squash` | 2026-11-02, on the merged tree — which is byte-identical to the branch tip (`git diff --stat pkg/repo/1-0-readmes 21d9be7` prints nothing), so every number in this cell is that tree's: builds `theme`/`select`/`menu`/`i18n`/`menu-e2e` exit 0; `check:readmes` **ok, 0 warnings** — READMEs at 104 / 172 / 134 / 165 lines and `ALLOW_OVER_BUDGET` now empty; `check:docs` **0 failures / 41 warnings**, reading the 26 topic pages for the first time; `test:scripts` **83 passed** (6 files); `ng test menu` **65**, `ng test select` **163**, `ng test i18n` **376**, `pnpm test:theme` **11**; `npx playwright test` **374 passed, 1 skipped** (125 cases × chromium, firefox, webkit); `check:popup-ssr` **15 checks**; `check:popup-mutations` **18 of 18 killed exactly as expected**; `check:duplication` **8 clones, 196 lines (6.64%), 2,213 tokens (11.36%)** — the clones did not move. Every exit code 0 | no blocking issue — the same self-review substitution as rows 6 and 7; read the two notes below it |
+| 9 | S8 API freeze + `1.0.0-rc.1` prep | `pkg/repo/1-0-api-freeze` | `9122a2a` | `--squash` | 2026-11-03, on the merged tree — byte-identical to the branch tip (`git diff --stat pkg/repo/1-0-api-freeze 9122a2a` prints nothing), and the 22 paths it carries include **zero** library source or style files (`git diff --name-only` over them: no hit for `src/lib/`, `styles/`, `.html`, `.css`, `.scss`): builds `theme`/`select`/`menu`/`i18n` exit 0 with every `dist/` manifest at `1.0.0-rc.1`, `ng build menu-e2e` 325.41 kB initial; `npm pack` of the four → **8,396 / 66,814 / 36,875 / 93,258 B**, `check:pack` **ok** on all four, `check-theme-package` **ok, 9 files**; `ng test select` **163**, `ng test menu` **65**, `ng test i18n` **376**, `pnpm test:theme` **11**, `test:scripts` **95 passed** (7 files — 12 of them the new snapshot spec); `npx playwright test` **374 passed, 1 skipped**; `check:popup-ssr` **passed**; `check:duplication` **8 clones, 196 lines (6.64%), 2,213 tokens (11.36%)** — unchanged from its baseline; `check:readmes` **ok, 0 warnings** (104 / 172 / 134 / 166); `check:docs` **0 failures / 41 warnings**. **Consumer smoke, tarballs only:** the four `file:` tarballs installed offline into a fresh fixture with no `@rivinia/*` path mapping, seven generated modules importing **all 79 published names**; SSR production build **349.33 kB raw / 93.87 kB transfer**, 2 routes prerendered; control build with the lazy route **295.50 kB / 81.79 kB** initial and a **52.18 kB** lazy chunk — 53.83 kB raw leaves the initial bundle, which is the measurement behind "it is really lazy"; the same app **without the optional select peer** builds at **289.62 kB / 79.30 kB** with **0** hits in the output for `rv-select`, `computeSelectPopupPosition`, `select-popup`, `rivinia-select`, `rv-language-select`; served under SSR and driven in Chromium — panel `[role=menu]` 1 with 2 rows, keyboard pick to "paid", menu item "profile", toggle to `dir=rtl lang=ar` with "3 مقاعد", `/lazy` carrying `data-variant="premium"` with 2 picker rows, theme CSS 1,217 B with `@layer rivinia-theme` and 5 `--rv-accent` reads, trigger border following `--rv-border` (224,224,224 → 255,0,0), **zero console or page errors**; `rivinia-i18n-keys init` run from the i18n tarball wrote `languages.ts` and both dictionaries. Every exit code 0 | no blocking issue — the same self-review substitution as rows 6, 7 and 8; read the notes under this row, which include the one gate it did **not** re-run |
 
 The branch column for rows 2–5 is the merged parent's `git name-rev` against
 `refs/heads/*`, read off the merge commits themselves; row 1 has no branch because
@@ -122,6 +123,87 @@ loses the boundary, so this sentence is the record.
 
 What this row does not prove: no gate compiled the snippets in the new READMEs and
 topic pages. That is S8, and S8 is the next row.
+
+## Row 9 — the review's four fixes, and the one gate that did not run
+
+Row 9 carries the same substitution as rows 6, 7 and 8: the owner's instruction for
+these sessions is that no subagent runs unless he asks, so the review came from the
+agent that wrote the change. It caught four things, all fixed on the branch before
+the squash (`e3d6f67`):
+
+- **A red gate.** `ng test i18n` failed 375/376: `language-select-surface.spec.ts`
+  still asserted the optional select peer is `^0.7.0` while the manifest said
+  `^1.0.0-rc.1`. `docs/RELEASE-1.0.md` asked for the two to move in the same commit;
+  the red run is also the mutation proof that the assertion still bites, and the
+  suite is 376/376 after the fix.
+- **A migration note that was wrong twice.** `@rivinia/theme` told a consumer
+  "coming from 0.1.0: nothing to do". `npm view` answers that `0.1.0` is still the
+  newest real theme release, so a consumer's baseline is that tarball and everything
+  merged since lands inside this major — the dark values that follow the OS, and the
+  `@theme inline` adapter that stops an element-level `--color-rv-*` override
+  reaching a `bg-rv-*` utility. The same note then said the behaviour change
+  "ships as a minor: **0.2.0**" — a bump that was never made. Both sentences now
+  say what actually ships, and `docs/PUBLISH-RUNBOOK-1.0.md` opens by making the
+  owner choose between skipping `0.2.0` and publishing it first.
+- **The same contradiction in select.** Its note said "nothing to do" one line
+  above its own first bullet, which moves the rows from `menuitem` to
+  `menuitemradio`. A consumer whose CSS or test queries `[role="menuitem"]` inside
+  the panel does have something to do, and now the note says so.
+- **A stale npm column.** The root README still listed menu `0.4.0` and select
+  `0.7.0`; the registry answers `0.5.0` and `0.7.1`. The drift is older than this
+  row — those cells were already wrong on integration, and `check:docs` reads the
+  Workspace column, not this one — but it names two of the four 1.0 packages, so it
+  is fixed here.
+
+**The gate this row did not re-run.** `pnpm check:popup-mutations` breaks a library
+source file for each of 18 rules and requires an exact case list to go red; it is
+the slowest gate in the table and the owner stopped it. It is **not** claimed green
+here. What stands in its place: this merge touches no source file at all (the count
+is in the cell), the conformance suite re-ran green on the merged tree, and rows 6,
+7 and 8 each ran the harness against the same library code.
+
+The interruption left something worth recording for the next person. When the run
+was stopped, the harness had already written one rule's mutation into
+`projects/menu/ui/src/lib/components/menu/menu-panel.ts` —
+`window.addEventListener('scroll', onScroll, true);` replaced by `void onScroll;` —
+and had not reached its restore step. It surfaced while staging the squash, not
+from a gate; the file was restored from `HEAD` (both parents carry the original
+line), `git diff pkg/repo/1-0-api-freeze -- <that file>` is empty, and the 22
+staged paths were compared against the branch tip before the commit was made. The
+Playwright numbers above are unaffected — that run finished before the harness
+started. The rule to carry forward: **a stopped mutation harness leaves a mutated
+tree; check `git status` after killing one.**
+
+Row 8's open question is closed: the README hooks and quick-start blocks of all
+four packages were compiled, not eyeballed — `select-hook`, `select-tag-picker`,
+`menu-hook` and `i18n-app-config` are components in the fixture above, and the
+theme hook is the fixture's `styles.css`.
+
+What row 9 does not prove:
+
+- **S2, S4 and S7 stay human and stay unfilled.** The D85 `searchbox` addendum and
+  the S4 height-only-resize policy remain **PROVISIONAL — pending human check**, and
+  the soak in `docs/HUMAN-CHECKS-1.0.md` cannot start before the rcs exist.
+- One machine, one version of each engine, no CI. Chrome 114–130 and Safari
+  17–26.1 have never been run; real Safari is S7; `docs/browser-support.md`
+  measures popups, not `Intl`.
+- The four **Decide** items in `docs/API-SURFACE-1.0.md` are the owner's to settle
+  before a `1.0.0` tag; nothing was removed while preparing the freeze.
+- `ng add @rivinia/i18n` was not re-run from the rc tarball. The
+  `rivinia-i18n-keys init` path was, and it wrote real files.
+- The files this row adds are linked from the freeze document with absolute GitHub
+  URLs pinned to `main`, and integration has not reached `main`. Until it does,
+  `docs/API-SURFACE-1.0.md` and `docs/PUBLISH-RUNBOOK-1.0.md` 404 for anyone who
+  follows a link from the repository home. Rows 6–8 carry the same caveat; row 9
+  adds two more pages to it.
+- `language-select-surface.spec.ts` is not Prettier-clean at its line 145 regex and
+  was not reformatted: the drift predates this row, and reformatting a line the row
+  does not change would put cosmetic noise inside a release branch.
+- `ng build theme` prints two ng-packagr warnings — a conflicting `default`
+  condition for `.` and `./package.json` that ng-packagr overrides. They predate the
+  freeze, and the gate that reads the tarball (`check:theme`, nine files) is green.
+- Row 8's unreproduced theme-suite failure is still unreproduced: 11/11 again here,
+  four runs in a row now, which is still not "that spec cannot be flaky".
 
 ## What "gates green" means for a popup step
 
