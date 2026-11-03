@@ -8,7 +8,9 @@
 </p>
 
 One stylesheet for the whole Rivinia ecosystem: map a palette once, and every
-component follows. Package version: **1.0.0-rc.1**.
+component follows. Package version: **1.0.0-rc.2**.
+
+1.0.0-rc.1 is the first supported release; 0.x was experimental.
 
 ```css
 /* your global stylesheet — that is the whole setup */

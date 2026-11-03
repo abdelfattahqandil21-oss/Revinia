@@ -11,7 +11,9 @@ A headless Angular language manager built on signals: key-based JSON
 dictionaries, inline translations, RTL/LTR document attributes, lazy loaders, ICU
 plural/select messages, browser-language detection, and `Intl` number/date
 formatting — with SSR that actually works and no runtime dependency beyond
-Angular. Package version: **1.0.0-rc.1**.
+Angular. Package version: **1.0.0-rc.2**.
+
+1.0.0-rc.1 is the first supported release; 0.x was experimental.
 
 Concretely: the text lives in JSON files, components ask for a key, and the whole
 app — text, direction, dates, numbers — follows the language the user picked.
