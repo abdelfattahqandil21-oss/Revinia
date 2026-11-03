@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 
 /**
- * Projected content contract (docs/specifications/menu-projected-content.md).
+ * Projected content contract (projects/menu/specifications/menu-projected-content.md).
  * jsdom cannot answer any of these: real Tab stepping, real focus after a
  * pick, live popover anchoring, and `aria-controls` resolution.
  */

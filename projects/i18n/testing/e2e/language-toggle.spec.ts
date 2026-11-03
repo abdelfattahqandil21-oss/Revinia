@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * SPEC-0.6-ui.md §11.2 in a real browser, on chromium and firefox (the config
+ * projects/i18n/specifications/SPEC-0.6-ui.md §11.2 in a real browser, on chromium and firefox (the config
  * defines no WebKit — D39). Every test also enforces "zero console errors":
  * the listeners attach before the app boots, so a hydration mismatch or a
  * broken render fails the test that caused it instead of a separate smoke test

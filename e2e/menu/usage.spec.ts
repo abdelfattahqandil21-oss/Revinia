@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { openMenu } from './support';
 
 /**
- * Usage and display contract for 0.4.0 (docs/specifications/menu-usage-display.md).
+ * Usage and display contract for 0.4.0 (projects/menu/specifications/menu-usage-display.md).
  * Every case here fails on the pre-change tree; jsdom cannot answer any of
  * them (form submission, painted backgrounds, layout caps, motion origin).
  */

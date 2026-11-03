@@ -338,7 +338,7 @@ placeholder resolves to nothing. Measured on `#panel`:
 Net rule for the docs: **the theme is a global-stylesheet import.** In a
 component, read `var(--rv-*)`; never import the theme there. That is already
 what the `/ui` packages do (`ViewEncapsulation.None`, tokens only), and what
-`SPEC-0.6-ui.md` assumes for `rv-language-toggle`.
+`projects/i18n/specifications/SPEC-0.6-ui.md` assumes for `rv-language-toggle`.
 
 ### 3.4 Duplicate imports
 
@@ -523,7 +523,7 @@ and §9's 5,261 B (`entry-tw.css`, no scoped selectors).
   runtime, so the THM-01 behaviour change breaks no app code in this repo.
 - They appear only in the adapter that declares them
   (`projects/theme/styles/tailwind.css`), and in the theme's own docs
-  (`README.md`, `CHANGELOG.md`, `SPEC-0.1.1.md`).
+  (`README.md`, `CHANGELOG.md`, `projects/theme/specifications/SPEC-0.1.1.md`).
 - `projects/select/README.md` mentions `--color-rv-select-bg` and
   `--color-rv-select-fg` — a **different namespace** (`--color-rv-<package>-…`),
   mapped by that package's Tailwind guidance and untouched by this change.

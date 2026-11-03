@@ -13,7 +13,7 @@ This file is research, not a contract. Every recommendation marked
 
 ## 0. What the repo already committed to
 
-`projects/i18n/SPEC-0.6.md` §3 fixes the following for Part 2:
+`projects/i18n/specifications/SPEC-0.6.md` §3 fixes the following for Part 2:
 
 - selectors `rv-language-toggle`, `rv-language-select`, `rv-language-switcher`;
 - two languages → a button showing the *other* language; three or more →
@@ -317,7 +317,7 @@ default — the `<html lang>` change is the announcement, per core behaviour).
 - Angular queries (contentChild/contentChildren) — https://angular.dev/guide/components/queries
 - Angular `ng-template` / `ngTemplateOutlet` — https://angular.dev/guide/templates/ng-template
 - CDK Overlay (for the comparison only) — https://material.angular.dev/cdk/overlay
-- Repo: `projects/i18n/SPEC-0.6.md` §3; `projects/toast/ui/src/lib/components/toast-list/toast-list.ts`; `projects/select/ui/src/lib/components/popup/select-popup.{ts,html}`.
+- Repo: `projects/i18n/specifications/SPEC-0.6.md` §3; `projects/toast/ui/src/lib/components/toast-list/toast-list.ts`; `projects/select/ui/src/lib/components/popup/select-popup.{ts,html}`.
 
 ### Not verified
 - Exact screen-reader behaviour for `lang`/`dir` on `<option>` across NVDA,

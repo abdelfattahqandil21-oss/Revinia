@@ -82,7 +82,7 @@ Measured on the packed tarball, for shipping both skins: **+801 B brotli /
 +1,292 B gzip** on the `@rivinia/select/ui` chunk, **0 B** on the headless
 `@rivinia/select` entry point. The full measurement, including the per-file
 breakdown and what a consumer pays over the wire, is in
-[`docs/specifications/select-variants.md`](../specifications/select-variants.md)
+[`projects/select/specifications/select-variants.md`](../../projects/select/specifications/select-variants.md)
 §8 "Budget" and [`docs/DECISIONS.md`](../DECISIONS.md)
 D78.
 
