@@ -35,6 +35,30 @@ The 27-byte difference is the CHANGELOG heading fix (`## 1.0.0-rc.1 — prepared
 yet published` → `## 1.0.0-rc.1`) shipping — the heading inside the registry
 tarball reads `## 1.0.0-rc.1`, which is the proof that the correction landed.
 
+### Pre-flight for the i18n rc, run 2026-11-03 — nothing here published anything
+
+`@rivinia/i18n@1.0.0-rc.1` declares the optional peer `@rivinia/select:
+^1.0.0-rc.1` (`projects/i18n/package.json`, `peerDependenciesMeta` marks both
+`@angular-devkit/schematics` and `@rivinia/select` optional). That range had
+**nothing to resolve against** until select's rc went live, which is the whole
+reason i18n is last. With select on `next`, the two installs S1 asked for were run
+against a local i18n tarball and the **registry** select, in `/tmp`, with no
+`@rivinia/*` path mapping:
+
+| Install                                                                   | Contents                                                     | Result                                                                                                                |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| i18n rc + `@rivinia/select@next` + `@rivinia/theme@next` + Angular 22.2.3 | the local `rivinia-i18n-1.0.0-rc.1.tgz` (93,239 B, 20 files) | `npm install` exit **0**, stderr **empty** — zero peer warnings; the three installed manifests read `1.0.0-rc.1`      |
+| i18n rc + `@angular/core@22.2.3`, no select                               | same tarball                                                 | exit **0**, stderr empty, and `node_modules/@rivinia` contains **only `i18n`** — the optional peer really is optional |
+
+The tarball's root barrel exports **35** names, which is the freeze's count for
+`@rivinia/i18n`, and a bare-Node `import` of it throws for the same JIT reason as
+select's `./ui` (`The service 'ViewTransitionService' needs to be compiled using
+the JIT compiler`), so that failure is not evidence about the package either.
+Two consequences for the remaining two publishes: `menu` can go now, and `i18n` can
+go immediately after it — its peer no longer points at a version that does not
+exist. Both were published from a **local** i18n build, so the numbers above
+predict the rc; they are not a substitute for `check:pack` on the tagged build.
+
 This file is S8 step 5 of
 [`specs/1.0-readiness.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/specs/1.0-readiness.md).
 Read [`docs/RELEASE-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/RELEASE-1.0.md)
