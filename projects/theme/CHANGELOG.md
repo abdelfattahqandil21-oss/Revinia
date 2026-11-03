@@ -16,7 +16,7 @@ setting (`0.1.0` had no dark values at all), the switch attribute is
 `--color-rv-*` override no longer repaints a `bg-rv-*` utility. Older releases
 followed the pre-1.0 policy, where a minor bump could break.
 
-## 1.0.0-rc.1 — prepared, not yet published
+## 1.0.0-rc.1
 
 ### Dark mode and the contrast gate (1.0.0-rc.1)
 
