@@ -12,6 +12,8 @@ and record it, because the code has to move, not the expectation.
 1. **S2 — screen reader pass** (one row of the matrix per sitting; NVDA first).
 2. **S4 — real device resize** (one phone, one tablet, portrait and landscape).
 3. **S7 — Safari** (macOS Safari, current version).
+4. **S8 — the soak** (a real app on the published rcs; it can only start after
+   the rcs exist, which is a human step).
 
 ## How to run the demo
 
@@ -218,3 +220,40 @@ you repeat the steps on a real device.
   engine, and that is a product fix, not a documentation note.
 - **Any S4 step disagreeing with Chromium and Firefox**: record the version, and
   revisit whether the resize policy should be width-based at all.
+
+## S8 — the soak
+
+**Status: cannot start yet.** The four `1.0.0-rc.1` tarballs were packed,
+installed into a clean fixture from `file:` paths and everything automated passed
+on them — the numbers are row 9 of
+[`docs/MERGES-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/MERGES-1.0.md).
+A fixture is not a product app: one route, no real submit flow, no browsing
+history. The soak is what turns an rc into `1.0.0`, and it needs the rcs on the
+registry, which is a human step.
+
+### Steps
+
+1. `npm install @rivinia/theme@next @rivinia/select@next @rivinia/menu@next @rivinia/i18n@next`
+   in a real application.
+2. Change nothing except the versions. If anything else has to change, that is the
+   finding — record it rather than fixing it quietly.
+3. Use it for a sitting: a searchable select, a multi select inside a
+   `FormGroup`, a menu whose panel holds projected markup, a language switch into
+   RTL, and a route that lazy-loads the picker.
+4. Build for production and run the SSR server twice: once with
+   `@rivinia/select` installed and once with it removed, because a toggle-only app
+   never installs the optional peer.
+
+### Pass means
+
+- No new console error, no unstyled control, no throw during SSR or hydration.
+- The panel still places correctly after a route change, and focus comes back to
+  the trigger.
+- `npm ls @rivinia/select` resolves without `ERESOLVE`, and the install still
+  resolves after select is uninstalled.
+
+### This forces a change
+
+- **Anything at all.** A published version is never modified, so the fix ships as
+  `1.0.0-rc.2` and the soak starts again. Only an rc that passed this section is
+  promoted to `1.0.0` on `latest`.

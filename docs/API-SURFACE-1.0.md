@@ -9,6 +9,13 @@ plus its snapshot
 pin the eight lists, so changing one is a deliberate diff rather than an accident
 in a refactor. **79 published names across 8 entry points.**
 
+What this document freezes is what gets published, and publishing is a human step:
+the commands are in
+[`docs/PUBLISH-RUNBOOK-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/PUBLISH-RUNBOOK-1.0.md)
+and the soak that promotes an rc to `1.0.0` is **S8 — the soak** in
+[`docs/HUMAN-CHECKS-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/HUMAN-CHECKS-1.0.md).
+Neither has been run.
+
 ## How to read a verdict
 
 | Verdict               | Meaning                                                                                                                                          |
@@ -80,10 +87,13 @@ consumer has to accept; `@layer` is what makes an unlayered `:root` win.
 | `SelectPlacement`                                           | type                                         | Keep                           |
 | `RiviniaSelectVariant`                                      | type (`'simple' \| 'premium'`)               | Keep                           |
 
-**The aliases.** `projects/select/ui/src/public-api.ts:7-17` publishes six names
+**The aliases.** `projects/select/ui/src/public-api.ts:7-16` publishes six names
 that are not what the internals call themselves: `computeSelectPopupPosition as
 computeSelectPosition`, `SELECT_POPUP_GAP as SELECT_GAP`, and four types aliased
-the same way. The comment in that file says it plainly — they are "the names
+the same way. (`SelectPlacement` on the next line is a seventh alias,
+`SelectPopupUiPlacement` inside; its verdict is **Keep** because the 0.5.0 spelling
+it preserves is also the spelling the docs use.) The comment in that file says it
+plainly — they are "the names
 0.5.0 used". Keeping them costs nothing at runtime and one line of indirection in
 the source; dropping them is a breaking change for a consumer who imported the
 0.5.0 spelling, which is a decision the owner makes, not a freeze.
