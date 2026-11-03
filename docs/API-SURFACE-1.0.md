@@ -14,7 +14,11 @@ the commands are in
 [`docs/PUBLISH-RUNBOOK-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/PUBLISH-RUNBOOK-1.0.md)
 and the soak that promotes an rc to `1.0.0` is **S8 — the soak** in
 [`docs/HUMAN-CHECKS-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/HUMAN-CHECKS-1.0.md).
-Neither has been run.
+Neither has been run — except that the runbook's step 2 ran for
+`@rivinia/theme` on 2026-11-03: `1.0.0-rc.1` is live on `next`, cut from the tag
+`theme/v1.0.0-rc.1` at `3cb8b51`, and these 79 names are now what a consumer
+installs. `select`, `menu` and `i18n` are unpublished and the soak has not
+started; the running record is the status table at the top of the runbook.
 
 ## How to read a verdict
 

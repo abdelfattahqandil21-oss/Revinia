@@ -187,7 +187,9 @@ What row 9 does not prove:
 - One machine, one version of each engine, no CI. Chrome 114–130 and Safari
   17–26.1 have never been run; real Safari is S7; `docs/browser-support.md`
   measures popups, not `Intl`.
-- The four **Decide** items in `docs/API-SURFACE-1.0.md` are the owner's to settle
+- The **Decide** verdicts in `docs/API-SURFACE-1.0.md` — five table rows, which are
+  two decisions: the `@rivinia/select/ui` alias group and the `RiviniaMenuItem`
+  type-versus-directive collision — are the owner's to settle
   before a `1.0.0` tag; nothing was removed while preparing the freeze.
 - `ng add @rivinia/i18n` was not re-run from the rc tarball. The
   `rivinia-i18n-keys init` path was, and it wrote real files.

@@ -1,21 +1,31 @@
 # Release order for 1.0 (S1)
 
-Status: **prepared** — nothing here has been published. Publishing, tags and
-dist-tags are human steps. S8 writes two more documents and neither exists
-before it runs: `docs/HUMAN-CHECKS-1.0.md` (the hand-run checks) and the
-copy-paste publish runbook. Both are **not part of this branch**.
+Status: **step 2 ran, for one package.** The owner published
+`@rivinia/theme@1.0.0-rc.1` to the `next` dist-tag on 2026-11-03; `latest` still
+answers `0.1.0`, and steps 3–7 have not run. Publishing, tags and dist-tags are
+human steps. The two documents S8 was going to write both exist now, on
+`release/1.0-integration`: `docs/HUMAN-CHECKS-1.0.md` (the hand-run checks) and
+[`docs/PUBLISH-RUNBOOK-1.0.md`](PUBLISH-RUNBOOK-1.0.md), which is the file that
+keeps the running record of what has been executed and what has not.
 
 ## Order
 
 | Step | Package | Version | Dist-tag | Why here |
 | --- | --- | --- | --- | --- |
-| 1 | `@rivinia/theme` | `0.2.0` | `latest` | SPEC-0.1.1 is merged on `main` and unpublished; ship it before any 1.0 work |
-| 2 | `@rivinia/theme` | `1.0.0-rc.1` | `next` | S5a dark mode + contrast; the token contract freezes here |
+| 1 | `@rivinia/theme` | `0.2.0` | `latest` | **Skipped on 2026-11-03.** The plan said ship SPEC-0.1.1 before any 1.0 work; Option A in the runbook was taken instead and the `@theme inline` adapter ships inside `1.0.0-rc.1` |
+| 2 | `@rivinia/theme` | `1.0.0-rc.1` | `next` | **Done 2026-11-03.** S5a dark mode + contrast; the token contract froze at `3cb8b51`, tagged `theme/v1.0.0-rc.1` |
 | 3 | `@rivinia/select` | `1.0.0-rc.1` | `next` | S2 ARIA + S3/S4 popup work |
 | 4 | `@rivinia/menu` | `1.0.0-rc.1` | `next` | S3 conformance parity with select |
 | 5 | `@rivinia/i18n` | `1.0.0-rc.1` | `next` | peers on select; must point at a select that exists |
 | 6 | — | soak | — | criteria written by S8, in the human-checks document (not in this branch) |
 | 7 | all four | `1.0.0` | `latest` | same order as 2–5 |
+
+The cost of skipping step 1, stated where a reader will meet it: a consumer on
+`latest` gets `0.1.0`, which has **no dark values at all**, and the only way to
+the `@theme inline` adapter fix is the `next` tag. If that ever becomes a problem
+for somebody, the remedy is a `0.2.0` release cut after the rc plus
+`npm dist-tag add @rivinia/theme@0.2.0 latest` — which would move `latest` to a
+version without dark mode, so it is not a small trade. D91 records the choice.
 
 ## Why i18n is last
 
