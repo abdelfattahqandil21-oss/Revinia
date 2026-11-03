@@ -12,7 +12,14 @@
 
 ## Metadata contract
 
-Package-aware skills declare an adjacent `.opencode/skills/<skill>/compatibility.json` or `.agents/skills/<skill>/compatibility.json`. The existing `SKILL.md` frontmatter uses `metadata.role` and, for maintainers, `metadata.package_scope`. Consumer skills require the sidecar; repository-wide maintainer skills do not unless they make package-specific claims. General-purpose skills do not need a sidecar.
+Package-aware skills declare an adjacent `.opencode/skills/<skill>/compatibility.json`
+or `.agents/skills/<skill>/compatibility.json`. The existing `SKILL.md`
+frontmatter uses `metadata.role` and, for maintainers, `metadata.package_scope`.
+Optional `supported_ranges_ref`, `documentation_refs`, and `verification_refs`
+values are repository-relative file paths and are checked for existence.
+Consumer skills require the sidecar; repository-wide maintainer skills do not
+unless they make package-specific claims. General-purpose skills do not need a
+sidecar.
 
 ```json
 {
@@ -37,7 +44,17 @@ Package-aware skills declare an adjacent `.opencode/skills/<skill>/compatibility
 }
 ```
 
-`check:skills` validates package identity, strict exact SemVer, supported range syntax (`*` and partial versions are intentionally unsupported), verified versions inside declared ranges, release-group identity, major compatibility boundaries, exact-tag documentation references, existing canonical/evidence files and feature introduction versions. The supported range operators are exact, `^`, `~`, `<`, `<=`, `>`, `>=`, whitespace intersection and `||` union. `check:governance` runs the same check. Never treat `supported_ranges` and `verified_versions` as synonyms. Feature availability is keyed by introduction version, not only major.
+`check:skills` validates package identity, strict exact SemVer, supported range
+syntax (`*` and partial versions are intentionally unsupported), verified
+versions inside declared ranges, release-group identity, major compatibility
+boundaries, tag-shaped documentation references, existing canonical/evidence
+files, optional skill-frontmatter references to versioning/documentation/
+verification policy files, and feature introduction versions. It does not
+check that a referenced Git tag exists or that an evidence file proves a gate
+passed. Supported range operators are exact, `^`, `~`, `<`, `<=`, `>`, `>=`,
+whitespace intersection, and `||` union. `check:governance` runs the same
+check. Never treat `supported_ranges` and `verified_versions` as synonyms.
+Feature availability is keyed by introduction version, not only major.
 
 Metadata validation checks declarations and traceability only. It does not prove that package APIs or examples work. To verify examples against a published version, build the package, install that exact published tarball into a clean Angular consumer, compile the documented public imports, and run a production consumer build. Run browser examples in the stated real browser and report those gates separately. Record the exact package version, toolchain and artifact hash in the evidence record. Do not infer semantic compatibility from a passing metadata check.
 

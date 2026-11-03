@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /** Validate version metadata only for skills that declare package compatibility. */
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const packagePattern = /^@rivinia\/[a-z][a-z0-9-]*$/;
 const semverPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+const skillMetadataPathFields = ['supported_ranges_ref', 'documentation_refs', 'verification_refs'];
 
 function parseVersion(value) {
   if (typeof value !== 'string') return undefined;
@@ -117,8 +118,27 @@ function readSkillRole(skillPath) {
     ?? /^role:\s*['"]?([^\s'"#]+)['"]?\s*$/m.exec(frontmatter)?.[1]
     ?? 'general';
   const packageScope = /^\s+package_scope:\s*['"]?([^\s'"#]+)['"]?\s*$/m.exec(metadata)?.[1] ?? '';
+  const metadataPathRefs = Object.fromEntries(skillMetadataPathFields.flatMap((field) => {
+    const value = new RegExp(`^\\s+${field}:\\s*(.*?)\\s*$`, 'm').exec(metadata)?.[1];
+    if (value === undefined) return [];
+    return [[field, value.replace(/^(['"])(.*)\1$/, '$2')]];
+  }));
   const malformedMetadata = Boolean(metadataLine && (metadataLine[1].trim() !== '' || !/^\s+role:\s*['"]?(?:consumer|maintainer|general)['"]?\s*$/m.test(metadata)));
-  return { role, packageScope, malformedMetadata };
+  return { role, packageScope, metadataPathRefs, malformedMetadata };
+}
+
+function validateSkillMetadataPaths(root, skillLabel, metadataPathRefs, errors) {
+  for (const [field, value] of Object.entries(metadataPathRefs)) {
+    const ref = typeof value === 'string' ? value.trim() : '';
+    const target = ref ? resolve(root, ref) : '';
+    const rel = target ? relative(root, target) : '';
+    const insideRepository = rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel);
+    let isFile = false;
+    try { isFile = Boolean(target && existsSync(target) && statSync(target).isFile()); } catch { /* report the invalid reference below */ }
+    if (!ref || isAbsolute(ref) || !insideRepository || !isFile) {
+      errors.push(`${skillLabel}: metadata.${field} must reference an existing repository file`);
+    }
+  }
 }
 
 function readSkillFiles(root, base, errors) {
@@ -308,11 +328,12 @@ export function validateSkillCompatibility({ root = repositoryRoot } = {}) {
     for (const skillPath of readSkillFiles(root, base, errors)) {
       const skillDir = dirname(skillPath);
       const skillLabel = relative(root, skillDir);
-      const { role, packageScope, malformedMetadata } = readSkillRole(skillPath);
+      const { role, packageScope, metadataPathRefs, malformedMetadata } = readSkillRole(skillPath);
       if (malformedMetadata) {
         errors.push(`${skillLabel}: metadata must be a mapping with a supported role`);
         continue;
       }
+      validateSkillMetadataPaths(root, skillLabel, metadataPathRefs, errors);
       if (!['consumer', 'maintainer', 'general'].includes(role)) {
         errors.push(`${skillLabel}: unsupported skill role ${role}`);
         continue;

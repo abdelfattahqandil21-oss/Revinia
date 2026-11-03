@@ -67,6 +67,22 @@ describe('version-aware skill compatibility', () => {
     expect(validateSkillCompatibility({ root })).toEqual([]);
   });
 
+  it('validates declared skill documentation references without requiring package-version metadata', () => {
+    const root = mkdtempSync(join(tmpdir(), 'rv-skill-doc-refs-'));
+    roots.push(root);
+    mkdirSync(join(root, '.agents', 'skills', 'release'), { recursive: true });
+    mkdirSync(join(root, 'docs', 'engineering'), { recursive: true });
+    for (const name of ['VERSIONING.md', 'VERSIONED-DOCUMENTATION.md', 'TESTING-ARCHITECTURE.md']) {
+      writeFileSync(join(root, 'docs', 'engineering', name), '# Policy');
+    }
+    const skillPath = join(root, '.agents', 'skills', 'release', 'SKILL.md');
+    writeFileSync(skillPath, `---\nname: release\nmetadata:\n  role: maintainer\n  package_scope: repository-wide\n  supported_ranges_ref: docs/engineering/VERSIONING.md\n  documentation_refs: docs/engineering/VERSIONED-DOCUMENTATION.md\n  verification_refs: docs/engineering/TESTING-ARCHITECTURE.md\n  verified_versions_ref: exact release evidence only\n---\n`);
+    expect(validateSkillCompatibility({ root })).toEqual([]);
+
+    writeFileSync(skillPath, `---\nname: release\nmetadata:\n  role: maintainer\n  package_scope: repository-wide\n  supported_ranges_ref: docs/engineering/VERSIONING.md\n  documentation_refs: docs/engineering/VERSIONED-DOCUMENTATION.md\n  verification_refs: docs/engineering/missing.md\n  verified_versions_ref: exact release evidence only\n---\n`);
+    expect(validateSkillCompatibility({ root }).join('\n')).toContain('metadata.verification_refs must reference an existing repository file');
+  });
+
   it('requires package metadata for consumer skills', () => {
     const { root } = fixture();
     rmSync(join(root, '.opencode', 'skills', 'example', 'compatibility.json'));
