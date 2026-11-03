@@ -15,17 +15,18 @@ the commands are in
 and the soak that promotes an rc to `1.0.0` is **S8 — the soak** in
 [`docs/HUMAN-CHECKS-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/HUMAN-CHECKS-1.0.md).
 Neither has been run — except that the runbook's step 2 ran for
-`@rivinia/theme`, `@rivinia/select` and `@rivinia/menu` on 2026-11-03: `1.0.0-rc.1`
-of each is on `next`, cut from the tags `theme/v1.0.0-rc.1` at `3cb8b51`,
-`select/v1.0.0-rc.1` at `1e78c6c` and `menu/v1.0.0-rc.1` at `d5d7f91`. Of the 79
-names, **34 are now what a consumer installs** — select's 7 on `.` and 10 on `./ui`,
-menu's 6 on `.` and 11 on `./ui`. Both are verified on the registry: menu's
-`dist.integrity` equals base64 of the local `sha512sum`, a consumer installing
-`@rivinia/menu@next` resolves `.` and `./ui`, and `diff -r` of that installed tree
-against the inspected tarball printed nothing; theme contributes none, because
-its contract is CSS custom properties, not TypeScript exports. `i18n`
-is unpublished and the soak has not
-started; the running record is the status table at the top of the runbook.
+**all four packages** on 2026-11-03: `1.0.0-rc.1` of each is on `next`, cut from the
+tags `theme/v1.0.0-rc.1` at `3cb8b51`, `select/v1.0.0-rc.1` at `1e78c6c`, and
+`menu/v1.0.0-rc.1` and `i18n/v1.0.0-rc.1` both at `d5d7f91`. Of the 79 names, **all 79
+are now what a consumer installs** — select's 7 on `.` and 10 on `./ui`, menu's 6 on
+`.` and 11 on `./ui`, i18n's 35 on `.` and 5 on `./ui` and 5 on `./select`. Three of
+them are verified against the registry the same way: `dist.integrity` equals base64 of
+the local `sha512sum`, the registry tarball `cmp`-identical to the published-from and
+pre-flight tarballs, a scratch consumer resolving every `exports` target, and `diff -r`
+of the installed tree against the inspected tarball printing nothing. i18n's counts are
+read off the **installed** `types/*.d.ts`, not the source barrels. theme contributes
+none, because its contract is CSS custom properties, not TypeScript exports. The soak
+has not started; the running record is the status table at the top of the runbook.
 
 ## How to read a verdict
 

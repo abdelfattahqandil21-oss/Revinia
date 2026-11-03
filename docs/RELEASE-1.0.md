@@ -1,13 +1,14 @@
 # Release order for 1.0 (S1)
 
-Status: **rows 2, 3 and 4 below have run, and the runbook's step 1 (this branch onto
+Status: **all five release rows below have run, and the runbook's step 1 (this branch onto
 `main`) has run and is pushed.** The owner published
-`@rivinia/theme@1.0.0-rc.1`, `@rivinia/select@1.0.0-rc.1` and
-`@rivinia/menu@1.0.0-rc.1` to the `next`
-dist-tag on 2026-11-03; `latest` still answers `0.1.0`, `0.7.1` and `0.5.0`, and rows
-5–7 have not run. The merge landed at `173f150` and is **pushed as `6b51eba..9173de3`,
+`@rivinia/theme@1.0.0-rc.1`, `@rivinia/select@1.0.0-rc.1`,
+`@rivinia/menu@1.0.0-rc.1` and
+`@rivinia/i18n@1.0.0-rc.1` to the `next`
+dist-tag on 2026-11-03; `latest` still answers `0.1.0`, `0.7.1`, `0.5.0` and `0.8.0`, and rows
+6–7 have not run. The merge landed at `173f150` and is **pushed as `6b51eba..9173de3`,
 a fast-forward, no force**; the D92 record commit `d5d7f91` went on top of it the same
-day. Publishing, tags and dist-tags are
+day, and both `menu/v1.0.0-rc.1` and `i18n/v1.0.0-rc.1` were cut at it. Publishing, tags and dist-tags are
 human steps. The two documents S8 was going to write both exist now, on
 `release/1.0-integration`: `docs/HUMAN-CHECKS-1.0.md` (the hand-run checks) and
 [`docs/PUBLISH-RUNBOOK-1.0.md`](PUBLISH-RUNBOOK-1.0.md), which is the file that
@@ -21,7 +22,7 @@ keeps the running record of what has been executed and what has not.
 | 2 | `@rivinia/theme` | `1.0.0-rc.1` | `next` | **Done 2026-11-03.** S5a dark mode + contrast; the token contract froze at `3cb8b51`, tagged `theme/v1.0.0-rc.1` |
 | 3 | `@rivinia/select` | `1.0.0-rc.1` | `next` | **Done 2026-11-03.** S2 ARIA + S3/S4 popup work; tagged `select/v1.0.0-rc.1` at `1e78c6c` |
 | 4 | `@rivinia/menu` | `1.0.0-rc.1` | `next` | S3 conformance parity with select. **Done 2026-11-03, verified against the registry the same day.** Tagged `menu/v1.0.0-rc.1` at `d5d7f91` (lightweight, like the other two rcs), built from the tag, published from the inspected tarball; the registry tarball is `cmp`-identical to it and `latest` still answers `0.5.0` |
-| 5 | `@rivinia/i18n` | `1.0.0-rc.1` | `next` | peers on select; must point at a select that exists. **Pre-flight 2026-11-03:** `^1.0.0-rc.1` now resolves against the registry, and installs clean with and without select |
+| 5 | `@rivinia/i18n` | `1.0.0-rc.1` | `next` | peers on select; must point at a select that exists. **Done 2026-11-03, verified against the registry the same day.** Tagged `i18n/v1.0.0-rc.1` at `d5d7f91` (lightweight, like the other three rcs), built from the tag, published from the inspected tarball; the registry tarball is `cmp`-identical to it and to the pre-flight (93,239 B, 20 files), `dist.integrity` equals base64 of the local `sha512sum`, and `latest` still answers `0.8.0`. Both consumers ran against the published artifact — with `@rivinia/select@next` and without it — exit 0 with empty stderr, so the optional peer is optional in what shipped |
 | 6 | — | soak | — | criteria written by S8, in the human-checks document (not in this branch) |
 | 7 | all four | `1.0.0` | `latest` | same order as 2–5 |
 

@@ -1,26 +1,29 @@
 # Publish runbook — Rivinia 1.0
 
-**Status: running — step 2 has been done for `@rivinia/theme`, `@rivinia/select`
-and `@rivinia/menu`, and for nothing else.** The owner published
-`@rivinia/theme@1.0.0-rc.1`, `@rivinia/select@1.0.0-rc.1` and
-`@rivinia/menu@1.0.0-rc.1` to the `next` dist-tag on 2026-11-03, from the
-`theme/v1.0.0-rc.1`, `select/v1.0.0-rc.1` and `menu/v1.0.0-rc.1` tags — the first
-two point at tips of `release/1.0-integration` (`3cb8b51`, `1e78c6c`), the third at
-`d5d7f91`, which is `main`. `latest` still answers `0.1.0`, `0.7.1` and `0.5.0`. The
-agent that prepared the rcs published nothing, created no tag and pushed no tag:
-every command below is still a human action, and `i18n` is unrun. **Step 1
-is done and pushed: `release/1.0-integration` is in `main` at `173f150`, and
-`origin/main` answers the same commit as local `main` — see step 1.** `menu`'s
-tagged build reproduced the pre-flight tarball byte for byte; the expected numbers
-for `i18n` are under the table.
+**Status: step 2 has run for all four packages, and for nothing after it.** The
+owner published `@rivinia/theme@1.0.0-rc.1`, `@rivinia/select@1.0.0-rc.1`,
+`@rivinia/menu@1.0.0-rc.1` and `@rivinia/i18n@1.0.0-rc.1` to the `next` dist-tag on
+2026-11-03, from the `theme/v1.0.0-rc.1`, `select/v1.0.0-rc.1`, `menu/v1.0.0-rc.1`
+and `i18n/v1.0.0-rc.1` tags — the first two point at tips of
+`release/1.0-integration` (`3cb8b51`, `1e78c6c`), the last two at `d5d7f91`, which is
+`main`. All four rc tags are **lightweight**; `git for-each-ref` says so for every
+one of them. `latest` still answers `0.1.0`, `0.7.1`, `0.5.0` and `0.8.0` — no rc
+moved a `latest`, and each packument's `dist-tags` is in its row below. The agent
+that prepared the rcs published nothing, created no tag and pushed no tag: every
+command below is still a human action. **Step 1 is done and pushed:
+`release/1.0-integration` is in `main` at `173f150`, and `origin/main` answers the
+same commit as local `main` — see step 1.** The tagged builds of `menu` and `i18n`
+each reproduced their pre-flight tarball byte for byte, and the tarballs downloaded
+from the registry `cmp`-identical to both. What is left in this file is the soak
+(step 3) and the promotion to `1.0.0` (step 4).
 
-| Package           | rc on `next`             | Registry verification                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ----------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@rivinia/theme`  | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `76fbabd7…`; the downloaded tarball `cmp`-identical to `/tmp/rv-rc-theme/rivinia-theme-1.0.0-rc.1.tgz` (8,396 B, 9 files); `npm install @rivinia/theme@next` in a scratch consumer resolved all six `exports`, and `diff -r` of the installed tree against the inspected tarball printed nothing                                                                                                                                                         |
-| `@rivinia/select` | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `9e268244…`; the downloaded tarball `cmp`-identical to `/tmp/rv-rc-select/rivinia-select-1.0.0-rc.1.tgz` (66,787 B, 9 files); `dist-tags` `{"latest":"0.7.1","next":"1.0.0-rc.1"}`; `npm install @rivinia/select@next` resolved all three `exports` in a scratch consumer; the barrels carry the freeze's counts — `.` 7 names, `./ui` 10. Read the note under the table                                                                                 |
-| `@rivinia/menu`   | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `cddc5e4b…`; the registry-downloaded tarball `cmp`-identical to both the published-from tarball and the pre-flight one (36,861 B, 9 files); `dist-tags` `{"latest":"0.5.0","next":"1.0.0-rc.1"}` — `latest` unmoved; `npm i @rivinia/menu@next` in a scratch consumer resolved all three `exports` and `diff -r` of the installed tree against the inspected tarball printed nothing; `published-at` `2026-11-03T10:02:31.761Z`. Read the menu run below |
-| `@rivinia/i18n`   | not published            | pre-flight run twice from clean trees and re-measured from `main` on 2026-11-03: 93,239 B, 20 files, shasum `59efe407…`, peers and both optional flags asserted from the tarball — the expected values are in the i18n subsections under the table. No tag exists yet                                                                                                                                                                                                                                                             |
-| the soak, `1.0.0` | not started              | it cannot start before the four rcs exist                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Package           | rc on `next`             | Registry verification                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@rivinia/theme`  | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `76fbabd7…`; the downloaded tarball `cmp`-identical to `/tmp/rv-rc-theme/rivinia-theme-1.0.0-rc.1.tgz` (8,396 B, 9 files); `npm install @rivinia/theme@next` in a scratch consumer resolved all six `exports`, and `diff -r` of the installed tree against the inspected tarball printed nothing                                                                                                                                                                                                                                                                                                                                                 |
+| `@rivinia/select` | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `9e268244…`; the downloaded tarball `cmp`-identical to `/tmp/rv-rc-select/rivinia-select-1.0.0-rc.1.tgz` (66,787 B, 9 files); `dist-tags` `{"latest":"0.7.1","next":"1.0.0-rc.1"}`; `npm install @rivinia/select@next` resolved all three `exports` in a scratch consumer; the barrels carry the freeze's counts — `.` 7 names, `./ui` 10. Read the note under the table                                                                                                                                                                                                                                                                         |
+| `@rivinia/menu`   | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum`; `dist.shasum` `cddc5e4b…`; the registry-downloaded tarball `cmp`-identical to both the published-from tarball and the pre-flight one (36,861 B, 9 files); `dist-tags` `{"latest":"0.5.0","next":"1.0.0-rc.1"}` — `latest` unmoved; `npm i @rivinia/menu@next` in a scratch consumer resolved all three `exports` and `diff -r` of the installed tree against the inspected tarball printed nothing; `published-at` `2026-11-03T10:02:31.761Z`. Read the menu run below                                                                                                                                                                                         |
+| `@rivinia/i18n`   | **published** 2026-11-03 | `dist.integrity` equal to base64 of the local `sha512sum` (`sha512-ijBK0eZE8RPnnoBKZaiuzFFjQ6PFRfw6f90WjXTFDnYaS3oCWsBZmmkL7oN4AtfAQRuDfz4mHqTKD8N1O9/2bw==`); `dist.shasum` `59efe407…`; the registry tarball `cmp`-identical to the published-from **and** the pre-flight tarball (93,239 B, 20 files); `dist-tags` `{"latest":"0.8.0","next":"1.0.0-rc.1"}` — `latest` unmoved; `published-at` `2026-11-03T10:36:00.306Z`; two scratch consumers — with `@rivinia/select@next` and without it — both exit 0 with empty stderr, all four `exports` resolve, the `ng-add` collection and `cli/rivinia-i18n-keys.mjs` are installed, the barrels count 35 / 5 / 5, and `diff -r` printed nothing. Read the i18n run below |
+| the soak, `1.0.0` | not started              | the four rcs exist now, so nothing blocks it: `docs/HUMAN-CHECKS-1.0.md` is the checklist, and S2, S4 and S7 are deliberately unfilled                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 The select row's last clause needs spelling out, because it is the one check a
 future verifier could get wrong. `@rivinia/select` imports cleanly in bare Node
@@ -164,12 +167,12 @@ The tarball's root barrel exports **35** names, which is the freeze's count for
 select's `./ui` (`The service 'ViewTransitionService' needs to be compiled using
 the JIT compiler`), so that failure is not evidence about the package either.
 Two consequences, as they read then: `menu` could go, and it did (see its run above),
-and `i18n` can go next — its peer no longer points at a version that does not
-exist. Both installs were run against a **local** i18n build, so the numbers above
+and `i18n` could go last, and it did too — its peer had a released select to point at.
+Both installs were run against a **local** i18n build, so the numbers above
 predict the rc; they are not a substitute for `check:pack` on the tagged build, which
 is why the re-measurement below exists.
 
-### The i18n tarball, re-measured from `main` on 2026-11-03 — still nothing published
+### The i18n tarball, re-measured from `main` on 2026-11-03 — what the tagged build had to match
 
 The install test above used a build from an earlier tree. The tagged build will be
 cut from `main`, so `d5d7f91` was packed again in its own throwaway worktree
@@ -198,7 +201,63 @@ The runtime imports of the three FESM bundles are `@angular/core` and
 no `@rivinia/theme` import, no internal path. `i18n` is the only one of the four
 with a `schematics` key, so its 20 files are the expected count where menu's 9 are
 his; `check:pack` is what proves it either way. `/tmp/rv-rc-i18n-prep/…tgz` is kept
-for a `cmp` after his run, exactly like menu's.
+for a `cmp` after his run, exactly like menu's — and that `cmp` has now run, twice,
+and printed nothing; see the section below.
+
+### What the owner ran for i18n, 2026-11-03 — the fourth rc, and the last of step 2
+
+`i18n/v1.0.0-rc.1` was cut as a **lightweight tag at `d5d7f91`** — the same commit
+`menu/v1.0.0-rc.1` points at, i.e. `main` — and pushed with it (`* [new tag]
+i18n/v1.0.0-rc.1`); `main` did not move. All four rc tags are now lightweight, which
+is the deviation the step 2 intro records against the annotated `menu/v0.5.0`,
+`select/v0.7.1` and `theme/v0.1.0`.
+
+In `../Revinia-rc-i18n`, built from that tag: `pnpm install --frozen-lockfile` (Done
+in 326 ms), `pnpm build:i18n` — which is `schematics:i18n`, then `ng build select`,
+then `ng build i18n`, because the `/select` entry compiles against `dist/select` —
+`pnpm check:pack i18n` → **ok, 20 files**, `pnpm test:scripts` → **95 passed** (7
+files), `pnpm check:readmes` → ok / 0 warnings (104/172/134/166), `pnpm check:docs` →
+**0 failures / 41 warnings**, `npx ng test i18n --watch=false` → **376 passed** (36
+files). Every one of those numbers is the pre-flight's.
+
+Then `npm pack` into `/tmp/rv-rc-i18n` answered **93.2 kB, 347.3 kB unpacked, 20
+files, shasum `59efe407dbf42d9a97b92971a06095e78526006d`, integrity
+`sha512-ijBK0eZE8RPnnoBKZaiuzFFjQ6PFRfw6f90WjXTFDnYaS3oCWsBZmmkL7oN4AtfAQRuDfz4mHqTKD8N1O9/2bw==`**
+— the pre-flight's values again — and `cmp /tmp/rv-rc-i18n/rivinia-i18n-1.0.0-rc.1.tgz
+/tmp/rv-rc-i18n-prep/rivinia-i18n-1.0.0-rc.1.tgz` printed **nothing**. `npm whoami`
+answered `abdelfattahqandil21`, the web-auth URL was approved, and publish printed
+**`+ @rivinia/i18n@1.0.0-rc.1`**. No `--otp` was used.
+
+**2.5 and 2.6 ran on 2026-11-03 and are green.** The packument answers `dist-tags
+{"latest":"0.8.0","next":"1.0.0-rc.1"}` — `latest` was not moved, and `npm view
+@rivinia/i18n version` says `0.8.0` — with `1.0.0-rc.1` in the version list at
+`published-at 2026-11-03T10:36:00.306Z`. `dist.integrity` is the base64 of the local
+`sha512sum`, byte for byte, and `dist.shasum` is `59efe407dbf42d9a97b92971a06095e78526006d`;
+`dist.unpackedSize` 347,334. The tarball downloaded from `registry.npmjs.org` is
+93,239 B, 20 files, and `cmp`-identical to `/tmp/rv-rc-i18n/…` (published from) **and**
+to `/tmp/rv-rc-i18n-prep/…` (pre-flight). Its `exports` are `.`, `./ui`, `./select`,
+`./package.json`, `schematics` points at `./schematics/collection.json`, the two
+optional peers and their `peerDependenciesMeta` flags are as prepared, `dependencies`
+is `tslib ^2.3.0` alone, `sideEffects: false`, and `repository`, `homepage`, `bugs` and
+`engines` all shipped.
+
+Two scratch consumers, run against the registry with `--registry` explicit:
+
+| Consumer                                                                               | Result                                                                                                                                                                                                                                                                                                                               |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@rivinia/i18n@next` + `@rivinia/select@next` + `@rivinia/theme@next` + Angular 22.2.3 | exit **0**, stderr **0 bytes**, 42 packages; the three installed manifests read `1.0.0-rc.1`; `import.meta.resolve` resolves all four `exports`; `schematics/collection.json` installs with `ng-add` in it and `cli/rivinia-i18n-keys.mjs` present; `diff -r` of the installed tree against the registry tarball printed **nothing** |
+| `@rivinia/i18n@next` + `@angular/core@22.2.3`, **no select**                           | exit **0**, stderr **0 bytes**, 5 packages, and `node_modules/@rivinia` contains **only `i18n`** — the optional peer is optional in the published artifact, not only in the local one                                                                                                                                                |
+
+The installed `types/*.d.ts` give **35 names on `.`, 5 on `./ui`, 5 on `./select`** —
+the freeze's counts, read off what a consumer actually gets. As with menu, the
+published sources differ from row 9's consumer build by one file: `git log --oneline
+9122a2a..d5d7f91 -- projects/i18n` is one commit, `847e35f`, whose only diff is
+`projects/i18n/CHANGELOG.md` — the publication claim dropped from the heading. No i18n
+code changed after the freeze.
+
+The gap between publish and 2.5 was **eleven polls, ~4 minutes**, and this time it was
+propagation, not the network: the packument was reachable the whole way and simply did
+not list the version until it appeared. See the network rule above.
 
 This file is S8 step 5 of
 [`specs/1.0-readiness.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/specs/1.0-readiness.md).
@@ -219,6 +278,16 @@ step must pass are in `AGENTS.md` (gates 1–8) and
   the browser. Nothing here should ever put a token or an OTP in a file or a commit.
 - The machine's `~/.npmrc` points at `https://registry.npmmirror.com`. Every npm
   command below carries `--registry=https://registry.npmjs.org/` explicitly.
+- **Why the mirror is the default, stated by the owner on 2026-11-03:** the company
+  network does not pass `registry.npmjs.org` at all. He switches to a phone hotspot
+  to publish and to verify, and goes back to the office network afterwards. Two
+  consequences for anyone running step 2: a publish can succeed while a `curl` to the
+  same registry from the same machine fails minutes later, so **2.5 and 2.6 are done
+  on the hotspot too, or not at all** — and the mirror is a cache, so a packument read
+  through `~/.npmrc` will not show a version that was just published. What looked like
+  registry propagation lag for menu (28 poll attempts over ~10 minutes) was this
+  network rule, and every command here names `--registry=https://registry.npmjs.org/`
+  rather than trusting the default.
 - `npm login --registry https://registry.npmjs.org/` **does** work here when the
   network is up: on 2026-11-03 it printed a `/login/cli/<uuid>` URL, the owner
   approved it, and it answered `Logged in on https://registry.npmjs.org/` in 21 s.
@@ -335,34 +404,32 @@ for one package before starting the next: `@rivinia/i18n`'s optional peer is
 `^1.0.0-rc.1` on select, so select's rc must already be on the registry when a
 consumer installs i18n.
 
-`theme` and `select` are done — their tags exist, both on origin
-(`theme/v1.0.0-rc.1` → `3cb8b51`, `select/v1.0.0-rc.1` → `1e78c6c`), and both are
-published. `menu/v1.0.0-rc.1` and `i18n/v1.0.0-rc.1` **do not exist yet** — verified
-again on 2026-11-03 against `git ls-remote --tags origin`, which lists only those
-two rc tags above — and step 1 changes where they should be cut: from `main` now,
-which is what this document always asked for. The `main` tree is the integration tree
-plus one root markdown file, so a tag cut there produces the same package bytes a tag
-cut on integration would — root `CHANGELOG.md` is not in any tarball. `origin/main`
-and `main` answer the same commit, so the block's `git push origin main refs/tags/…`
-has something to push; `git rev-parse origin/main main` immediately before 2.1 is the
-check, not a SHA copied from here. One mechanical note: `main` is checked out in
-`../Revinia-select-summary`, not in this repo, so the tag is cut in that directory
-— and it was clean and gated there on 2026-11-03, so `git rev-parse HEAD` there
-before tagging is the fastest confirmation that nothing moved.
+**Step 2 has now run for all four packages.** `theme/v1.0.0-rc.1` → `3cb8b51`,
+`select/v1.0.0-rc.1` → `1e78c6c`, `menu/v1.0.0-rc.1` and `i18n/v1.0.0-rc.1` → both at
+`d5d7f91`, which was `main` and `origin/main` at the moment they were cut; all four
+tags are on origin and all four versions are on `next`. The last two were cut from
+`main`, which is what this document always asked for — the earlier two were cut from
+tips of `release/1.0-integration`, the deviation step 1 records. `main` did not move
+for either tag, and the two docs-record commits that were sitting on
+`release/1.0-integration` were **not** fast-forwarded onto `main` first; that is the
+open question at the bottom of this file, and it changed no package bytes, because the
+`main` tree is the integration tree plus root markdown only and root `CHANGELOG.md` is
+not in any tarball. `git rev-parse origin/main main` immediately before a tag is the
+check, not a SHA copied from here. One mechanical note that held for both: `main` is
+checked out in `../Revinia-select-summary`, not in this repo, so the tag was cut there
+— that worktree was clean and gated, so `git rev-parse HEAD` there is the fastest
+confirmation that nothing moved.
 
-**One thing to decide before 2.1, and it is the owner's call, not the block's.**
-`git for-each-ref --format='%(objecttype)'` says the two rc tags already on origin
-are **lightweight** (`theme/v1.0.0-rc.1` and `select/v1.0.0-rc.1` → `commit`), while
-every 0.x tag in the repo is **annotated** (`menu/v0.5.0`, `select/v0.7.1`,
-`theme/v0.1.0` → `tag`). The block below is literal to what theme and select
-actually did, so it stays lightweight for consistency inside the rc line. `git tag
--a -m …` would instead match the program's release history, which the owner
-confirmed as the default form once already. A tag is immutable, so whichever he
-picks, `menu` and `i18n` are decided together and the two existing rc tags stay
-lightweight forever.
+**The tag-style question 2.1 raised is answered by what he did, not by a new decision.**
+`menu/v1.0.0-rc.1` and `i18n/v1.0.0-rc.1` were both cut lightweight, matching the two
+rc tags before them, so the whole rc line is `objecttype commit` while every 0.x tag
+(`menu/v0.5.0`, `select/v0.7.1`, `theme/v0.1.0`) stays `objecttype tag`. Tags are
+immutable, so that inconsistency is permanent; `1.0.0` is where the choice is still
+open, and the form he confirmed for release tags earlier in this program is
+**annotated** (`git tag -a -m`).
 
 ```bash
-PKG=menu           # theme and select are done; i18n is last
+PKG=menu           # the block ran four times: theme, select, menu, i18n — all four are on `next`
 VER=1.0.0-rc.1
 
 # 2.1 tag the rc commit — after an explicit OK
@@ -432,7 +499,7 @@ npm pack @rivinia/$PKG@1.0.0-rc.1 --registry=https://registry.npmjs.org/ \
 cd - > /dev/null && git worktree remove "../Revinia-rc-$PKG"   # last, when the package is done
 ```
 
-### What theme's run taught, in case the last one goes the same way
+### What theme's run taught, and what the last two runs did with it
 
 - **A failed `git tag` silently relocates the whole block.** `theme/v1.0.0-rc.1`
   and `../Revinia-rc-theme` already existed from an earlier pass, so 2.1 exited
@@ -467,12 +534,33 @@ cd - > /dev/null && git worktree remove "../Revinia-rc-$PKG"   # last, when the 
   a scratch consumer installed `@next` and all six `exports` targets resolved —
   and no Angular production build has run against the published rc.
 
+**How those five landed across menu and i18n.** Neither tag failed — both printed
+`* [new tag]`, and both builds report `from: …/Revinia-rc-menu/projects/menu` and
+`…/Revinia-rc-i18n/projects/i18n` in the ng-packagr output, which is the proof the block
+ran inside the worktree and not in the main repository. Neither run needed
+`npm cache clean`: menu's 2.5 was late because `registry.npmjs.org` was unreachable from
+the office network (see the network rule), and i18n's came down in eleven polls with the
+packument reachable the whole time — that was propagation. Both published records have
+`dist.attestations` and `dist.provenance` **absent** (`npm view`-equivalent: the `dist`
+keys are `shasum, tarball, fileCount, integrity, signatures, unpackedSize`), so nothing
+here created provenance. The stale-heading defect did not repeat: `tar -xOf
+<registry tarball> package/CHANGELOG.md` shows `## 1.0.0-rc.1` bare, at line 23 for
+i18n. What is still true of all four is the last clause — `cmp` proves the bytes, and no
+Angular **production** build has been run against any published rc; the consumer checks
+in each row are resolution and file-tree equality, which is what step 2.6 asked for, not
+a compile. The soak is where a real app installs them.
+
 ## Step 3 — the soak
 
 Install the four rcs in a real app and follow **S8 — the soak** in
 `docs/HUMAN-CHECKS-1.0.md`: version-only diff, one sitting, two production builds
 (with and without the optional select peer), then the report. Nothing is promoted
 until that section passes.
+
+**Unblocked on 2026-11-03, and not started.** All four rcs are on `next` and each has
+been installed from the registry into a scratch consumer, so the soak has published
+artifacts to soak rather than local tarballs. S2 (screen readers), S4 (real devices)
+and S7 (Safari) remain deliberately unfilled.
 
 ## Step 4 — promotion to 1.0.0
 
@@ -505,3 +593,36 @@ move it.
   packument URL above.
 - An rc reveals a bug: fix it on a branch, gates, merge, tag `1.0.0-rc.2`, soak
   again. `1.0.0` is only ever cut from a clean rc.
+
+## What step 2 left open
+
+Step 2 is finished; these are the things it did **not** answer, in the order a reader
+meets them.
+
+1. **The docs commits still sit on `release/1.0-integration`.** He was asked twice
+   whether `main` may be fast-forwarded onto it and skipped both times, so `main` and
+   `origin/main` are at the commit both rc tags were cut from, and this file's records
+   are ahead of them. Nothing published depends on it — the four rc artifacts are tagged
+   from `main`, and the commits in between are markdown only — but `docs/RELEASE-1.0.md`
+   and `docs/PUBLISH-RUNBOOK-1.0.md` as they sit on `main` are older than these files as
+   they sit here. Read the state at run time with `git rev-parse main origin/main
+release/1.0-integration origin/release/1.0-integration` and `git log --oneline
+main..release/1.0-integration`, and treat a merge onto `main` as its own approval,
+   with its own push approval after it.
+2. **The soak (step 3) has not started**, and S2, S4 and S7 stay unfilled by his
+   instruction — nobody should fill them on his behalf.
+3. **No Angular production build has run against any published rc.** Step 2.6 in all
+   four rows is resolution plus `diff -r` of the installed tree; the only production
+   builds in this program compiled local tarballs (row 9). The soak is where that
+   changes.
+4. **The two `Decide` items in `docs/API-SURFACE-1.0.md`** are still open and gate the
+   `1.0.0` tag, not the rc: select's alias group (`computeSelectPosition`, `SELECT_GAP`,
+   `PanelCoordinates`/`PanelSize`/`TriggerRect`/`ViewportSize`) and the `RiviniaMenuItem`
+   collision between the frozen type and the `[rvmenuItem]` directive.
+5. **The `1.0.0` tag form.** The rc line is lightweight; `git tag -a -m` is the form the
+   0.x releases and his earlier confirmation use, so step 4 needs a decision before the
+   first `1.0.0` tag rather than after it.
+6. **Step 4's coupling in one commit:** i18n's optional peer goes `^1.0.0-rc.1` →
+   `^1.0.0` **with** the assertion in
+   `projects/i18n/tests/language-select-surface.spec.ts` changed in the same commit, or
+   the gate suite is red at that tag.
