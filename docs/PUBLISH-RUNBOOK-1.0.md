@@ -26,7 +26,9 @@ step must pass are in `AGENTS.md` (gates 1–8) and
 
 ## Step 0 — decide the theme question
 
-`@rivinia/theme` has one release on npm: `0.1.0`. `docs/RELEASE-1.0.md` planned a
+`@rivinia/theme` has one release on npm: `0.1.0` — the only other version the
+package has ever published is the placeholder `0.0.0-stage`, per
+`npm view @rivinia/theme versions`. `docs/RELEASE-1.0.md` planned a
 `0.2.0` before the rc, and that bump was **never made** — the manifest went
 straight from `0.1.0` to `1.0.0-rc.1`. Two honest options:
 
