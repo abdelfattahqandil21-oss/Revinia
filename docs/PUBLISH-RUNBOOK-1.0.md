@@ -7,8 +7,11 @@ owner published `@rivinia/theme@1.0.0-rc.1`, `@rivinia/select@1.0.0-rc.1`,
 and `i18n/v1.0.0-rc.1` tags — the first two point at tips of
 `release/1.0-integration` (`3cb8b51`, `1e78c6c`), the last two at `d5d7f91`, which is
 `main`. All four rc tags are **lightweight**; `git for-each-ref` says so for every
-one of them. `latest` still answers `0.1.0`, `0.7.1`, `0.5.0` and `0.8.0` — no rc
-moved a `latest`, and each packument's `dist-tags` is in its row below. The agent
+one of them. **`latest` now answers `1.0.0-rc.1` for all four** — the owner moved it
+on the afternoon of 2026-11-03 and deprecated the whole 0.x line, which is D93 below
+and `D93` in `docs/DECISIONS.md`; the `dist-tags` objects quoted in the table rows
+are the state each check read **at publish time**, and every one of them is
+superseded. The agent
 that prepared the rcs published nothing, created no tag and pushed no tag: every
 command below is still a human action. **Step 1 is done and pushed:
 `release/1.0-integration` is in `main` at `173f150`, and `origin/main` answers the
@@ -479,8 +482,9 @@ npm whoami --registry=https://registry.npmjs.org/
 ```
 
 npm prints `https://www.npmjs.com/auth/cli/<uuid>`; open it, approve, and the
-command exits with `+ @rivinia/$PKG@$VER`. `--tag next` is what keeps `latest`
-pointing at the 0.x release nobody has to leave.
+command exits with `+ @rivinia/$PKG@$VER`. `--tag next` is what kept the rc off
+`latest` — that was the plan through theme's, select's, menu's and i18n's runs, and
+D93 reversed it afterwards by moving `latest` by hand rather than by republishing.
 
 ```bash
 # 2.5 verify — propagation takes a minute; poll rather than conclude
@@ -562,6 +566,61 @@ been installed from the registry into a scratch consumer, so the soak has publis
 artifacts to soak rather than local tarballs. S2 (screen readers), S4 (real devices)
 and S7 (Safari) remain deliberately unfilled.
 
+D93 changed what a soak failure costs. `latest` now points at `1.0.0-rc.1`, so the
+rcs are no longer the versions only the curious find: a defect the soak reveals is
+one every fresh `npm i @rivinia/<pkg>` installs until it is fixed. Two consequences
+for whoever runs it — if an `rc.2` is published, publish it with `--tag latest` (or
+move `latest` by hand immediately after), because `--tag next` would leave `latest`
+on the broken `rc.1`; and the soak is now the only thing standing between a public
+`latest` and `1.0.0`.
+
+## What the dist-tags look like now — D93, run by the owner on 2026-11-03
+
+After all four rcs verified, the owner moved `latest` onto the 1.0 line and
+deprecated the 0.x line, so that a package page and a bare `npm i` show the release
+line instead of `0.1.0`, `0.7.1`, `0.5.0`, `0.8.0`. The agent ran none of it; this is
+the record of what he ran and what came back.
+
+```bash
+# the owner's block, on the hotspot, from ../Revinia-rc-i18n at i18n/v1.0.0-rc.1
+REG=https://registry.npmjs.org/
+for p in theme select menu i18n; do
+  npm dist-tag add "@rivinia/$p@1.0.0-rc.1" latest --registry=$REG
+done
+# 0.x closed — the range that CANNOT match the rc
+for p in theme select menu i18n; do
+  npm deprecate "@rivinia/$p@<1.0.0-0" \
+    "Superseded by the Rivinia 1.x line. 0.x receives no further fixes; install @rivinia/$p@latest." \
+    --registry=$REG
+done
+# read the packument itself, not npm view and not the mirror
+for p in theme select menu i18n; do
+  curl -4 -sS "${REG}@rivinia%2f$p" | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{const v=JSON.parse(d).versions;for(const k of Object.keys(v))console.log(k.padEnd(12), v[k].deprecated?"DEPRECATED":"clean")})'
+  npm dist-tag ls "@rivinia/$p" --registry=$REG
+done
+```
+
+The state the read-back printed: `latest: 1.0.0-rc.1` and `next: 1.0.0-rc.1` for all
+four; `1.0.0-rc.1` `clean` in every packument; and `DEPRECATED` on 38 versions —
+theme 2 (`0.0.0-stage`, `0.1.0`), select 13, menu 9, i18n 14.
+
+**The range to use, and the one that bit us.** The first pass said `<1.0.0`, and that
+deprecated `1.0.0-rc.1` as well — `npm-deprecate.md` states that ranges for this
+command "are interpreted such that they **do** include prerelease versions", and
+`semver.satisfies('1.0.0-rc.1','<1.0.0',{includePrerelease:true})` is `true`. The
+symptom was `npm i @rivinia/i18n` warning that it had installed a deprecated version.
+The fix ran in two commands: `npm deprecate "@rivinia/<pkg>@1.0.0-rc.1" ""` — an empty
+message un-deprecates — then the deprecation again with `<1.0.0-0`. Write the boundary
+that way every time in this program, and deprecate a specific version by naming it.
+
+**What this does not change.** No bytes moved: `dist.integrity`, `dist.shasum`,
+`published-at` and every tarball are the ones verified in step 2, and no file under
+`projects/` changed in this repository because of it. It is also not a version bump —
+D93 is a dist-tag and a
+deprecation message, the two registry acts that never modify a published version
+(AGENTS.md rule 8 holds). What it does cost is that `latest` now points at a version
+that has not passed the soak, which is the owner's call and is written down as such.
+
 ## Step 4 — promotion to 1.0.0
 
 Only from an rc that passed the soak, and in the same order.
@@ -583,6 +642,12 @@ and `npm dist-tag add @rivinia/<pkg>@1.0.0 latest` is not needed — publishing 
 `--tag latest` does it. `next` keeps pointing at `1.0.0-rc.1` until you decide to
 move it.
 
+D93 adds one row to that, because `latest` is already on the 1.0 line: promoting
+`1.0.0` leaves `1.0.0-rc.1` installed by nothing any more, so deprecate the rc as
+part of the promotion — `npm deprecate "@rivinia/<pkg>@1.0.0-rc.1" "<message>"`, by
+version, never by range; and if the soak forces an `rc.2`, it deprecates the rc it
+replaced too.
+
 ## If something is wrong
 
 - Wrong version published: do not touch it. Publish the next one (`1.0.0-rc.2`) and
@@ -596,8 +661,8 @@ move it.
 
 ## What step 2 left open
 
-Step 2 is finished; these are the things it did **not** answer, in the order a reader
-meets them.
+Step 2 is finished and the dist-tag move ran after it; these are the things neither
+answered, in the order a reader meets them.
 
 1. **The docs commits still sit on `release/1.0-integration`.** He was asked twice
    whether `main` may be fast-forwarded onto it and skipped both times, so `main` and
@@ -631,3 +696,10 @@ main..release/1.0-integration`, and treat a merge onto `main` as its own approva
    `^1.0.0` **with** the assertion in
    `projects/i18n/tests/language-select-surface.spec.ts` changed in the same commit, or
    the gate suite is red at that tag.
+7. **D93's registry state is read once, from his screen.** The `dist-tags` and the
+   deprecation read-back came from the owner's terminal on the hotspot; the agent never
+   reproduced it, because `registry.npmjs.org` stopped being reachable from this network
+   the same afternoon. Re-read it before relying on it — the loop in the D93 section is
+   the command — and note that it is the only claim in this file about npm that has no
+   second witness. The `next` tag is now the same version as `latest`, which nothing has
+   decided what to do with.
