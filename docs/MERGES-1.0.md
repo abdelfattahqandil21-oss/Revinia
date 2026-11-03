@@ -25,6 +25,7 @@ and the reviewer's verdict.
 | 8 | S9 README content move | `pkg/repo/1-0-readmes` | `21d9be7` | `--squash` | 2026-11-02, on the merged tree — which is byte-identical to the branch tip (`git diff --stat pkg/repo/1-0-readmes 21d9be7` prints nothing), so every number in this cell is that tree's: builds `theme`/`select`/`menu`/`i18n`/`menu-e2e` exit 0; `check:readmes` **ok, 0 warnings** — READMEs at 104 / 172 / 134 / 165 lines and `ALLOW_OVER_BUDGET` now empty; `check:docs` **0 failures / 41 warnings**, reading the 26 topic pages for the first time; `test:scripts` **83 passed** (6 files); `ng test menu` **65**, `ng test select` **163**, `ng test i18n` **376**, `pnpm test:theme` **11**; `npx playwright test` **374 passed, 1 skipped** (125 cases × chromium, firefox, webkit); `check:popup-ssr` **15 checks**; `check:popup-mutations` **18 of 18 killed exactly as expected**; `check:duplication` **8 clones, 196 lines (6.64%), 2,213 tokens (11.36%)** — the clones did not move. Every exit code 0 | no blocking issue — the same self-review substitution as rows 6 and 7; read the two notes below it |
 | 9 | S8 API freeze + `1.0.0-rc.1` prep | `pkg/repo/1-0-api-freeze` | `9122a2a` | `--squash` | 2026-11-03, on the merged tree — byte-identical to the branch tip (`git diff --stat pkg/repo/1-0-api-freeze 9122a2a` prints nothing), and the 22 paths it carries include **zero** library source or style files (`git diff --name-only` over them: no hit for `src/lib/`, `styles/`, `.html`, `.css`, `.scss`): builds `theme`/`select`/`menu`/`i18n` exit 0 with every `dist/` manifest at `1.0.0-rc.1`, `ng build menu-e2e` 325.41 kB initial; `npm pack` of the four → **8,396 / 66,814 / 36,875 / 93,258 B**, `check:pack` **ok** on all four, `check-theme-package` **ok, 9 files**; `ng test select` **163**, `ng test menu` **65**, `ng test i18n` **376**, `pnpm test:theme` **11**, `test:scripts` **95 passed** (7 files — 12 of them the new snapshot spec); `npx playwright test` **374 passed, 1 skipped**; `check:popup-ssr` **passed**; `check:duplication` **8 clones, 196 lines (6.64%), 2,213 tokens (11.36%)** — unchanged from its baseline; `check:readmes` **ok, 0 warnings** (104 / 172 / 134 / 166); `check:docs` **0 failures / 41 warnings**. **Consumer smoke, tarballs only:** the four `file:` tarballs installed offline into a fresh fixture with no `@rivinia/*` path mapping, seven generated modules importing **all 79 published names**; SSR production build **349.33 kB raw / 93.87 kB transfer**, 2 routes prerendered; control build with the lazy route **295.50 kB / 81.79 kB** initial and a **52.18 kB** lazy chunk — 53.83 kB raw leaves the initial bundle, which is the measurement behind "it is really lazy"; the same app **without the optional select peer** builds at **289.62 kB / 79.30 kB** with **0** hits in the output for `rv-select`, `computeSelectPopupPosition`, `select-popup`, `rivinia-select`, `rv-language-select`; served under SSR and driven in Chromium — panel `[role=menu]` 1 with 2 rows, keyboard pick to "paid", menu item "profile", toggle to `dir=rtl lang=ar` with "3 مقاعد", `/lazy` carrying `data-variant="premium"` with 2 picker rows, theme CSS 1,217 B with `@layer rivinia-theme` and 5 `--rv-accent` reads, trigger border following `--rv-border` (224,224,224 → 255,0,0), **zero console or page errors**; `rivinia-i18n-keys init` run from the i18n tarball wrote `languages.ts` and both dictionaries. Every exit code 0 | no blocking issue — the same self-review substitution as rows 6, 7 and 8; read the notes under this row, which include the one gate it did **not** re-run |
 | 10 | Runbook step 1 — the promotion of the whole branch onto `main` | `release/1.0-integration` at `89bf4c0` | `173f150`, which is **on `main`, not on integration** | `--no-ff`, two parents `6b51eba` + `89bf4c0` | 2026-11-03, in the worktree that holds `main` (`../Revinia-select-summary`, clean before and clean after): `check:docs` **0 failures / 41 warnings**; `check:readmes` **ok / 0 warnings**; `test:scripts` **95 passed** (7 files); `ng build` of theme, select, menu and i18n all exit **0** with every `dist/*/package.json` at `1.0.0-rc.1`; `ng test menu` **65**, `ng test select` **163**, `ng test i18n` **376**, `pnpm test:theme` **11** — every number identical to row 9's, which is what a merged tree that differs from row 9's by one root markdown file should print. **Not re-run here:** `npx playwright test`, `check:popup-ssr`, `check:duplication` | the owner gave the merge OK in chat on 2026-11-03; the agent drove the merge, so this row carries the same self-review substitution as rows 6–9. **the owner then gave the push OK as a separate yes: `6b51eba..9173de3`, a fast-forward, no force** |
+| 11 | Runbook step 1's follow-through — the eight docs commits, D91–D93, promoted onto `main` | `release/1.0-integration` at `9281f85` | `9281f85`, **the tip of both branches** | `--ff-only` — `main` sat at `d5d7f91`, an ancestor, so there is no merge commit and nothing was rewritten | 2026-11-03, in the same worktree that holds `main` (`../Revinia-select-summary`, clean before and clean after): `check:docs` **0 failures / 41 warnings** and `check:readmes` **ok / 0 warnings**, run **on `main` itself** rather than on the branch. `git diff --name-status main..release/1.0-integration` before the merge was **six markdown files and nothing else** — `README.md`, `docs/API-SURFACE-1.0.md`, `docs/DECISIONS.md`, `docs/MERGES-1.0.md`, `docs/PUBLISH-RUNBOOK-1.0.md`, `docs/RELEASE-1.0.md` — zero library source or style file, so no build, unit, Playwright or pack gate was re-run for this row and none is claimed | the owner gave the merge and the push in one instruction ("merge علي main وبوش"), after `git merge-base --is-ancestor origin/main main` and the same test for integration proved both pushes fast-forwards and no force was possible; `git ls-remote origin` then answered `9281f85` for `refs/heads/main` and `refs/heads/release/1.0-integration` |
 
 Row 10 is not a feature merge into this branch — it is the other direction, and
 the first time `main` moved in this program. Everything in rows 1–9 is inside it.
@@ -40,6 +41,20 @@ push OK** — docs-only, but the rule is one OK per push, so it stands as a devi
 and not as a precedent. At run time, read `git rev-parse origin/main main
 release/1.0-integration origin/release/1.0-integration`: they should be one commit,
 and no SHA written in these files stays current for long.
+
+**Row 11 is that read, executed.** Eight `docs(repo)` commits — the D91 record,
+menu's and i18n's rc runs, the stale-SHA correction, D92, the not-run consumer
+record, D93 and the tense corrections — sat on the integration branch while `main`
+stayed at `d5d7f91`. `docs/PUBLISH-RUNBOOK-1.0.md` asked twice for that fast-forward
+and was declined twice; on 2026-11-03 the owner gave it, together with the push, in
+one instruction. Two things it closes: the open item at the bottom of the runbook
+("the docs commits still sit on `release/1.0-integration`") is gone, and the caveat
+rows 6–9 carry — that `docs/API-SURFACE-1.0.md` and `docs/PUBLISH-RUNBOOK-1.0.md` are
+linked from the repository home with URLs pinned to `main` and **404 until
+integration reaches `main`** — stopped being true the moment `9281f85` landed on
+`origin/main`. The record commit for this row is the one exception to that
+paragraph: it is made on `main` and fast-forwarded onto integration locally, and it
+goes to origin only on its own OK, because row 10's deviation is the reason.
 
 The branch column for rows 2–5 is the merged parent's `git name-rev` against
 `refs/heads/*`, read off the merge commits themselves; row 1 has no branch because
@@ -210,10 +225,12 @@ What row 9 does not prove:
 - `ng add @rivinia/i18n` was not re-run from the rc tarball. The
   `rivinia-i18n-keys init` path was, and it wrote real files.
 - The files this row adds are linked from the freeze document with absolute GitHub
-  URLs pinned to `main`, and integration has not reached `main`. Until it does,
-  `docs/API-SURFACE-1.0.md` and `docs/PUBLISH-RUNBOOK-1.0.md` 404 for anyone who
-  follows a link from the repository home. Rows 6–8 carry the same caveat; row 9
-  adds two more pages to it.
+  URLs pinned to `main`, and integration had not reached `main` when this was
+  written. Until it did, `docs/API-SURFACE-1.0.md` and
+  `docs/PUBLISH-RUNBOOK-1.0.md` 404 for anyone who followed a link from the
+  repository home. Rows 6–8 carry the same caveat; row 9 adds two more pages to it.
+  **Retired by row 11** — `9281f85` is on `origin/main`, so every one of those links
+  resolves today; the caveat stays here because rows 6–9 were gated under it.
 - `language-select-surface.spec.ts` is not Prettier-clean at its line 145 regex and
   was not reformatted: the drift predates this row, and reformatting a line the row
   does not change would put cosmetic noise inside a release branch.

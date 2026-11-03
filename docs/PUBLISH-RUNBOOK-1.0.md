@@ -13,9 +13,11 @@ and `D93` in `docs/DECISIONS.md`; the `dist-tags` objects quoted in the table ro
 are the state each check read **at publish time**, and every one of them is
 superseded. The agent
 that prepared the rcs published nothing, created no tag and pushed no tag: every
-command below is still a human action. **Step 1 is done and pushed:
-`release/1.0-integration` is in `main` at `173f150`, and `origin/main` answers the
-same commit as local `main` — see step 1.** The tagged builds of `menu` and `i18n`
+command below is still a human action. **Step 1 is done and pushed, and so is the
+docs line behind it: `main`, `origin/main`, `release/1.0-integration` and
+`origin/release/1.0-integration` all answer `9281f85` — the merge at `173f150` plus
+the eight `docs(repo)` commits on top, fast-forwarded with no force on the owner's OK
+(row 11 of `docs/MERGES-1.0.md`).** The tagged builds of `menu` and `i18n`
 each reproduced their pre-flight tarball byte for byte, and the tarballs downloaded
 from the registry `cmp`-identical to both. What is left in this file is the soak
 (step 3) and the promotion to `1.0.0` (step 4).
@@ -668,16 +670,20 @@ replaced too.
 Step 2 is finished and the dist-tag move ran after it; these are the things neither
 answered, in the order a reader meets them.
 
-1. **The docs commits still sit on `release/1.0-integration`.** He was asked twice
-   whether `main` may be fast-forwarded onto it and skipped both times, so `main` and
-   `origin/main` are at the commit both rc tags were cut from, and this file's records
-   are ahead of them. Nothing published depends on it — the four rc artifacts are tagged
-   from `main`, and the commits in between are markdown only — but `docs/RELEASE-1.0.md`
-   and `docs/PUBLISH-RUNBOOK-1.0.md` as they sit on `main` are older than these files as
-   they sit here. Read the state at run time with `git rev-parse main origin/main
-release/1.0-integration origin/release/1.0-integration` and `git log --oneline
-main..release/1.0-integration`, and treat a merge onto `main` as its own approval,
-   with its own push approval after it.
+1. **The docs commits sat on `release/1.0-integration` — closed on 2026-11-03.** He
+   was asked twice whether `main` may be fast-forwarded onto it and skipped both times;
+   the third ask got a "merge علي main وبوش", and `main` fast-forwarded `d5d7f91..9281f85`
+   — eight `docs(repo)` commits, six markdown files, **zero library source**
+   (`git diff --name-status main..release/1.0-integration` before the merge) — with no
+   merge commit, no force, and `origin/release/1.0-integration` fast-forwarded to the
+   same tip. The gate that ran on `main` after it: `check:docs` 0 failures / 41 warnings,
+   `check:readmes` ok / 0; no build or test was re-run, because nothing but markdown
+   moved. Recorded as row 11 of `docs/MERGES-1.0.md`, which also retires the rows 6–9
+   caveat that the freeze documents 404 when linked from the repository home — they
+   resolve now. The merge is still not a standing lift: `main` is the release branch and
+   every future promotion of it is its own OK, with its own push OK after it. Read the
+   state at run time with `git rev-parse main origin/main release/1.0-integration
+origin/release/1.0-integration` — those four should print one SHA.
 2. **The soak (step 3) has not started**, and S2, S4 and S7 stay unfilled by his
    instruction — nobody should fill them on his behalf.
 3. **No Angular production build has run against any published rc.** Step 2.6 in all

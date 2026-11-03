@@ -10,7 +10,10 @@ four and deprecated the whole 0.x line — **D93**, whose row is below and whose
 the section after the table. Rows
 6–7 have not run. The merge landed at `173f150` and is **pushed as `6b51eba..9173de3`,
 a fast-forward, no force**; the D92 record commit `d5d7f91` went on top of it the same
-day, and both `menu/v1.0.0-rc.1` and `i18n/v1.0.0-rc.1` were cut at it. Publishing, tags and dist-tags are
+day, and both `menu/v1.0.0-rc.1` and `i18n/v1.0.0-rc.1` were cut at it. The eight
+`docs(repo)` commits after that — D91 through D93 — then fast-forwarded `main` again,
+`d5d7f91..9281f85`, on his OK, and `origin/main`, local `main` and both ends of the
+integration branch now answer `9281f85` (row 11 of `docs/MERGES-1.0.md`). Publishing, tags and dist-tags are
 human steps. The two documents S8 was going to write both exist now, on
 `release/1.0-integration`: `docs/HUMAN-CHECKS-1.0.md` (the hand-run checks) and
 [`docs/PUBLISH-RUNBOOK-1.0.md`](PUBLISH-RUNBOOK-1.0.md), which is the file that
