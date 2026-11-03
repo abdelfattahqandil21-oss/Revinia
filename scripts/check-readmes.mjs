@@ -8,10 +8,9 @@
  *     `main`, 2026-10-31: select 0.7.1's README said 0.6.0, menu 0.5.0's said
  *     0.4.0).
  *
- * The line budget is enforced with a temporary per-package allowance until the
- * S9 content move lands (see docs/README-TEMPLATE.md). Relative links are
- * reported as warnings only: the docs pages they will point at do not exist
- * yet.
+ * The line budget uses the package README structure recorded in
+ * docs/releases/1.0/README-TEMPLATE.md. Missing relative links fail: the package
+ * README is what npm displays, so every repository-local target must resolve.
  *
  * Usage: node scripts/check-readmes.mjs
  */
@@ -149,7 +148,7 @@ export function checkReadme({
     if (path.length === 0) continue;
     const resolved = resolve(base, path);
     if (!fileExists(resolved))
-      warnings.push(`${pkg}/README.md links ${target}, which does not exist`);
+      problems.push(`${pkg}/README.md links ${target}, which does not exist`);
   }
 
   return { ok: problems.length === 0, problems, warnings, lines };

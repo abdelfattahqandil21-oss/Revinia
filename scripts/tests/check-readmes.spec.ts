@@ -9,7 +9,8 @@ import { checkReadme, LINE_BUDGET, readManifest } from '../check-readmes.mjs';
  *  1. a package README must stay within the line budget (temporary per-package
  *     allowances exist until the content move lands);
  *  2. a version claim about the package must equal its manifest version.
- * Relative links are reported, not enforced: the docs move is still in flight.
+ * Relative links must resolve inside the repository so shipped READMEs do not
+ * point consumers at missing docs.
  */
 
 const MANIFEST = { name: '@rivinia/select', version: '0.7.1' };
@@ -117,10 +118,10 @@ describe('version claims', () => {
 });
 
 describe('link report', () => {
-  it('warns, but does not fail, when a relative link target is missing', () => {
+  it('fails when a relative link target is missing', () => {
     const report = readme('See [api](./docs/api.md) and [forms](./docs/forms.md).\n');
-    expect(report.problems).toEqual([]);
-    expect(report.warnings.join('\n')).toMatch(/docs\/forms\.md/);
+    expect(report.problems.join('\n')).toMatch(/docs\/forms\.md/);
+    expect(report.warnings).toEqual([]);
   });
 
   it('resolves a link that exists', () => {
