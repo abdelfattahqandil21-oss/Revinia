@@ -3,7 +3,7 @@
 Status: **implemented** (Phase 1, 2026-10-29) — THM-01…THM-07 done, gates
 1–6 run; merge, release and version bump pending the owner.
 Baseline: `@rivinia/theme` 0.1.0 (published and in the workspace). Evidence:
-`docs/RESEARCH-theme-stacks.md` — "the five styling stacks, measured"
+`docs/research/theme-stacks.md` — "the five styling stacks, measured"
 (`@angular/core` 22.2.3, `@angular/build`/`@angular/cli` 22.2.5 in the consumer
 fixture; Sass 1.97.0, Less 4.4.2, Tailwind 4.1.16, Bootstrap 5.3.8; Chromium and
 Firefox).

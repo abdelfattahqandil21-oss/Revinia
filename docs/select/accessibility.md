@@ -30,7 +30,7 @@ Single/multi share the same model:
   filter away mid-word is worse than a panel that keeps its placement. Any width
   change closes, because width is the axis the panel is anchored on. This is the
   policy recorded as PROVISIONAL in
-  [`docs/HUMAN-CHECKS-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/HUMAN-CHECKS-1.0.md)
+  [`docs/releases/1.0/HUMAN-CHECKS.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/releases/1.0/HUMAN-CHECKS.md)
   (S4) — it still needs a real device.
 
 ## Accessibility
@@ -102,12 +102,12 @@ clearing every pick removes the attribute and the hidden element together.
 
 The machine-checked half of this section — which axe runs, which assertions,
 which accessibility trees — is recorded in
-[`docs/a11y-verification.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/a11y-verification.md).
+[`docs/testing/a11y-verification.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/testing/a11y-verification.md).
 
 - **No real screen reader testing** — automated axe checks and committed
   accessibility-tree snapshots only. NVDA, JAWS, VoiceOver and TalkBack are still
   "not tested"; the matrix and the steps are in that document and in
-  [`docs/HUMAN-CHECKS-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/HUMAN-CHECKS-1.0.md)
+  [`docs/releases/1.0/HUMAN-CHECKS.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/releases/1.0/HUMAN-CHECKS.md)
   (S2).
 - **Custom `listTemplate` rows are not keyboard-navigable.** Arrows move between
   the select's own rows; a consumer-rendered window has no row directive, so
@@ -116,7 +116,7 @@ which accessibility trees — is recorded in
 - **Safari proper is not tested** — WebKit is the engine, not the browser chrome
   (Safari's own top-layer and anchor support can lag the engine). The engines
   actually run here, their versions, and what WebKit needs on this machine are in
-  [`docs/browser-support.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/browser-support.md).
+  [`docs/testing/browser-support.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/testing/browser-support.md).
 - **No Tailwind project** in the test suite.
 - **Forced colors** ships system-colour defaults for the panel, rows, trigger and
   search (see [Accent and forced colors](theming.md#accent-and-forced-colors)).
@@ -133,5 +133,5 @@ which accessibility trees — is recorded in
 - [Forms](forms.md) — `[formField]`, `formControlName`, `ngModel`, and the form
   state the component exposes.
 - [Recipes](recipes.md) — the virtual-list markup that keeps `role="menu"` legal.
-- [Browser support](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/browser-support.md)
+- [Browser support](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/testing/browser-support.md)
   — the two floors, and which feature does what.

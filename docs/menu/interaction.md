@@ -42,7 +42,7 @@ The automated half lives in
 [`e2e/popup/conformance.spec.ts`](../../e2e/popup/conformance.spec.ts), run
 against the select, the built-in menu, and a menu with a consumer field
 projected into its panel. The real-device half is **not tested** and is listed
-in [`docs/HUMAN-CHECKS-1.0.md`](../HUMAN-CHECKS-1.0.md) (S4).
+in [`docs/releases/1.0/HUMAN-CHECKS.md`](../HUMAN-CHECKS-1.0.md) (S4).
 
 Placement is measured on the client and flipped to fit the viewport when needed.
 Where supported, the panel uses the browser popover top layer to avoid clipping

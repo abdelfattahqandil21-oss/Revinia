@@ -10,5 +10,6 @@
 - Added release-group, version-aware skill compatibility and immutable documentation-link/snapshot checks with positive and negative fixtures.
 - Rebuilt popup prerequisites before mutation verification: the clean control passed 24 tests and all 18 behavior mutants were killed.
 - Refreshed the root package table to the verified `1.0.0-rc.2` npm `latest` state for the four-package release group.
+- Organized repository documentation by responsibility and release lifecycle, retaining compatibility pointers for previous paths; strengthened the package README checker to fail on missing local links.
 - No runtime, public API, package version, release tag or registry state changed.
 - Evidence: `docs/engineering/MIGRATION-PLAN.md`; task details remain in the task owner's private journal.

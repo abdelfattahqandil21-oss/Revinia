@@ -20,7 +20,7 @@ describe('the frozen surface', () => {
     expect(diffSurface(committedSnapshot(), currentSurface())).toEqual([]);
   });
 
-  it('covers all eight entry points, at the counts docs/API-SURFACE-1.0.md states', () => {
+  it('covers all eight entry points, at the counts docs/releases/1.0/API-SURFACE.md states', () => {
     const snapshot = committedSnapshot();
     expect(Object.keys(snapshot).sort()).toEqual(ENTRY_POINTS.map(([spec]) => spec).sort());
     expect(Object.fromEntries(Object.entries(snapshot).map(([k, v]) => [k, v.length]))).toEqual({

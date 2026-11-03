@@ -49,6 +49,6 @@ This is an evidence-based audit of the current repository. “Risk” means a wo
 
 - There are ten publishable packages and two E2E applications. Production-source scan found only one cross-package Rivinia import: i18n’s optional `@rivinia/select/ui` integration, documented in i18n’s package peer metadata and implementation.
 - `docs/DECISIONS.md` D86 records duplicated Menu/Select popup logic as an accepted pre-1.0 deferral. The current duplication check is report-only; do not refactor this as part of repository organization.
-- `docs/PUBLISH-RUNBOOK-1.0.md` records Select alias/type naming questions as product decisions for 1.0.0. Keep these marked **REQUIRES PRODUCT DECISION**.
+- `docs/releases/1.0/PUBLISH-RUNBOOK.md` records Select alias/type naming questions as product decisions for 1.0.0. Keep these marked **REQUIRES PRODUCT DECISION**.
 - No tracked CI workflow files were found. Existing local gates therefore do not establish that CI runs the same checks.
 - No tracked generated outputs or credential-like patterns were found in tracked text files during the scan. These are bounded scan results, not a security certification.

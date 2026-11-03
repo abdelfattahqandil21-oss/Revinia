@@ -1,25 +1,29 @@
-# Documentation map
+# Documentation guide
 
-Start here when you need a Rivinia document. Package APIs and setup instructions remain beside each package in `projects/<package>/README.md`.
+Use the package README in `projects/<package>/` for its public setup and API. This guide routes to shared engineering material without copying release history or package examples.
 
-## Find by task
+## Find by responsibility
 
-| I need to… | Start here |
-| --- | --- |
-| Understand package boundaries and architecture | [Engineering governance](engineering/README.md), then the append-only [decision log](DECISIONS.md) |
-| Find a feature design, proposal, or implementation contract | [Specifications and design records](specifications/README.md) |
-| Use a package feature | The package README under `projects/<package>/`, then its topic guide under `docs/<package>/` when available |
-| Run tests or diagnose browser results | [Testing architecture](engineering/TESTING-ARCHITECTURE.md), [shared browser-suite instructions](../e2e/AGENTS.md), and the root README's work section |
-| Prepare or understand a release | [Versioning](engineering/VERSIONING.md), [versioned documentation](engineering/VERSIONED-DOCUMENTATION.md), and the [1.0 publish runbook](PUBLISH-RUNBOOK-1.0.md) |
-| Find a repository skill or choose one | [Skills inventory](engineering/SKILLS-INVENTORY.md) and [routing guide](engineering/SKILLS-ROUTING.md) |
-| Review the repository architecture work history | [Architecture audit and reports](repository-architecture/) |
+| Need | Canonical location | Status and ownership |
+| --- | --- | --- |
+| Package APIs and consumer guidance | `projects/<package>/README.md`, `docs/{i18n,menu,select,theme}/` | Current; maintained with the package |
+| Architecture policy and workflows | [`engineering/README.md`](engineering/README.md) | Current policy and procedures |
+| Durable architecture decisions | [`DECISIONS.md`](DECISIONS.md) | Append-only decision history; never rewrite old entries |
+| Feature specifications and designs | [`specifications/README.md`](specifications/README.md) | Approved, implemented, pending, and proposal status is stated per record |
+| Testing and browser evidence | [`testing/README.md`](testing/README.md) | Testing procedures plus dated verification evidence |
+| Release history | [`releases/1.0/README.md`](releases/1.0/README.md) | Historical 1.0 RC records; refresh against current source before operational use |
+| Research | [`research/theme-stacks.md`](research/theme-stacks.md) | Dated investigation, not normative API guidance |
+| Repository audits and migration history | [`repository-architecture/README.md`](repository-architecture/README.md) | Historical snapshots; root policy and engineering docs remain authoritative |
+| Skills and agent workflows | [`engineering/SKILLS-INVENTORY.md`](engineering/SKILLS-INVENTORY.md), [`engineering/SKILLS-ROUTING.md`](engineering/SKILLS-ROUTING.md) | Current routing; version-specific claims follow `engineering/AI-SKILLS.md` |
+| Task and package README templates | `docs/engineering/templates/`, [`releases/1.0/README-TEMPLATE.md`](releases/1.0/README-TEMPLATE.md) | Reusable process templates and historical S9 package template |
 
-## Browse by collection
+The dated JSON baselines in [`a11y-snapshots/`](a11y-snapshots/) are retained test evidence linked by the accessibility guide and decision history.
 
-- `docs/i18n/`, `docs/menu/`, `docs/select/`, and `docs/theme/` contain topic guides linked from package documentation.
-- `docs/engineering/` contains active repository policies and workflows; its README is the detailed index.
-- `docs/specifications/` contains feature specifications and design briefs. The status at the top of each file distinguishes proposals from implemented work.
-- `docs/repository-architecture/` contains dated audits, migration decisions, and verification reports.
-- The append-only [decision log](DECISIONS.md) and release records stay at their established paths. The 1.0 set includes the [API surface](API-SURFACE-1.0.md), [human checks](HUMAN-CHECKS-1.0.md), [release order](RELEASE-1.0.md), and [merge record](MERGES-1.0.md).
+## Compatibility paths
 
-Use `package.json` as the source of truth for runnable command names; this index routes to the relevant procedures instead of copying command lists.
+Short pointer files remain at selected former root paths so package docs,
+append-only decisions, and existing external links keep resolving. Use the
+canonical locations in the table above for new links; the pointer files do not
+duplicate the documents.
+
+Use root `package.json` as the source of truth for command names. Do not infer current registry state from a historical release record; inspect the registry and exact tag when preparing a release.

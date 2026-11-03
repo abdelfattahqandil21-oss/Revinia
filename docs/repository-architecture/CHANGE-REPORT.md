@@ -14,3 +14,7 @@ At the initial audit close, this branch was ready for review of the audit and pr
 ## Follow-up governance foundation — 2026-11-03
 
 The owner-approved follow-up implemented additive governance on the same task branch. See `docs/engineering/MIGRATION-PLAN.md` for the current phase/status and file map. Added root/directory instructions, version and support policies, engineering RFC, documentation/skill/testing/memory/worktree/changelog procedures, templates, release-group config, governance/link validators, and a validator test. Updated the root README's four verified `latest` cells to rc.2. No package manifest/version, public API, runtime library, release tag, npm dist-tag or published tarball changed. All current edits remain uncommitted.
+
+### Status correction — 2026-11-03
+
+The final sentence above records the original review checkout at that time. The governance work was subsequently committed and integrated into `main`; see Git history for its exact commits. This note corrects only the later status and leaves the audit-time record intact.

@@ -2,7 +2,7 @@
 
 **Owner:** Repository maintainers
 **Purpose:** sequence governance adoption and later structural work with measurable rollback points.
-**Status:** Phase A completed; additive Phase B implemented in this task; disruptive Phase C deferred.
+**Status:** Phases A and B completed; owner-authorized documentation organization is in progress; source/configuration migrations remain separately gated.
 
 ## Phase A — baseline and specification
 
@@ -30,11 +30,11 @@ No public API, package version, runtime source, package export, release tag, reg
 | API snapshots beyond four current 1.0 packages | Owner-approved API baselines | Per-package export comparison and consumer imports | Revert snapshot/tooling change | Deferred |
 | Hosted docs platform or directory reorganization | Platform/ownership decisions and configuration compatibility proof | Build/link/redirect checks on before/after snapshots | Keep tag source snapshots; restore previous routing | **REQUIRES PRODUCT DECISION** |
 
-No directory move is authorized by this plan. Any move affecting Angular configuration, Playwright projects, package files or release scripts requires a separate review and gate matrix.
+The repository owner explicitly authorized a documentation-only organization on `main` on 2026-11-03. The execution groups release records under `docs/releases/1.0/`, verification material under `docs/testing/`, research under `docs/research/`, theme guidance under `docs/theme/`, and historical audits under `docs/repository-architecture/`. Old documentation paths remain short compatibility pointers; append-only `docs/DECISIONS.md` and the linked `docs/a11y-snapshots/` baseline remain in place. This authorization does not include package/source/test topology, Angular or Playwright configuration, release scripts, published package artifacts, or protected schematics. Those changes still require their own impact review and gate matrix.
 
 ## Current-state verification
 
-At the initial audit checkpoint, branch `chore/repository-architecture` was at the audited base SHA and the source worktree was under `/tmp`. A cross-filesystem `git worktree move` failed with `Invalid cross-device link`. The later preservation procedure created a durable sibling worktree using Git-native registration, transferred tracked diffs and inventoried untracked/ignored content without copying Git metadata, and verified the inventories. The original source worktree remains intact and must not be removed without owner approval. The primary checkout remains untouched.
+At the initial audit checkpoint, branch `chore/repository-architecture` was at the audited base SHA and the source worktree was under `/tmp`. A cross-filesystem `git worktree move` failed with `Invalid cross-device link`. The later preservation procedure created a durable sibling worktree using Git-native registration, transferred tracked diffs and inventoried untracked/ignored content without copying Git metadata, and verified the inventories. The original source worktree remains intact and must not be removed without owner approval. The primary checkout remained untouched during that review. The owner subsequently authorized direct-main organization; the validated governance/docs commits have been integrated and pushed to `origin/main`.
 
 On 2026-11-03, all four release-group manifests were `1.0.0-rc.2`; npm `latest` was rc.2 for all four. npm `next` was rc.1 for menu/select and rc.2 for theme/i18n. Package READMEs currently point many docs links at moving `main`; the versioned-doc gate is for future versions and is not claimed to pass against already-published rc.2.
 
