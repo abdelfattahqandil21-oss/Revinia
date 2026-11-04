@@ -28,9 +28,11 @@ run time with `git rev-parse main origin/main release/1.0-integration
 origin/release/1.0-integration` and `git tag -l "*rc*"`.** The tagged builds of `menu` and `i18n`
 each reproduced their pre-flight tarball byte for byte, and the tarballs downloaded
 from the registry `cmp`-identical to both. What is left in this file is `1.0.0-rc.3`
-(its payload: the rc.2 changelog headings the published rc.2 tarballs do not contain,
-plus the tag-pinned README links the new gate demands), then the soak (step 3), then the
-promotion to `1.0.0` (step 4).
+— prepared on `release/1.0-rc3`, branched off `main` and gated on 2026-11-04, and as of
+that read **untagged, unpushed and unpublished**, which is why step 2 below still has to
+be run by a human — (its payload: the rc.2 changelog headings the published rc.2 tarballs
+do not contain, plus the tag-pinned README links the new gate demands), then the soak
+(step 3), then the promotion to `1.0.0` (step 4).
 
 ## What the registry answers today — read this before step 2
 
