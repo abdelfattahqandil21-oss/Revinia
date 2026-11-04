@@ -1,26 +1,77 @@
 # Publish runbook — Rivinia 1.0
 
-**Status: step 2 has run for all four packages, and for nothing after it.** The
-owner published `@rivinia/theme@1.0.0-rc.1`, `@rivinia/select@1.0.0-rc.1`,
+**Status: step 2 has run twice for all four packages — `1.0.0-rc.1` on the morning of
+2026-11-03 and `1.0.0-rc.2` on the evening of the same day — and for nothing after
+that.** Read the next section before running anything: every sentence in this file that
+names `1.0.0-rc.1` as the state of the registry is the **rc.1 record**, kept for the
+audit trail, and `latest` moved off it twice. The owner published
+`@rivinia/theme@1.0.0-rc.1`, `@rivinia/select@1.0.0-rc.1`,
 `@rivinia/menu@1.0.0-rc.1` and `@rivinia/i18n@1.0.0-rc.1` to the `next` dist-tag on
 2026-11-03, from the `theme/v1.0.0-rc.1`, `select/v1.0.0-rc.1`, `menu/v1.0.0-rc.1`
 and `i18n/v1.0.0-rc.1` tags — the first two point at tips of
 `release/1.0-integration` (`3cb8b51`, `1e78c6c`), the last two at `d5d7f91`, which is
-`main`. All four rc tags are **lightweight**; `git for-each-ref` says so for every
-one of them. **`latest` now answers `1.0.0-rc.1` for all four** — the owner moved it
+`main`. The four rc.1 tags are **lightweight** (`git cat-file -t` prints `commit`);
+the four `*/v1.0.0-rc.2` tags are **annotated** (`git cat-file -t` prints `tag`, and all
+four peel to `69af061`), which is the release form D92 predicted and the reason "every
+rc tag is lightweight" can no longer be said from this line. **`latest` answered
+`1.0.0-rc.1` for all four after D93** — the owner moved it
 on the afternoon of 2026-11-03 and deprecated the whole 0.x line, which is D93 below
 and `D93` in `docs/DECISIONS.md`; the `dist-tags` objects quoted in the table rows
 are the state each check read **at publish time**, and every one of them is
 superseded. The agent
 that prepared the rcs published nothing, created no tag and pushed no tag: every
-command below is still a human action. **Step 1 is done and pushed, and so is the
-docs line behind it: `main`, `origin/main`, `release/1.0-integration` and
-`origin/release/1.0-integration` all answer `9281f85` — the merge at `173f150` plus
-the eight `docs(repo)` commits on top, fast-forwarded with no force on the owner's OK
-(row 11 of `docs/releases/1.0/MERGES.md`).** The tagged builds of `menu` and `i18n`
+command below is still a human action. **Step 1 is done, pushed and long since
+overtaken: the SHAs this file prints as the state of `main` (`173f150`, `9281f85`) are
+history — `rc.2` reached `main` through its own merge, `f066a32` (row 12 of
+`docs/releases/1.0/MERGES.md`), and the governance work came after it. Read the state at
+run time with `git rev-parse main origin/main release/1.0-integration
+origin/release/1.0-integration` and `git tag -l "*rc*"`.** The tagged builds of `menu` and `i18n`
 each reproduced their pre-flight tarball byte for byte, and the tarballs downloaded
-from the registry `cmp`-identical to both. What is left in this file is the soak
-(step 3) and the promotion to `1.0.0` (step 4).
+from the registry `cmp`-identical to both. What is left in this file is `1.0.0-rc.3`
+— prepared on `release/1.0-rc3`, branched off `main` and gated on 2026-11-04, and as of
+that read **untagged, unpushed and unpublished**, which is why step 2 below still has to
+be run by a human — (its payload: the rc.2 changelog headings the published rc.2 tarballs
+do not contain, plus the tag-pinned README links the new gate demands), then the soak
+(step 3), then the promotion to `1.0.0` (step 4).
+
+## What the registry answers today — read this before step 2
+
+On 2026-11-04 the agent read the npmjs mirror's packuments and the four rc.2 tarballs
+themselves. Every one of the four answers `{"latest":"1.0.0-rc.2","next":"1.0.0-rc.2"}`;
+`1.0.0-rc.3` does not exist in any form — no version in the packument, no tag locally or
+on origin, no manifest. The four tarballs verify: local `shasum` equals `dist.shasum`,
+base64 `sha512sum` equals `dist.integrity`, at 8,419 B / 9 files (theme), 66,818 / 9
+(select), 36,887 / 9 (menu), 93,265 / 20 (i18n), and those four shasums are the numbers
+the owner read off npmjs, which is what makes a cache read a real one. Full record:
+`D94` in `docs/DECISIONS.md`.
+
+Three consequences for whoever runs the next publish.
+
+1. **`select` and `menu` answered `next: 1.0.0-rc.1` while `latest` answered `rc.2`,
+   until the owner moved them on 2026-11-04.** That was npm behaving as documented:
+   rc.1 went out with `--tag next`, D93 moved `latest` by hand, rc.2 went out with
+   `--tag latest` — a publish moves exactly one pointer and only the one it names. The
+   rule for every rc from now on: **publish the new version with `--tag next` for all
+   four packages, then move `latest` for all four, and always all four in one run** —
+   never two packages on one tag and two on another, because
+   `docs/releases/1.0/HUMAN-CHECKS.md` installs `@rivinia/{theme,select,menu,i18n}@next` in a single command
+   and a split line makes the soak test two rc generations at once.
+2. **The published rc.2 artifacts are internally inconsistent.** `package.json` says
+   `1.0.0-rc.2` and the README says `Package version: **1.0.0-rc.2**`, but `CHANGELOG.md`
+   inside the same tarball stops at `## 1.0.0-rc.1` for all four. A published version is
+   immutable, so this is the content of rc.3.
+3. **`check:versioned-doc-links` — added after rc.2 by `34a52c9` — fails on every rc.2
+   artifact and on the current tree: 12 issues for theme, 14 for select, 12 for menu, 17
+   for i18n.** One is the missing CHANGELOG heading; the rest are repository links that
+   point at `main` where the gate requires the immutable tag (`<pkg>/v<version>/…`). Run
+   it per package before packing:
+   `node scripts/check-versioned-doc-links.mjs @rivinia/<pkg> <version>`, and with
+   `--tarball=<exact.tgz> --require-tag --verify-tag-snapshot` once the tag exists. A red
+   run here is a stop, not a warning.
+
+Also still owed and not done: **`1.0.0-rc.1` is not deprecated on any of the four** (D93's
+"deprecate the rc the next one replaces" step, by version, never by range), and no
+production build or consumer install has ever run against a published rc.2 artifact.
 
 | Package           | rc on `next`             | Registry verification                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ----------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

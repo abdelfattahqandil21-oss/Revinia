@@ -20,6 +20,34 @@ The README is the start-here tier; everyday patterns and the reference live in
 one topic per page. This file keeps what a consumer of this package needs,
 including the migration notes for 0.6.0 and 0.4.0.
 
+## 1.0.0-rc.3
+
+**No config key, export, pipe, token, loader hook or behavior changed** — the code in
+this release is the code of `1.0.0-rc.2`. The version exists because a published version
+is immutable and `1.0.0-rc.2` shipped a `CHANGELOG.md` whose newest heading was still
+`## 1.0.0-rc.1`, and because every repository link in the READMEs now points at an
+immutable release tag instead of the moving `main` branch.
+
+- **Documentation links are pinned to this release.** The asset and docs links in
+  `README.md` resolve through the `i18n/v1.0.0-rc.3` tag, so the document read from the
+  installed package can never be redirected to a `main` that has moved on.
+- **Nothing a consumer imports moved**: 35 names at `.`, 5 at `./ui`, 5 at `./select`,
+  the `rvTranslate` pipe, the ICU rules and the shape `rivinia-i18n-keys` generates are
+  as frozen in the API surface document.
+- **The optional `@rivinia/select` peer stays at `^1.0.0-rc.1` on purpose.** That range
+  admits every select `1.x` — each rc and the stable release alike — and excludes a 2.0,
+  which is what a peer wants. It is deliberately not `^1.0.0` yet: a caret on `1.0.0`
+  excludes prereleases, so an app installing this rc alongside `@rivinia/select@next`
+  would get an `ERESOLVE` the day the file is changed and not before. The flip belongs
+  with the `1.0.0` release, where both sides exist.
+
+## 1.0.0-rc.2
+
+Documentation only, and the first release of this package whose own changelog entry had
+to be written after the fact (see above). What it carried was the `Package version` line
+in `README.md`; the optional `@rivinia/select` peer stayed at `^1.0.0-rc.1`. No config
+key, export, pipe, token, loader hook or behavior changed.
+
 ## 1.0.0-rc.1
 
 - **The optional `@rivinia/select` peer is now `^1.0.0-rc.1`** (it was `^0.7.0`, a
