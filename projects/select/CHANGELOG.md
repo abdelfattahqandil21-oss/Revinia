@@ -22,6 +22,27 @@ The full entry for every release is in the repository
 this file keeps what a consumer of this package needs, including the migration
 notes for 0.6.0, 0.5.0 and 0.2.0.
 
+## 1.0.0-rc.3
+
+**No input, output, export, role, token or behavior changed** — the code in this release
+is the code of `1.0.0-rc.2`. The version exists because a published version is immutable
+and `1.0.0-rc.2` shipped a `CHANGELOG.md` whose newest heading was still
+`## 1.0.0-rc.1`, and because every repository link in the READMEs now points at an
+immutable release tag instead of the moving `main` branch.
+
+- **Documentation links are pinned to this release.** The asset, demo-page and docs
+  links in `README.md` resolve through the `select/v1.0.0-rc.3` tag, so the document read
+  from the installed package can never be redirected to a `main` that has moved on.
+- **Nothing a consumer imports moved.** The 7 names at `.`, the 10 at `./ui`, the
+  `menu` + `menuitemradio` roles and every `--rv-select-*` name are exactly as frozen in
+  the API surface document.
+
+## 1.0.0-rc.2
+
+Documentation only, and the first release of this package whose own changelog entry had
+to be written after the fact (see above). What it carried was the `Package version` line
+in `README.md`. No input, output, export, role, token or behavior changed.
+
 ## 1.0.0-rc.1
 
 - **Single rows are `menuitemradio` with `aria-checked`.** They were plain

@@ -18,6 +18,28 @@ setting (`0.1.0` had no dark values at all), the switch attribute is
 `--color-rv-*` override no longer repaints a `bg-rv-*` utility. Older releases
 followed the pre-1.0 policy, where a minor bump could break.
 
+## 1.0.0-rc.3
+
+**No token, entry file, value or rule changed** — the CSS in this release is the CSS of
+`1.0.0-rc.2`. The version exists because a published version is immutable and
+`1.0.0-rc.2` shipped a `CHANGELOG.md` whose newest heading was still `## 1.0.0-rc.1`, and
+because every repository link in the READMEs now points at an immutable release tag
+instead of the moving `main` branch.
+
+- **Documentation links are pinned to this release.** The asset and page links in
+  `README.md` resolve through the `theme/v1.0.0-rc.3` tag, so the document you read from
+  the installed package can never be redirected to a `main` that has moved on.
+- **The twelve `--rv-*` names and the four entry files are unchanged**, so an app
+  upgrading from `1.0.0-rc.2` renders exactly what it rendered before.
+
+## 1.0.0-rc.2
+
+Documentation only, and the first release of this package whose own changelog entry had
+to be written after the fact (see above). What it carried: the `Package version` line in
+`README.md`, and the `## 0.1.0 → 1.0.0` migration section at the top of this file, which
+is the one thing a reader coming from the `0.1.0` tarball needs — `0.1.0` has no dark
+values at all. No token, entry file, value or rule changed.
+
 ## 1.0.0-rc.1
 
 ### Dark mode and the contrast gate (1.0.0-rc.1)

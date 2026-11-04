@@ -4,13 +4,13 @@
 [![license](https://img.shields.io/npm/l/@rivinia/menu.svg)](https://www.npmjs.com/package/@rivinia/menu)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/main/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/menu/v1.0.0-rc.3/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
 </p>
 
 Angular dropdown menus: an optional ready-made UI and the headless controller
 behind it. The menu follows the WAI-ARIA menu-button pattern; it is for
 **actions**, not for a menubar or a general-purpose listbox.
-Package version: **1.0.0-rc.2**.
+Package version: **1.0.0-rc.3**.
 
 1.0.0-rc.1 is the first supported release; 0.x was experimental.
 
@@ -41,7 +41,7 @@ That is the whole menu: arrow keys and typeahead, one highlighted row, Escape
 back to the trigger, and a panel that stays attached to its button in
 right-to-left layouts. No service providers, no global styles to configure. The
 same page under
-[`projects/menu-e2e/src/app/pages`](https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/projects/menu-e2e/src/app/pages)
+[`projects/menu-e2e/src/app/pages`](https://github.com/abdelfattahqandil21-oss/Revinia/tree/menu/v1.0.0-rc.3/projects/menu-e2e/src/app/pages)
 is what the conformance suite drives — `npx ng build menu-e2e` runs it locally.
 
 ## Why `@rivinia/menu`
@@ -118,19 +118,19 @@ which is the path this suite measures three times a day.
 `@rivinia/menu` needs no feature to work that Angular itself does not need.
 The floor dates, the `@supports` gate, and what has never been run (including
 real Safari) are in
-[browser support](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/browser-support.md).
+[browser support](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.0-rc.3/docs/browser-support.md).
 
 ## Go further
 
-| Topic                                                                                                | Read                                                                                                              |
-| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| The ready-made component: data rows, custom panel content, projected content that keeps its own keys | [docs/menu/ready-made.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/menu/ready-made.md)   |
-| Every input, output, option and type, per entry point                                                | [docs/menu/api.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/menu/api.md)                 |
-| Keyboard, opening and closing, resize, and the limitations                                           | [docs/menu/interaction.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/menu/interaction.md) |
-| Headless: the controller surface and a complete custom dropdown                                      | [docs/menu/headless.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/menu/headless.md)       |
-| The menu's tokens, classes, `data-*` hooks and forced-colours behaviour                              | [docs/menu/theming.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/menu/theming.md)         |
-| Theming every Rivinia component — the cascade, light and dark, where an override has to live         | [docs/theming.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/theming.md)                   |
+| Topic                                                                                                | Read                                                                                                                          |
+| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| The ready-made component: data rows, custom panel content, projected content that keeps its own keys | [docs/menu/ready-made.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.0-rc.3/docs/menu/ready-made.md)   |
+| Every input, output, option and type, per entry point                                                | [docs/menu/api.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.0-rc.3/docs/menu/api.md)                 |
+| Keyboard, opening and closing, resize, and the limitations                                           | [docs/menu/interaction.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.0-rc.3/docs/menu/interaction.md) |
+| Headless: the controller surface and a complete custom dropdown                                      | [docs/menu/headless.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.0-rc.3/docs/menu/headless.md)       |
+| The menu's tokens, classes, `data-*` hooks and forced-colours behaviour                              | [docs/menu/theming.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.0-rc.3/docs/menu/theming.md)         |
+| Theming every Rivinia component — the cascade, light and dark, where an override has to live         | [docs/theming.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.0-rc.3/docs/theming.md)                   |
 
 Migration notes for each version live in
-[CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/projects/menu/CHANGELOG.md).
+[CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.0-rc.3/projects/menu/CHANGELOG.md).
 MIT licensed.
