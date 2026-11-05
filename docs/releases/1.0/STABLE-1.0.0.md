@@ -1,8 +1,9 @@
 # Synchronized stable release — 1.0.0
 
-**Status: merged to local `main` as `6237c3b`; not pushed, tagged, or published. Stable promotion remains blocked by S2, S4 and S8 below.**
-This document tracks the first stable release of all eleven libraries. Registry
-state checked on 2026-11-05: Popup, Theme, Select, Menu and i18n have `latest`
+**Current status: all eleven `1.0.0` packages were published to npm on 2026-11-05 and `latest` now points to `1.0.0`. Registry verification confirms exact archive integrity. Namespaced Git tags are still absent; the pre-release S2, S4 and S8 checks were not completed before publication. Safari was deferred by owner.**
+This document tracks the first stable release of all eleven libraries. The
+pre-publication registry snapshot on 2026-11-05 showed Popup, Theme, Select,
+Menu and i18n with `latest`
 at `1.0.0-rc.4` (Theme, Select, Menu and i18n have `next` at `rc.3`); Datepicker
 is `0.1.0`, Env `0.3.3`, HTTP `0.5.3`, Toast `0.5.1`, Modal `0.6.1`, and Table
 `0.1.0`. None of the eleven has a published `1.0.0`. The workspace candidate is
@@ -61,10 +62,10 @@ At stable publish time, Select and Menu must depend on
 `^1.0.0`. `pnpm check:governance` proves group alignment and the Popup dependency
 ranges; `language-select-surface.spec.ts` proves the optional-peer contract.
 
-The exact `1.0.0` candidate was built and local gates were run on the current
-topic branch. The exact archives passed the local consumer build and imports;
-the registry still has no `1.0.0` versions. It has not been built from a clean
-release tag, and therefore is not yet a release artifact.
+At candidate-preparation time, the exact `1.0.0` archives passed local consumer
+build and import checks, but the registry had no `1.0.0` versions. The archives
+had not been built from a clean release tag, so they were not yet release
+artifacts.
 
 ### Exact local archive inventory (2026-11-05)
 
@@ -241,7 +242,33 @@ merged to local `main` with `--no-ff` as `6237c3b`. All eleven manifests and
   `1.0.0-rc.5` set is published; local tarballs and Vercel preview do not satisfy
   the registry soak requirement.
 
-No release tags, `npm publish` or push were performed. Before final promotion,
-complete S2, S4 and S8, rerun release gates against this merged tree, create and
-verify immutable namespaced tags, and obtain exact owner approval for the eleven
-package names, `1.0.0`, npm public access and the inspected tarballs.
+At candidate-preparation time, no release tags, `npm publish` or push had been
+performed. The post-publication state and remaining release record are below.
+
+## Post-publication verification — 2026-11-05
+
+This addendum supersedes the pre-publication status above. The owner published
+all eleven `1.0.0` archives. The first immediate `npm view` calls returned
+`E404` while npm was processing the uploads; a later registry check confirmed
+all eleven versions are visible and each package's `latest` tag is `1.0.0`.
+
+- For all eleven packages, npm registry `dist.integrity` and `dist.shasum` match
+  the exact local `pack/rivinia-<package>-1.0.0.tgz` bytes.
+- A clean consumer installed `@rivinia/select@1.0.0` as its only direct Rivinia
+  dependency; Popup resolved through Select. After adding Menu, `npm ls
+  @rivinia/popup --all` showed one deduped Popup. The same consumer then installed
+  all eleven registry packages, compiled all 19 documented JavaScript entry
+  points and the three Theme CSS imports, and passed an Angular production build.
+- An SSR smoke app importing those public entry points rendered successfully.
+  This was a minimal `renderApplication` smoke, not the full all-library SSR/E2E
+  soak.
+- Namespaced release tags are absent locally and on `origin`. The versioned
+  README links therefore do not yet resolve to GitHub snapshots. The local
+  `main` integration (`6237c3b`, followed by release-doc commit `a403567`) is
+  not pushed.
+- S2 (full screen-reader matrix), S4 (physical phone/tablet keyboard), and S8
+  (real consumer soak against published RCs) were still open when stable
+  publication happened. S7 Safari remains deferred by owner. Published versions
+  are immutable; follow-up fixes require new versions.
+- Post-publish bundle-size comparison against the preceding release was not
+  run. Record it with the follow-up consumer audit.
