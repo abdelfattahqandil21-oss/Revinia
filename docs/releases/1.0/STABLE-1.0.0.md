@@ -103,6 +103,27 @@ The runbook requires S8 before stable promotion. `1.0.0-rc.5` is only a local
 candidate today, so the soak cannot use it yet. These checks must be completed
 and their results recorded before stable release approval.
 
+### S8 scope for the synchronized eleven-package group
+
+Once all eleven `1.0.0-rc.5` versions exist on the registry, run the real
+consumer soak against those exact versions, not a moving `next` range or local
+tarball override. Exercise the all-library lab's production routes and cover:
+
+- Theme light/dark switching; Select single, multi, search and RTL; Menu keyboard
+  navigation and projected controls; Popup dismissal and focus restore through
+  both Select and Menu.
+- i18n Arabic/English switching, RTL, production build and SSR; Datepicker date
+  and time selection with `Africa/Cairo` explicitly selected.
+- Env configuration; HTTP request/response behavior; Toast actions and
+  dismissal; nested Modal open/result/close; Table sorting, filtering, paging,
+  selection and duplicate/invalid row identity behavior.
+- `npm ls @rivinia/popup` has one deduped copy, every documented import resolves,
+  the production build succeeds, and SSR renders and hydrates without errors.
+
+Keep the package versions exact during the sitting. Any integration failure
+blocks promotion: fix it in a new RC, publish the new RC through the approved
+release process, then restart the soak against that exact version set.
+
 ## Main, tags and publication boundary
 
 The verification above was performed on the release-preparation branch. Before
@@ -162,3 +183,6 @@ created.
   exactly as expected). The shared Popup/Menu/Select suite also passed all 126
   tests with `pnpm exec playwright test --project=webkit`. This is Playwright
   WebKit engine coverage, not native Safari coverage.
+- Full shared Playwright Chromium run: 125 passed, 1 skipped. The i18n browser
+  suite passed 96/96 across bundled Chromium, system Chrome and Firefox; its SSR
+  smoke passed 36/36. `pnpm check:skills` passed.
