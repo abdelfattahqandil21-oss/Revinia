@@ -6,7 +6,7 @@
 - **Base SHA:** `75c50384d19fa98c7aadfa71d7c93bbe5d4026a`.
 - **Source/runtime changes:** none.
 - **Manifest, API, version, tag, publish, merge, or push changes:** none.
-- **Deliverables:** audit, proposal, verification report, future work list, and this report under `docs/repository-architecture/`.
+- **Deliverables:** audit, proposal, verification report, future work list, and this report under `docs/archive/repository-architecture/`.
 - **Generated artifacts:** ignored build outputs were used for verification and are not deliverables; no generated output is committed.
 
 At the initial audit close, this branch was ready for review of the audit and proposal. The owner has since approved the governance direction; this addendum records the additive follow-up.

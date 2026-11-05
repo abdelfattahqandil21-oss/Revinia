@@ -13,7 +13,7 @@ loader chunks. Three defects keep it from being a production default:
 1. **The default loader is broken on the server.** `jsonLoader()` fetches
    `i18n/{lang}.json` — a relative URL. Node's `fetch` throws
    `TypeError: Failed to parse URL from i18n/en.json` (measured 2026-10-28;
-   `docs/repository-architecture/AUDIT-2026-10.md:314` recorded the same failure earlier). The app
+   `docs/archive/repository-architecture/AUDIT-2026-10.md:314` recorded the same failure earlier). The app
    initializer therefore renders raw keys under SSR — while SSR support is the
    library's strongest differentiator.
 2. **No fallback language.** A key missing in `ar` returns the key, not the

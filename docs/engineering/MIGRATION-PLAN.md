@@ -6,7 +6,7 @@
 
 ## Phase A — baseline and specification
 
-Completed from base `75c50384d19fa98c7aadfa71d7c93bbe5d4026a` on 2026-11-03. Read the architecture audit, root instructions, playbook/release skill, decisions, release runbooks, package manifests, docs, test layout and scripts. Verified current workspace versions and official npm registry state rather than carrying forward the prior audit snapshot. See [RFC](RFC-ENGINEERING-GOVERNANCE.md), [audit](../repository-architecture/REPOSITORY-AUDIT.md), and [verification](../repository-architecture/VERIFICATION-REPORT.md).
+Completed from base `75c50384d19fa98c7aadfa71d7c93bbe5d4026a` on 2026-11-03. Read the architecture audit, root instructions, playbook/release skill, decisions, release runbooks, package manifests, docs, test layout and scripts. Verified current workspace versions and official npm registry state rather than carrying forward the prior audit snapshot. See [RFC](RFC-ENGINEERING-GOVERNANCE.md), [audit](../archive/repository-architecture/REPOSITORY-AUDIT.md), and [verification](../archive/repository-architecture/VERIFICATION-REPORT.md).
 
 ## Phase B — additive governance foundation
 
@@ -33,7 +33,7 @@ No public API, package version, runtime source, package export, release tag, reg
 | Colocate package-owned specifications | Keep package README/changelogs and published exports at their existing boundaries; preserve append-only decisions | Full local Markdown link check, `check:docs`, docs index review; pack configuration confirms specs are not package assets | Revert spec moves and restore compatibility pointers | **Verified 2026-11-03** |
 | Add exact-tarball consumer smoke | Keep fixture tracked and generated app external; test cleanup on each failure edge | Script unit tests plus i18n tarball install, optional-peer absence, and Angular production build | Revert runner, fixture, command and procedure docs | **Verified 2026-11-03** |
 
-The owner first authorized documentation-only organization on `main` on 2026-11-03. The execution groups release records under `docs/releases/1.0/`, verification material under `docs/testing/`, research under `docs/research/`, theme guidance under `docs/theme/`, and historical audits under `docs/repository-architecture/`. Old documentation paths remain short compatibility pointers; append-only `docs/DECISIONS.md` and the linked `docs/a11y-snapshots/` baseline remain in place. A later owner direction authorized ownership-based project moves, beginning with the verified i18n testing pilot. That does not authorize changes to published artifacts, package versions, registry state, tags, or protected `projects/env/schematics/`.
+The owner first authorized documentation-only organization on `main` on 2026-11-03. The execution grouped release records under `docs/releases/1.0/`, verification material under `docs/testing/`, research under `docs/research/`, theme guidance under `docs/theme/`, and historical audits under `docs/repository-architecture/`. A later path cleanup moved completed reports into `docs/archive/` and removed old pointers after updating active links; append-only `docs/DECISIONS.md` and the linked `docs/a11y-snapshots/` baseline remain in place. A later owner direction authorized ownership-based project moves, beginning with the verified i18n testing pilot. That does not authorize changes to published artifacts, package versions, registry state, tags, or protected `projects/env/schematics/`.
 
 ## Current-state verification
 

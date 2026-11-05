@@ -11,7 +11,7 @@ This is an evidence-based audit of the current repository. “Risk” means a wo
 
 ### High — popup mutation control can consume stale E2E output
 
-- **Evidence:** [`scripts/check-popup-mutations.mjs`](../../scripts/check-popup-mutations.mjs#L325) runs the clean Playwright control before mutation builds. [`playwright.config.ts`](../../playwright.config.ts#L20) serves `dist/menu-e2e/browser` and expects build output to exist separately. Workspace aliases resolve package imports through `dist` ([`tsconfig.json`](../../tsconfig.json#L15)).
+- **Evidence:** [`scripts/check-popup-mutations.mjs`](../../../scripts/check-popup-mutations.mjs#L325) runs the clean Playwright control before mutation builds. [`playwright.config.ts`](../../../playwright.config.ts#L20) serves `dist/menu-e2e/browser` and expects build output to exist separately. Workspace aliases resolve package imports through `dist` ([`tsconfig.json`](../../../tsconfig.json#L15)).
 - **Observed:** In the earlier rc.2 diagnosis, rebuilding select/menu did not clear four clean-control failures; rebuilding `menu-e2e` did, and popup conformance then passed 24/24. This points to stale/missing demo output, not a confirmed popup implementation regression.
 - **Impact:** A gate can abort before mutations and falsely implicate current source, depending on leftover ignored build artifacts.
 - **Proposal:** Make the gate build its exact demo/package prerequisites before the control run, or fail with a specific “required dist missing/stale” diagnostic. Test from an empty `dist` directory and with pre-existing stale output.
@@ -19,14 +19,14 @@ This is an evidence-based audit of the current repository. “Risk” means a wo
 
 ### Medium — schematic build emits into protected source directories
 
-- **Evidence:** Root scripts compile schematics and rename emitted files in place ([`package.json`](../../package.json#L10)); env schematic config sets both `outDir` and `rootDir` to `./` ([`projects/env/schematics/tsconfig.schematics.json`](../../projects/env/schematics/tsconfig.schematics.json#L9)).
+- **Evidence:** Root scripts compile schematics and rename emitted files in place ([`package.json`](../../../package.json#L10)); env schematic config sets both `outDir` and `rootDir` to `./` ([`projects/env/schematics/tsconfig.schematics.json`](../../../projects/env/schematics/tsconfig.schematics.json#L9)).
 - **Impact:** Build commands can write generated files alongside authored sources and replace the tracked `.cjs` output. This increases risk of accidental source-tree churn.
 - **Proposal:** Emit to an ignored temporary build directory, validate output, then copy only the intended artifact in a controlled step. Preserve current package tarball contents and verify with pack/consumer checks.
 - **Migration risk:** Medium; schematics paths and package exports must remain byte-for-byte compatible in the tarball. Env schematics are protected; do not edit without explicit review.
 
 ### Medium — public API snapshot intentionally covers only four 1.0 packages
 
-- **Evidence:** [`scripts/api-surface.mjs`](../../scripts/api-surface.mjs#L1) describes its scope as four packages; its [`ENTRY_POINTS`](../../scripts/api-surface.mjs#L22) list includes theme, select, menu and i18n. The workspace contains ten publishable package manifests and 18 `public-api.ts` files.
+- **Evidence:** [`scripts/api-surface.mjs`](../../../scripts/api-surface.mjs#L1) describes its scope as four packages; its [`ENTRY_POINTS`](../../../scripts/api-surface.mjs#L22) list includes theme, select, menu and i18n. The workspace contains ten publishable package manifests and 18 `public-api.ts` files.
 - **Impact:** The six other packages do not receive the same centralized API snapshot comparison. This is a coverage gap, not evidence of an API break.
 - **Proposal:** Expand snapshots package-by-package when each package has a reviewed baseline and an owner for intentional changes. Avoid generating snapshots that bless unreviewed APIs.
 - **Migration risk:** Low to medium; snapshot churn requires human review.
@@ -40,7 +40,7 @@ This is an evidence-based audit of the current repository. “Risk” means a wo
 
 ### Low — dependency build allowlist still has owner decisions pending
 
-- **Evidence:** [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml) contains literal “set this to true or false” entries for four native/build packages. pnpm documents the `allowBuilds` / approval workflow in [approve-builds](https://pnpm.io/cli/approve-builds).
+- **Evidence:** [`pnpm-workspace.yaml`](../../../pnpm-workspace.yaml) contains literal “set this to true or false” entries for four native/build packages. pnpm documents the `allowBuilds` / approval workflow in [approve-builds](https://pnpm.io/cli/approve-builds).
 - **Impact:** Install/build behavior depends on the package manager’s undecided-script policy; this is not a source architecture defect.
 - **Proposal:** Have the maintainer decide each package explicitly, then validate clean install and production builds. Do not guess approvals in an architecture cleanup.
 - **Migration risk:** Low, but approval broadens install-time script execution and should be deliberate.

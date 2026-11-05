@@ -78,6 +78,6 @@ High risk: the old README rule said `sideEffects: false` for every library; the 
 1. Root/scoped instruction corrections: `AGENTS.md`, `projects/AGENTS.md`, `projects/env/AGENTS.md`, `e2e/AGENTS.md`.
 2. Governance checks and tests: `package.json`, `release-groups.json`, `scripts/check-governance.mjs`, `scripts/check-versioned-doc-links.mjs`, matching `scripts/tests/*`.
 3. Governance policy and release workflow docs: `docs/engineering/**`, `.opencode/skills/rivinia-playbook/SKILL.md`, `.opencode/skills/rivinia-release/SKILL.md`.
-4. Audit/review reports: `docs/repository-architecture/**` and root README edits, if owner wants the historical audit updates committed.
+4. Audit/review reports: `docs/archive/repository-architecture/**` and root README edits, if owner wants the historical audit updates committed.
 
 At this review snapshot, no commit boundary had been staged or created. Later owner authorization and completion evidence are recorded in `FINALIZATION-REPORT.md`.

@@ -13,7 +13,8 @@ Use the package README in `projects/<package>/` for its public setup and API. Th
 | Testing and browser evidence | [`testing/README.md`](testing/README.md) | Testing procedures plus dated verification evidence |
 | Release history | [`releases/1.0/README.md`](releases/1.0/README.md) | Historical 1.0 RC records; refresh against current source before operational use |
 | Research | [`research/theme-stacks.md`](research/theme-stacks.md) | Dated investigation, not normative API guidance |
-| Repository audits and migration history | [`repository-architecture/README.md`](repository-architecture/README.md) | Historical snapshots; root policy and engineering docs remain authoritative |
+| Repository architecture history | [`repository-architecture/README.md`](repository-architecture/README.md) | Index to archived audits and task reports |
+| Historical audits, proofs, and reports | [`archive/README.md`](archive/README.md) | Dated evidence snapshots, not current policy |
 | Skills and agent workflows | [`engineering/SKILLS-INVENTORY.md`](engineering/SKILLS-INVENTORY.md), [`engineering/SKILLS-ROUTING.md`](engineering/SKILLS-ROUTING.md) | Current routing; version-specific claims follow `engineering/AI-SKILLS.md` |
 | Task and package README templates | `docs/engineering/templates/`, [`releases/1.0/README-TEMPLATE.md`](releases/1.0/README-TEMPLATE.md) | Reusable process templates and historical S9 package template |
 

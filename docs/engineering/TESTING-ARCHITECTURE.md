@@ -60,4 +60,4 @@ Keep source and test suites singular where possible. Use fixtures/configuration 
 - The packed-consumer runner has been exercised for `@rivinia/i18n@1.0.0-rc.2` core/UI entry points without optional `@rivinia/select`; other packages still need their own exact-tarball runs before a release claim.
 - Full `check:popup-mutations` was not run in the audit; its prerequisite fix needs its own reviewable change.
 
-See `docs/repository-architecture/VERIFICATION-REPORT.md` for the timestamped audit evidence and limitations.
+See `docs/archive/repository-architecture/VERIFICATION-REPORT.md` for the timestamped audit evidence and limitations.

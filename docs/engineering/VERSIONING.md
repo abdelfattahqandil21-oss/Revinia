@@ -40,7 +40,7 @@ The table separates owner-declared lifecycle from what the audited source actual
 | `@rivinia/table` | `0.1.0` | `0.1.0` | Independent versioning; no multi-version support range declared | Base `75c5038`; build, 207 unit tests, pack, clean tarball install |
 | `@rivinia/toast` | `0.5.1` | `0.5.2` | Independent versioning; no multi-version support range declared | Base `75c5038`; build, 35 unit tests, pack, clean tarball install |
 
-The npm column is the exact `latest` dist-tag version read from `https://registry.npmjs.org/` on 2026-11-03; the workspace column is the manifest version at base. These are separate facts and neither implies the other. The matrix is a dated snapshot, not a live registry guarantee. Full evidence, failed test context and not-run gates are in `docs/repository-architecture/VERIFICATION-REPORT.md`. The long-term support/end-of-life schedule for future stable majors remains **REQUIRES PRODUCT DECISION**.
+The npm column is the exact `latest` dist-tag version read from `https://registry.npmjs.org/` on 2026-11-03; the workspace column is the manifest version at base. These are separate facts and neither implies the other. The matrix is a dated snapshot, not a live registry guarantee. Full evidence, failed test context and not-run gates are in `../archive/repository-architecture/VERIFICATION-REPORT.md`. The long-term support/end-of-life schedule for future stable majors remains **REQUIRES PRODUCT DECISION**.
 
 ### Admission rules for a future group member
 

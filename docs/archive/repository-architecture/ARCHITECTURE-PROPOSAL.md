@@ -1,6 +1,6 @@
 # Architecture Proposal
 
-**Status:** Initial audit proposal; superseded for governance direction by [the engineering governance RFC](../engineering/RFC-ENGINEERING-GOVERNANCE.md). No package, test, or E2E tree moves have been applied; the later approved skill-source relocation is documented in the RFC.
+**Status:** Initial audit proposal; superseded for governance direction by [the engineering governance RFC](../../engineering/RFC-ENGINEERING-GOVERNANCE.md). No package, test, or E2E tree moves have been applied; the later approved skill-source relocation is documented in the RFC.
 **Branch:** `chore/repository-architecture` · **Base:** `75c50384d19fa98c7aadfa71d7c93bbe5d4026a`
 
 ## Goals
