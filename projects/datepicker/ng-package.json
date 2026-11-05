@@ -3,5 +3,10 @@
   "dest": "../../dist/datepicker",
   "lib": {
     "entryFile": "src/public-api.ts"
-  }
+  },
+  "assets": [
+    "./LICENSE",
+    "./README.md",
+    "./CHANGELOG.md"
+  ]
 }

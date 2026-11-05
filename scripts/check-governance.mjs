@@ -21,8 +21,8 @@ const requiredDocs = [
   'docs/engineering/templates/task-record.md',
   'docs/engineering/templates/handoff.md',
 ];
-const approvedMembers = ['@rivinia/menu', '@rivinia/select', '@rivinia/theme', '@rivinia/i18n', '@rivinia/popup'];
-const coreAdmissionDecision = 'D95';
+const approvedMembers = ['@rivinia/menu', '@rivinia/select', '@rivinia/theme', '@rivinia/i18n', '@rivinia/popup', '@rivinia/datepicker', '@rivinia/env', '@rivinia/http', '@rivinia/modal', '@rivinia/table', '@rivinia/toast'];
+const coreAdmissionDecision = 'D97';
 
 function isExactSemver(version) {
   if (typeof version !== 'string') return false;

@@ -1,7 +1,7 @@
 # @rivinia/modal
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/main/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/modal/v1.0.0/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="340" />
 </p>
 
 An Angular modal manager with typed results, stack/queue admission, dismissal
@@ -9,7 +9,7 @@ policies, async guards, and optional ready-made UI. The core package owns
 modal state and lifecycle but does not render or style dialogs.
 
 - Install: `npm install @rivinia/modal`
-- Package version: **0.6.0**
+- Package version: **1.0.0**
 - Peer dependencies: `@angular/core ^22.0.0` and `@angular/common ^22.0.0`
 - `@rivinia/modal` is the headless manager.
 - `@rivinia/modal/ui` contains standalone dialog and host components.
@@ -597,3 +597,7 @@ The `@rivinia/modal/ui` entry point exports `RiviniaModalDialog`,
 ## License
 
 MIT.
+
+## Further reading
+
+[Package design and usage notes](https://github.com/abdelfattahqandil21-oss/Revinia/blob/modal/v1.0.0/docs/decisions/D029-rivinia-modal-ui-on-native-dialog-no-cdk.md).

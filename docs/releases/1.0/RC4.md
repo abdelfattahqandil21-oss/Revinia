@@ -1,6 +1,6 @@
 # 1.0.0-rc.4 — Popup release preparation
 
-**Status:** prepared locally; not pushed, tagged or published. This candidate adds the first public `@rivinia/popup` package to the synchronized `rivinia-1.0` release line. The exact candidate version for Popup, Theme, Select, Menu and i18n is `1.0.0-rc.4`.
+**Status:** published by the owner on 2026-11-05. All five namespaced rc.4 tags point to `d966e51fe18b321459221b187497c0f8fcb8fdc5`; all five packages are visible on npm `latest` at `1.0.0-rc.4`. Theme’s immutable rc.4 tarball does not contain `LICENSE`; this packaging omission is fixed for the next release only. This candidate adds the first public `@rivinia/popup` package to the synchronized `rivinia-1.0` release line.
 
 This procedure is based on the [1.1 popup runbook](../1.1/PUBLISH-RUNBOOK.md), updated for the owner's decision to include Popup before the 1.0 final. Read [D96](../../decisions/D096-popup-ships-in-the-1-0-rc-4-release-line.md), [D88](../../decisions/D088-1-0-ships-as-1-0-0-rc-1-on-next-then-1-0-0.md), [D93](../../decisions/D093-latest-moves-onto-the-1-0-line-at-1-0-0-rc-1-and-the-whole-0-x-line-is-d.md), [D94](../../decisions/D094-1-0-0-rc-2-is-published-on-annotated-tags-the-four-next-tags-are-aligned.md), and the [1.0 publish runbook](PUBLISH-RUNBOOK.md) before release.
 
@@ -104,7 +104,7 @@ done
 
 ## Gaps and findings
 
-- `LICENSE` was absent from all five initial archives. Four packages now include a package-local copy of the repository MIT license and pass `check:pack`. Theme’s exact-file checker rejects an added `LICENSE` as unexpected, and this task does not authorize editing that checker. Therefore the Theme tarball still lacks `LICENSE`; minimal fix is to add it to the checker’s expected files and keep the package-local asset.
+- Theme rc.4’s immutable published tarball lacks `LICENSE`. The post-rc.4 housekeeping change adds the package-local license asset and updates the exact-file checker; the fix takes effect only in the next Theme release.
 - `check:pack` now includes Popup in its default five-package run. The API-surface snapshot test still passes without a snapshot edit; it enumerates the existing public entry points and does not demand an update for this new package.
 
 ## Real-registry verification after publication

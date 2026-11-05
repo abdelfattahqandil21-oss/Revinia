@@ -1,23 +1,8 @@
 # @rivinia/menu
 
-From 1.0.0 this package follows **strict semver**: only a major may break, a new
-input, output, token or export is a minor, and a patch never changes what a page
-renders or what an assistive technology announces. Two things are public API here
-rather than implementation detail: **the `--rv-menu-*` and `--rv-*` token names**,
-and **the roles the panel emits** — `menu` on the panel, `menuitem` rows,
-`menuitemradio` and `menuitemcheckbox` when the consumer's markup asks, and the
-optional `role="group"` wrapper. Renaming a token or changing a role a consumer
-has to write is a major. A new token is always additive: every rule reads
-`var(--rv-menu-<name>, var(--rv-<semantic>, <previous value>))`.
+## 1.0.0
 
-Coming from 0.5.0: **nothing to do** — 1.0.0 removes no name and renames none.
-The changes a 0.x consumer had to read are 0.4.0's pointer-open and width
-defaults, recorded below, and the freeze that fixed what ships is
-[`docs/releases/1.0/API-SURFACE.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/releases/1.0/API-SURFACE.md).
-The full entry for every release is in the repository
-[CHANGELOG](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/CHANGELOG.md);
-this file keeps what a consumer of this package needs, including the migration
-notes for 0.4.0 and 0.3.5.
+- First stable release. Popup mechanics are provided by @rivinia/popup; Menu keeps its documented host-specific keyboard and focus behavior.
 
 ## 1.0.0-rc.4
 

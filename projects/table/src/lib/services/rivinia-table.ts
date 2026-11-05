@@ -70,9 +70,12 @@ export interface TableOptions<T> {
   /** Server mode: declared only, not wired in 0.1.0 (the table warns). */
   readonly server?: TableServerOptions<T>;
   /**
-   * Row identity. Defaults to `row.id`, then a per-object generated id kept in
-   * a `WeakMap`. Never the array index: an index changes under sorting and
-   * filtering, and would silently break selection and focus.
+   * Row identity. IDs must be unique, stable, non-empty strings or finite
+   * numbers within the full data set. In development invalid or duplicate
+   * values throw with their source row positions. In production ambiguous
+   * rows remain visible but identity-dependent actions (such as selection) are
+   * disabled for them. Defaults to `row.id`, then a per-object generated id
+   * kept in a `WeakMap`; never use the array index.
    */
   readonly getRowId?: (row: T) => TableRowId;
   /** Locale for collation and formatting; read lazily so it can be a signal. */
@@ -160,11 +163,11 @@ const EMPTY_SELECTION: SelectionState = { mode: 'include', ids: NO_IDS };
  */
 function pruneSelection(
   state: SelectionState,
-  rows: readonly { readonly id: TableRowId }[],
+  rows: readonly { readonly id: TableRowId; readonly identityValid?: boolean }[],
 ): SelectionState {
   if (state.ids.size === 0) return state;
   const present = new Set<TableRowId>();
-  for (const row of rows) present.add(row.id);
+  for (const row of rows) if (row.identityValid !== false) present.add(row.id);
   let dropped = false;
   const next = new Set<TableRowId>();
   for (const id of state.ids) {
@@ -229,7 +232,7 @@ class RiviniaSelection<T> implements RiviniaTableSelection {
   }
 
   select(id: TableRowId): void {
-    if (!this.enabled) return;
+    if (!this.enabled || !this.isUnambiguous(id)) return;
     const state = this.state();
     if (!this.multiple) {
       if (state.mode === 'include' && state.ids.size === 1 && state.ids.has(id)) return;
@@ -246,7 +249,7 @@ class RiviniaSelection<T> implements RiviniaTableSelection {
   }
 
   deselect(id: TableRowId): void {
-    if (!this.enabled) return;
+    if (!this.enabled || !this.isUnambiguous(id)) return;
     const state = this.state();
     if (state.mode === 'include') {
       const ids = withoutId(state.ids, id);
@@ -268,7 +271,7 @@ class RiviniaSelection<T> implements RiviniaTableSelection {
   }
 
   isSelected(id: TableRowId): boolean {
-    if (!this.enabled) return false;
+    if (!this.enabled || !this.isUnambiguous(id)) return false;
     const state = this.state();
     return state.mode === 'include' ? state.ids.has(id) : !state.ids.has(id);
   }
@@ -280,12 +283,12 @@ class RiviniaSelection<T> implements RiviniaTableSelection {
     const state = this.state();
     if (state.mode === 'include') {
       let ids = state.ids;
-      for (const row of page) ids = withId(ids, row.id);
+      for (const row of page) if (row.identityValid !== false) ids = withId(ids, row.id);
       if (ids !== state.ids) this.state.set({ mode: 'include', ids });
       return;
     }
     let ids = state.ids;
-    for (const row of page) ids = withoutId(ids, row.id);
+    for (const row of page) if (row.identityValid !== false) ids = withoutId(ids, row.id);
     if (ids !== state.ids) this.state.set({ mode: 'exclude', ids });
   }
 
@@ -329,20 +332,63 @@ class RiviniaSelection<T> implements RiviniaTableSelection {
     const state = this.state();
     const ids: TableRowId[] = [];
     for (const row of this.rows()) {
+      if (row.identityValid === false) continue;
       const listed = state.ids.has(row.id);
       if (state.mode === 'include' ? listed : !listed) ids.push(row.id);
     }
     return ids;
   }
+
+  private isUnambiguous(id: TableRowId): boolean {
+    let matches = 0;
+    for (const row of this.rows()) {
+      if (row.identityValid !== false && row.id === id) matches++;
+      if (matches > 1) return false;
+    }
+    return matches === 1;
+  }
+}
+
+function isValidRowId(id: unknown): id is TableRowId {
+  return (typeof id === 'string' && id.trim().length > 0) ||
+    (typeof id === 'number' && Number.isFinite(id));
 }
 
 function buildRows<T>(data: readonly T[], getId: (row: T) => TableRowId): readonly TableRow<T>[] {
+  const ids = new Map<TableRowId, number[]>();
+  const invalid = new Set<number>();
   const rows = new Array<TableRow<T>>(data.length);
   for (let index = 0; index < data.length; index++) {
     const item = data[index];
-    rows[index] = { id: getId(item), data: item, index };
+    const id: unknown = getId(item);
+    if (!isValidRowId(id)) {
+      invalid.add(index);
+      if (isDevMode()) {
+        throw new Error(
+          `[rivinia/table] Invalid row ID ${String(id)} at row index ${index}; ` +
+          'IDs must be non-empty strings or finite numbers.',
+        );
+      }
+    } else {
+      const positions = ids.get(id) ?? [];
+      positions.push(index);
+      ids.set(id, positions);
+    }
+    // Preserve the caller's value for diagnosis; identityValid gates all
+    // identity-dependent behavior. Never synthesize an index-based ID.
+    rows[index] = { id: id as TableRowId, data: item, index };
   }
-  return rows;
+  for (const [id, positions] of ids) {
+    if (positions.length < 2) continue;
+    for (const index of positions) invalid.add(index);
+    if (isDevMode()) {
+      throw new Error(
+        `[rivinia/table] Duplicate row ID ${JSON.stringify(id)} at row indices ${positions.join(', ')}; ` +
+        'IDs must be unique and stable within the active data set.',
+      );
+    }
+  }
+  return rows.map((row, index) => invalid.has(index) ? { ...row, identityValid: false } : row);
 }
 
 /**
@@ -355,7 +401,7 @@ function buildRows<T>(data: readonly T[], getId: (row: T) => TableRowId): readon
 function reindex<T>(rows: readonly TableRow<T>[]): readonly TableRow<T>[] {
   for (let index = 0; index < rows.length; index++) {
     if (rows[index].index !== index) {
-      return rows.map((row, position) => ({ id: row.id, data: row.data, index: position }));
+      return rows.map((row, position) => ({ ...row, index: position }));
     }
   }
   return rows;
@@ -598,7 +644,10 @@ export class RiviniaTable<T> {
   }
 
   /**
-   * `getRowId` -> `row.id` -> a per-object generated id.
+   * `getRowId` -> `row.id` -> a per-object generated id. Custom IDs must be
+   * unique, stable, non-empty strings or finite numbers; ambiguous rows are
+   * rejected in development and excluded from identity-dependent operations
+   * in production. Primitive rows require a unique `getRowId`.
    *
    * A primitive row has no identity of its own, so equal primitives collapse
    * into one id; that is documented, and `getRowId` is the answer.

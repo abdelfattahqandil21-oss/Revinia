@@ -27,6 +27,8 @@ export interface FilterState {
 export interface TableRow<T> {
   /** Stable across sorting and paging: what selection and actions refer to. */
   readonly id: TableRowId;
+  /** False when this row's configured identity is invalid or ambiguous. */
+  readonly identityValid?: boolean;
   readonly data: T;
   /** Position in `rows`, i.e. after filtering and sorting. */
   readonly index: number;

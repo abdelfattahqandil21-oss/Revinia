@@ -4,16 +4,16 @@
 [![license](https://img.shields.io/npm/l/@rivinia/i18n.svg)](https://www.npmjs.com/package/@rivinia/i18n)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/i18n/v1.0.0-rc.4/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/i18n/v1.0.0/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="340" />
 </p>
 
 A headless Angular language manager built on signals: key-based JSON
 dictionaries, inline translations, RTL/LTR document attributes, lazy loaders, ICU
 plural/select messages, browser-language detection, and `Intl` number/date
 formatting — with SSR that actually works and no runtime dependency beyond
-Angular. Package version: **1.0.0-rc.4**.
+Angular. Package version: **1.0.0**.
 
-1.0.0-rc.1 is the first supported release; 0.x was experimental.
+The `1.0.0` stable release follows the 1.0 release candidates; 0.x was experimental.
 
 Concretely: the text lives in JSON files, components ask for a key, and the whole
 app — text, direction, dates, numbers — follows the language the user picked.
@@ -43,7 +43,7 @@ export class Header {
 
 `title()` and the pipe update on the click and the page's direction flips with the
 language — nothing else is wired by hand. The same app under
-[`projects/i18n/testing/app/src`](https://github.com/abdelfattahqandil21-oss/Revinia/tree/i18n/v1.0.0-rc.4/projects/i18n/testing/app/src)
+[`projects/i18n/testing/app/src`](https://github.com/abdelfattahqandil21-oss/Revinia/tree/i18n/v1.0.0/projects/i18n/testing/app/src)
 is what the Playwright suites drive: `npx ng build i18n-e2e` runs it locally.
 
 ## Why `@rivinia/i18n`
@@ -129,7 +129,7 @@ so an app that never runs `ng add` does not install it). Optional, for the picke
 
 The two are independent: the UI entry points import core **types** only, and the core
 never imports them. Every UI export is Experimental; the tiers are in the
-[API reference](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0-rc.4/docs/i18n/api.md#api-stability).
+[API reference](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0/docs/i18n/api.md#api-stability).
 
 ## Compatibility
 
@@ -144,25 +144,25 @@ above. The **Enhanced** row belongs to the picker's popup, which is
 `@rivinia/select`'s; the toggle is a plain button and is unaffected.
 `document.startViewTransition` is used only if you opt into `viewTransition` — the
 service feature-detects it and applies the change without a transition where it is
-absent. Peers: `@angular/core` `^22.0.0`, plus `@rivinia/select` `^1.0.0-rc.1` for
+absent. Peers: `@angular/core` `^22.0.0`, plus `@rivinia/select` `^1.0.0` for
 the `/select` entry only — optional, so an app that never imports
 `@rivinia/i18n/select` does not install it. The caret admits every select 1.x
 release, the rc and the final alike, and excludes a 2.0. The floor dates, the
 `@supports` gate and what has never been run (including real Safari) are in
-[browser support](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0-rc.4/docs/browser-support.md).
+[browser support](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0/docs/browser-support.md).
 
 ## Go further
 
 Three levels, kept as they were: everyday patterns first, then the complete
 surface ordered by API.
 
-| Tier                    | Read                                                                                                                                                                                                                                                                                                                                                                           |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Everyday use            | [translating text](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0-rc.4/docs/i18n/translating.md) · [switching the language](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0-rc.4/docs/i18n/switching.md) · [dictionaries and SSR](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0-rc.4/docs/i18n/dictionaries.md) |
-| Reference — behaviour   | [ICU messages](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0-rc.4/docs/i18n/icu.md) · [missing keys, fallback and failures](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0-rc.4/docs/i18n/resilience.md) · [the CLI](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0-rc.4/docs/i18n/cli.md)                     |
-| Reference — the surface | [the API](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0-rc.4/docs/i18n/api.md) · [the language toggle](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0-rc.4/docs/i18n/toggle.md) · [the language picker](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0-rc.4/docs/i18n/select.md)                               |
-| Theming                 | [Rivinia theming](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0-rc.4/docs/theme/README.md)                                                                                                                                                                                                                                                                    |
+| Tier                    | Read                                                                                                                                                                                                                                                                                                                                                            |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Everyday use            | [translating text](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0/docs/i18n/translating.md) · [switching the language](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0/docs/i18n/switching.md) · [dictionaries and SSR](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0/docs/i18n/dictionaries.md) |
+| Reference — behaviour   | [ICU messages](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0/docs/i18n/icu.md) · [missing keys, fallback and failures](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0/docs/i18n/resilience.md) · [the CLI](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0/docs/i18n/cli.md)                     |
+| Reference — the surface | [the API](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0/docs/i18n/api.md) · [the language toggle](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0/docs/i18n/toggle.md) · [the language picker](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0/docs/i18n/select.md)                               |
+| Theming                 | [Rivinia theming](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0/docs/theme/README.md)                                                                                                                                                                                                                                                     |
 
 Migration notes for each version live in
-[CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0-rc.4/projects/i18n/CHANGELOG.md).
+[CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.0/projects/i18n/CHANGELOG.md).
 MIT licensed.

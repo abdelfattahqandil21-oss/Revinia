@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/env",
-  "version": "0.3.4",
+  "version": "1.0.0",
   "description": "Typed application environments for Angular (dev/staging/prod) with an ng-add schematic.",
   "keywords": [
     "angular",
@@ -13,5 +13,17 @@
     "@angular-devkit/schematics": "^22.0.0"
   },
   "sideEffects": false,
-  "schematics": "./schematics/collection.json"
+  "schematics": "./schematics/collection.json",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abdelfattahqandil21-oss/Revinia.git",
+    "directory": "projects/env"
+  },
+  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/env/v1.0.0/projects/env#readme",
+  "bugs": {
+    "url": "https://github.com/abdelfattahqandil21-oss/Revinia/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
+  }
 }

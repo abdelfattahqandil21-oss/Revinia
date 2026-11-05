@@ -8,7 +8,13 @@
         "@rivinia/select",
         "@rivinia/theme",
         "@rivinia/i18n",
-        "@rivinia/popup"
+        "@rivinia/popup",
+        "@rivinia/datepicker",
+        "@rivinia/env",
+        "@rivinia/http",
+        "@rivinia/modal",
+        "@rivinia/table",
+        "@rivinia/toast"
       ]
     }
   ]

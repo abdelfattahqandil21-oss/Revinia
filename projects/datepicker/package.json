@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/datepicker",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Headless Gregorian date and time picker for Angular: month grid, time zone and DST resolution, keyboard navigation, RTL, locale-aware formatting.",
   "keywords": [
     "angular",
@@ -22,5 +22,17 @@
     "@angular/core": "^22.0.0",
     "@angular/forms": "^22.0.0"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abdelfattahqandil21-oss/Revinia.git",
+    "directory": "projects/datepicker"
+  },
+  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/datepicker/v1.0.0/projects/datepicker#readme",
+  "bugs": {
+    "url": "https://github.com/abdelfattahqandil21-oss/Revinia/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
+  }
 }

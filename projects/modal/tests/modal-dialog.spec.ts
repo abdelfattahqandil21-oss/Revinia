@@ -3,6 +3,7 @@ import { By } from '@angular/platform-browser';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RiviniaModalDialog } from '../ui/src/lib/components/modal-dialog/modal-dialog';
+import { RiviniaModalScrollLock } from '../ui/src/lib/components/modal-scroll-lock/modal-scroll-lock';
 
 function ensureDialogApi(): void {
   // The unit-test DOM may not implement HTMLDialogElement at all (then
@@ -166,6 +167,47 @@ describe('RiviniaModalDialog', () => {
     TestBed.flushEffects();
     withX.detectChanges();
     expect(withX.nativeElement.ownerDocument.activeElement?.tagName).toBe('DIALOG');
+  });
+
+  it('MODAL-LIFECYCLE-001: releases the scroll lock when destroyed while open', () => {
+    const fixture = TestBed.createComponent(DialogHarness);
+    const lock = TestBed.inject(RiviniaModalScrollLock);
+    const previous = document.body.style.overflow;
+    fixture.detectChanges();
+    const cmp = fixture.debugElement.query(By.directive(RiviniaModalDialog))
+      .componentInstance as RiviniaModalDialog;
+    cmp.open.set(true);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+    expect(lock.active).toBe(1);
+
+    fixture.destroy();
+    expect(lock.active).toBe(0);
+    expect(document.body.style.overflow).toBe(previous);
+  });
+
+  it('MODAL-LIFECYCLE-002: clears the exit timer when destroyed mid-exit', () => {
+    vi.useFakeTimers();
+    try {
+      const fixture = TestBed.createComponent(DialogHarness);
+      fixture.detectChanges();
+      const cmp = fixture.debugElement.query(By.directive(RiviniaModalDialog))
+        .componentInstance as RiviniaModalDialog;
+      cmp.open.set(true);
+      TestBed.flushEffects();
+      fixture.detectChanges();
+      cmp.dismiss('closing');
+      const pendingBeforeDestroy = vi.getTimerCount();
+      expect(pendingBeforeDestroy).toBeGreaterThan(0);
+
+      fixture.destroy();
+      expect((cmp as unknown as { exitTimer: ReturnType<typeof setTimeout> | null }).exitTimer)
+        .toBeNull();
+      expect(vi.getTimerCount()).toBe(pendingBeforeDestroy - 1);
+    } finally {
+      vi.runOnlyPendingTimers();
+      vi.useRealTimers();
+    }
   });
 
   it('dismisses through the exit machinery and settles closed', () => {

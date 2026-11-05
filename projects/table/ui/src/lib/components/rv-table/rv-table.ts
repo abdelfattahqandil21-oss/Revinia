@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  isDevMode,
   afterRenderEffect,
   computed,
   contentChildren,
@@ -64,8 +65,9 @@ interface RenderCell {
 }
 
 interface RenderRow {
-  /** The effective row id (`[rowKey]` applied): what selection and tracking use. */
+  /** The effective row id (`[rowKey]` applied): what selection refers to. */
   readonly id: TableRowId;
+  identityValid: boolean;
   readonly row: TableUiRow;
   /** Position inside the rendered page. */
   readonly rowIndex: number;
@@ -313,18 +315,37 @@ export class RiviniaTableComponent {
   protected readonly renderedRows = computed<readonly RenderRow[]>(() => {
     const templates = this.cellTemplates();
     const selected = this.selected();
-    return this.rows().map((row, rowIndex) => {
+    const ids = new Map<TableRowId, number[]>();
+    const rendered = this.rows().map((row, rowIndex) => {
       const id = this.rowId(row);
+      const validId = (typeof id === 'string' && id.trim().length > 0) ||
+        (typeof id === 'number' && Number.isFinite(id));
+      const positions = validId ? (ids.get(id) ?? []) : [];
+      if (validId) {
+        positions.push(rowIndex);
+        ids.set(id, positions);
+      } else if (isDevMode()) {
+        throw new Error(`[rivinia/table/ui] Invalid row ID ${String(id)} at row index ${rowIndex}.`);
+      }
       return {
         id,
+        identityValid: row.identityValid !== false && validId,
         row,
         rowIndex,
         ariaRowIndex:
           (Number.isFinite(row.index) ? row.index : rowIndex) + 2,
-        selected: selected.has(id),
+        selected: row.identityValid !== false && validId && selected.has(id),
         cells: this.buildCells(row, rowIndex, templates),
       };
     });
+    for (const [id, positions] of ids) {
+      if (positions.length < 2) continue;
+      if (isDevMode()) {
+        throw new Error(`[rivinia/table/ui] Duplicate row ID ${JSON.stringify(id)} at row indices ${positions.join(', ')}.`);
+      }
+      for (const index of positions) rendered[index].identityValid = false;
+    }
+    return rendered;
   });
 
   protected readonly skeletonList = computed(() => {
@@ -512,7 +533,7 @@ export class RiviniaTableComponent {
     this.active.set({ row: item.rowIndex, column: cell.columnIndex });
     this.pendingFocus = false;
     this.focusCell(item.rowIndex, cell.columnIndex);
-    if (this.selectable()) this.toggleRow(item.row);
+    if (this.selectable()) this.toggleRow(item);
   }
 
   protected onCellFocus(row: number, column: number): void {
@@ -586,7 +607,7 @@ export class RiviniaTableComponent {
         break;
       case ' ':
         if (!this.selectable()) return;
-        this.toggleRow(rows[active.row].row);
+        this.toggleRow(rows[active.row]);
         break;
       default:
         return;
@@ -850,14 +871,14 @@ export class RiviniaTableComponent {
     return record === null || record === undefined ? undefined : record[accessor];
   }
 
-  private toggleRow(row: TableUiRow): void {
-    if (!this.selectable()) return;
-    const id = this.rowId(row);
+  private toggleRow(item: RenderRow): void {
+    if (!this.selectable() || !item.identityValid) return;
+    const id = item.id;
     const selected = new Set(this.selected());
     if (selected.has(id)) selected.delete(id);
     else selected.add(id);
     this.selected.set(selected);
-    this.selectionChange.emit({ selected, row });
+    this.selectionChange.emit({ selected, row: item.row });
   }
 
   private errorText(error: unknown): string {

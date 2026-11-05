@@ -1,24 +1,8 @@
 # @rivinia/i18n
 
-From 1.0.0 this package follows **strict semver**: only a major may break, a new
-config key, export, token or loader hook is a minor, and a patch never changes
-what a page renders. The contract is wider than the export list: **the
-`provideRiviniaI18n` config keys**, the pipe name (`rvTranslate`), **the loader
-descriptor contract — including the `LoaderContext` a custom loader receives**,
-the ICU placeholder rules, the `--rv-i18n-*` token names, and the declaration
-shape `rivinia-i18n-keys` generates (`RiviniaI18nKeyRegistry`). Changing any of
-those is a major; adding one is a minor. A new token is always additive — the
-toggle and the picker read `var(--rv-i18n-<name>, var(--rv-<semantic>, <previous
-value>))`.
+## 1.0.0
 
-Coming from 0.8.0: **nothing to do** — 1.0.0 removes no name and renames none.
-The removals a consumer already met were in 0.6.0 (`RTranslatePipe` /
-`rTranslate`), recorded below, and the freeze that fixed what ships is
-[`docs/releases/1.0/API-SURFACE.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/releases/1.0/API-SURFACE.md).
-The README is the start-here tier; everyday patterns and the reference live in
-[`docs/i18n/`](https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/docs/i18n),
-one topic per page. This file keeps what a consumer of this package needs,
-including the migration notes for 0.6.0 and 0.4.0.
+- First stable release. The optional @rivinia/select peer remains optional and accepts the stable 1.0 line.
 
 ## 1.0.0-rc.4
 

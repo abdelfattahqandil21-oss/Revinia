@@ -1,12 +1,8 @@
 # @rivinia/theme
 
-From 1.0.0 this package follows **strict semver**: only a major may break, a new
-token or entry file is a minor, and a patch never changes what a page renders.
-The contract here is CSS, not TypeScript — **the twelve `--rv-*` names and the
-four entry files** (`theme.css`, `tailwind.css`, `bootstrap.css` and the Sass
-entry) are public API. A new token is always additive: every component reads
-`var(--rv-<own>, var(--rv-<semantic>, <previous value>))`, so a name that did not
-exist yesterday cannot change what renders today.
+## 1.0.0
+
+- First stable release of the semantic CSS token system, its stylesheet adapters, and the light/dark theme contract.
 
 ## 0.1.0 → 1.0.0
 
