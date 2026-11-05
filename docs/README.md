@@ -12,6 +12,7 @@ Use the package README in `projects/<package>/` for its public setup and API. Th
 | Feature specifications and designs | `projects/<package>/specifications/` plus the [cross-library index](specifications/README.md) | Package-owned records stay with their owners; each record states its status |
 | Testing and browser evidence | [`testing/README.md`](testing/README.md) | Testing procedures plus dated verification evidence |
 | Release history | [`releases/1.0/README.md`](releases/1.0/README.md) | Historical 1.0 RC records; refresh against current source before operational use |
+| Planned 1.1 release | [`releases/1.1/README.md`](releases/1.1/README.md) | Five-package release runbook; planned only, owner decisions remain |
 | Research | [`research/theme-stacks.md`](research/theme-stacks.md) | Dated investigation, not normative API guidance |
 | Repository architecture history | [`repository-architecture/README.md`](repository-architecture/README.md) | Index to archived audits and task reports |
 | Historical audits, proofs, and reports | [`archive/README.md`](archive/README.md) | Dated evidence snapshots, not current policy |
