@@ -181,6 +181,29 @@
         }
       }
     },
+    "popup": {
+      "projectType": "library",
+      "root": "projects/popup",
+      "sourceRoot": "projects/popup/src",
+      "prefix": "rv",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": { "tsConfig": "projects/popup/tsconfig.lib.prod.json" },
+            "development": { "tsConfig": "projects/popup/tsconfig.lib.json" }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/popup/tsconfig.spec.json",
+            "include": ["../tests/**/*.spec.ts"]
+          }
+        }
+      }
+    },
     "select": {
       "projectType": "library",
       "root": "projects/select",

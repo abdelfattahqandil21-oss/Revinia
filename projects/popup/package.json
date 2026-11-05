@@ -1,0 +1,15 @@
+{
+  "name": "@rivinia/popup",
+  "version": "0.0.0",
+  "description": "Headless shared popup mechanics for Rivinia Angular components.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abdelfattahqandil21-oss/Revinia.git",
+    "directory": "projects/popup"
+  },
+  "peerDependencies": {
+    "@angular/core": "^22.0.0"
+  },
+  "sideEffects": false
+}

@@ -652,6 +652,38 @@ describe('RiviniaMenuComponent — projected content', () => {
     expect(document.activeElement).not.toBe(document.body);
   });
 
+  it('r10: a prevented key from a projected control is not handled by the menu', () => {
+    const fixture = TestBed.createComponent(ProjectedMenuHarness);
+    open(fixture);
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('.projected-input');
+    input.focus();
+    fixture.componentInstance.claim = 'Escape';
+    key(input, 'Escape');
+
+    expect(fixture.componentInstance.menu.open()).toBe(true);
+    expect(document.activeElement).toBe(input);
+  });
+
+  it('characterizes the host refocus hook used for WebKit popover navigation', () => {
+    const fixture = TestBed.createComponent(ProjectedMenuHarness);
+    open(fixture);
+    const trigger: HTMLElement = fixture.nativeElement.querySelector('[rv-menu-trigger]');
+    const transitions: string[] = [];
+    trigger.addEventListener('blur', () => transitions.push('blur'));
+    trigger.addEventListener('focus', () => transitions.push('focus'));
+    trigger.focus();
+
+    // The user agent specific sequential-focus workaround deliberately
+    // re-seats focus on the trigger when the menu closes from the trigger.
+    key(trigger, 'Escape');
+
+    expect(fixture.componentInstance.menu.open()).toBe(false);
+    expect(document.activeElement).toBe(trigger);
+    // Tests lock the observable contract; blur/focus may be suppressed by a
+    // browser if the focus target does not actually change.
+    expect(transitions.includes('focus')).toBe(true);
+  });
+
   it('r6: a projected element reusing data-rv-id is not a row', () => {
     const fixture = TestBed.createComponent(ProjectedMenuHarness);
     open(fixture);

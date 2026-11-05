@@ -2,7 +2,7 @@
 
 **Owner:** Rivinia maintainers
 **Purpose:** define the smallest shared, headless module for popup positioning and dismissal used by Select and Menu.
-**Status:** approved extraction groundwork; package release and release-group membership remain undecided. See [D95](../../../docs/decisions/D095-popup-core-extraction-after-the-1-0-final.md) and [D86](../../../docs/decisions/D086-no-popup-dedupe-before-1-0-a-conformance-suite-instead.md).
+**Status:** approved extraction groundwork; owner approved synchronized release-group membership, while release remains out of scope. See [D95](../../../docs/decisions/D095-popup-core-extraction-after-the-1-0-final.md) and [D86](../../../docs/decisions/D086-no-popup-dedupe-before-1-0-a-conformance-suite-instead.md).
 
 ## Scope
 
@@ -18,7 +18,7 @@ Keep templates, CSS and anchor-positioning declarations, trigger and panel selec
 
 One package entry point, `@rivinia/popup`, with two capabilities:
 
-1. `computePopupPosition(input)` is a pure function. `input` carries trigger rect, panel size, viewport size, placement (`top|bottom` × `start|end`), direction, and optional gap. It returns viewport `left`, `top`, and `flipped`. It reads no DOM and has no mutable state.
+1. `computePopupPosition(input)` is a pure function. `input` carries trigger rect, panel size, viewport size, placement (`top|bottom` × `start|end`), explicit direction, and optional gap. It returns viewport `left`, `top`, and `flipped`. It reads no DOM or host/computed direction and has no mutable state.
 2. `bindPopupDismissal(destroyRef, options)` binds the agreed outside-pointer, outside-scroll, and S4 resize rules for one host. `options` supplies that host's `Document`/`Window` (nullable for SSR), host and panel lookup, an editable-focus predicate, and a dismissal callback. Width-at-open state is local to this binding. Cleanup is registered to the supplied Angular `DestroyRef`.
 
 The host supplies its own DOM lookups and callback; the core owns no selectors, component state, templates, styles, or global registry. These two surfaces cross the same public entry-point seam for host calls and tests.
@@ -35,8 +35,8 @@ The host supplies its own DOM lookups and callback; the core owns no selectors, 
 
 `@rivinia/select` and `@rivinia/menu` declare `@rivinia/popup` in regular `dependencies`, never `peerDependencies`; installing either consumer must install the core automatically. Add `@rivinia/popup` to each consumer's ng-packagr `allowedNonPeerDependencies`, then prove the exact tarballs include valid dependency metadata and runtime imports. Core has no dependency on either UI package, and imports cross packages only through public exports; there are no cycles.
 
-The existing `rivinia-1.0` synchronized group currently contains Menu, Select, Theme, and i18n. **Recommendation: add Popup to that group** so the two consumers and their core resolve together. This requires owner confirmation; do not edit `release-groups.json` before it. Until the owner chooses the initial version, use `0.0.0` in unpublished groundwork and do not alter any `1.0.0-rc.3` version. No package is published by this task.
+The `rivinia-1.0` synchronized group contains Menu, Select, Theme, and i18n at their current `1.0.0-rc.3` versions; Popup joins the approved group but remains `0.0.0` during development. Align it only at release; do not alter any existing version. No package is published by this task. Introducing the new runtime capability uses a synchronized minor bump; a dependency metadata-only change with no new capability may be a patch (see SemVer FAQ and D95).
 
 ## Differences preserved for owner review
 
-The inventory found behavior that is not interchangeable. Keep both host implementations unchanged during extraction until the owner chooses whether any should converge: pointer-open focus, direction source and CSS anchor alignment, trigger-width sizing in the Select JS fallback, key ownership for projected controls, focus restoration after picking, and Menu's WebKit focus reseating. The detail and source locations are in the task report.
+The inventory found behavior that is not interchangeable. Do not unify either host behavior during extraction: pointer-open initial focus, direction source and CSS anchor alignment, trigger-width sizing in the Select JS fallback, key ownership/defaultPrevented routing for projected controls, focus restoration after picking, and Menu's WebKit focus reseating. Phase 2 characterization tests lock each package's existing behavior before moving any logic. The detail and source locations are in the private task record.
