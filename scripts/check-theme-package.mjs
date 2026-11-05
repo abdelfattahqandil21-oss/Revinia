@@ -27,6 +27,7 @@ export const DEFAULT_TARGET = join(ROOT, 'dist', 'theme');
 
 export const EXPECTED_FILES = Object.freeze([
   'CHANGELOG.md',
+  'LICENSE',
   'README.md',
   'fesm2022/rivinia-theme.mjs',
   'package.json',

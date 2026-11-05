@@ -43,6 +43,7 @@ const MANIFEST = {
 
 const FILES = [
   'CHANGELOG.md',
+  'LICENSE',
   'README.md',
   'fesm2022/rivinia-select.mjs',
   'fesm2022/rivinia-select-ui.mjs',
@@ -82,6 +83,12 @@ describe('auditPackage', () => {
   it('fails when CHANGELOG.md is not shipped', () => {
     const report = audit({ files: FILES.filter((file) => file !== 'CHANGELOG.md') });
     expect(report.problems.join('\n')).toMatch(/CHANGELOG\.md/);
+  });
+
+  it('fails when LICENSE is not shipped', () => {
+    const report = audit({ files: FILES.filter((file) => file !== 'LICENSE') });
+    expect(report.ok).toBe(false);
+    expect(report.problems.join('\n')).toMatch(/LICENSE/);
   });
 
   it('fails when repository is missing', () => {

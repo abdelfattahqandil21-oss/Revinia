@@ -8,7 +8,7 @@
  * inspects what `npm pack --dry-run` would actually ship.
  *
  * Fails (exit 1, one FAIL line per problem) when any of these is false:
- *  1. `README.md` and `CHANGELOG.md` are in the packed file list;
+ *  1. `README.md`, `CHANGELOG.md`, and `LICENSE` are in the packed file list;
  *  2. `repository` is an object with a url and `directory = projects/<pkg>`;
  *  3. `homepage` and `bugs.url` exist;
  *  4. `engines.node` exists and, when `@angular/core` is installed, equals its
@@ -16,7 +16,7 @@
  *  5. every `exports` target is in the packed file list.
  *
  * Usage: node scripts/check-pack.mjs [pkg ... | directory ...]
- * With no argument it checks the four 1.0 packages in `dist/`.
+ * With no argument it checks the five 1.0 packages in `dist/`.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -70,6 +70,7 @@ export function auditPackage({ dir, manifest, files, expectedEngines = null }) {
   if (!packed.has('package.json')) problems.push('package.json is not in the packed file list');
   if (!packed.has('README.md')) problems.push('README.md is not in the packed file list');
   if (!packed.has('CHANGELOG.md')) problems.push('CHANGELOG.md is not in the packed file list');
+  if (!packed.has('LICENSE')) problems.push('LICENSE is not in the packed file list');
 
   const repository = manifest.repository;
   const repositoryUrl = typeof repository === 'string' ? repository : repository?.url;
