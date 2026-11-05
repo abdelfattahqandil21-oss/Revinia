@@ -1,0 +1,38 @@
+name: Bug report
+description: Report unexpected behavior in a Rivinia package
+title: "[Bug]: "
+body:
+  - type: input
+    id: package
+    attributes:
+      label: Package and version
+      description: Include the @rivinia package name and exact version.
+      placeholder: "@rivinia/menu 1.0.0-rc.3"
+    validations:
+      required: true
+  - type: textarea
+    id: scenario
+    attributes:
+      label: Scenario
+      description: What were you trying to do?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: 1. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual result
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Angular, Node, browser, and OS versions
+    validations:
+      required: true

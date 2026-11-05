@@ -55,7 +55,7 @@ Keep source and test suites singular where possible. Use fixtures/configuration 
 ## Known coverage gaps
 
 - `scripts/api-surface.mjs` covers the four-package 1.0 scope, not all ten libraries.
-- No tracked CI workflow was found in the audited tree; local green does not imply CI parity.
+- The tracked CI workflow runs docs/governance, builds, and unit tests. A separate Chromium E2E job is advisory (`continue-on-error`) while CI stability is established; it does not imply cross-browser coverage.
 - Root E2E was Chromium-only in the audit snapshot; WebKit/full cross-browser support is not implied.
 - The packed-consumer runner has been exercised for `@rivinia/i18n@1.0.0-rc.2` core/UI entry points without optional `@rivinia/select`; other packages still need their own exact-tarball runs before a release claim.
 - Full `check:popup-mutations` was not run in the audit; its prerequisite fix needs its own reviewable change.

@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Docs, governance, builds, and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6.1.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check documentation and governance
+        run: |
+          pnpm check:docs
+          pnpm check:readmes
+          pnpm check:governance
+          pnpm check:skills
+          pnpm test:scripts
+          for package in theme select menu i18n; do
+            version="$(node -p "require('./projects/' + process.argv[1] + '/package.json').version" "$package")"
+            pnpm check:versioned-doc-links "@rivinia/$package" "$version" "--package-dir=projects/$package"
+          done
+      - name: Measure source duplication (advisory)
+        run: pnpm check:duplication
+      - name: Build release-group packages
+        run: |
+          pnpm build:theme
+          pnpm build:select
+          pnpm build:menu
+          pnpm build:i18n
+      - name: Test release-group packages
+        run: |
+          pnpm test:theme
+          pnpm exec ng test select --watch=false
+          pnpm exec ng test menu --watch=false
+          pnpm exec ng test i18n --watch=false
+
+  browser-e2e:
+    name: Chromium browser E2E (advisory)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6.1.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build browser harness
+        run: |
+          pnpm build:theme
+          pnpm build:select
+          pnpm build:menu
+          pnpm exec ng build menu-e2e
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run Chromium suite
+        run: pnpm exec playwright test --project=chromium
