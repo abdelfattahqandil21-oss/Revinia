@@ -136,6 +136,8 @@ export class RiviniaModalDialog {
     // The viewport listener outlives the component otherwise.
     this.stopResizeWatch();
     if (this.settleTimer !== null) clearTimeout(this.settleTimer);
+    if (this.exitTimer !== null) clearTimeout(this.exitTimer);
+    if (this.phase() !== 'closed') this.finalize(this.dialog()?.nativeElement ?? null);
   }
   readonly showCloseButton = input<boolean>(true);
   /**

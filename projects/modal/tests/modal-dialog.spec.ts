@@ -169,7 +169,7 @@ describe('RiviniaModalDialog', () => {
     expect(withX.nativeElement.ownerDocument.activeElement?.tagName).toBe('DIALOG');
   });
 
-  it.fails('MODAL-LIFECYCLE-001: releases the scroll lock when destroyed while open', () => {
+  it('MODAL-LIFECYCLE-001: releases the scroll lock when destroyed while open', () => {
     const fixture = TestBed.createComponent(DialogHarness);
     const lock = TestBed.inject(RiviniaModalScrollLock);
     const previous = document.body.style.overflow;
@@ -186,7 +186,7 @@ describe('RiviniaModalDialog', () => {
     expect(document.body.style.overflow).toBe(previous);
   });
 
-  it.fails('MODAL-LIFECYCLE-002: clears the exit timer when destroyed mid-exit', () => {
+  it('MODAL-LIFECYCLE-002: clears the exit timer when destroyed mid-exit', () => {
     vi.useFakeTimers();
     try {
       const fixture = TestBed.createComponent(DialogHarness);
@@ -197,10 +197,13 @@ describe('RiviniaModalDialog', () => {
       TestBed.flushEffects();
       fixture.detectChanges();
       cmp.dismiss('closing');
-      expect(vi.getTimerCount()).toBeGreaterThan(0);
+      const pendingBeforeDestroy = vi.getTimerCount();
+      expect(pendingBeforeDestroy).toBeGreaterThan(0);
 
       fixture.destroy();
-      expect(vi.getTimerCount()).toBe(0);
+      expect((cmp as unknown as { exitTimer: ReturnType<typeof setTimeout> | null }).exitTimer)
+        .toBeNull();
+      expect(vi.getTimerCount()).toBe(pendingBeforeDestroy - 1);
     } finally {
       vi.runOnlyPendingTimers();
       vi.useRealTimers();
