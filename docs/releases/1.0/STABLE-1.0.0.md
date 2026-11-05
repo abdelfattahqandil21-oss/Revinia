@@ -1,6 +1,6 @@
 # Synchronized stable release — 1.0.0
 
-**Status: all eleven `1.0.0` tarballs are prepared locally on `pkg/datepicker/focus-leave-close`, based on `main` at `6a8d1f8`; not committed, merged, tagged, or published. Stable promotion is still blocked by the human checks below.**
+**Status: merged to local `main` as `6237c3b`; not pushed, tagged, or published. Stable promotion remains blocked by S2, S4 and S8 below.**
 This document tracks the first stable release of all eleven libraries. Registry
 state checked on 2026-11-05: Popup, Theme, Select, Menu and i18n have `latest`
 at `1.0.0-rc.4` (Theme, Select, Menu and i18n have `next` at `rc.3`); Datepicker
@@ -192,9 +192,8 @@ created.
 
 ## Final `1.0.0` artifact preparation after the datepicker focus fix — 2026-11-05
 
-The local `pkg/datepicker/focus-leave-close` checkout is based on the same
-`6a8d1f8` tree as local `main`; the datepicker focus-out fix and its tests/docs
-are currently uncommitted on that branch. All eleven manifests and
+The datepicker focus-out fix and its tests/docs were committed as `8140ee9` and
+merged to local `main` with `--no-ff` as `6237c3b`. All eleven manifests and
 `release-groups.json` agree on `1.0.0` and group `rivinia-1.0`.
 
 - Production builds passed in dependency order: `pnpm exec ng build popup`,
@@ -242,8 +241,7 @@ are currently uncommitted on that branch. All eleven manifests and
   `1.0.0-rc.5` set is published; local tarballs and Vercel preview do not satisfy
   the registry soak requirement.
 
-No release tags, `npm publish`, push, commit or merge were performed in this
-preparation. Before final promotion, complete the remaining human gates, merge
-to `main` with `--no-ff`, rerun release gates against that merged tree, create
-and verify immutable namespaced tags, and obtain exact owner approval for the
-eleven package names, `1.0.0`, npm public access and the inspected tarballs.
+No release tags, `npm publish` or push were performed. Before final promotion,
+complete S2, S4 and S8, rerun release gates against this merged tree, create and
+verify immutable namespaced tags, and obtain exact owner approval for the eleven
+package names, `1.0.0`, npm public access and the inspected tarballs.
