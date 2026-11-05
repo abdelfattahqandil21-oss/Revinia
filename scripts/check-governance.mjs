@@ -181,6 +181,29 @@ export function validateGovernance({ root = repositoryRoot } = {}) {
     }
   }
 
+  const coreGroup = Array.isArray(groups) ? groups.find((group) => group?.id === 'rivinia-1.0') : undefined;
+  if (coreGroup && Array.isArray(coreGroup.packages)) {
+    const alignedMembers = coreGroup.packages
+      .filter((name) => name !== '@rivinia/popup')
+      .map((name) => {
+        const short = name.slice('@rivinia/'.length);
+        return readJson(`projects/${short}/package.json`, `projects/${short}/package.json`);
+      })
+      .filter(Boolean);
+    const groupVersion = alignedMembers[0]?.version;
+    if (typeof groupVersion === 'string' && isExactSemver(groupVersion)) {
+      for (const name of ['@rivinia/select', '@rivinia/menu']) {
+        const short = name.slice('@rivinia/'.length);
+        const manifest = readJson(`projects/${short}/package.json`, `projects/${short}/package.json`);
+        const actual = manifest?.dependencies?.['@rivinia/popup'];
+        const expected = `^${groupVersion}`;
+        if (actual !== expected) {
+          problems.push(`projects/${short}/package.json: @rivinia/popup must be a regular dependency at ${expected}, got ${String(actual)}`);
+        }
+      }
+    }
+  }
+
   const versionPolicyPath = 'docs/engineering/VERSIONING.md';
   if (existsSync(join(root, versionPolicyPath))) {
     const versionPolicy = read(versionPolicyPath);

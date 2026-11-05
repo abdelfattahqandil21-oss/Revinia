@@ -1,3 +1,9 @@
+# 1.0.0-rc.4 (prepared; not published)
+
+- Add `@rivinia/popup` to the synchronized 1.0 release line.
+- Extract shared popup mechanics from Select and Menu without unifying their characterized behavior.
+- Align Popup, Theme, Select, Menu and i18n at `1.0.0-rc.4`.
+
 # Changelog
 
 Per-package behavior changes. Pre-1.0: minor = breaking/feature, patch = fix.

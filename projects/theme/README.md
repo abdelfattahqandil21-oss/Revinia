@@ -4,11 +4,11 @@
 [![license](https://img.shields.io/npm/l/@rivinia/theme.svg)](https://www.npmjs.com/package/@rivinia/theme)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/theme/v1.0.0-rc.3/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/theme/v1.0.0-rc.4/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
 </p>
 
 One stylesheet for the whole Rivinia ecosystem: map a palette once, and every
-component follows. Package version: **1.0.0-rc.3**.
+component follows. Package version: **1.0.0-rc.4**.
 
 1.0.0-rc.1 is the first supported release; 0.x was experimental.
 
@@ -84,7 +84,7 @@ never both, or the stylesheet ships twice (measured: 3,997 B duplicated).
 none of them is a gap here. The second floor — CSS anchor positioning, which
 makes a panel tether itself to its trigger — belongs to the popup components,
 not to a stylesheet; see
-[browser support](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.3/docs/browser-support.md)
+[browser support](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.4/docs/browser-support.md)
 for both. Real
 Safari has not been run, and no CI runs this matrix; the same page says what
 else was never measured.
@@ -93,14 +93,14 @@ else was never measured.
 
 | Topic                                                                                                          | Read                                                                                                                                     |
 | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Theming every Rivinia component — the cascade, the three levels, where an override has to live, light and dark | [docs/theme/README.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.3/docs/theme/README.md)                             |
-| The twelve tokens with both schemes                                                                            | [docs/theme/tokens.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.3/docs/theme/tokens.md)                   |
-| Tailwind v4, Bootstrap 5.3, Sass, Less                                                                         | [docs/theme/styling-stacks.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.3/docs/theme/styling-stacks.md)   |
-| What the theme restyles inside the components, and forced colours                                              | [docs/theme/component-theme.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.3/docs/theme/component-theme.md) |
-| Contrast, measured pair by pair                                                                                | [docs/theme/contrast.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.3/docs/theme/contrast.md)               |
-| Browser floors and what each feature is for                                                                    | [docs/browser-support.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.3/docs/browser-support.md)             |
-| Building and checking this package                                                                             | [docs/theme/contributing.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.3/docs/theme/contributing.md)       |
+| Theming every Rivinia component — the cascade, the three levels, where an override has to live, light and dark | [docs/theme/README.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.4/docs/theme/README.md)                             |
+| The twelve tokens with both schemes                                                                            | [docs/theme/tokens.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.4/docs/theme/tokens.md)                   |
+| Tailwind v4, Bootstrap 5.3, Sass, Less                                                                         | [docs/theme/styling-stacks.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.4/docs/theme/styling-stacks.md)   |
+| What the theme restyles inside the components, and forced colours                                              | [docs/theme/component-theme.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.4/docs/theme/component-theme.md) |
+| Contrast, measured pair by pair                                                                                | [docs/theme/contrast.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.4/docs/theme/contrast.md)               |
+| Browser floors and what each feature is for                                                                    | [docs/browser-support.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.4/docs/browser-support.md)             |
+| Building and checking this package                                                                             | [docs/theme/contributing.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.4/docs/theme/contributing.md)       |
 
 Migration notes for each version live in
-[CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.3/projects/theme/CHANGELOG.md).
+[CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.0-rc.4/projects/theme/CHANGELOG.md).
 MIT licensed.

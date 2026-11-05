@@ -28,7 +28,7 @@ jobs:
           pnpm check:governance
           pnpm check:skills
           pnpm test:scripts
-          for package in theme select menu i18n; do
+          for package in popup theme select menu i18n; do
             version="$(node -p "require('./projects/' + process.argv[1] + '/package.json').version" "$package")"
             pnpm check:versioned-doc-links "@rivinia/$package" "$version" "--package-dir=projects/$package"
           done

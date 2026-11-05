@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.0-rc.4
+
+- First public release of the shared headless positioning and dismissal core.
+- Select and Menu consume Popup as a regular runtime dependency; host-specific behavior remains in each package.
+
 ## 0.0.0 — Unreleased development
 
 - Add shared headless popup position calculation and per-host dismissal

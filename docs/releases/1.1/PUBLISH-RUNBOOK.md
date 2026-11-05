@@ -1,3 +1,5 @@
+> **Superseded for Popup first publish:** use [the 1.0.0-rc.4 procedure](../1.0/RC4.md); the owner moved Popup into the 1.0 line before final.
+
 # Publish runbook — Rivinia 1.1 (planned)
 
 **Status: planning only.** The planned stable release is a synchronized 1.1.0 of

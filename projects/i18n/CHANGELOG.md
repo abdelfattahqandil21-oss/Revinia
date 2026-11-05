@@ -20,6 +20,11 @@ The README is the start-here tier; everyday patterns and the reference live in
 one topic per page. This file keeps what a consumer of this package needs,
 including the migration notes for 0.6.0 and 0.4.0.
 
+## 1.0.0-rc.4
+
+- Align the package and optional `@rivinia/select` peer with the 1.0.0-rc.4 synchronized release.
+- No public API change.
+
 ## 1.0.0-rc.3
 
 **No config key, export, pipe, token, loader hook or behavior changed** — the code in

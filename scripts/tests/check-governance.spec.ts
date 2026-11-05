@@ -46,7 +46,7 @@ function fixture() {
   for (const name of members) {
     const short = name.replace('@rivinia/', '');
     mkdirSync(join(root, 'projects', short), { recursive: true });
-    writeFileSync(join(root, 'projects', short, 'package.json'), JSON.stringify({ name, version: '1.0.0-rc.2' }));
+    writeFileSync(join(root, 'projects', short, 'package.json'), JSON.stringify({ name, version: '1.0.0-rc.2', ...(name === '@rivinia/select' || name === '@rivinia/menu' ? { dependencies: { '@rivinia/popup': '^1.0.0-rc.2' } } : {}) }));
   }
   writeFileSync(
     join(root, 'docs', 'engineering', 'VERSIONING.md'),
@@ -80,6 +80,15 @@ describe('governance validation', () => {
     const root = fixture();
     writeFileSync(join(root, 'projects', 'popup', 'package.json'), JSON.stringify({ name: '@rivinia/popup', version: '0.0.0' }));
     expect(validateGovernance({ root })).toEqual([]);
+  });
+
+  it('rejects a select or menu popup dependency range that is not aligned with the group version', () => {
+    const root = fixture();
+    const path = join(root, 'projects', 'select', 'package.json');
+    const manifest = JSON.parse(readFileSync(path, 'utf8'));
+    manifest.dependencies['@rivinia/popup'] = '^1.0.0-rc.1';
+    writeFileSync(path, JSON.stringify(manifest));
+    expect(validateGovernance({ root }).join('\n')).toContain('@rivinia/popup must be a regular dependency at ^1.0.0-rc.2');
   });
 
   it('rejects malformed package metadata instead of accepting matching arbitrary strings', () => {

@@ -22,6 +22,11 @@ The full entry for every release is in the repository
 this file keeps what a consumer of this package needs, including the migration
 notes for 0.6.0, 0.5.0 and 0.2.0.
 
+## 1.0.0-rc.4
+
+- Extract shared popup positioning and dismissal mechanics into `@rivinia/popup`; Select retains its host-specific keyboard, focus and sizing behavior.
+- Popup is a regular runtime dependency at `^1.0.0-rc.4`.
+
 ## 1.0.0-rc.3
 
 **No input, output, export, role, token or behavior changed** — the code in this release

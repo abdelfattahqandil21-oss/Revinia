@@ -1,3 +1,5 @@
+See the current [1.0.0-rc.4 preparation](RC4.md) for the Popup release candidate.
+
 # Rivinia 1.0 release records
 
 This folder preserves the 1.0 release-candidate program's API review, human checks, merge log, publish runbook, release order, and package README template. The records contain time-specific package versions, tags, registry state, and verification results. They are historical evidence, not a current publish procedure; refresh all external state and gates before reuse.
