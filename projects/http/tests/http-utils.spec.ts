@@ -14,6 +14,13 @@ describe('joinUrl', () => {
   it('returns the base when the endpoint is empty', () => {
     expect(joinUrl('https://api.example.com/', '')).toBe('https://api.example.com');
   });
+
+  it.fails('HTTP-URL-001: collapses repeated boundary slashes and preserves query strings', () => {
+    expect(joinUrl('https://api.example.com///', '///users?q=a%20b')).toBe(
+      'https://api.example.com/users?q=a%20b',
+    );
+    expect(joinUrl('', 'users?q=1')).toBe('/users?q=1');
+  });
 });
 
 describe('unwrapAs', () => {
