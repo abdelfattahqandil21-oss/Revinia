@@ -129,7 +129,7 @@ real Safari) are in
 | Keyboard, opening and closing, resize, and the limitations                                           | [docs/menu/interaction.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.0-rc.3/docs/menu/interaction.md) |
 | Headless: the controller surface and a complete custom dropdown                                      | [docs/menu/headless.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.0-rc.3/docs/menu/headless.md)       |
 | The menu's tokens, classes, `data-*` hooks and forced-colours behaviour                              | [docs/menu/theming.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.0-rc.3/docs/menu/theming.md)         |
-| Theming every Rivinia component — the cascade, light and dark, where an override has to live         | [docs/theming.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.0-rc.3/docs/theming.md)                   |
+| Theming every Rivinia component — the cascade, light and dark, where an override has to live         | [docs/theme/README.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.0-rc.3/docs/theme/README.md)                   |
 
 Migration notes for each version live in
 [CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.0-rc.3/projects/menu/CHANGELOG.md).

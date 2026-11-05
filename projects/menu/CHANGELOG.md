@@ -13,7 +13,7 @@ has to write is a major. A new token is always additive: every rule reads
 Coming from 0.5.0: **nothing to do** — 1.0.0 removes no name and renames none.
 The changes a 0.x consumer had to read are 0.4.0's pointer-open and width
 defaults, recorded below, and the freeze that fixed what ships is
-[`docs/API-SURFACE-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/API-SURFACE-1.0.md).
+[`docs/releases/1.0/API-SURFACE.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/releases/1.0/API-SURFACE.md).
 The full entry for every release is in the repository
 [CHANGELOG](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/CHANGELOG.md);
 this file keeps what a consumer of this package needs, including the migration
@@ -60,7 +60,7 @@ in `README.md`. No input, output, export, role, token or behavior changed.
   built-in menu and a menu with a consumer field projected into its panel), which
   also asserts the panel's three global listeners are balanced again after a
   route change destroys an open panel. The real-device half of this is
-  **not tested** and is listed in `docs/HUMAN-CHECKS-1.0.md` (S4).
+  **not tested** and is listed in `docs/releases/1.0/HUMAN-CHECKS.md` (S4).
 
 - **The CSS anchor-positioning gate now covers `anchor-scope` and
   `position-visibility`.** The panel used to enter that block on any engine with

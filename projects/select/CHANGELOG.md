@@ -16,7 +16,7 @@ mode where 0.7.1 emitted `menuitem`, so CSS or a test that selected
 `[role="menuitem"]` inside the panel has to follow the role (first bullet below).
 The breaking changes a consumer already migrated through are 0.6.0's popup rename
 and 0.2.0's token rename, both recorded below, and the freeze that fixed what
-ships is [`docs/API-SURFACE-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/API-SURFACE-1.0.md).
+ships is [`docs/releases/1.0/API-SURFACE.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/releases/1.0/API-SURFACE.md).
 The full entry for every release is in the repository
 [CHANGELOG](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/CHANGELOG.md);
 this file keeps what a consumer of this package needs, including the migration
@@ -73,7 +73,7 @@ in `README.md`. No input, output, export, role, token or behavior changed.
   the caret is inside the panel's filter box; a width change still always closes,
   because width is the axis the panel is anchored on. Automated in
   `e2e/popup/conformance.spec.ts`; the real-device half of this is
-  **not tested** and is listed in `docs/HUMAN-CHECKS-1.0.md` (S4).
+  **not tested** and is listed in `docs/releases/1.0/HUMAN-CHECKS.md` (S4).
 - **The theme's accent now reaches the control.** `--rv-accent` paints the
   trigger, search and row focus rings, the active row's tint and the selected
   tick. Every read is `var(--rv-accent, <previous value>)`, so a page that does

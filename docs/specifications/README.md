@@ -13,6 +13,6 @@ These documents describe proposed or implemented behavior. Their status lines ar
 | [Table design](../../projects/table/specifications/table-design.md) | Table package design proposal | Proposal; no package or source implementation |
 | [Table spans and size](../../projects/table/specifications/table-spans-and-size.md) | Span behavior and size measurements | Design companion to table proposal |
 
-Package-owned specifications live with their libraries under `projects/<package>/specifications/`. This index is a cross-library map. The original `docs/specifications/<name>.md` paths remain as short compatibility pointers for the append-only decision log and older links.
+Package-owned specifications live with their libraries under `projects/<package>/specifications/`. This index is a cross-library map.
 
-The separate [`1.0 readiness record`](../../specs/1.0-readiness.md) tracks release preparation rather than a package feature specification.
+The [`1.0 readiness record`](1.0-readiness.md) tracks release preparation rather than a package feature specification.

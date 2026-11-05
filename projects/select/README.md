@@ -167,7 +167,7 @@ real Safari) are in
 | `optionTemplate` rows, paged data, a virtualised list, your own entrance animation           | [docs/select/recipes.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.0-rc.3/docs/select/recipes.md)             |
 | `simple` vs `premium`, what premium actually paints, and its measured byte cost              | [docs/select/variants.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.0-rc.3/docs/select/variants.md)           |
 | The select's tokens, classes, `data-*` hooks and forced-colors behaviour                     | [docs/select/theming.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.0-rc.3/docs/select/theming.md)             |
-| Theming every Rivinia component — the cascade, light and dark, where an override has to live | [docs/theming.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.0-rc.3/docs/theming.md)                           |
+| Theming every Rivinia component — the cascade, light and dark, where an override has to live | [docs/theme/README.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.0-rc.3/docs/theme/README.md)                           |
 
 Migration notes for each version live in
 [CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.0-rc.3/projects/select/CHANGELOG.md).

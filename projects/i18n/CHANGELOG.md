@@ -14,7 +14,7 @@ value>))`.
 Coming from 0.8.0: **nothing to do** — 1.0.0 removes no name and renames none.
 The removals a consumer already met were in 0.6.0 (`RTranslatePipe` /
 `rTranslate`), recorded below, and the freeze that fixed what ships is
-[`docs/API-SURFACE-1.0.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/API-SURFACE-1.0.md).
+[`docs/releases/1.0/API-SURFACE.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/releases/1.0/API-SURFACE.md).
 The README is the start-here tier; everyday patterns and the reference live in
 [`docs/i18n/`](https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/docs/i18n),
 one topic per page. This file keeps what a consumer of this package needs,

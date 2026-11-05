@@ -19,11 +19,10 @@ Use the package README in `projects/<package>/` for its public setup and API. Th
 
 The dated JSON baselines in [`a11y-snapshots/`](a11y-snapshots/) are retained test evidence linked by the accessibility guide and decision history.
 
-## Compatibility paths
+## Former paths
 
-Short pointer files remain at selected former root paths so package docs,
-append-only decisions, and existing external links keep resolving. Use the
-canonical locations in the table above for new links; the pointer files do not
-duplicate the documents.
+Use the canonical locations in the table above. Former root paths were removed
+after active repository links were updated; historical path mentions in the
+append-only decision log describe the records as they existed at the time.
 
 Use root `package.json` as the source of truth for command names. Do not infer current registry state from a historical release record; inspect the registry and exact tag when preparing a release.

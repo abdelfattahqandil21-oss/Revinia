@@ -1,6 +1,6 @@
 # The 1.0 API surface
 
-S8 of [`specs/1.0-readiness.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/specs/1.0-readiness.md),
+S8 of [`docs/specifications/1.0-readiness.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/specifications/1.0-readiness.md),
 under D88. This is the list of names and defaults the four 1.0 packages ship with.
 Every symbol below was read off the entry point that publishes it, and
 [`scripts/api-surface.mjs`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/scripts/api-surface.mjs)
