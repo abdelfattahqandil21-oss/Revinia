@@ -6,7 +6,7 @@
 
 ## Source-of-truth boundaries
 
-Git is authoritative for commits, branches, tags, changed files and merge state. Task memory links to verified Git evidence; it never invents a commit or overrides instructions. Public ADRs in `docs/DECISIONS.md` hold long-lived architecture/product decisions. `docs/engineering/CHANGELOG.md` holds repository engineering outcomes. Package CHANGELOGs hold only consumer-visible package releases. Detailed agent steps, raw transcripts, credentials, personal data and operationally private notes stay outside the public repository.
+Git is authoritative for commits, branches, tags, changed files and merge state. Task memory links to verified Git evidence; it never invents a commit or overrides instructions. Public ADRs in `docs/decisions/` hold long-lived architecture/product decisions; `docs/DECISIONS.md` is the stable pointer to their index. `docs/engineering/CHANGELOG.md` holds repository engineering outcomes. Package CHANGELOGs hold only consumer-visible package releases. Detailed agent steps, raw transcripts, credentials, personal data and operationally private notes stay outside the public repository.
 
 ## Local private memory location
 

@@ -15,12 +15,12 @@
 - Major versions are compatibility boundaries. Compatibility information spans source/API, tests, consumer docs, skills, changelogs and release evidence.
 - Keep `projects/` and the current E2E layout. Do not copy all source or test suites per major.
 - Keep public API, package manifests/versions, release tags, registry state and runtime code unchanged in this governance task.
-- Preserve historical ADRs. New durable architectural/product decisions go in `docs/DECISIONS.md`; do not rewrite old entries.
+- Preserve historical ADRs. New durable architectural/product decisions go in one file under `docs/decisions/`; `docs/DECISIONS.md` remains the stable pointer to the index.
 - Never let task memory override current owner instructions, repository policy or directory instructions.
 
 ### Proposed operating rules
 
-- Use `docs/engineering/` as the navigation point for governance. Keep the existing package docs, `docs/DECISIONS.md`, and release runbooks authoritative for their own subjects; link them rather than copy their history.
+- Use `docs/engineering/` as the navigation point for governance. Keep the existing package docs, `docs/decisions/`, and release runbooks authoritative for their own subjects; link them rather than copy their history.
 - Treat exact tagged source as the immutable documentation and source snapshot for a release. A future hosted documentation platform is an open decision, not an assumed service.
 - Keep actual task journals private by default. Commit only sanitized, public-safe engineering outcomes.
 - Add directory instructions only where ownership/operations differ from the root rules.
@@ -38,7 +38,7 @@
 | `projects/<library>/CHANGELOG.md` | User-visible package release history | Package/release owner | Entry matches actual released version and release evidence |
 | `.agents/skills/` | Agent procedures shared by Codex and OpenCode | Maintainers | Skill role/version metadata checks; examples against declared versions |
 | `scripts/`, root config and `package.json` | Shared developer/release tooling | Repository maintainers | Script-specific tests and relevant package gates |
-| `docs/DECISIONS.md` | Long-lived architecture/product decisions | Maintainers + owner approval for foundational policy | D-numbered ADR; preserve prior records |
+| `docs/decisions/*.md` and `docs/DECISIONS.md` | Long-lived architecture/product decisions and stable index pointer | Maintainers + owner approval for foundational policy | D-numbered ADR; preserve prior records |
 | `docs/engineering/` | Governance procedures and public-safe templates | Repository maintainers | `pnpm check:governance` |
 | `$HOME/.local/share/rivinia/tasks/` | Private task records and timeline | Local user/agent; outside repository | Private permissions; Git remains evidence for commit/ref facts |
 

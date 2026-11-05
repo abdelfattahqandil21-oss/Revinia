@@ -7,7 +7,7 @@ session. The point of the file is to answer one question with evidence:
 Bootstrap 5.3 — and where does it fail silently?*
 
 Companion reading: `projects/theme/README.md` (what we tell consumers),
-`docs/DECISIONS.md` D42 (the token model) and D44 (rem sizing).
+the [D42 token model](../decisions/D042-one-global-token-layer-and-the-surface-a-consumer-can-actually-change.md) and [D44 rem-sizing decision](../decisions/D044-sizes-in-rem-standalone-dropped-and-migration-notes-written-for-the-cons.md).
 
 ---
 

@@ -1,7 +1,7 @@
 # @rivinia/theme — which styling stack?
 
 Back to [the README](../../projects/theme/README.md) ·
-[where an override has to live](../theming.md)
+[where an override has to live](README.md)
 
 | Stack           | How you wire it                                                                      |
 | --------------- | ------------------------------------------------------------------------------------ |

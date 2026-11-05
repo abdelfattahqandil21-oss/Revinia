@@ -1,7 +1,7 @@
 # @rivinia/theme — what it restyles in the components
 
 Back to [the README](../../projects/theme/README.md) ·
-[theming every component](../theming.md)
+[theming every component](README.md)
 
 The import reaches the interactive layer of each component, not just surfaces:
 

@@ -85,5 +85,6 @@ The browser suites build first:
 Building a workspace package is not the same as publishing it. Do not publish
 without confirming the package name, version, access, and inspected tarball;
 follow the release gates in [`AGENTS.md`](./AGENTS.md) and the decisions in
+[`docs/decisions/README.md`](./docs/decisions/README.md); the stable entry point is
 [`docs/DECISIONS.md`](./docs/DECISIONS.md). Releases are tagged on `main` as
 `<package>/v<semver>` (for example `i18n/v0.5.0`); tags are immutable.

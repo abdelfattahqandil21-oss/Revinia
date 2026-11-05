@@ -2,11 +2,11 @@
 
 Back to [the README](../../projects/menu/README.md) ·
 [ready-made component](ready-made.md) ·
-[theming every Rivinia component](../theming.md)
+[theming every Rivinia component](../theme/README.md)
 
 This page is the menu's own half. The cascade, the three levels of control,
 where an override has to live, and light/dark all belong to the single shared
-page: [theming every Rivinia component](../theming.md).
+page: [theming every Rivinia component](../theme/README.md).
 
 ## The chain
 
@@ -156,7 +156,7 @@ stable:
 
 ## Further reading
 
-- [Theming every Rivinia component](../theming.md) — the cascade, the four
+- [Theming every Rivinia component](../theme/README.md) — the cascade, the four
   placements of an override, light and dark, `check:theme-dark`.
 - [The token table](../theme/tokens.md) — the twelve global names, both schemes.
 - [Which styling stack?](../theme/styling-stacks.md)

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** Validate required governance docs and the approved synchronized package groups. */
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateSkillCompatibility } from './check-skill-compatibility.mjs';
@@ -54,6 +54,44 @@ export function validateGovernance({ root = repositoryRoot } = {}) {
     }
   }
 
+  const decisionsStubPath = 'docs/DECISIONS.md';
+  const decisionsIndexPath = 'docs/decisions/README.md';
+  const decisionsDir = join(root, 'docs', 'decisions');
+  const decisionIds = new Set();
+  if (!existsSync(join(root, decisionsStubPath))) {
+    problems.push(`missing stable decision-log entry point: ${decisionsStubPath}`);
+  } else if (!/\]\(decisions\/README\.md\)/.test(read(decisionsStubPath))) {
+    problems.push(`${decisionsStubPath}: point to ${decisionsIndexPath}`);
+  }
+  if (!existsSync(join(root, decisionsIndexPath))) {
+    problems.push(`missing decision index: ${decisionsIndexPath}`);
+  }
+  if (!existsSync(decisionsDir)) {
+    problems.push('missing decision records directory: docs/decisions/');
+  } else {
+    const records = readdirSync(decisionsDir).filter((name) => name.endsWith('.md') && name !== 'README.md');
+    if (records.length === 0) problems.push('docs/decisions/: no decision records found');
+    for (const name of records) {
+      const path = `docs/decisions/${name}`;
+      const headings = [...read(path).matchAll(/^## \d{4}-\d{2}-\d{2} — (D\d+):/gm)];
+      if (headings.length !== 1) {
+        problems.push(`${path}: expected exactly one dated decision heading, found ${headings.length}`);
+        continue;
+      }
+      const [, id] = headings[0];
+      if (decisionIds.has(id)) problems.push(`${path}: duplicate decision ID ${id}`);
+      decisionIds.add(id);
+    }
+    if (existsSync(join(root, decisionsIndexPath))) {
+      const index = read(decisionsIndexPath);
+      for (const id of decisionIds) {
+        if (!new RegExp(`\\[${id}\\]\\(`).test(index)) {
+          problems.push(`${decisionsIndexPath}: missing index row for ${id}`);
+        }
+      }
+    }
+  }
+
   const indexPath = 'docs/engineering/README.md';
   if (existsSync(join(root, indexPath))) {
     const index = read(indexPath);
@@ -97,9 +135,8 @@ export function validateGovernance({ root = repositoryRoot } = {}) {
           problems.push(`${group.id}: future groups require an admissionDecision reference to docs/DECISIONS.md`);
         } else {
           const decisionId = group.admissionDecision.split('#')[1];
-          const decisionsPath = 'docs/DECISIONS.md';
-          if (!existsSync(join(root, decisionsPath)) || !new RegExp(`\\b${decisionId}\\b`).test(read(decisionsPath))) {
-            problems.push(`${group.id}: admission decision ${decisionId} is missing from docs/DECISIONS.md`);
+          if (!decisionIds.has(decisionId)) {
+            problems.push(`${group.id}: admission decision ${decisionId} is missing from docs/decisions/`);
           }
         }
       }

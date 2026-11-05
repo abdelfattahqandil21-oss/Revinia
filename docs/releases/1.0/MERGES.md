@@ -87,7 +87,7 @@ now part of the branch. From row 6 on, the squash rule applies.
 
 "not recorded" is the state of the evidence, not a claim that no review happened:
 the reviews ran, but their verdicts were written into the conversation and into
-`docs/DECISIONS.md` rather than into a per-merge record, so they cannot be
+the decision index rather than into a per-merge record, so they cannot be
 quoted here with a precision the repository does not hold.
 
 Row 6's verdict needs the same honesty. The rule asks for a **fresh-context**

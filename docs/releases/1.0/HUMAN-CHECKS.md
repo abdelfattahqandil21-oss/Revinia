@@ -99,7 +99,7 @@ but every one of them is Playwright moving `viewport`, not a phone. A real
 device is the only place where a keyboard opening can change the viewport while
 the finger is in the panel, and where the browser chrome collapses on scroll.
 
-The policy being tested, from `docs/DECISIONS.md` (S4, recorded PROVISIONAL):
+The policy being tested, from [D86](../../decisions/D086-no-popup-dedupe-before-1-0-a-conformance-suite-instead.md) (S4, recorded PROVISIONAL):
 the popup listens for `resize` and compares `window.innerWidth` with the width
 captured when it opened. A resize that **does not** change the width closes the
 popup **only when the focus is inside an editable element in the panel** — the
@@ -189,7 +189,7 @@ metrics that move layout. Safari is also the engine that shipped `popover` first
 the top-layer path is only fully proven there. Until this section is run, the Safari
 column of the matrix in `docs/testing/a11y-verification.md` stays **not tested**, and the
 one engine-specific finding the automated run did produce is recorded in
-`docs/DECISIONS.md`: WebKit lays the demo page out taller than Chromium at the same
+[D86](../../decisions/D086-no-popup-dedupe-before-1-0-a-conformance-suite-instead.md): WebKit lays the demo page out taller than Chromium at the same
 viewport (`scrollHeight` 1221 against 1109 at 720px), which is worth your eye when
 you repeat the steps on a real device.
 

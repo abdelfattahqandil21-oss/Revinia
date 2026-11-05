@@ -2,11 +2,11 @@
 
 Back to [the README](../../projects/select/README.md) ·
 [variants](variants.md) · [recipes](recipes.md) ·
-[theming every Rivinia component](../theming.md)
+[theming every Rivinia component](../theme/README.md)
 
 This page is the select's own half. The cascade, the three levels of control,
 where an override has to live, and light/dark all belong to the single shared
-page: [theming every Rivinia component](../theming.md).
+page: [theming every Rivinia component](../theme/README.md).
 
 ## The chain
 
@@ -149,7 +149,7 @@ stylesheet, so pick one, never both.
 **No forced dark mode** — there is no `prefers-color-scheme` block anywhere in
 this package, so a component can never override your explicit choice. Dark
 comes from the theme layer the tokens resolve through; see
-[theming every component](../theming.md) for both switches.
+[theming every component](../theme/README.md) for both switches.
 
 ## Classes for anything the tokens do not cover
 
@@ -198,7 +198,7 @@ stable:
 
 ## Further reading
 
-- [Theming every Rivinia component](../theming.md) — the cascade, the four
+- [Theming every Rivinia component](../theme/README.md) — the cascade, the four
   placements of an override, light and dark, `check:theme-dark`.
 - [The token table](../theme/tokens.md) — the twelve global names, both schemes.
 - [What the theme restyles in the components](../theme/component-theme.md).

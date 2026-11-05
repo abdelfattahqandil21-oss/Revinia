@@ -1,6 +1,6 @@
 # Repository architecture history
 
-The reports now live under [`../archive/repository-architecture/`](../archive/repository-architecture/). Treat them as evidence from their stated commit/date, not as current policy. Current rules live in root `AGENTS.md` and [`../engineering/README.md`](../engineering/README.md); durable decisions live in [`../DECISIONS.md`](../DECISIONS.md).
+The reports now live under [`../archive/repository-architecture/`](../archive/repository-architecture/). Treat them as evidence from their stated commit/date, not as current policy. Current rules live in root `AGENTS.md` and [`../engineering/README.md`](../engineering/README.md); durable decisions live in the [decision index](../decisions/README.md).
 
 - [`ARCHITECTURE-PROPOSAL.md`](../archive/repository-architecture/ARCHITECTURE-PROPOSAL.md) — superseded proposal.
 - [`AUDIT-1.0-readiness.md`](../archive/repository-architecture/AUDIT-1.0-readiness.md) and [`AUDIT-2026-10.md`](../archive/repository-architecture/AUDIT-2026-10.md) — dated repository/package audits.

@@ -83,14 +83,13 @@ Measured on the packed tarball, for shipping both skins: **+801 B brotli /
 `@rivinia/select` entry point. The full measurement, including the per-file
 breakdown and what a consumer pays over the wire, is in
 [`projects/select/specifications/select-variants.md`](../../projects/select/specifications/select-variants.md)
-§8 "Budget" and [`docs/DECISIONS.md`](../DECISIONS.md)
-D78.
+§8 "Budget" and the [D78 decision record](../decisions/D078-a-variant-flag-styled-entirely-in-css-and-why-close-never-animates.md).
 
 ## Further reading
 
 - [Theming and the override surface](theming.md) — every `--rv-select-*` name,
   both skins.
-- [Theming every Rivinia component](../theming.md) — the cascade, the three
+- [Theming every Rivinia component](../theme/README.md) — the cascade, the three
   levels, light and dark.
 - [The API](api.md) — `variant` in the input table, `RiviniaSelectVariant` in the
   shapes.

@@ -9,6 +9,7 @@ This is the navigation index. `AGENTS.md` is the concise, always-loaded instruct
 | Need | Canonical document |
 | --- | --- |
 | Overall architecture, ownership, migration sequence and rollback | [Architecture RFC](RFC-ENGINEERING-GOVERNANCE.md) |
+| Durable architecture decisions | [Decision index](../decisions/README.md); stable landing page [`DECISIONS.md`](../DECISIONS.md) |
 | Per-library code, test, harness and documentation ownership | [Library ownership map](LIBRARY-OWNERSHIP.md) |
 | Root scripts, fixtures, and generated outputs | [Shared tooling ownership](TOOLING-OWNERSHIP.md) |
 | Package versions, release group, support claims and admission | [Version and release policy](VERSIONING.md) |

@@ -8,7 +8,7 @@ Use the package README in `projects/<package>/` for its public setup and API. Th
 | --- | --- | --- |
 | Package APIs and consumer guidance | `projects/<package>/README.md`, `docs/{i18n,menu,select,theme}/` | Current; maintained with the package |
 | Architecture policy and workflows | [`engineering/README.md`](engineering/README.md) | Current policy and procedures |
-| Durable architecture decisions | [`DECISIONS.md`](DECISIONS.md) | Append-only decision history; never rewrite old entries |
+| Durable architecture decisions | [Decision index](decisions/README.md); stable entry point [`DECISIONS.md`](DECISIONS.md) | Append-only records, one file per decision |
 | Feature specifications and designs | `projects/<package>/specifications/` plus the [cross-library index](specifications/README.md) | Package-owned records stay with their owners; each record states its status |
 | Testing and browser evidence | [`testing/README.md`](testing/README.md) | Testing procedures plus dated verification evidence |
 | Release history | [`releases/1.0/README.md`](releases/1.0/README.md) | Historical 1.0 RC records; refresh against current source before operational use |

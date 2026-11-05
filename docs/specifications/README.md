@@ -1,6 +1,6 @@
 # Specifications and design records
 
-These documents describe proposed or implemented behavior. Their status lines are authoritative for whether work is approved, pending, or complete. Accepted durable architecture decisions belong in [`../DECISIONS.md`](../DECISIONS.md); this collection does not replace that append-only log.
+These documents describe proposed or implemented behavior. Their status lines are authoritative for whether work is approved, pending, or complete. Accepted durable architecture decisions belong in the [decision records](../decisions/README.md); this collection does not replace that append-only log.
 
 | Record | Scope | Status |
 | --- | --- | --- |

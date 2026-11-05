@@ -16,7 +16,7 @@ four peel to `69af061`), which is the release form D92 predicted and the reason 
 rc tag is lightweight" can no longer be said from this line. **`latest` answered
 `1.0.0-rc.1` for all four after D93** — the owner moved it
 on the afternoon of 2026-11-03 and deprecated the whole 0.x line, which is D93 below
-and `D93` in `docs/DECISIONS.md`; the `dist-tags` objects quoted in the table rows
+and [D93](../../decisions/D093-latest-moves-onto-the-1-0-line-at-1-0-0-rc-1-and-the-whole-0-x-line-is-d.md); the `dist-tags` objects quoted in the table rows
 are the state each check read **at publish time**, and every one of them is
 superseded. The agent
 that prepared the rcs published nothing, created no tag and pushed no tag: every
@@ -43,7 +43,7 @@ on origin, no manifest. The four tarballs verify: local `shasum` equals `dist.sh
 base64 `sha512sum` equals `dist.integrity`, at 8,419 B / 9 files (theme), 66,818 / 9
 (select), 36,887 / 9 (menu), 93,265 / 20 (i18n), and those four shasums are the numbers
 the owner read off npmjs, which is what makes a cache read a real one. Full record:
-`D94` in `docs/DECISIONS.md`.
+[D94](../../decisions/D094-1-0-0-rc-2-is-published-on-annotated-tags-the-four-next-tags-are-aligned.md).
 
 Three consequences for whoever runs the next publish.
 

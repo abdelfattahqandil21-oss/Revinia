@@ -1,7 +1,7 @@
 # @rivinia/theme — the tokens
 
 Back to [the README](../../projects/theme/README.md) ·
-[how the tokens cascade](../theming.md)
+[how the tokens cascade](README.md)
 
 Every colour ships in two schemes.
 

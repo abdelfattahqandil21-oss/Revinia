@@ -238,7 +238,7 @@ render cannot disagree.
 ## Styling
 
 Sizes are `rem`/`em`, and every token falls back to a `--rv-*` semantic value from
-[`@rivinia/theme`](../theming.md). Override the custom property, not the
+[`@rivinia/theme`](../theme/README.md). Override the custom property, not the
 declaration:
 
 | Token                               | Falls back to | Default                                                                                                       |

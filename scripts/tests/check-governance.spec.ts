@@ -52,6 +52,10 @@ function fixture() {
     join(root, 'docs', 'engineering', 'VERSIONING.md'),
     `**Owner:** Test\n**Purpose:** Test fixture\n${members.map((name) => `\`${name}\``).join('\n')}`,
   );
+  mkdirSync(join(root, 'docs', 'decisions'), { recursive: true });
+  writeFileSync(join(root, 'docs', 'DECISIONS.md'), '[Decision index](decisions/README.md)\n');
+  writeFileSync(join(root, 'docs', 'decisions', 'README.md'), '[D123](D123-test-decision.md)\n');
+  writeFileSync(join(root, 'docs', 'decisions', 'D123-test-decision.md'), '## 2026-01-01 — D123: test decision\n');
   return root;
 }
 
@@ -118,5 +122,37 @@ describe('governance validation', () => {
       }),
     );
     expect(validateGovernance({ root }).join('\n')).toContain('future groups require an admissionDecision');
+  });
+
+  it('resolves a stable decision-log reference to its split record', () => {
+    const root = fixture();
+    mkdirSync(join(root, 'projects', 'datepicker'), { recursive: true });
+    writeFileSync(join(root, 'projects', 'datepicker', 'package.json'), JSON.stringify({ name: '@rivinia/datepicker', version: '0.1.0' }));
+    writeFileSync(
+      join(root, 'release-groups.json'),
+      JSON.stringify({
+        groups: [
+          { id: 'rivinia-1.0', policy: 'synchronized-version', packages: members },
+          { id: 'datepicker-sync', policy: 'synchronized-version', admissionDecision: 'docs/DECISIONS.md#D123', packages: ['@rivinia/datepicker'] },
+        ],
+      }),
+    );
+    expect(validateGovernance({ root })).toEqual([]);
+  });
+
+  it('rejects an admission ID missing from the split decision records', () => {
+    const root = fixture();
+    mkdirSync(join(root, 'projects', 'datepicker'), { recursive: true });
+    writeFileSync(join(root, 'projects', 'datepicker', 'package.json'), JSON.stringify({ name: '@rivinia/datepicker', version: '0.1.0' }));
+    writeFileSync(
+      join(root, 'release-groups.json'),
+      JSON.stringify({
+        groups: [
+          { id: 'rivinia-1.0', policy: 'synchronized-version', packages: members },
+          { id: 'datepicker-sync', policy: 'synchronized-version', admissionDecision: 'docs/DECISIONS.md#D999', packages: ['@rivinia/datepicker'] },
+        ],
+      }),
+    );
+    expect(validateGovernance({ root }).join('\n')).toContain('admission decision D999 is missing from docs/decisions/');
   });
 });
