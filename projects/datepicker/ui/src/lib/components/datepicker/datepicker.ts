@@ -45,9 +45,9 @@ let nextId = 0;
  *
  * Deliberate choices:
  *  - the panel is NON-modal: a date picker is a popover, not a dialog that
- *    blocks the page. It does not trap focus, it closes on Escape or an
- *    outside click, and it returns focus to the trigger as the APG dialog
- *    pattern requires for keyboard users;
+ *    blocks the page. It does not trap focus; it closes on Escape, an outside
+ *    click, or when focus leaves the control. Escape and date selection return
+ *    focus to the trigger, while tabbing out keeps focus at its new target;
  *  - the value is a `RiviniaDate` (or `null`), never a `Date` and never a
  *    formatted string, so a form or a payload can rely on it;
  *  - the value is a `model()`, i.e. the documented Angular 22
@@ -361,7 +361,8 @@ export class RiviniaDatepickerComponent implements FormValueControl<RiviniaDate 
   protected onFocusOut(event: FocusEvent): void {
     const related = event.relatedTarget as Node | null;
     if (!related || !this.hostRef.nativeElement.contains(related)) {
-      this.touch.emit();
+      if (this.open()) this.closePanel(false);
+      else this.touch.emit();
     }
   }
 

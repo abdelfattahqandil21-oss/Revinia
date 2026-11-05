@@ -242,6 +242,23 @@ describe('rv-datepicker — the panel', () => {
     expect(document.activeElement).toBe(mounted.trigger());
   });
 
+  it('closes without restoring focus when Tab moves outside the picker', () => {
+    mounted.open();
+    const outside = document.createElement('button');
+    document.body.append(outside);
+    outside.focus();
+    mounted.settle();
+
+    expect(mounted.trigger().getAttribute('aria-expanded')).toBe('false');
+    expect(
+      mounted.panel() === null ||
+        mounted.panel()?.classList.contains('rv-datepicker-panel--closing'),
+    ).toBe(true);
+    expect(document.activeElement).toBe(outside);
+    expect(mounted.host.touches).toBe(1);
+    outside.remove();
+  });
+
   it('a click outside closes it', () => {
     mounted.open();
     document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));

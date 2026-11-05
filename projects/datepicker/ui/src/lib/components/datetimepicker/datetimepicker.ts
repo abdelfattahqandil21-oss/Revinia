@@ -66,7 +66,8 @@ let nextId = 0;
  * The panel is the same one `rv-datepicker` uses: the calendar is never
  * unmounted while the time row is used, so the visible month, the focused day
  * and the selected date survive editing the time. The time is a DRAFT until
- * OK; Escape or an outside click discards it (a time alone is incomplete).
+ * OK; Escape, an outside click, or leaving the control discards it (a time
+ * alone is incomplete). Tabbing out never moves focus back to the trigger.
  *
  * The value is civil on purpose: `{ date, time }` and no zone. The `resolved`
  * output carries the instant the chosen zone gives that wall time, including
@@ -503,7 +504,8 @@ export class RiviniaDatetimepickerComponent implements FormValueControl<RiviniaD
   protected onFocusOut(event: FocusEvent): void {
     const related = event.relatedTarget as Node | null;
     if (!related || !this.hostRef.nativeElement.contains(related)) {
-      this.touch.emit();
+      if (this.open()) this.closePanel(false);
+      else this.touch.emit();
     }
   }
 

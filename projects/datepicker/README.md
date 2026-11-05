@@ -472,8 +472,9 @@ Each `<rv-datepicker>` provides its **own** calendar state, so two adjacent
 pickers never share a focused day, a month, or a value. Opening one closes the
 other — the coordination is a root service (`DatepickerPanelRegistry`), so it
 works for keyboard activation too, which fires no pointer event. Clicking
-anywhere outside closes without stealing focus; Escape closes and returns focus
-to the trigger. `<rv-datetimepicker>` uses the same registry, so a date picker
+anywhere outside closes without stealing focus; tabbing out of the control also
+closes its panel while leaving focus at the new target. Escape closes and
+returns focus to the trigger. `<rv-datetimepicker>` uses the same registry, so a date picker
 and a datetime picker on one page also never leave two panels open.
 
 ### `<rv-calendar>`
@@ -623,6 +624,7 @@ your API — it is not a form value.
 | `Shift+PageUp/Down`   | previous / next year                    | ±12 years                      | ±120 years                    |
 | `Enter` / `Space`     | pick the focused day                    | open that month (day view)     | open that year (month view)   |
 | `Escape`              | close the panel, restore focus          | close the panel                | close the panel               |
+| `Tab` / `Shift+Tab`    | when focus leaves: close; keep the new focus | when focus leaves: close; keep the new focus | when focus leaves: close; keep the new focus |
 
 The heading is a button: `Tab` to it and press `Enter` to go from the day view
 to the months, and from the months to the years.
@@ -998,7 +1000,7 @@ keeps `--rv-calendar-width` and stays centred.
 | digits                | direct entry, clamped; pads on blur                                                                      |
 | `Enter`               | commit the draft and close                                                                               |
 | `Escape`              | discard the draft, close, restore focus                                                                  |
-| `Tab`                 | hour → minute → [second] → clock → tray rows → meridiem → Now → OK (the tray rows only while it is open) |
+| `Tab`                 | hour → minute → [second] → clock → tray rows → meridiem → Now → OK (the tray rows only while it is open); leaving the picker closes it without restoring focus |
 
 The full day-grid table is in [Keyboard](#keyboard). The time row is a named
 `role="group"`; each unit is a `role="spinbutton"` with localized
