@@ -33,6 +33,7 @@ export interface PopupDismissalOptions {
   readonly panel: () => Element | null;
   readonly editableFocusInsidePanel: () => boolean;
   readonly dismiss: () => void;
+  readonly onCleanup?: (cleanup: () => void) => void;
 }
 
 export const POPUP_GAP = 6;
@@ -79,7 +80,10 @@ export function computePopupPosition(
 }
 
 /** Attach equivalent outside-dismissal listeners to one open host instance. */
-export function bindPopupDismissal(destroyRef: DestroyRef, options: PopupDismissalOptions): void {
+export function bindPopupDismissal(
+  options: PopupDismissalOptions,
+  destroyRef: DestroyRef,
+): void {
   const { document: doc, window: win } = options;
   if (!doc || !win) return;
 
@@ -103,9 +107,14 @@ export function bindPopupDismissal(destroyRef: DestroyRef, options: PopupDismiss
   doc.addEventListener('pointerdown', onPointer);
   win.addEventListener('scroll', onScroll, true);
   win.addEventListener('resize', onResize);
-  destroyRef.onDestroy(() => {
+  let active = true;
+  const cleanup = () => {
+    if (!active) return;
+    active = false;
     doc.removeEventListener('pointerdown', onPointer);
     win.removeEventListener('scroll', onScroll, true);
     win.removeEventListener('resize', onResize);
-  });
+  };
+  options.onCleanup?.(cleanup);
+  destroyRef.onDestroy(cleanup);
 }

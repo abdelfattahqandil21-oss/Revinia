@@ -1,4 +1,5 @@
-import type { DestroyRef } from '@angular/core';
+import { DestroyRef, EnvironmentInjector, runInInjectionContext } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { bindPopupDismissal, computePopupPosition } from './popup-core';
 
@@ -48,18 +49,20 @@ describe('bindPopupDismissal', () => {
     const panel = document.createElement('div');
     host.append(panel);
     const dismiss = vi.fn();
-    let destroy!: () => void;
-    const destroyRef = { onDestroy(callback: () => void) { destroy = callback; } } as DestroyRef;
     const originalWidth = window.innerWidth;
     const editable = { value: false };
+    let cleanup!: () => void;
+    const fakeDestroyRef = { onDestroy(callback: () => void) { cleanup = callback; } } as DestroyRef;
 
-    bindPopupDismissal(destroyRef, {
-      document,
-      window,
-      host: () => host,
-      panel: () => panel,
-      editableFocusInsidePanel: () => editable.value,
-      dismiss,
+    runInInjectionContext(TestBed.inject(EnvironmentInjector), () => {
+      bindPopupDismissal({
+        document,
+        window,
+        host: () => host,
+        panel: () => panel,
+        editableFocusInsidePanel: () => editable.value,
+        dismiss,
+      }, fakeDestroyRef);
     });
 
     document.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true }));
@@ -74,7 +77,7 @@ describe('bindPopupDismissal', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth + 1 });
     window.dispatchEvent(new Event('resize'));
     expect(dismiss).toHaveBeenCalledTimes(1);
-    destroy();
+    cleanup();
     dismiss.mockClear();
     window.dispatchEvent(new Event('resize'));
     expect(dismiss).not.toHaveBeenCalled();
@@ -82,15 +85,17 @@ describe('bindPopupDismissal', () => {
   });
 
   it('is a no-op for a null server browser context', () => {
-    const onDestroy = vi.fn();
-    bindPopupDismissal({ onDestroy } as unknown as DestroyRef, {
-      document: null,
-      window: null,
-      host: () => null,
-      panel: () => null,
-      editableFocusInsidePanel: () => false,
-      dismiss: vi.fn(),
+    const destroyRef = { onDestroy: vi.fn() } as unknown as DestroyRef;
+    runInInjectionContext(TestBed.inject(EnvironmentInjector), () => {
+      bindPopupDismissal({
+        document: null,
+        window: null,
+        host: () => null,
+        panel: () => null,
+        editableFocusInsidePanel: () => false,
+        dismiss: vi.fn(),
+      }, destroyRef);
     });
-    expect(onDestroy).not.toHaveBeenCalled();
+    expect(destroyRef.onDestroy).not.toHaveBeenCalled();
   });
 });

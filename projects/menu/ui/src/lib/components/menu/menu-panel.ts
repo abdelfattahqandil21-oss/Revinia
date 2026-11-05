@@ -1,5 +1,6 @@
 import {
   Component,
+  DestroyRef,
   Directive,
   ElementRef,
   ViewEncapsulation,
@@ -14,8 +15,8 @@ import {
 } from '@angular/core';
 import type { RiviniaMenuController, RiviniaMenuItemData } from '@rivinia/menu';
 import { RiviniaMenu } from '@rivinia/menu';
+import { bindPopupDismissal, computePopupPosition } from '@rivinia/popup';
 import type { RiviniaMenuUiPlacement } from '../../models/menu.ui-types';
-import { computeMenuPosition } from '../../utils/menu-position';
 
 /** Payload of {@link RiviniaMenuComponent.picked}. */
 export interface MenuPick {
@@ -217,6 +218,7 @@ export class RiviniaMenuComponent {
 
   private readonly owned = new RiviniaMenu();
   private readonly self = inject(ElementRef<HTMLElement>);
+  private readonly destroyRef = inject(DestroyRef);
   /** Item directives the consumer projected (not the ones we render). */
   private readonly projectedItems = contentChildren(RiviniaMenuItem, { descendants: true });
   /**
@@ -303,45 +305,18 @@ export class RiviniaMenuComponent {
       );
     });
     effect((onCleanup) => {
-      if (typeof window === 'undefined') return;
       if (!this.controller().open()) return;
-      const onPointer = (event: PointerEvent) => {
-        const host = this.self.nativeElement;
-        // Close WITHOUT restoring focus: the pointer is heading somewhere the
-        // browser will focus naturally (or nowhere focusable). Stealing it
-        // back to the trigger would break that (APG + WCAG focus-visible).
-        if (host && !host.contains(event.target as Node)) this.doClose(false);
-      };
-      document.addEventListener('pointerdown', onPointer);
-      // Coordinates go stale on outside scroll — close instead of drifting
-      // (native-select-like; scrolling inside the panel is exempt).
-      // Like Tab-close, this is APG-consistent non-modal behavior.
-      const onScroll = (event: Event) => {
-        const panel = this.self.nativeElement.querySelector('.rv-menu-panel');
-        if (panel && event.target instanceof Node && panel.contains(event.target)) return;
-        this.doClose(false);
-      };
-      // S4: a HEIGHT-only `resize` is what an on-screen keyboard fires, and it
-      // is ignored only while an editable element inside the panel owns the
-      // caret. A built-in menu has nothing editable — its rows are buttons — so
-      // for it every resize closes, exactly as before; a menu hosting projected
-      // content can hold an `<input>`, and that is the keyboard case. Width is
-      // the axis the anchor lives on, so a width change, including an
-      // orientation flip, always closes.
-      let widthAtOpen = window.innerWidth;
-      const onResize = () => {
-        const width = window.innerWidth;
-        if (width === widthAtOpen && this.editableFocusInsidePanel()) return;
-        widthAtOpen = width;
-        this.doClose(false);
-      };
-      window.addEventListener('scroll', onScroll, true);
-      window.addEventListener('resize', onResize);
-      onCleanup(() => {
-        document.removeEventListener('pointerdown', onPointer);
-        window.removeEventListener('scroll', onScroll, true);
-        window.removeEventListener('resize', onResize);
-      });
+      const win = typeof window === 'undefined' ? null : window;
+      const doc = typeof document === 'undefined' ? null : document;
+      bindPopupDismissal({
+        document: doc,
+        window: win,
+        host: () => this.self.nativeElement,
+        panel: () => this.self.nativeElement.querySelector('.rv-menu-panel'),
+        editableFocusInsidePanel: () => this.editableFocusInsidePanel(),
+        dismiss: () => this.doClose(false),
+        onCleanup,
+      }, this.destroyRef);
     });
     // APG menu-button: the trigger exposes haspopup + expanded, and
     // aria-controls only while the panel it names exists.
@@ -385,12 +360,12 @@ export class RiviniaMenuComponent {
         this.positioned.set(true);
         return;
       }
-      const at = computeMenuPosition(
+      const at = computePopupPosition(
         { left: trigger.left, top: trigger.top, width: trigger.width, height: trigger.height },
         { width: root.offsetWidth, height: root.offsetHeight },
         this.placement(),
         { width: window.innerWidth, height: window.innerHeight },
-        this.isRtl(),
+        this.isRtl() ? 'rtl' : 'ltr',
       );
       root.style.left = `${at.left}px`;
       root.style.top = `${at.top}px`;

@@ -31,5 +31,8 @@
     "@angular/core": "^22.0.0",
     "@angular/forms": "^22.0.0"
   },
+  "dependencies": {
+    "@rivinia/popup": "0.0.0"
+  },
   "sideEffects": false
 }

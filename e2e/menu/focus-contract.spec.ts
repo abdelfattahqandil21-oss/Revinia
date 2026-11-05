@@ -36,6 +36,23 @@ test.describe('focus contract — Tab traversal', () => {
     await expect(first).not.toBeFocused();
   });
 
+  test('after pointer-open dismissal, Shift+Tab starts from the trigger in WebKit', async ({ page, browserName }) => {
+    test.skip(browserName !== 'webkit', 'This locks the WebKit top-layer sequential-focus workaround.');
+    await page.goto('/two');
+    const trigger = page.getByRole('button', { name: 'First' });
+    const previous = page.getByRole('link', { name: 'Styled' });
+
+    await trigger.click();
+    await expect(page.getByRole('menu', { name: 'First menu' })).toBeVisible();
+    await expect(trigger).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('menu', { name: 'First menu' })).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.keyboard.press('Shift+Tab');
+    await expect(previous).toBeFocused();
+  });
+
   test('Tab never traps focus: repeated Tab keeps walking through the page', async ({ page }) => {
     await page.goto('/two');
     const second = page.getByRole('button', { name: 'Second' });

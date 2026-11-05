@@ -1,6 +1,6 @@
 /**
  * pnpm check:popup-mutations — the evidence behind D86's acceptance line:
- * "breaking one component's behavior makes it fail".
+ * "breaking shared popup behavior makes its contract fail".
  *
  * A green conformance suite proves nothing on its own: a case can pass because
  * the behavior it names is not the behavior it measures. So each entry below
@@ -13,17 +13,12 @@
  * A mutant nobody kills is a behavior no test measures. The expected list is
  * exact in both directions: every named case must go red, and NOTHING else —
  * so a menu-side break that reddens a select case is reported as a mismatch,
- * not as extra coverage. That second half is what makes the per-component claim
- * real: the select's cases stay green under a menu mutant and the other way
- * round, because they are different code.
+ * not as extra coverage. Shared-core mutants are expected to fail both hosts'
+ * equivalent cases; host-specific focus/keyboard behavior remains outside this
+ * mutation set and covered by package characterization tests.
  *
- * Two kinds of break are deliberately absent, with the reason rather than a
- * silent omission: forcing the height-only exemption to always fire cannot be
- * tested on the select, whose panel always has a filter box — the "has nothing
- * editable" counter-case exists only for the built-in menu. The `<textarea>` /
- * `contenteditable` branch breaks are the same story on the select: its fixture
- * offers an `<input>`, so those two branches are unobservable there by
- * construction.
+ * The set covers the shared generic rules: height exemption, scroll/pointer
+ * dismissal, listener cleanup, plus the host-owned Menu SSR guard.
  *
  * The source files are restored in a `finally`, including on a crash, and the
  * libraries plus the demo are rebuilt on the way out so `dist/` describes the
@@ -32,7 +27,7 @@
  * The suite runs on Chromium only, and that is a speed choice, not a gap: an
  * engine would have to be excluded if it could not launch at all, and WebKit does
  * launch here since `libavif16` was installed (24/24 on 2026-11-01). Rebuilding and
- * re-running 18 mutants on three engines costs about an hour to prove a claim about
+ * re-running eight mutants on three engines costs time to prove a claim about
  * library logic, which is engine-independent — the engine matrix is S7's job and
  * runs the suite separately on all three.
  */
@@ -41,6 +36,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+const CORE = 'projects/popup/src/lib/popup-core.ts';
 const MENU = 'projects/menu/ui/src/lib/components/menu/menu-panel.ts';
 const SELECT = 'projects/select/ui/src/lib/components/popup/select-popup.ts';
 const SUITE = 'e2e/popup/conformance.spec.ts';
@@ -54,26 +50,19 @@ const LEDGER = 'destroying the open panel removes every global listener';
 const ESCAPE = 'Escape closes and returns focus to the trigger';
 const POINTER = 'outside pointerdown closes without stealing focus back to the trigger';
 
-/** The shared S4 guard, byte-identical in both popups (D86's accepted clone). */
-const RESIZE_GUARD = 'if (width === widthAtOpen && this.editableFocusInsidePanel()) return;';
-
-/** The three kinds of editable the exemption recognizes. */
-const EDITABLE_TEST = `    return (
-      active.isContentEditable ||
-      active instanceof HTMLInputElement ||
-      active instanceof HTMLTextAreaElement
-    );`;
+/** Shared S4 guard. */
+const RESIZE_GUARD = 'if (width === widthAtOpen && options.editableFocusInsidePanel()) return;';
 
 const INSIDE_SCROLL_GUARD =
   'if (panel && event.target instanceof Node && panel.contains(event.target)) return;';
 
-const SCROLL_REGISTRATION = "window.addEventListener('scroll', onScroll, true);";
+const SCROLL_REGISTRATION = "win.addEventListener('scroll', onScroll, true);";
 
-const CLEANUP_BLOCK = `        document.removeEventListener('pointerdown', onPointer);
-        window.removeEventListener('scroll', onScroll, true);
-        window.removeEventListener('resize', onResize);`;
+const CLEANUP_BLOCK = `    doc.removeEventListener('pointerdown', onPointer);
+    win.removeEventListener('scroll', onScroll, true);
+    win.removeEventListener('resize', onResize);`;
 
-const POINTER_GUARD = 'if (host && !host.contains(event.target as Node)) this.doClose(false);';
+const POINTER_GUARD = 'if (host && !host.contains(event.target as Node)) options.dismiss();';
 
 const ESCAPE_BRANCH = `      case 'Escape':
         event.preventDefault();
@@ -91,134 +80,59 @@ const ESCAPE_NO_RESTORE = `      case 'Escape':
  */
 const MUTANTS = [
   {
-    label: 'menu: the height-only exemption never fires',
-    file: MENU,
+    label: 'core: the height-only exemption never fires',
+    file: CORE,
     from: RESIZE_GUARD,
-    to: 'this.editableFocusInsidePanel();',
+    to: 'options.editableFocusInsidePanel();',
     expect: [HEIGHT_KEEPS],
   },
   {
-    label: 'menu: the height-only exemption ignores editability',
-    file: MENU,
+    label: 'core: the height-only exemption ignores editability',
+    file: CORE,
     from: RESIZE_GUARD,
     to: 'if (width === widthAtOpen) return;',
     expect: [HEIGHT_CLOSES],
   },
   {
-    label: 'menu: the height-only exemption ignores width',
-    file: MENU,
+    label: 'core: the height-only exemption ignores width',
+    file: CORE,
     from: RESIZE_GUARD,
-    to: 'if (this.editableFocusInsidePanel()) return;',
+    to: 'if (options.editableFocusInsidePanel()) return;',
     expect: [WIDTH_CLOSES],
   },
   {
-    label: 'menu: only an <input> counts as editable',
-    file: MENU,
-    from: EDITABLE_TEST,
-    to: '    return active instanceof HTMLInputElement;',
-    expect: [HEIGHT_KEEPS],
-  },
-  {
-    label: 'menu: contenteditable does not count as editable',
-    file: MENU,
-    from: '      active.isContentEditable ||\n',
-    to: '',
-    expect: [HEIGHT_KEEPS],
-  },
-  {
-    label: 'menu: the scroll exemption tests the wrong side of the panel',
-    file: MENU,
+    label: 'core: the scroll exemption tests the wrong side of the panel',
+    file: CORE,
     from: INSIDE_SCROLL_GUARD,
     to: 'if (panel && event.target instanceof Node && !panel.contains(event.target)) return;',
     expect: [SCROLL_INSIDE, SCROLL_OUTSIDE],
   },
   {
-    label: 'menu: the scroll listener is never registered',
-    file: MENU,
+    label: 'core: the scroll listener is never registered',
+    file: CORE,
     from: SCROLL_REGISTRATION,
-    to: 'void onScroll;',
+    to: '  void onScroll;',
     expect: [SCROLL_OUTSIDE, LEDGER],
   },
   {
-    label: 'menu: the cleanup removes nothing',
-    file: MENU,
+    label: 'core: the cleanup removes nothing',
+    file: CORE,
     from: CLEANUP_BLOCK,
-    to: '        void [onPointer, onScroll, onResize];',
+    to: '    void [onPointer, onScroll, onResize];',
     expect: [LEDGER],
   },
   {
-    label: 'menu: Escape closes without restoring focus',
-    file: MENU,
-    from: ESCAPE_BRANCH,
-    to: ESCAPE_NO_RESTORE,
-    expect: [ESCAPE],
-  },
-  {
-    label: 'menu: an outside pointerdown closes nothing',
-    file: MENU,
+    label: 'core: an outside pointerdown closes nothing',
+    file: CORE,
     from: POINTER_GUARD,
-    to: 'if (host && !host.contains(event.target as Node)) void this.controller();',
+    to: 'if (host && !host.contains(event.target as Node)) void options.panel();',
     expect: [POINTER],
   },
   {
-    label: 'select: the height-only exemption never fires',
-    file: SELECT,
-    from: RESIZE_GUARD,
-    to: 'this.editableFocusInsidePanel();',
-    expect: [HEIGHT_KEEPS],
-  },
-  {
-    label: 'select: the height-only exemption ignores width',
-    file: SELECT,
-    from: RESIZE_GUARD,
-    to: 'if (this.editableFocusInsidePanel()) return;',
-    expect: [WIDTH_CLOSES],
-  },
-  {
-    label: 'select: the scroll exemption tests the wrong side of the panel',
-    file: SELECT,
-    from: INSIDE_SCROLL_GUARD,
-    to: 'if (panel && event.target instanceof Node && !panel.contains(event.target)) return;',
-    expect: [SCROLL_INSIDE, SCROLL_OUTSIDE],
-  },
-  {
-    label: 'select: the scroll listener is never registered',
-    file: SELECT,
-    from: SCROLL_REGISTRATION,
-    to: 'void onScroll;',
-    expect: [SCROLL_OUTSIDE, LEDGER],
-  },
-  {
-    label: 'select: the cleanup removes nothing',
-    file: SELECT,
-    from: CLEANUP_BLOCK,
-    to: '        void [onPointer, onScroll, onResize];',
-    expect: [LEDGER],
-  },
-  {
-    label: 'select: Escape closes without restoring focus',
-    file: SELECT,
-    from: ESCAPE_BRANCH,
-    to: ESCAPE_NO_RESTORE,
-    expect: [ESCAPE],
-  },
-  {
-    label: 'select: an outside pointerdown closes nothing',
-    file: SELECT,
-    from: POINTER_GUARD,
-    to: 'if (host && !host.contains(event.target as Node)) void this.controller();',
-    expect: [POINTER],
-  },
-  {
-    // A different harness: this guard protects a server, not a viewport, and the
-    // open-state effect only runs there if `window` is asked for. Angular swallows
-    // an effect error during a server render, so `threw` stays green and the kill
-    // is the two state assertions below.
-    label: 'menu: the server guard in the listener effect is deleted',
-    file: MENU,
-    from: `    effect((onCleanup) => {
-      if (typeof window === 'undefined') return;`,
-    to: '    effect((onCleanup) => {',
+    label: 'core: a missing browser context is not SSR-safe',
+    file: CORE,
+    from: '  if (!doc || !win) return;',
+    to: '  if (!doc || !win) { options.dismiss(); return; }',
     harness: 'ssr',
     expect: [
       'rv-menu (open): the panel really mounted',
@@ -287,11 +201,9 @@ export function failingChecks(output) {
 }
 
 function observe(mutant) {
-  // Both libraries, every time, even when only one of them was just rewritten:
-  // the first run of this script rebuilt only the mutated one and carried the
-  // previous menu mutant inside `dist/menu` through six select runs, reddening
-  // menu cases the select break never touched. That is the same stale-`dist/`
-  // trap the header warns about, and the strict expected list is what caught it.
+  // Rebuild the core first, then both consumers, so no mutant is hidden by a
+  // stale dist/popup or bundled into only one consumer.
+  run('npx', ['ng', 'build', 'popup'], 'popup core build');
   run('npx', ['ng', 'build', 'menu'], 'menu build');
   run('npx', ['ng', 'build', 'select'], 'select build');
   if (mutant.harness === 'ssr') {
@@ -309,9 +221,7 @@ function observe(mutant) {
 const entry = process.argv[1] ? resolve(process.argv[1]) : '';
 if (entry === fileURLToPath(import.meta.url)) {
   const originals = new Map();
-  for (const file of new Set(MUTANTS.map((mutant) => mutant.file))) {
-    originals.set(file, readFileSync(file, 'utf8'));
-  }
+  for (const file of new Set(MUTANTS.map((mutant) => mutant.file))) originals.set(file, readFileSync(file, 'utf8'));
 
   function restore() {
     for (const [file, source] of originals) writeFileSync(file, source);
@@ -359,13 +269,12 @@ if (entry === fileURLToPath(import.meta.url)) {
     }
   } finally {
     restore();
-    if (!aborted) {
-      // Leave `dist/` describing the restored source: the suite reads the bundle,
-      // not the tree, so a mutant left in `dist/` would masquerade as a product bug.
-      run('npx', ['ng', 'build', 'menu'], 'menu rebuild');
-      run('npx', ['ng', 'build', 'select'], 'select rebuild');
-      run('npx', ['ng', 'build', 'menu-e2e'], 'demo rebuild');
-    }
+    // Leave `dist/` describing the restored source, even after an abort: a
+    // mutant left in dist would make the next clean control misleading.
+    run('npx', ['ng', 'build', 'popup'], 'popup core rebuild');
+    run('npx', ['ng', 'build', 'menu'], 'menu rebuild');
+    run('npx', ['ng', 'build', 'select'], 'select rebuild');
+    run('npx', ['ng', 'build', 'menu-e2e'], 'demo rebuild');
   }
 
   const survivors = results.filter((result) => !result.killed);
