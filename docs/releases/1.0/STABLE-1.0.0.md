@@ -73,16 +73,16 @@ same source is integrated on `main`, tagged, and re-inspected there.
 | Package | Archive size | Files | SHA-256 |
 | --- | ---: | ---: | --- |
 | `@rivinia/popup` | 5,051 B | 7 | `f1ef1ad94425f58dfe6ceadadc2a3e657d102ef1f83687d7e1903be7e8303fed` |
-| `@rivinia/theme` | 9,397 B | 10 | `baf2a6343de8ab8f83e70da100da2903333693e675680bd432fa0130c1393425` |
-| `@rivinia/select` | 65,511 B | 10 | `e1c19a499665fb1147c49cfe3d52eab4870a2c61f6ed2f1f911889ad7f0f1afd` |
-| `@rivinia/menu` | 35,683 B | 10 | `670ca61a0919a9b4fcd28b54e521bb85256d56d5da64a1c3fa57121337459955` |
-| `@rivinia/i18n` | 94,118 B | 21 | `2c8a9ffeaf100128e84d1319cfb8e21378f76838563fac1fac42c95c2d00c387` |
-| `@rivinia/datepicker` | 127,621 B | 10 | `fd315eb2dcb500e1da3619a9e1fd07ca0d20b2da8dd46043e35f08f0344ff419` |
-| `@rivinia/env` | 7,505 B | 9 | `fde5390bd18db41968d35d82b1143154bd26fa4231c94a014df574319a9ebdc9` |
-| `@rivinia/http` | 21,948 B | 10 | `6beb59eebe810dfd219a03481564c51a42f317a62d513dae84809f992822e53f` |
-| `@rivinia/toast` | 29,983 B | 13 | `4871b9d0a39b8b4182fc46228355e5fcbc1f7a0c5f860b0a41cefef0e76d1125` |
-| `@rivinia/modal` | 56,791 B | 13 | `454d14918a28e11a51df57b6c2e7a17f29dabf593a477415f0306cfadfca4419` |
-| `@rivinia/table` | 81,729 B | 10 | `093b90aab5da99ef77c9591894e6ea75420f9d3e0a0f9b8ffaeece0aaa925ab5` |
+| `@rivinia/theme` | 9,395 B | 10 | `e57b27e9952b3b40e0e8d5c48919b62c945d443ceafd0986c1abeadb11eee8d5` |
+| `@rivinia/select` | 65,512 B | 10 | `e17a6afab465e97813f8c48e0fb277f73242e29f38c407190bf3fc3c5eed0c42` |
+| `@rivinia/menu` | 35,681 B | 10 | `f3f7c081a8aedd93bbe48dc5ab95d2a823a69eb7832c7a01f93b0f957af69620` |
+| `@rivinia/i18n` | 94,116 B | 21 | `ff010434efdda99e45cf48a10beb39378f587aaa37c921a77c0775773bcb3587` |
+| `@rivinia/datepicker` | 127,883 B | 10 | `da8f18dd75d43923080294200eaab545fffae9a3d6998f10baf800e44b32cb19` |
+| `@rivinia/env` | 7,504 B | 9 | `a97667497770d81601ad5493311f816c3df427183b66ee6fc75d664923ad5751` |
+| `@rivinia/http` | 21,948 B | 10 | `50746c54cacd8c8ac347ea3e1e9f5feb069af0fe84acf92dfcf0a7269ecfef0d` |
+| `@rivinia/toast` | 29,983 B | 13 | `fc6f1c2f0337cd7cc21f10ca84f0882bd4fde8383a5d2791e04c2c3d14684e54` |
+| `@rivinia/modal` | 56,788 B | 13 | `a83eea38289f8a1de94062f39be0b1eef22536f5e25f880f65e428a765d8e14f` |
+| `@rivinia/table` | 81,773 B | 10 | `8cc1e16405757c86d4a1da82923fc37e8c234406528b896be8c2672793c07838` |
 
 The package archives contain each package's `README.md`, `CHANGELOG.md`, license,
 manifest, declaration files, FESM output, and any package-specific styles or
