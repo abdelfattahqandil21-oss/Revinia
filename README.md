@@ -22,6 +22,13 @@ installs the 1.0 release candidate. “Workspace” shows each package manifest'
 version and may be unreleased. The authoritative version for a release is the
 package's published npm metadata.
 
+## Start here (humans)
+
+New contributors: see [Contributing](./CONTRIBUTING.md) for setup and the usual
+checks. For package documentation, engineering policy, and historical records,
+use the [documentation map](./docs/README.md). To report a vulnerability, see
+[Security](./SECURITY.md).
+
 ## Packages
 
 | Package                                                  | Latest on npm                                               | Workspace  | `ng add` | Use it for                                                                                      |
