@@ -156,3 +156,9 @@ created.
   bundles. This does not provide native Safari, a screen-reader listening pass,
   or real-device on-screen keyboard evidence; S2, S4, S7 and the published-RC
   soak S8 remain open.
+- Specialized checks passed: `pnpm check:contrast`, `pnpm check:theme-dark`
+  (Chromium + Firefox), `pnpm check:component-theme` (Chromium + Firefox),
+  `pnpm check:popup-ssr`, and `pnpm check:popup-mutations` (8/8 mutants killed
+  exactly as expected). The shared Popup/Menu/Select suite also passed all 126
+  tests with `pnpm exec playwright test --project=webkit`. This is Playwright
+  WebKit engine coverage, not native Safari coverage.
