@@ -12,14 +12,18 @@ A package's `projects/<name>/package.json` declares its workspace version. npm r
 
 ### Unified 1.0 group
 
-Exactly these four packages belong to the initial group:
+The synchronized group contains:
 
 - `@rivinia/menu`
 - `@rivinia/select`
 - `@rivinia/theme`
 - `@rivinia/i18n`
 
-Their workspace release versions must be identical. Any group release candidate or stable release is prepared and verified as a four-package set, with one shared version and coordinated release evidence. Package-specific immutable tags remain namespaced (`menu/v<version>`, etc.); the tags point to the same approved release commit unless the release owner records a justified exception. This policy does not authorize creating tags or publishing.
+Their workspace release versions must be identical at release. `@rivinia/popup` remains at `0.0.0` during development and is aligned only for a release. Any group release candidate or stable release is prepared and verified as a five-package set, with one shared version and coordinated release evidence. Package-specific immutable tags remain namespaced (`menu/v<version>`, etc.); the tags point to the same approved release commit unless the release owner records a justified exception. This policy does not authorize creating tags or publishing.
+
+- `@rivinia/popup` joins by owner-approved D95; during development its package manifest remains `0.0.0`. Its addition is synchronized with the group only at release.
+
+Introducing the shared popup runtime capability is a backward-compatible capability addition and uses a synchronized minor bump. SemVer's dependency FAQ classifies dependency updates without public API changes as compatible and says the bump level depends on whether the dependency update introduces functionality; dependency metadata alone without new capability may use patch. See [SemVer 2.0.0 FAQ](https://semver.org/#what-should-i-do-if-i-update-my-own-dependencies-without-changing-the-public-api).
 
 The remaining six packages—datepicker, env, http, modal, table and toast—remain independently versioned. The release group is checked by `pnpm check:governance`; the registry is not contacted by that local gate.
 

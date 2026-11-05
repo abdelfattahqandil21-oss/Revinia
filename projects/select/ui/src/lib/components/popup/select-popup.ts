@@ -1,5 +1,6 @@
 import {
   Component,
+  DestroyRef,
   Directive,
   ElementRef,
   ViewEncapsulation,
@@ -19,7 +20,7 @@ import type {
   SelectPopupUiPlacement,
 } from '../../models/select-popup.ui-types';
 import { SelectPopupControllerImpl } from '../../services/select-popup';
-import { computeSelectPopupPosition } from '../../utils/select-popup-position';
+import { bindPopupDismissal, computePopupPosition } from '@rivinia/popup';
 
 /** Payload of {@link RiviniaSelectPopup.picked}. */
 export interface SelectPopupPick {
@@ -254,6 +255,7 @@ export class SelectPopupComponent {
 
   private readonly owned = new SelectPopupControllerImpl();
   private readonly self = inject(ElementRef<HTMLElement>);
+  private readonly destroyRef = inject(DestroyRef);
   /** Item directives the consumer projected (not the ones we render). */
   private readonly projectedItems = contentChildren(SelectPopupItem, { descendants: true });
   /**
@@ -356,45 +358,18 @@ export class SelectPopupComponent {
       );
     });
     effect((onCleanup) => {
-      if (typeof window === 'undefined') return;
       if (!this.controller().open()) return;
-      const onPointer = (event: PointerEvent) => {
-        const host = this.self.nativeElement;
-        // Close WITHOUT restoring focus: the pointer is heading somewhere the
-        // browser will focus naturally (or nowhere focusable). Stealing it
-        // back to the trigger would break that (APG + WCAG focus-visible).
-        if (host && !host.contains(event.target as Node)) this.doClose(false);
-      };
-      document.addEventListener('pointerdown', onPointer);
-      // Coordinates go stale on outside scroll — close instead of drifting
-      // (native-select-like; scrolling inside the panel is exempt).
-      // Like Tab-close, this is APG-consistent non-modal behavior.
-      const onScroll = (event: Event) => {
-        const panel = this.self.nativeElement.querySelector('.rv-select-popup-panel');
-        if (panel && event.target instanceof Node && panel.contains(event.target)) return;
-        this.doClose(false);
-      };
-      // S4: the on-screen keyboard fires a HEIGHT-only `resize` while the user
-      // types in the panel's own filter, and closing took that input away
-      // mid-word. Width is the axis the anchor lives on, so a width change —
-      // including an orientation flip — still means stale coordinates and
-      // closes. The height-only exemption needs the focus to be in an editable
-      // element INSIDE this panel; a menu-like panel has none, so it keeps
-      // closing on every resize.
-      let widthAtOpen = window.innerWidth;
-      const onResize = () => {
-        const width = window.innerWidth;
-        if (width === widthAtOpen && this.editableFocusInsidePanel()) return;
-        widthAtOpen = width;
-        this.doClose(false);
-      };
-      window.addEventListener('scroll', onScroll, true);
-      window.addEventListener('resize', onResize);
-      onCleanup(() => {
-        document.removeEventListener('pointerdown', onPointer);
-        window.removeEventListener('scroll', onScroll, true);
-        window.removeEventListener('resize', onResize);
-      });
+      const win = typeof window === 'undefined' ? null : window;
+      const doc = typeof document === 'undefined' ? null : document;
+      bindPopupDismissal({
+        document: doc,
+        window: win,
+        host: () => this.self.nativeElement,
+        panel: () => this.self.nativeElement.querySelector('.rv-select-popup-panel'),
+        editableFocusInsidePanel: () => this.editableFocusInsidePanel(),
+        dismiss: () => this.doClose(false),
+        onCleanup,
+      }, this.destroyRef);
     });
     // APG menu-button: the trigger exposes haspopup + expanded. The trigger
     // element is consumer-owned, so the attributes sync onto its focusable
@@ -490,12 +465,12 @@ export class SelectPopupComponent {
       // stylesheet's min-width still sets the floor, so `offsetWidth` below is
       // measured after that floor has been applied.
       root.style.width = `${trigger.width}px`;
-      const at = computeSelectPopupPosition(
+      const at = computePopupPosition(
         { left: trigger.left, top: trigger.top, width: trigger.width, height: trigger.height },
         { width: root.offsetWidth, height: root.offsetHeight },
         this.placement(),
         { width: window.innerWidth, height: window.innerHeight },
-        this.isRtl(),
+        this.isRtl() ? 'rtl' : 'ltr',
       );
       root.style.left = `${at.left}px`;
       root.style.top = `${at.top}px`;

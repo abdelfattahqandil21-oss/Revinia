@@ -21,7 +21,8 @@ const requiredDocs = [
   'docs/engineering/templates/task-record.md',
   'docs/engineering/templates/handoff.md',
 ];
-const approvedMembers = ['@rivinia/menu', '@rivinia/select', '@rivinia/theme', '@rivinia/i18n'];
+const approvedMembers = ['@rivinia/menu', '@rivinia/select', '@rivinia/theme', '@rivinia/i18n', '@rivinia/popup'];
+const coreAdmissionDecision = 'D95';
 
 function isExactSemver(version) {
   if (typeof version !== 'string') return false;
@@ -117,6 +118,8 @@ export function validateGovernance({ root = repositoryRoot } = {}) {
     if (actualCore.length !== approvedMembers.length || approvedMembers.some((name) => !actualCore.includes(name))) {
       problems.push(`rivinia-1.0 members differ from owner-approved set: ${actualCore.join(', ')}`);
     }
+    const popupAdmissionApproved = decisionIds.has(coreAdmissionDecision);
+    if (!popupAdmissionApproved) problems.push(`rivinia-1.0 admission decision ${coreAdmissionDecision} is missing from docs/decisions/`);
 
     const ids = new Set();
     const packageOwners = new Map();
@@ -169,6 +172,7 @@ export function validateGovernance({ root = repositoryRoot } = {}) {
         if (manifest.name !== name) problems.push(`${manifestPath}: expected package name ${name}, got ${String(manifest.name)}`);
         if (!isExactSemver(manifest.version)) problems.push(`${manifestPath}: version must be a valid SemVer, got ${String(manifest.version)}`);
         if (manifest.private === true) problems.push(`${manifestPath}: release-group packages cannot be private`);
+        if (name === '@rivinia/popup' && popupAdmissionApproved && manifest.version === '0.0.0') continue;
         if (isExactSemver(manifest.version)) versions.push(`${name}@${manifest.version}`);
       }
       if (new Set(versions.map((entry) => entry.slice(entry.lastIndexOf('@') + 1))).size > 1) {

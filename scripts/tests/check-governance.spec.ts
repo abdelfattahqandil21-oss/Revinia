@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { validateGovernance } from '../check-governance.mjs';
 
 const roots: string[] = [];
-const members = ['@rivinia/menu', '@rivinia/select', '@rivinia/theme', '@rivinia/i18n'];
+const members = ['@rivinia/menu', '@rivinia/select', '@rivinia/theme', '@rivinia/i18n', '@rivinia/popup'];
 const documents = [
   'README.md',
   'RFC-ENGINEERING-GOVERNANCE.md',
@@ -56,6 +56,8 @@ function fixture() {
   writeFileSync(join(root, 'docs', 'DECISIONS.md'), '[Decision index](decisions/README.md)\n');
   writeFileSync(join(root, 'docs', 'decisions', 'README.md'), '[D123](D123-test-decision.md)\n');
   writeFileSync(join(root, 'docs', 'decisions', 'D123-test-decision.md'), '## 2026-01-01 — D123: test decision\n');
+  writeFileSync(join(root, 'docs', 'decisions', 'D095-test-decision.md'), '## 2026-01-01 — D95: popup admission\n');
+  writeFileSync(join(root, 'docs', 'decisions', 'README.md'), '[D123](D123-test-decision.md)\n[D95](D095-test-decision.md)\n');
   return root;
 }
 
@@ -72,6 +74,12 @@ describe('governance validation', () => {
     const root = fixture();
     writeFileSync(join(root, 'projects', 'menu', 'package.json'), JSON.stringify({ name: '@rivinia/menu', version: '1.0.0-rc.3' }));
     expect(validateGovernance({ root }).join('\n')).toContain('versions are not synchronized');
+  });
+
+  it('allows only the approved popup at 0.0.0 during synchronized group development', () => {
+    const root = fixture();
+    writeFileSync(join(root, 'projects', 'popup', 'package.json'), JSON.stringify({ name: '@rivinia/popup', version: '0.0.0' }));
+    expect(validateGovernance({ root })).toEqual([]);
   });
 
   it('rejects malformed package metadata instead of accepting matching arbitrary strings', () => {

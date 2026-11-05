@@ -24,6 +24,7 @@
       "@rivinia/env": ["./dist/env"],
       "@rivinia/menu": ["./dist/menu"],
       "@rivinia/menu/ui": ["./dist/menu/ui"],
+      "@rivinia/popup": ["./dist/popup"],
       "@rivinia/select": ["./dist/select"],
       "@rivinia/table": ["./dist/table"],
       "@rivinia/table/ui": ["./dist/table/ui"],
@@ -73,6 +74,12 @@
     },
     {
       "path": "./projects/menu/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/popup/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/popup/tsconfig.spec.json"
     },
     {
       "path": "./projects/menu/tsconfig.spec.json"

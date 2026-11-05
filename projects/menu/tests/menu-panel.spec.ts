@@ -652,6 +652,18 @@ describe('RiviniaMenuComponent — projected content', () => {
     expect(document.activeElement).not.toBe(document.body);
   });
 
+  it('r10: a prevented key from a projected control is not handled by the menu', () => {
+    const fixture = TestBed.createComponent(ProjectedMenuHarness);
+    open(fixture);
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('.projected-input');
+    input.focus();
+    fixture.componentInstance.claim = 'Escape';
+    key(input, 'Escape');
+
+    expect(fixture.componentInstance.menu.open()).toBe(true);
+    expect(document.activeElement).toBe(input);
+  });
+
   it('r6: a projected element reusing data-rv-id is not a row', () => {
     const fixture = TestBed.createComponent(ProjectedMenuHarness);
     open(fixture);
