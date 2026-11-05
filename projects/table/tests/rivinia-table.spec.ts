@@ -549,6 +549,34 @@ describe('row identity', () => {
     }));
     expect(table.rows().map((row) => row.id)).toEqual(['a', 'b']);
   });
+
+  it('rejects duplicate custom IDs with both source row indices before selection can change', () => {
+    const { table } = makeTable({
+      getRowId: (row) => row.dept,
+      selection: { mode: 'multi' },
+    });
+    expect(() => table.rows()).toThrow(/Duplicate row ID "A" at row indices 0, 1/);
+  });
+
+  it('rejects empty, whitespace-only, infinite and NaN IDs', () => {
+    for (const invalidId of ['', '   ', Number.POSITIVE_INFINITY, Number.NaN]) {
+      const { table } = makeTable({
+        getRowId: () => invalidId as string | number,
+      });
+      expect(() => table.rows()).toThrow(/Invalid row ID/);
+    }
+  });
+
+  it('validates the full data set before filtering, sorting, paging or selecting', () => {
+    const { table } = makeTable({
+      getRowId: (row) => row.dept,
+      selection: { mode: 'multi' },
+      pageSize: 1,
+    });
+    table.globalSearch.set('Ahmed');
+    expect(() => table.pageRows()).toThrow(/row indices 0, 1/);
+    expect(() => table.selection.select('A')).toThrow(/row indices 0, 1/);
+  });
 });
 
 describe('server mode', () => {

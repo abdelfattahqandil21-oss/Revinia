@@ -104,12 +104,12 @@
           </div>
         }
       } @else {
-        @for (item of bodyRows(); track item.id) {
+        @for (item of bodyRows(); track item.row) {
           <div
             class="rv-table-row"
             role="row"
             [attr.aria-rowindex]="item.ariaRowIndex"
-            [attr.aria-selected]="selectable() ? (item.selected ? 'true' : 'false') : null"
+            [attr.aria-selected]="selectable() && item.identityValid ? (item.selected ? 'true' : 'false') : null"
             [attr.data-selected]="item.selected ? 'true' : null"
             [attr.data-row]="item.rowIndex"
             (dblclick)="onRowDoubleClick(item, $event)"
