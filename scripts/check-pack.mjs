@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-export const PACKAGES = Object.freeze(['theme', 'select', 'menu', 'i18n']);
+export const PACKAGES = Object.freeze(['theme', 'select', 'menu', 'i18n', 'popup']);
 
 /**
  * The files npm would publish from `dir` (respects `files` and `.npmignore`).
