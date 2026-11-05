@@ -1,10 +1,12 @@
 # Synchronized stable release — 1.0.0
 
-**Status: merged to local `main` (`164473b`), not published, and not ready for final promotion.**
+**Status: all eleven `1.0.0` tarballs are prepared locally on `pkg/datepicker/focus-leave-close`, based on `main` at `6a8d1f8`; not committed, merged, tagged, or published. Stable promotion is still blocked by the human checks below.**
 This document tracks the first stable release of all eleven libraries. Registry
-state last checked on 2026-11-05: Popup, Theme, Select, Menu and i18n are at
-`1.0.0-rc.4`; Datepicker, Env, HTTP, Toast, Modal and Table remain on their
-published 0.x versions. The workspace candidate is `1.0.0` for all eleven.
+state checked on 2026-11-05: Popup, Theme, Select, Menu and i18n have `latest`
+at `1.0.0-rc.4` (Theme, Select, Menu and i18n have `next` at `rc.3`); Datepicker
+is `0.1.0`, Env `0.3.3`, HTTP `0.5.3`, Toast `0.5.1`, Modal `0.6.1`, and Table
+`0.1.0`. None of the eleven has a published `1.0.0`. The workspace candidate is
+`1.0.0` for all eleven.
 
 ## Scope and publish order
 
@@ -77,7 +79,7 @@ same source is integrated on `main`, tagged, and re-inspected there.
 | `@rivinia/select` | 65,512 B | 10 | `e17a6afab465e97813f8c48e0fb277f73242e29f38c407190bf3fc3c5eed0c42` |
 | `@rivinia/menu` | 35,681 B | 10 | `f3f7c081a8aedd93bbe48dc5ab95d2a823a69eb7832c7a01f93b0f957af69620` |
 | `@rivinia/i18n` | 94,116 B | 21 | `ff010434efdda99e45cf48a10beb39378f587aaa37c921a77c0775773bcb3587` |
-| `@rivinia/datepicker` | 127,883 B | 10 | `da8f18dd75d43923080294200eaab545fffae9a3d6998f10baf800e44b32cb19` |
+| `@rivinia/datepicker` | 128,128 B | 10 | `f54b7e66af0711893b859f6c8974cef6c390e9cf67b187f2b1a8e5e07c1704de` |
 | `@rivinia/env` | 7,504 B | 9 | `a97667497770d81601ad5493311f816c3df427183b66ee6fc75d664923ad5751` |
 | `@rivinia/http` | 21,948 B | 10 | `50746c54cacd8c8ac347ea3e1e9f5feb069af0fe84acf92dfcf0a7269ecfef0d` |
 | `@rivinia/toast` | 29,983 B | 13 | `fc6f1c2f0337cd7cc21f10ca84f0882bd4fde8383a5d2791e04c2c3d14684e54` |
@@ -92,11 +94,12 @@ lookups on 2026-11-05 returned no `1.0.0` version for all eleven package names.
 
 ## Human checks and soak
 
-The existing [1.0 human checklist](HUMAN-CHECKS.md) still has open work:
+The existing [1.0 human checklist](HUMAN-CHECKS.md) tracks these checks. On
+2026-11-05, the owner deferred native Safari verification to a later release;
+it is not a 1.0.0 promotion gate. The remaining open work is:
 
 - S2: screen reader pass.
 - S4: real phone/tablet resize with the on-screen keyboard.
-- S7: native Safari pass.
 - S8: real consumer soak against published release candidates.
 
 The runbook requires S8 before stable promotion. `1.0.0-rc.5` is only a local
@@ -186,3 +189,61 @@ created.
 - Full shared Playwright Chromium run: 125 passed, 1 skipped. The i18n browser
   suite passed 96/96 across bundled Chromium, system Chrome and Firefox; its SSR
   smoke passed 36/36. `pnpm check:skills` passed.
+
+## Final `1.0.0` artifact preparation after the datepicker focus fix — 2026-11-05
+
+The local `pkg/datepicker/focus-leave-close` checkout is based on the same
+`6a8d1f8` tree as local `main`; the datepicker focus-out fix and its tests/docs
+are currently uncommitted on that branch. All eleven manifests and
+`release-groups.json` agree on `1.0.0` and group `rivinia-1.0`.
+
+- Production builds passed in dependency order: `pnpm exec ng build popup`,
+  `theme`, `select`, `menu`, `i18n`, `datepicker`, `env`, `http`, `toast`,
+  `modal`, `table`.
+- Unit tests passed: Popup 5, Theme 11, Select 166, Menu 66, i18n 376,
+  Datepicker 470, Env 2, HTTP 40, Toast 35, Modal 55 and Table 210
+  (1,436 total). `pnpm test:schematics` passed 40 and `pnpm test:scripts`
+  passed 140 more.
+- `pnpm check:governance`, `pnpm check:readmes`, `pnpm check:pack`,
+  `pnpm check:skills`, `node scripts/check-theme-package.mjs
+  pack/rivinia-theme-1.0.0.tgz`, and `git diff --check` passed. `pnpm check:docs`
+  passed with zero failures and 41 existing warnings.
+- Built package directories and all eleven exact tarballs passed
+  `check-versioned-doc-links`. Each 1.0.0 package README carries its own
+  namespaced 1.0 tag links (`<package>/v1.0.0`), not `main`; the exact tarball
+  check confirmed the README is inside each archive. The immutable tag
+  snapshots cannot yet be checked because those tags do not exist; run
+  `--verify-tag-snapshot --require-tag` after integration/tagging.
+- Exact archive inspection passed for exports, type targets, peers, dependencies,
+  file lists and FESM runtime imports. Select/Menu depend on Popup at `^1.0.0`;
+  i18n's Select peer is optional and `^1.0.0`. Theme retains CSS/SCSS side-effect
+  metadata. Full archive sizes, file lists and SHA-256 values are in the
+  inventory above and private task record.
+- Clean `consumer-smoke.mjs` install/build passed for all eleven tarballs,
+  nineteen documented package import paths and the three Theme CSS entry
+  points. A second clean consumer built i18n without installing optional
+  `@rivinia/select`. In the all-library lab, all eleven vendor archive hashes
+  matched `pack/`, `npm ls @rivinia/popup --all` showed one deduped Popup, the
+  production build passed, all 12 Playwright cases passed across Chromium and
+  Firefox, and SSR returned 200 for `/`, `/libraries/datepicker` and
+  `/libraries/table`.
+- README release links are ready to become immutable once tags are created. A
+  package's README inside its 1.0.0 tarball keeps linking to its 1.0.0 tag when
+  the repository later advances to 2.0.0; the new 2.0.0 README will link to the
+  separate `<package>/v2.0.0` snapshot.
+
+### Still blocks final promotion
+
+- S2: the owner confirmed Orca speech works on Linux and tried the datepicker
+  Tab flow; the full Select/Menu screen-reader matrix is not yet recorded.
+- S4: real phone/tablet keyboard and rotation check not run.
+- S7: deferred by owner to a later release; not a 1.0.0 blocker.
+- S8: real consumer soak against published release candidates not run. No
+  `1.0.0-rc.5` set is published; local tarballs and Vercel preview do not satisfy
+  the registry soak requirement.
+
+No release tags, `npm publish`, push, commit or merge were performed in this
+preparation. Before final promotion, complete the remaining human gates, merge
+to `main` with `--no-ff`, rerun release gates against that merged tree, create
+and verify immutable namespaced tags, and obtain exact owner approval for the
+eleven package names, `1.0.0`, npm public access and the inspected tarballs.

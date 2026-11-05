@@ -511,6 +511,24 @@ describe('rv-datetimepicker — the pointer-friendly time tray', () => {
 });
 
 describe('rv-datetimepicker — closing, clearing and focus', () => {
+  it('closes without restoring focus when Tab moves outside the picker', () => {
+    const view = mount();
+    view.open();
+    const outside = document.createElement('button');
+    document.body.append(outside);
+    outside.focus();
+    view.fixture.detectChanges();
+
+    expect(view.trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(
+      view.panel() === null ||
+        view.panel()?.classList.contains('rv-datepicker-panel--closing'),
+    ).toBe(true);
+    expect(document.activeElement).toBe(outside);
+    expect(view.host.touches).toBe(1);
+    outside.remove();
+  });
+
   it('Escape from a time field discards the draft and restores focus', () => {
     const view = mount({ value: dt(2026, 10, 25, 15, 30) });
     view.open();
