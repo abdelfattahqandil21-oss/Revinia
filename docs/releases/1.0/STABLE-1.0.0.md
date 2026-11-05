@@ -132,3 +132,27 @@ immutable; any correction ships as a new version.
 
 Candidate preparation does not create release tags, push branches, change npm
 dist-tags or publish packages.
+
+## Local integration verification — 2026-11-05
+
+The candidate was merged to local `main` with `--no-ff` as `164473b`; this
+status was recorded by `e973deb`. The merged tree is locally verified, while
+`origin/main` remains unchanged. No release tags or package publications were
+created.
+
+- All eleven package unit-test commands passed, as did `pnpm test:schematics`
+  and `pnpm test:scripts`.
+- All eleven `pnpm exec ng build <package>` builds passed.
+- `pnpm check:governance`, `pnpm check:readmes`, `pnpm check:docs`,
+  `pnpm check:pack`, the exact Theme tarball check, and all source/tarball
+  `check-versioned-doc-links` checks passed. `check:docs` reports 41 existing
+  warnings and zero failures.
+- The exact local tarballs passed the clean `consumer-smoke.mjs` production
+  build, public imports and Theme CSS. `npm ls @rivinia/popup --all` reports one
+  deduped copy through Select and Menu. SSR `/libraries/table` returned HTTP 200
+  with the expected rendered-table marker.
+- The all-library lab ran `CI=1 npm run test:e2e`: 10/10 passed across Playwright
+  Chromium and Firefox. Its config always starts a fresh server to avoid stale
+  bundles. This does not provide native Safari, a screen-reader listening pass,
+  or real-device on-screen keyboard evidence; S2, S4, S7 and the published-RC
+  soak S8 remain open.
