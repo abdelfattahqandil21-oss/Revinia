@@ -1,6 +1,6 @@
 # Synchronized stable release — 1.0.0
 
-**Status: locally prepared, not published, and not ready for final promotion.**
+**Status: merged to local `main` (`164473b`), not published, and not ready for final promotion.**
 This document tracks the first stable release of all eleven libraries. Registry
 state last checked on 2026-11-05: Popup, Theme, Select, Menu and i18n are at
 `1.0.0-rc.4`; Datepicker, Env, HTTP, Toast, Modal and Table remain on their
