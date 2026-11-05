@@ -4,7 +4,7 @@
 [![license](https://img.shields.io/npm/l/@rivinia/table.svg)](https://www.npmjs.com/package/@rivinia/table)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/main/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/table/v1.0.0/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="340" />
 </p>
 
 A headless Angular table with typed columns, real row and column spans,
@@ -12,7 +12,7 @@ sorting, filtering, selection and paging — plus an optional ready-made grid.
 The core owns the data and the geometry; it never renders a cell, never knows
 what an "action" is, and never imports a stylesheet.
 
-- Package version: **0.1.0**
+- Package version: **1.0.0**
 - Requires: **Angular `^22.0.0`** (`@angular/core` and `@angular/common`).
 - Entry points: `@rivinia/table` (headless controller + pure helpers) and
   `@rivinia/table/ui` (the `rv-table` grid, div-based, `role="grid"`).
@@ -86,7 +86,7 @@ property read at the use site.
 ```ts
 import { createTable, tableColumn } from '@rivinia/table';
 
-@Component({ /* … */ })
+@Component({/* … */})
 export class InvoicesPage {
   private readonly table = createTable<Invoice>(() => ({
     // Columns are a FACTORY too: `options()` runs inside a computed, so a
@@ -121,19 +121,19 @@ A column is data, not a component. `tableColumn<T>()` has two builders:
 `accessor(key, def?)` reads a field of the row, `display(id, def?)` has no field
 and exists for a template or an actions column.
 
-| Field | Meaning |
-| --- | --- |
-| `header` | Visible header text. Omit for an icon-only column. |
-| `width` | A CSS length. Fixed columns take part in `table-layout: fixed`. |
-| `flex` | `> 0` absorbs free space; `0` stays fixed. |
-| `align` | `'start' \| 'center' \| 'end'` — logical, so RTL needs no override. |
-| `sortable` | Adds the three-state sort affordance and `aria-sort`. |
-| `format` | `(value, row, locale) => string` for display only. |
-| `comparator` | Sort with something other than the default compare. |
-| `pinned` | `'start' \| 'end'` — stays visible during horizontal scroll. |
-| `textOverflow` | `'nowrap'` (default), `'wrap'`, `'clamp'`. |
-| `lines` | Clamp height, default 2. |
-| `hidden` | Removed from the visible set without losing its definition. |
+| Field          | Meaning                                                             |
+| -------------- | ------------------------------------------------------------------- |
+| `header`       | Visible header text. Omit for an icon-only column.                  |
+| `width`        | A CSS length. Fixed columns take part in `table-layout: fixed`.     |
+| `flex`         | `> 0` absorbs free space; `0` stays fixed.                          |
+| `align`        | `'start' \| 'center' \| 'end'` — logical, so RTL needs no override. |
+| `sortable`     | Adds the three-state sort affordance and `aria-sort`.               |
+| `format`       | `(value, row, locale) => string` for display only.                  |
+| `comparator`   | Sort with something other than the default compare.                 |
+| `pinned`       | `'start' \| 'end'` — stays visible during horizontal scroll.        |
+| `textOverflow` | `'nowrap'` (default), `'wrap'`, `'clamp'`.                          |
+| `lines`        | Clamp height, default 2.                                            |
+| `hidden`       | Removed from the visible set without losing its definition.         |
 
 ## Row and column spans
 
@@ -143,15 +143,15 @@ in increasing power:
 
 ```ts
 // 1. Row span by a shared key: consecutive rows with an equal value merge.
-tableColumn<Invoice>().accessor('department', { header: 'Department', merge: 'equal' })
+tableColumn<Invoice>().accessor('department', { header: 'Department', merge: 'equal' });
 
 // 2. Column span: this cell covers N columns to its end.
-tableColumn<Invoice>().accessor('note', { header: 'Notes', colSpan: 2 })
+tableColumn<Invoice>().accessor('note', { header: 'Notes', colSpan: 2 });
 
 // 3. Both axes, computed per cell.
 tableColumn<Invoice>().display('summary', {
   span: ({ rowIndex }) => (rowIndex === 0 ? { colSpan: 5 } : null),
-})
+});
 ```
 
 Rules, enforced at `createTable()` rather than at render time:
@@ -185,9 +185,20 @@ createTable<Invoice>(() => ({
 ```ts
 table.selection.toggle(row.id);
 table.selection.isSelected(row.id);
-table.selection.selectAllOnPage();   // page scope, never "everything by accident"
+table.selection.selectAllOnPage(); // page scope, never "everything by accident"
 table.selection.clear();
 ```
+
+### Row identity contract
+
+`getRowId` must return a unique, stable, non-empty string or finite number for
+every row in the full active data set. Validation runs before filtering,
+sorting, paging, or selection state is committed. In development, duplicate IDs
+throw an error naming the ID and source row indices; invalid values name their
+source index. In production, rows with ambiguous IDs remain visible, but
+selection and other identity-dependent actions are disabled for those rows.
+The table never substitutes an array index for an invalid ID. If rows have no
+stable `id`, provide a `getRowId` backed by a persistent domain key.
 
 ## Paging and state
 
@@ -275,3 +286,7 @@ Sizes are in `rem`, so the grid follows the browser's text size; hairlines stay
 and spans are the 0.1.0 scope; server mode (`TableRequest`, `reload()`) and
 editing (`@rivinia/table/editing`) are planned, additive, and not part of this
 version.
+
+## Further reading
+
+[Package design and usage notes](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.0/docs/specifications/table-design.md).

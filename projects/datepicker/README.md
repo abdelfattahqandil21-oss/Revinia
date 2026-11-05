@@ -4,14 +4,14 @@
 [![license](https://img.shields.io/npm/l/@rivinia/datepicker.svg)](https://www.npmjs.com/package/@rivinia/datepicker)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/main/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/datepicker/v1.0.0/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="340" />
 </p>
 
 Headless Gregorian calendar behaviour for Angular 22+: integer date math, a
 locale-aware month grid, keyboard intents and RTL as a first-class rule — no
 DOM, no styling. Rendering lives in `@rivinia/datepicker/ui` or in your own UI.
 
-- Package version: **0.1.0**
+- Package version: **1.0.0**
 - Requires: **Angular `^22.0.0`** (`@angular/core`, and `@angular/forms` for the
   `FormValueControl` type that the component implements).
 - Entry points: `@rivinia/datepicker` (headless) and `@rivinia/datepicker/ui`
@@ -100,23 +100,23 @@ npm install @rivinia/theme
 Two entry points. The components live only in the UI entry point; the service,
 the date math and the formatters live in the headless one.
 
-| Symbol                                                          | `@rivinia/datepicker` | `@rivinia/datepicker/ui` |
-| --------------------------------------------------------------- | :-------------------: | :----------------------: |
-| `RiviniaDatepickerComponent` (`<rv-datepicker>`)                 |           —           |            ✅            |
-| `RiviniaDatetimepickerComponent` (`<rv-datetimepicker>`)         |           —           |            ✅            |
-| `RiviniaTimeRowComponent` (`<rv-time-row>`)                      |           —           |            ✅            |
-| `RiviniaCalendarComponent` (`<rv-calendar>`)                     |           —           |            ✅            |
-| `RiviniaCalendar` (the calendar service)                         |           ✅          |            —             |
-| `buildMonth`, `resolveCalendarKey`                               |           ✅          |            —             |
-| `formatDate`, `formatWithPattern`, `parseDatePattern`            |           ✅          |            —             |
-| `formatTime`, `formatDateTime`, `formatTimeWithPattern`          |           ✅          |            —             |
-| `resolveWallTime`, `wallTimeInTimeZone`, `isValidTimeZone`, …    |           ✅          |            —             |
-| the date math (`addDays`, `toIso`, `parseDate`, `isSameDay`, …)  |           ✅          |            —             |
-| the time math (`addMinutes`, `parseTime`, `compareDateTime`, …)  |           ✅          |            —             |
-| `provideRiviniaDatepicker`, `injectRiviniaDatepicker`            |           ✅          |            —             |
-| `RiviniaDatepickerTheme`, `DATEPICKER_THEMES`                    |           ✅          |            —             |
-| `RiviniaDate`, `RiviniaDateFormat`, `RiviniaDatepickerLabels`, … |           ✅          |            —             |
-| `RiviniaTime`, `RiviniaDateTime`, `RiviniaTimeFormat`, `RiviniaTimeZone*` |     ✅          |            —             |
+| Symbol                                                                    | `@rivinia/datepicker` | `@rivinia/datepicker/ui` |
+| ------------------------------------------------------------------------- | :-------------------: | :----------------------: |
+| `RiviniaDatepickerComponent` (`<rv-datepicker>`)                          |           —           |            ✅            |
+| `RiviniaDatetimepickerComponent` (`<rv-datetimepicker>`)                  |           —           |            ✅            |
+| `RiviniaTimeRowComponent` (`<rv-time-row>`)                               |           —           |            ✅            |
+| `RiviniaCalendarComponent` (`<rv-calendar>`)                              |           —           |            ✅            |
+| `RiviniaCalendar` (the calendar service)                                  |          ✅           |            —             |
+| `buildMonth`, `resolveCalendarKey`                                        |          ✅           |            —             |
+| `formatDate`, `formatWithPattern`, `parseDatePattern`                     |          ✅           |            —             |
+| `formatTime`, `formatDateTime`, `formatTimeWithPattern`                   |          ✅           |            —             |
+| `resolveWallTime`, `wallTimeInTimeZone`, `isValidTimeZone`, …             |          ✅           |            —             |
+| the date math (`addDays`, `toIso`, `parseDate`, `isSameDay`, …)           |          ✅           |            —             |
+| the time math (`addMinutes`, `parseTime`, `compareDateTime`, …)           |          ✅           |            —             |
+| `provideRiviniaDatepicker`, `injectRiviniaDatepicker`                     |          ✅           |            —             |
+| `RiviniaDatepickerTheme`, `DATEPICKER_THEMES`                             |          ✅           |            —             |
+| `RiviniaDate`, `RiviniaDateFormat`, `RiviniaDatepickerLabels`, …          |          ✅           |            —             |
+| `RiviniaTime`, `RiviniaDateTime`, `RiviniaTimeFormat`, `RiviniaTimeZone*` |          ✅           |            —             |
 
 ```ts
 // Ready-made UI
@@ -211,10 +211,14 @@ modes, and the mode is detected from the value.
 `Intl.DateTimeFormat` as a `dateStyle` — **date only**, never a time.
 
 ```html
-<rv-datepicker format="short" />  <!-- 10/25/26 (en-US), ٢٥‏/١٠‏/٢٠٢٦ (ar-EG) -->
-<rv-datepicker format="medium" /> <!-- Oct 25, 2026 / ٢٥‏/١٠‏/٢٠٢٦ -->
-<rv-datepicker format="long" />   <!-- October 25, 2026 / ٢٥ أكتوبر ٢٠٢٦ -->
-<rv-datepicker format="full" />   <!-- Sunday, October 25, 2026 / الأحد، ٢٥ أكتوبر ٢٠٢٦ -->
+<rv-datepicker format="short" />
+<!-- 10/25/26 (en-US), ٢٥‏/١٠‏/٢٠٢٦ (ar-EG) -->
+<rv-datepicker format="medium" />
+<!-- Oct 25, 2026 / ٢٥‏/١٠‏/٢٠٢٦ -->
+<rv-datepicker format="long" />
+<!-- October 25, 2026 / ٢٥ أكتوبر ٢٠٢٦ -->
+<rv-datepicker format="full" />
+<!-- Sunday, October 25, 2026 / الأحد، ٢٥ أكتوبر ٢٠٢٦ -->
 ```
 
 Formatters are cached per locale and options, so a 42-cell grid does not
@@ -225,22 +229,26 @@ construct `Intl.DateTimeFormat` objects on every render.
 A pattern is a date-only string built from these tokens. **Case is ignored;
 the width is the number of letters.**
 
-| Token      | Meaning                                   | Example (25 October 2026) |
-| ---------- | ----------------------------------------- | ------------------------- |
-| `d`        | day, no padding                           | `25`                      |
-| `dd`       | day, two digits                           | `25`                      |
-| `M`, `mm`  | month, no padding / two digits            | `10`                      |
-| `MMM`      | abbreviated month name                    | `Oct`                     |
-| `MMMM`     | full month name                           | `October`                 |
-| `yy`       | year, two digits                          | `26`                      |
-| `yyyy`     | year, four digits                         | `2026`                    |
-| `EEEE`     | weekday, full name                        | `Sunday`                  |
+| Token     | Meaning                        | Example (25 October 2026) |
+| --------- | ------------------------------ | ------------------------- |
+| `d`       | day, no padding                | `25`                      |
+| `dd`      | day, two digits                | `25`                      |
+| `M`, `mm` | month, no padding / two digits | `10`                      |
+| `MMM`     | abbreviated month name         | `Oct`                     |
+| `MMMM`    | full month name                | `October`                 |
+| `yy`      | year, two digits               | `26`                      |
+| `yyyy`    | year, four digits              | `2026`                    |
+| `EEEE`    | weekday, full name             | `Sunday`                  |
 
 ```html
-<rv-datepicker format="MM-dd-yyyy" />  <!-- 10-25-2026 -->
-<rv-datepicker format="MM-dd-yy" />    <!-- 10-25-26 -->
-<rv-datepicker format="dd-mm-yy" />    <!-- 25-10-26 -->
-<rv-datepicker format="dd/mm/yyyy" />  <!-- 25/10/2026 -->
+<rv-datepicker format="MM-dd-yyyy" />
+<!-- 10-25-2026 -->
+<rv-datepicker format="MM-dd-yy" />
+<!-- 10-25-26 -->
+<rv-datepicker format="dd-mm-yy" />
+<!-- 25-10-26 -->
+<rv-datepicker format="dd/mm/yyyy" />
+<!-- 25/10/2026 -->
 <rv-datepicker format="dd MMMM yyyy" /><!-- 25 October 2026 -->
 ```
 
@@ -258,8 +266,10 @@ the width is the number of letters.**
 `timeFormat` is independent from `format`. The same two modes apply:
 
 ```html
-<rv-datetimepicker timeFormat="short" />   <!-- 15:30 (en-GB), 3:30 PM (en-US) -->
-<rv-datetimepicker timeFormat="medium" />  <!-- 15:30:00 / 3:30:00 PM -->
+<rv-datetimepicker timeFormat="short" />
+<!-- 15:30 (en-GB), 3:30 PM (en-US) -->
+<rv-datetimepicker timeFormat="medium" />
+<!-- 15:30:00 / 3:30:00 PM -->
 <rv-datetimepicker timeFormat="HH:mm" />
 <rv-datetimepicker timeFormat="hh:mm a" />
 <rv-datetimepicker timeFormat="HH:mm:ss" />
@@ -272,22 +282,22 @@ locale's own clock is used unless `hour12` says otherwise: `en-GB` is 24-hour,
 A time pattern uses these tokens. Unlike the date pattern language, **case is
 significant** here, because `h` and `H` mean different clocks:
 
-| Token    | Meaning                              | Example (`15:30:05`) |
-| -------- | ------------------------------------ | -------------------- |
-| `H`      | hour, 0–23, no padding               | `15`                 |
-| `HH`     | hour, 0–23, two digits               | `15`                 |
-| `h`      | hour, 1–12, no padding               | `3`                  |
-| `hh`     | hour, 1–12, two digits               | `03`                 |
-| `m`/`mm` | minute, no padding / two digits      | `30`                 |
-| `s`/`ss` | second, no padding / two digits      | `5` / `05`           |
-| `a`      | the locale's day period              | `PM` / `م`           |
+| Token    | Meaning                         | Example (`15:30:05`) |
+| -------- | ------------------------------- | -------------------- |
+| `H`      | hour, 0–23, no padding          | `15`                 |
+| `HH`     | hour, 0–23, two digits          | `15`                 |
+| `h`      | hour, 1–12, no padding          | `3`                  |
+| `hh`     | hour, 1–12, two digits          | `03`                 |
+| `m`/`mm` | minute, no padding / two digits | `30`                 |
+| `s`/`ss` | second, no padding / two digits | `5` / `05`           |
+| `a`      | the locale's day period         | `PM` / `م`           |
 
 - Digits come from the locale: `HH:mm` in `ar-EG` is `١٥:٣٠`.
 - `''` is an escaped quote; non-ASCII letters are literals.
 - Mixing a 24-hour token with a 12-hour token or `a` (`HH:mm a`) throws, because
   the result would be ambiguous.
 - `M`, `S`, `A`, `k`, `K`, the timezone letters and the date letters throw with
-  a message. In particular `HH:MM` says *use `m` for minutes* — in the date
+  a message. In particular `HH:MM` says _use `m` for minutes_ — in the date
   pattern language `M` is the month, so guessing would be worse than an error.
 - `formatTime(locale, time, format, { hour12? })`,
   `formatTimeWithPattern(locale, time, pattern)` and `parseTimePattern()` are
@@ -297,7 +307,7 @@ significant** here, because `h` and `H` mean different clocks:
 two halves. When **both** are style keywords it uses one combined
 `Intl.DateTimeFormat({ dateStyle, timeStyle })`, which is the only way to get
 ICU's locale-specific separator and bidi marks; otherwise it formats each half
-and joins with the locale's comma (Arabic uses ` في `).
+and joins with the locale's comma (Arabic uses `في`).
 
 ### Why not `DatePipe`
 
@@ -316,24 +326,24 @@ behaviour to your own templates.
 
 ### `<rv-datepicker>`
 
-| Input         | Type                                             | Default        | Notes                                                                 |
-| ------------- | ------------------------------------------------ | -------------- | --------------------------------------------------------------------- |
-| `value`       | `RiviniaDate \| null`                            | config         | Two-way: `[(value)]`. Starts at `provideRiviniaDatepicker({ selected })`. |
-| `locale`      | `string`                                         | config, `en-US`| Any BCP-47 tag. Digits, names, week start and direction follow it.    |
-| `format`      | `RiviniaDateFormat`                              | `'medium'`     | A style or a date-only pattern.                                      |
-| `firstDay`    | `RiviniaWeekday` (`0`–`6`)                       | CLDR           | Overrides the locale's first day of the week.                        |
-| `min` / `max` | `RiviniaDate`                                    | config         | Bounds. A bound day is focusable but cannot be picked.               |
-| `labels`      | `Partial<RiviniaDatepickerLabels>`               | locale         | Per-instance label overrides (`chooseDate`, `previousMonth`, …).     |
-| `disabled`    | `boolean`                                        | `false`        | A form binds this automatically when the control is disabled.        |
-| `placeholder` | `string`                                         | `labels.chooseDate` | Trigger text when there is no value.                            |
-| `label`       | `string`                                         | —              | The field name ("Departure"). Becomes the trigger's accessible name: `Departure: Oct 25, 2026`. |
-| `theme`       | `'auto' \| 'light' \| 'dark'`                    | `'auto'` (config) | The colour scheme of this picker. `auto` inherits the page's `color-scheme`; `light`/`dark` pin it. Mirrored on the host as `data-theme`. |
-| `clearable`   | `boolean`                                        | `false` (config) | Shows a clear button while a value is set. Hidden when disabled.   |
+| Input         | Type                               | Default             | Notes                                                                                                                                     |
+| ------------- | ---------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `value`       | `RiviniaDate \| null`              | config              | Two-way: `[(value)]`. Starts at `provideRiviniaDatepicker({ selected })`.                                                                 |
+| `locale`      | `string`                           | config, `en-US`     | Any BCP-47 tag. Digits, names, week start and direction follow it.                                                                        |
+| `format`      | `RiviniaDateFormat`                | `'medium'`          | A style or a date-only pattern.                                                                                                           |
+| `firstDay`    | `RiviniaWeekday` (`0`–`6`)         | CLDR                | Overrides the locale's first day of the week.                                                                                             |
+| `min` / `max` | `RiviniaDate`                      | config              | Bounds. A bound day is focusable but cannot be picked.                                                                                    |
+| `labels`      | `Partial<RiviniaDatepickerLabels>` | locale              | Per-instance label overrides (`chooseDate`, `previousMonth`, …).                                                                          |
+| `disabled`    | `boolean`                          | `false`             | A form binds this automatically when the control is disabled.                                                                             |
+| `placeholder` | `string`                           | `labels.chooseDate` | Trigger text when there is no value.                                                                                                      |
+| `label`       | `string`                           | —                   | The field name ("Departure"). Becomes the trigger's accessible name: `Departure: Oct 25, 2026`.                                           |
+| `theme`       | `'auto' \| 'light' \| 'dark'`      | `'auto'` (config)   | The colour scheme of this picker. `auto` inherits the page's `color-scheme`; `light`/`dark` pin it. Mirrored on the host as `data-theme`. |
+| `clearable`   | `boolean`                          | `false` (config)    | Shows a clear button while a value is set. Hidden when disabled.                                                                          |
 
-| Output        | Payload                | When                                                              |
-| ------------- | ---------------------- | ----------------------------------------------------------------- |
-| `valueChange` | `RiviniaDate \| null`  | The value really changed (a pick, `value.set()` or the clear button). A form write updates the model **without** emitting. |
-| `touch`       | `void`                 | The interaction finished: the panel closed, the clear button was pressed, or focus left the host. |
+| Output        | Payload               | When                                                                                                                       |
+| ------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `valueChange` | `RiviniaDate \| null` | The value really changed (a pick, `value.set()` or the clear button). A form write updates the model **without** emitting. |
+| `touch`       | `void`                | The interaction finished: the panel closed, the clear button was pressed, or focus left the host.                          |
 
 Method: `focus(options?)` — focuses the trigger (the `FormUiControl.focus`
 hook).
@@ -345,30 +355,30 @@ The date picker's API, plus the time half. The value is a `RiviniaDateTime`
 grid), and the panel contains the same `<rv-calendar>` plus an
 `<rv-time-row>`.
 
-| Input          | Type                                      | Default        | Notes |
-| -------------- | ----------------------------------------- | -------------- | ----- |
-| `value`        | `RiviniaDateTime \| null`                 | `null`         | Two-way: `[(value)]`. Civil, with no zone. |
-| `locale`       | `string`                                  | config, `en-US`| Same locale rules as the date picker. |
-| `format`       | `RiviniaDateFormat`                       | `'medium'`     | The **date** half only; time tokens still throw. |
-| `timeFormat`   | `RiviniaTimeFormat`                        | `'short'`      | `short`, `medium`, or a time pattern. |
-| `showSeconds`  | `boolean`                                 | `false` (config) | Adds the seconds spinbutton. The value always carries seconds. |
-| `minuteStep`   | `number`                                  | `1` (config)   | Step for `PageUp`/`PageDown` on minutes/seconds; arrows stay ±1. |
-| `hour12`       | `boolean \| 'auto'`                       | `'auto'` (config) | `'auto'` follows the locale's clock. |
-| `timeZone`     | `string`                                  | config, unset  | An IANA zone or fixed UTC offset (`+03:00`) used for the offset, DST checks and "today". Not stored in the value. |
-| `firstDay`     | `RiviniaWeekday` (`0`–`6`)                | CLDR           | Forwarded to the calendar. |
-| `min` / `max`  | `RiviniaDateTime`                         | config         | Bounds. The grid uses their `date`; the time half is not restricted. |
-| `labels`       | `Partial<RiviniaDatepickerLabels>`        | locale         | Includes the time labels (`chooseTime`, `hour`, `minute`, `ok`, `now`, `dstGap`, …). |
-| `disabled`     | `boolean`                                 | `false`        | A form binds this automatically. |
-| `placeholder`  | `string`                                  | `labels.chooseDateTime` | Trigger text when empty. |
-| `label`        | `string`                                  | —              | Field name; joins the trigger and clear-button accessible names. |
-| `theme`        | `'auto' \| 'light' \| 'dark'`             | `'auto'` (config) | Same as the date picker. |
-| `clearable`    | `boolean`                                 | `false` (config) | Clear button while a value is set. |
+| Input         | Type                               | Default                 | Notes                                                                                                             |
+| ------------- | ---------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `value`       | `RiviniaDateTime \| null`          | `null`                  | Two-way: `[(value)]`. Civil, with no zone.                                                                        |
+| `locale`      | `string`                           | config, `en-US`         | Same locale rules as the date picker.                                                                             |
+| `format`      | `RiviniaDateFormat`                | `'medium'`              | The **date** half only; time tokens still throw.                                                                  |
+| `timeFormat`  | `RiviniaTimeFormat`                | `'short'`               | `short`, `medium`, or a time pattern.                                                                             |
+| `showSeconds` | `boolean`                          | `false` (config)        | Adds the seconds spinbutton. The value always carries seconds.                                                    |
+| `minuteStep`  | `number`                           | `1` (config)            | Step for `PageUp`/`PageDown` on minutes/seconds; arrows stay ±1.                                                  |
+| `hour12`      | `boolean \| 'auto'`                | `'auto'` (config)       | `'auto'` follows the locale's clock.                                                                              |
+| `timeZone`    | `string`                           | config, unset           | An IANA zone or fixed UTC offset (`+03:00`) used for the offset, DST checks and "today". Not stored in the value. |
+| `firstDay`    | `RiviniaWeekday` (`0`–`6`)         | CLDR                    | Forwarded to the calendar.                                                                                        |
+| `min` / `max` | `RiviniaDateTime`                  | config                  | Bounds. The grid uses their `date`; the time half is not restricted.                                              |
+| `labels`      | `Partial<RiviniaDatepickerLabels>` | locale                  | Includes the time labels (`chooseTime`, `hour`, `minute`, `ok`, `now`, `dstGap`, …).                              |
+| `disabled`    | `boolean`                          | `false`                 | A form binds this automatically.                                                                                  |
+| `placeholder` | `string`                           | `labels.chooseDateTime` | Trigger text when empty.                                                                                          |
+| `label`       | `string`                           | —                       | Field name; joins the trigger and clear-button accessible names.                                                  |
+| `theme`       | `'auto' \| 'light' \| 'dark'`      | `'auto'` (config)       | Same as the date picker.                                                                                          |
+| `clearable`   | `boolean`                          | `false` (config)        | Clear button while a value is set.                                                                                |
 
-| Output        | Payload                        | When |
-| ------------- | ------------------------------ | ---- |
-| `valueChange` | `RiviniaDateTime \| null`      | A committed `OK`, `value.set()`, or the clear button. A form write does not echo. |
-| `touch`       | `void`                         | The interaction finished: the panel closed, the clear button was pressed, or focus left the host. |
-| `resolved`    | `RiviniaDateTimeResolution`    | On commit **only when a valid `timeZone` is set**. Carries `{ value, timeZone, resolution }`; `resolution.instant` is the epoch, `kind` is `unique`, `ambiguous` or `nonexistent`. |
+| Output        | Payload                     | When                                                                                                                                                                               |
+| ------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `valueChange` | `RiviniaDateTime \| null`   | A committed `OK`, `value.set()`, or the clear button. A form write does not echo.                                                                                                  |
+| `touch`       | `void`                      | The interaction finished: the panel closed, the clear button was pressed, or focus left the host.                                                                                  |
+| `resolved`    | `RiviniaDateTimeResolution` | On commit **only when a valid `timeZone` is set**. Carries `{ value, timeZone, resolution }`; `resolution.instant` is the epoch, `kind` is `unique`, `ambiguous` or `nonexistent`. |
 
 Methods: `focus(options?)` (trigger) and `closeForAnotherPanel()` (the panel
 coordination hook; not needed by normal consumers).
@@ -383,15 +393,15 @@ the time is confirmed.
 The row is exported so a custom panel can compose the same controls. The
 component is controlled: it never keeps a date or a zone.
 
-| Input         | Type                       | Notes |
-| ------------- | -------------------------- | ----- |
-| `value`       | `RiviniaTime`              | **Required.** |
-| `locale`      | `string`                   | **Required.** Digits and day periods. |
-| `labels`      | `RiviniaDatepickerLabels`  | **Required.** The full label set; `chooseTime` is optional and falls back to the row label. |
-| `hour12`      | `boolean \| 'auto'`        | Default `'auto'`. |
-| `showSeconds` | `boolean`                  | Default `false`. |
-| `minuteStep`  | `number`                   | Default `1`; also spaces the minute/second tray options. |
-| `disabled`    | `boolean`                  | Default `false`. |
+| Input         | Type                      | Notes                                                                                       |
+| ------------- | ------------------------- | ------------------------------------------------------------------------------------------- |
+| `value`       | `RiviniaTime`             | **Required.**                                                                               |
+| `locale`      | `string`                  | **Required.** Digits and day periods.                                                       |
+| `labels`      | `RiviniaDatepickerLabels` | **Required.** The full label set; `chooseTime` is optional and falls back to the row label. |
+| `hour12`      | `boolean \| 'auto'`       | Default `'auto'`.                                                                           |
+| `showSeconds` | `boolean`                 | Default `false`.                                                                            |
+| `minuteStep`  | `number`                  | Default `1`; also spaces the minute/second tray options.                                    |
+| `disabled`    | `boolean`                 | Default `false`.                                                                            |
 
 Outputs: `valueChange` (`RiviniaTime`), `commit` (Enter or `OK`), `now`
 (the `Now` button). The row owns the clock button and the tray; they are part
@@ -404,7 +414,7 @@ provideRiviniaDatepicker({
   locale: 'ar-EG',
   format: 'dd MMMM yyyy',
   firstDay: 6,
-  theme: 'auto',       // or 'light' / 'dark'
+  theme: 'auto', // or 'light' / 'dark'
   clearable: true,
   selected: null,
   min: undefined,
@@ -470,16 +480,16 @@ and a datetime picker on one page also never leave two panels open.
 
 The rendering half, usable without the trigger.
 
-| Input       | Type              | Notes                                                      |
-| ----------- | ----------------- | ---------------------------------------------------------- |
-| `calendar`  | `RiviniaCalendar` | **Required.** The state to render.                          |
-| `headingId` | `string`          | Id for the heading, so a host dialog can label itself by it.|
-| `autofocus` | `boolean`         | Focus the active cell on first render.                      |
+| Input       | Type              | Notes                                                        |
+| ----------- | ----------------- | ------------------------------------------------------------ |
+| `calendar`  | `RiviniaCalendar` | **Required.** The state to render.                           |
+| `headingId` | `string`          | Id for the heading, so a host dialog can label itself by it. |
+| `autofocus` | `boolean`         | Focus the active cell on first render.                       |
 
-| Output     | Payload       | When                              |
-| ---------- | ------------- | --------------------------------- |
-| `picked`   | `RiviniaDate` | The user committed a day.         |
-| `dismissed`| `void`        | The user pressed Escape.          |
+| Output      | Payload       | When                      |
+| ----------- | ------------- | ------------------------- |
+| `picked`    | `RiviniaDate` | The user committed a day. |
+| `dismissed` | `void`        | The user pressed Escape.  |
 
 ## Headless usage
 
@@ -487,10 +497,10 @@ The rendering half, usable without the trigger.
 import { Component, computed, inject } from '@angular/core';
 import { RiviniaCalendar, buildMonth, resolveCalendarKey } from '@rivinia/datepicker';
 
-@Component({ /* … */ })
+@Component({/* … */})
 export class MyDateField {
   readonly calendar = inject(RiviniaCalendar);
-  readonly grid = computed(() => buildMonth({ /* … */ }));
+  readonly grid = computed(() => buildMonth({/* … */}));
 
   onKeydown(event: KeyboardEvent): void {
     const intent = resolveCalendarKey({ key: event.key, direction: 'rtl' });
@@ -520,7 +530,10 @@ import {
   wallTimeInTimeZone,
 } from '@rivinia/datepicker';
 
-const departure = { date: { year: 2026, month: 10, day: 25 }, time: { hour: 15, minute: 30, second: 0 } };
+const departure = {
+  date: { year: 2026, month: 10, day: 25 },
+  time: { hour: 15, minute: 30, second: 0 },
+};
 
 // Civil → instant, with the DST rule made explicit.
 const resolved = resolveWallTime(departure, 'Africa/Cairo');
@@ -601,15 +614,15 @@ your API — it is not a form value.
 
 ## Keyboard
 
-| Key                     | Day view                        | Month view        | Year view         |
-| ----------------------- | ------------------------------- | ----------------- | ----------------- |
-| `←` / `→`               | previous / next day **(RTL: mirrored)** | previous / next month | previous / next year |
-| `↑` / `↓`               | previous / next week            | previous / next row (3 months) | previous / next row (3 years) |
-| `Home` / `End`          | first / last day of the week    | first / last month of the row | first / last year of the row |
-| `PageUp` / `PageDown`   | previous / next month           | previous / next year | ±12 years         |
-| `Shift+PageUp/Down`     | previous / next year            | ±12 years         | ±120 years        |
-| `Enter` / `Space`       | pick the focused day            | open that month (day view) | open that year (month view) |
-| `Escape`                | close the panel, restore focus  | close the panel   | close the panel   |
+| Key                   | Day view                                | Month view                     | Year view                     |
+| --------------------- | --------------------------------------- | ------------------------------ | ----------------------------- |
+| `←` / `→`             | previous / next day **(RTL: mirrored)** | previous / next month          | previous / next year          |
+| `↑` / `↓`             | previous / next week                    | previous / next row (3 months) | previous / next row (3 years) |
+| `Home` / `End`        | first / last day of the week            | first / last month of the row  | first / last year of the row  |
+| `PageUp` / `PageDown` | previous / next month                   | previous / next year           | ±12 years                     |
+| `Shift+PageUp/Down`   | previous / next year                    | ±12 years                      | ±120 years                    |
+| `Enter` / `Space`     | pick the focused day                    | open that month (day view)     | open that year (month view)   |
+| `Escape`              | close the panel, restore focus          | close the panel                | close the panel               |
 
 The heading is a button: `Tab` to it and press `Enter` to go from the day view
 to the months, and from the months to the years.
@@ -623,15 +636,15 @@ attribute), and `Enter` on one does nothing.
 
 Time spinbuttons follow the W3C APG spinbutton pattern:
 
-| Key                 | On a time spinbutton |
-| ------------------- | -------------------- |
-| `↑` / `↓`           | ±1 unit (hour, minute or second) |
-| `PageUp` / `PageDown` | ±`minuteStep` on minute/second; ±1 on hour |
-| `Home` / `End`      | first / last value (hour `00`/`23`, minute/second `00`/`59`) |
-| digits              | direct entry; the value is clamped, and the field pads on blur |
-| `Enter`             | commits the draft and closes the panel |
-| `Escape`            | closes and discards the draft |
-| `Tab`               | next control; the `OK` and `Now` buttons are real tab stops |
+| Key                   | On a time spinbutton                                           |
+| --------------------- | -------------------------------------------------------------- |
+| `↑` / `↓`             | ±1 unit (hour, minute or second)                               |
+| `PageUp` / `PageDown` | ±`minuteStep` on minute/second; ±1 on hour                     |
+| `Home` / `End`        | first / last value (hour `00`/`23`, minute/second `00`/`59`)   |
+| digits                | direct entry; the value is clamped, and the field pads on blur |
+| `Enter`               | commits the draft and closes the panel                         |
+| `Escape`              | closes and discards the draft                                  |
+| `Tab`                 | next control; the `OK` and `Now` buttons are real tab stops    |
 
 The AM/PM control is a two-button `aria-pressed` group, not a listbox. The
 `Now` button fills the draft with the current wall time in the selected zone;
@@ -663,13 +676,16 @@ the locale's (`٠٩:٣٠` in Arabic).
 page already decided:
 
 ```css
-:root { color-scheme: light dark; }               /* follow the OS */
-html[data-theme='dark'] { color-scheme: dark; }    /* follow the app toggle */
+:root {
+  color-scheme: light dark;
+} /* follow the OS */
+html[data-theme='dark'] {
+  color-scheme: dark;
+} /* follow the app toggle */
 ```
 
 ```html
-<rv-datepicker theme="dark" />
-<rv-datepicker theme="light" />
+<rv-datepicker theme="dark" /> <rv-datepicker theme="light" />
 ```
 
 The built-in palette is written with `light-dark()`, so the same rule covers
@@ -921,7 +937,7 @@ pointer/touch path for the same draft.
 
 ```ts
 export interface RiviniaTime {
-  readonly hour: number;   // 0–23
+  readonly hour: number; // 0–23
   readonly minute: number; // 0–59
   readonly second: number; // 0–59, always present
 }
@@ -939,11 +955,7 @@ two incompatible shapes for the same fact. The row simply does not edit them.
 ### Formatting
 
 ```html
-<rv-datetimepicker
-  [(value)]="appointment"
-  format="dd/MM/yyyy"
-  timeFormat="HH:mm"
-/>
+<rv-datetimepicker [(value)]="appointment" format="dd/MM/yyyy" timeFormat="HH:mm" />
 <!-- 25/10/2026, 15:30 -->
 ```
 
@@ -960,7 +972,7 @@ two incompatible shapes for the same fact. The row simply does not edit them.
 - `formatDateTime(locale, value, dateFormat, timeFormat, { hour12? })` is the
   exported formatter the trigger uses. When both halves are style keywords it
   uses one combined `Intl.DateTimeFormat`; otherwise it joins the halves with
-  the locale's date-time connector (` في ` in Arabic, a comma elsewhere).
+  the locale's date-time connector (`في` in Arabic, a comma elsewhere).
 
 ### Width
 
@@ -978,14 +990,14 @@ keeps `--rv-calendar-width` and stays centred.
 
 ### Keyboard
 
-| Key                   | On a time spinbutton |
-| --------------------- | -------------------- |
-| `↑` / `↓`             | ±1 unit (hour, minute or second) |
-| `PageUp` / `PageDown` | ±`minuteStep` on minute/second; ±1 on hour |
-| `Home` / `End`        | first / last value |
-| digits                | direct entry, clamped; pads on blur |
-| `Enter`               | commit the draft and close |
-| `Escape`              | discard the draft, close, restore focus |
+| Key                   | On a time spinbutton                                                                                     |
+| --------------------- | -------------------------------------------------------------------------------------------------------- |
+| `↑` / `↓`             | ±1 unit (hour, minute or second)                                                                         |
+| `PageUp` / `PageDown` | ±`minuteStep` on minute/second; ±1 on hour                                                               |
+| `Home` / `End`        | first / last value                                                                                       |
+| digits                | direct entry, clamped; pads on blur                                                                      |
+| `Enter`               | commit the draft and close                                                                               |
+| `Escape`              | discard the draft, close, restore focus                                                                  |
 | `Tab`                 | hour → minute → [second] → clock → tray rows → meridiem → Now → OK (the tray rows only while it is open) |
 
 The full day-grid table is in [Keyboard](#keyboard). The time row is a named
@@ -1023,18 +1035,10 @@ Set `timeZone` to an IANA id, or to a **fixed UTC offset** when the zone must
 not follow DST:
 
 ```html
-<rv-datetimepicker
-  [(value)]="departure"
-  timeZone="Africa/Cairo"
-  (resolved)="save($event)"
-/>
+<rv-datetimepicker [(value)]="departure" timeZone="Africa/Cairo" (resolved)="save($event)" />
 
 <!-- always GMT+3, in January and in July, with no DST rules -->
-<rv-datetimepicker
-  [(value)]="shift"
-  timeZone="+03:00"
-  (resolved)="save($event)"
-/>
+<rv-datetimepicker [(value)]="shift" timeZone="+03:00" (resolved)="save($event)" />
 ```
 
 A fixed offset is written `+HH:MM` or `-HH:MM` (`+03:00`, `-05:30`, `+00:00`).
@@ -1068,14 +1072,14 @@ end-user time-zone selector: the developer chooses the zone or offset in code.
 
 ### In the headless core
 
-| Function | Answer |
-| --- | --- |
-| `resolveWallTime(value, timeZone, disambiguation?)` | The instant(s), offset(s) and kind for a civil wall time. `null` for an invalid zone/value. |
-| `wallTimeInTimeZone(timeZone, instant)` | The civil wall time at an epoch. |
-| `getTimeZoneOffsetMinutes(timeZone, instant)` | Offset east of UTC in minutes, or `null`. |
-| `nowInTimeZone(timeZone)` / `todayInTimeZone(timeZone)` | The zone's current wall time / date. |
-| `isValidTimeZone(id)` / `listTimeZones()` | Validate an IANA id or a fixed offset (`+03:00`) / enumerate the runtime's IANA zones (fixed offsets are not listed). |
-| `formatTimeZoneName(locale, zone, instant, style?)` | `short` (`EEST`), `shortOffset` (`GMT+3`), `long`, `longOffset`. |
+| Function                                                | Answer                                                                                                                |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `resolveWallTime(value, timeZone, disambiguation?)`     | The instant(s), offset(s) and kind for a civil wall time. `null` for an invalid zone/value.                           |
+| `wallTimeInTimeZone(timeZone, instant)`                 | The civil wall time at an epoch.                                                                                      |
+| `getTimeZoneOffsetMinutes(timeZone, instant)`           | Offset east of UTC in minutes, or `null`.                                                                             |
+| `nowInTimeZone(timeZone)` / `todayInTimeZone(timeZone)` | The zone's current wall time / date.                                                                                  |
+| `isValidTimeZone(id)` / `listTimeZones()`               | Validate an IANA id or a fixed offset (`+03:00`) / enumerate the runtime's IANA zones (fixed offsets are not listed). |
+| `formatTimeZoneName(locale, zone, instant, style?)`     | `short` (`EEST`), `shortOffset` (`GMT+3`), `long`, `longOffset`.                                                      |
 
 `disambiguation` is `'compatible'` (default), `'earlier'`, `'later'` or
 `'reject'`. `'reject'` throws a `RangeError` instead of guessing — for an
@@ -1104,7 +1108,7 @@ formatDateTime('en-GB', shown, 'medium', 'short'); // 25 Oct 2026, 15:30
 
 ```ts
 const earlier = resolveWallTime(value, zone, 'earlier')!; // first occurrence
-const later = resolveWallTime(value, zone, 'later')!;     // second occurrence
+const later = resolveWallTime(value, zone, 'later')!; // second occurrence
 ```
 
 **Gap.** The UI offers the suggested wall time. Headless:
@@ -1186,3 +1190,7 @@ The pointer tray follows the APG **listbox** pattern (`role="listbox"` /
 `role="option"`, `aria-selected`, one roving tab stop); it is a second input
 path for the same draft, not a second step or a second popup.
 The package follows the brief: **one panel, one value, one commit**.
+
+## Further reading
+
+[Package design and usage notes](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.0/docs/decisions/D051-rivinia-datepicker-headless-gregorian-calendar-themed-picker.md).

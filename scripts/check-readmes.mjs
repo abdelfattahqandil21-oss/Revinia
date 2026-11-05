@@ -22,8 +22,14 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 export const LINE_BUDGET = 200;
 
-/** The four 1.0 packages. Extend when another package enters scope. */
-export const PACKAGES = Object.freeze(['theme', 'select', 'menu', 'i18n']);
+/** Every package in the synchronized 1.0 candidate. */
+export const PACKAGES = Object.freeze(['theme', 'select', 'menu', 'i18n', 'popup', 'datepicker', 'env', 'http', 'toast', 'modal', 'table']);
+
+/** Package-specific caps reflect the current documented public surface. */
+export const LINE_BUDGETS = Object.freeze({
+  popup: 80, theme: 125, select: 200, menu: 160, i18n: 190,
+  datepicker: 1250, env: 180, http: 450, toast: 420, modal: 650, table: 330,
+});
 
 /**
  * Temporary allowances, removed package by package as the content move lands.
@@ -99,6 +105,7 @@ const IGNORED_SCHEMES = /^(?:https?:|mailto:|tel:|#)/i;
  *   text: string,
  *   manifest: { version: string },
  *   allowOverBudget?: boolean,
+ *   lineBudget?: number,
  *   fileExists?: (path: string) => boolean,
  * }} input
  * @returns {{ ok: boolean, problems: string[], warnings: string[], lines: number }}
@@ -108,14 +115,15 @@ export function checkReadme({
   text,
   manifest,
   allowOverBudget = false,
+  lineBudget = LINE_BUDGETS[pkg] ?? LINE_BUDGET,
   fileExists = existsSync,
 }) {
   const problems = [];
   const warnings = [];
   const lines = text.replace(/\n$/, '').split('\n').length;
 
-  if (lines > LINE_BUDGET) {
-    const message = `${pkg}/README.md is ${lines} lines, over the ${LINE_BUDGET}-line budget`;
+  if (lines > lineBudget) {
+    const message = `${pkg}/README.md is ${lines} lines, over the ${lineBudget}-line budget`;
     if (allowOverBudget) warnings.push(`${message} (temporarily allowed until the content move)`);
     else problems.push(message);
   }

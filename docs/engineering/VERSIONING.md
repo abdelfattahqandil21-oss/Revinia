@@ -21,7 +21,8 @@ The synchronized group contains:
 
 Their workspace release versions must be identical at release. `@rivinia/popup` remains at `0.0.0` during development and is aligned only for a release. Any group release candidate or stable release is prepared and verified as a five-package set, with one shared version and coordinated release evidence. Package-specific immutable tags remain namespaced (`menu/v<version>`, etc.); the tags point to the same approved release commit unless the release owner records a justified exception. This policy does not authorize creating tags or publishing.
 
-- `@rivinia/popup` joins by owner-approved D95; during development its package manifest remains `0.0.0`. Its addition is synchronized with the group only at release.
+- `@rivinia/popup` joined by D95 and ships in the group at release.
+- By explicit owner decision D97, the remaining six libraries also join `rivinia-1.0` for the all-library release line. The owner has requested local preparation of synchronized `1.0.0`; this does not assert that any stable package has been published. The independent packages retain their own API and dependency boundaries while their release versions are synchronized.
 
 Introducing the shared popup runtime capability is a backward-compatible capability addition and uses a synchronized minor bump. SemVer's dependency FAQ classifies dependency updates without public API changes as compatible and says the bump level depends on whether the dependency update introduces functionality; dependency metadata alone without new capability may use patch. See [SemVer 2.0.0 FAQ](https://semver.org/#what-should-i-do-if-i-update-my-own-dependencies-without-changing-the-public-api).
 
@@ -29,7 +30,7 @@ The remaining six packages—datepicker, env, http, modal, table and toast—rem
 
 ## Current support and verification matrix
 
-The table separates owner-declared lifecycle from what the audited source actually verified. `Verified at base` means the prior audit ran those listed local gates at the exact base SHA; it is not a promise that the package is maintained for a range of versions.
+The table separates owner-declared lifecycle from what the audited source actually verified. D97 admitted the remaining six packages to the synchronized line. Current local work prepares the eleven-package `1.0.0` candidate; registry state remains the published versions shown in the left column until release. `Verified at base` means the prior audit ran those listed local gates at the exact base SHA; it is not a promise that the package is maintained for a range of versions.
 
 | Package | npm `latest` published | Workspace version at base | Release policy / support claim | Exact source verification evidence |
 | --- | --- | --- | --- | --- |
@@ -48,7 +49,7 @@ The npm column is the exact `latest` dist-tag version read from `https://registr
 
 ### Admission rules for a future group member
 
-A package joins only after a reviewed decision record states: (1) owner and public API, (2) concrete runtime/API dependency that makes independent release unsafe or costly, (3) coordinated semver and peer-range behavior, (4) migration and rollback plan, (5) required contract/unit/E2E/consumer gates, and (6) explicit owner approval. Add it to the group with an `admissionDecision` reference and synchronized manifest/checker validation in the same reviewed change. `check:governance` requires that reference for groups beyond `rivinia-1.0`. Shared branding or folder layout alone is insufficient.
+A package joins only after a reviewed decision record states: (1) owner and public API, (2) concrete runtime/API dependency that makes independent release unsafe or costly, or an explicit owner-approved synchronization exception with its operational benefit, (3) coordinated semver and peer-range behavior, (4) migration and rollback plan, (5) required contract/unit/E2E/consumer gates, and (6) explicit owner approval. Add it to the group with an admission decision reference and synchronized manifest/checker validation in the same reviewed change. Shared branding or folder layout alone is insufficient.
 
 ## Major-aware compatibility
 

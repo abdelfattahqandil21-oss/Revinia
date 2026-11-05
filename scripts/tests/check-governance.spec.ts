@@ -5,7 +5,11 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { validateGovernance } from '../check-governance.mjs';
 
 const roots: string[] = [];
-const members = ['@rivinia/menu', '@rivinia/select', '@rivinia/theme', '@rivinia/i18n', '@rivinia/popup'];
+const members = [
+  '@rivinia/menu', '@rivinia/select', '@rivinia/theme', '@rivinia/i18n', '@rivinia/popup',
+  '@rivinia/datepicker', '@rivinia/env', '@rivinia/http', '@rivinia/toast', '@rivinia/modal', '@rivinia/table',
+];
+const groupVersion = '1.0.0';
 const documents = [
   'README.md',
   'RFC-ENGINEERING-GOVERNANCE.md',
@@ -46,7 +50,7 @@ function fixture() {
   for (const name of members) {
     const short = name.replace('@rivinia/', '');
     mkdirSync(join(root, 'projects', short), { recursive: true });
-    writeFileSync(join(root, 'projects', short, 'package.json'), JSON.stringify({ name, version: '1.0.0-rc.2', ...(name === '@rivinia/select' || name === '@rivinia/menu' ? { dependencies: { '@rivinia/popup': '^1.0.0-rc.2' } } : {}) }));
+    writeFileSync(join(root, 'projects', short, 'package.json'), JSON.stringify({ name, version: groupVersion, ...(name === '@rivinia/select' || name === '@rivinia/menu' ? { dependencies: { '@rivinia/popup': `^${groupVersion}` } } : {}) }));
   }
   writeFileSync(
     join(root, 'docs', 'engineering', 'VERSIONING.md'),
@@ -57,7 +61,8 @@ function fixture() {
   writeFileSync(join(root, 'docs', 'decisions', 'README.md'), '[D123](D123-test-decision.md)\n');
   writeFileSync(join(root, 'docs', 'decisions', 'D123-test-decision.md'), '## 2026-01-01 — D123: test decision\n');
   writeFileSync(join(root, 'docs', 'decisions', 'D095-test-decision.md'), '## 2026-01-01 — D95: popup admission\n');
-  writeFileSync(join(root, 'docs', 'decisions', 'README.md'), '[D123](D123-test-decision.md)\n[D95](D095-test-decision.md)\n');
+  writeFileSync(join(root, 'docs', 'decisions', 'D097-test-decision.md'), '## 2026-01-01 — D97: synchronized all-library group\n');
+  writeFileSync(join(root, 'docs', 'decisions', 'README.md'), '[D123](D123-test-decision.md)\n[D95](D095-test-decision.md)\n[D97](D097-test-decision.md)\n');
   return root;
 }
 
@@ -72,7 +77,7 @@ describe('governance validation', () => {
 
   it('rejects a workspace version mismatch', () => {
     const root = fixture();
-    writeFileSync(join(root, 'projects', 'menu', 'package.json'), JSON.stringify({ name: '@rivinia/menu', version: '1.0.0-rc.3' }));
+    writeFileSync(join(root, 'projects', 'menu', 'package.json'), JSON.stringify({ name: '@rivinia/menu', version: '1.0.1' }));
     expect(validateGovernance({ root }).join('\n')).toContain('versions are not synchronized');
   });
 
@@ -86,9 +91,9 @@ describe('governance validation', () => {
     const root = fixture();
     const path = join(root, 'projects', 'select', 'package.json');
     const manifest = JSON.parse(readFileSync(path, 'utf8'));
-    manifest.dependencies['@rivinia/popup'] = '^1.0.0-rc.1';
+    manifest.dependencies['@rivinia/popup'] = '^1.0.1';
     writeFileSync(path, JSON.stringify(manifest));
-    expect(validateGovernance({ root }).join('\n')).toContain('@rivinia/popup must be a regular dependency at ^1.0.0-rc.2');
+    expect(validateGovernance({ root }).join('\n')).toContain('@rivinia/popup must be a regular dependency at ^1.0.0');
   });
 
   it('rejects malformed package metadata instead of accepting matching arbitrary strings', () => {
@@ -121,20 +126,20 @@ describe('governance validation', () => {
 
   it('rejects package metadata that is not an object', () => {
     const root = fixture();
-    writeFileSync(join(root, 'projects', 'menu', 'package.json'), JSON.stringify(['@rivinia/menu', '1.0.0-rc.2']));
+    writeFileSync(join(root, 'projects', 'menu', 'package.json'), JSON.stringify(['@rivinia/menu', groupVersion]));
     expect(validateGovernance({ root }).join('\n')).toContain('package metadata must be an object');
   });
 
   it('requires a decision record before adding another synchronized group', () => {
     const root = fixture();
-    mkdirSync(join(root, 'projects', 'datepicker'), { recursive: true });
-    writeFileSync(join(root, 'projects', 'datepicker', 'package.json'), JSON.stringify({ name: '@rivinia/datepicker', version: '0.1.0' }));
+    mkdirSync(join(root, 'projects', 'newlib'), { recursive: true });
+    writeFileSync(join(root, 'projects', 'newlib', 'package.json'), JSON.stringify({ name: '@rivinia/newlib', version: '0.1.0' }));
     writeFileSync(
       join(root, 'release-groups.json'),
       JSON.stringify({
         groups: [
           { id: 'rivinia-1.0', policy: 'synchronized-version', packages: members },
-          { id: 'datepicker-sync', policy: 'synchronized-version', packages: ['@rivinia/datepicker'] },
+          { id: 'newlib-sync', policy: 'synchronized-version', packages: ['@rivinia/newlib'] },
         ],
       }),
     );
@@ -143,14 +148,14 @@ describe('governance validation', () => {
 
   it('resolves a stable decision-log reference to its split record', () => {
     const root = fixture();
-    mkdirSync(join(root, 'projects', 'datepicker'), { recursive: true });
-    writeFileSync(join(root, 'projects', 'datepicker', 'package.json'), JSON.stringify({ name: '@rivinia/datepicker', version: '0.1.0' }));
+    mkdirSync(join(root, 'projects', 'newlib'), { recursive: true });
+    writeFileSync(join(root, 'projects', 'newlib', 'package.json'), JSON.stringify({ name: '@rivinia/newlib', version: '0.1.0' }));
     writeFileSync(
       join(root, 'release-groups.json'),
       JSON.stringify({
         groups: [
           { id: 'rivinia-1.0', policy: 'synchronized-version', packages: members },
-          { id: 'datepicker-sync', policy: 'synchronized-version', admissionDecision: 'docs/DECISIONS.md#D123', packages: ['@rivinia/datepicker'] },
+          { id: 'newlib-sync', policy: 'synchronized-version', admissionDecision: 'docs/DECISIONS.md#D123', packages: ['@rivinia/newlib'] },
         ],
       }),
     );
@@ -159,14 +164,14 @@ describe('governance validation', () => {
 
   it('rejects an admission ID missing from the split decision records', () => {
     const root = fixture();
-    mkdirSync(join(root, 'projects', 'datepicker'), { recursive: true });
-    writeFileSync(join(root, 'projects', 'datepicker', 'package.json'), JSON.stringify({ name: '@rivinia/datepicker', version: '0.1.0' }));
+    mkdirSync(join(root, 'projects', 'newlib'), { recursive: true });
+    writeFileSync(join(root, 'projects', 'newlib', 'package.json'), JSON.stringify({ name: '@rivinia/newlib', version: '0.1.0' }));
     writeFileSync(
       join(root, 'release-groups.json'),
       JSON.stringify({
         groups: [
           { id: 'rivinia-1.0', policy: 'synchronized-version', packages: members },
-          { id: 'datepicker-sync', policy: 'synchronized-version', admissionDecision: 'docs/DECISIONS.md#D999', packages: ['@rivinia/datepicker'] },
+          { id: 'newlib-sync', policy: 'synchronized-version', admissionDecision: 'docs/DECISIONS.md#D999', packages: ['@rivinia/newlib'] },
         ],
       }),
     );

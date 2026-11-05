@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/theme",
-  "version": "1.0.0-rc.4",
+  "version": "1.0.0",
   "description": "The shared Rivinia design-token layer: one import, one place to set the whole component ecosystem's colours, shapes and type.",
   "keywords": [
     "angular",
@@ -16,7 +16,7 @@
     "url": "git+https://github.com/abdelfattahqandil21-oss/Revinia.git",
     "directory": "projects/theme"
   },
-  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/projects/theme#readme",
+  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/theme/v1.0.0/projects/theme#readme",
   "bugs": {
     "url": "https://github.com/abdelfattahqandil21-oss/Revinia/issues"
   },

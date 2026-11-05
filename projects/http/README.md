@@ -4,7 +4,7 @@
 [![license](https://img.shields.io/npm/l/@rivinia/http.svg)](https://www.npmjs.com/package/@rivinia/http)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/main/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/http/v1.0.0/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="340" />
 </p>
 
 `@rivinia/http` is a thin, typed Angular HTTP client for plain `Observable`
@@ -12,7 +12,7 @@ requests and reactive `httpResource` requests. It leaves URLs, backend
 contracts, and interceptors under app control. Response bodies pass through
 unchanged unless a request explicitly asks to unwrap one.
 
-- Package version: **0.5.2**
+- Package version: **1.0.0**
 - Requires Angular `^22.0.0` and RxJS `^6.5.3 || ^7.4.0`; `tslib` is installed
   as a dependency.
 
@@ -406,3 +406,7 @@ call sites. Without the per-request options, the response remains raw.
 ## License
 
 MIT.
+
+## Further reading
+
+[Package design and usage notes](https://github.com/abdelfattahqandil21-oss/Revinia/blob/http/v1.0.0/docs/decisions/D026-consumer-driven-http-0-3-0-reactive-function-endpoints.md).

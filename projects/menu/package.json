@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/menu",
-  "version": "1.0.0-rc.4",
+  "version": "1.0.0",
   "description": "Headless menu behavior for Angular: open state, keyboard navigation, item registry.",
   "keywords": [
     "angular",
@@ -15,7 +15,7 @@
     "url": "git+https://github.com/abdelfattahqandil21-oss/Revinia.git",
     "directory": "projects/menu"
   },
-  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/projects/menu#readme",
+  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/menu/v1.0.0/projects/menu#readme",
   "bugs": {
     "url": "https://github.com/abdelfattahqandil21-oss/Revinia/issues"
   },
@@ -29,7 +29,7 @@
     "@angular/core": "^22.0.0"
   },
   "dependencies": {
-    "@rivinia/popup": "^1.0.0-rc.4"
+    "@rivinia/popup": "^1.0.0"
   },
   "sideEffects": false
 }

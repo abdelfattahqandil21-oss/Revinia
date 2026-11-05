@@ -72,6 +72,7 @@ function packageFiles(options: ManifestOptions = {}): Record<string, string> {
   const manifestJson = JSON.stringify(manifest(options), null, 2);
   return {
     'package.json': manifestJson,
+    'LICENSE': 'MIT License\n',
     'README.md': '# @rivinia/theme\n',
     'CHANGELOG.md': '# @rivinia/theme\n\n## Unreleased\n',
     'styles/theme.css': LAYERED_CSS,

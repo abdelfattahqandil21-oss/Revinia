@@ -5,8 +5,9 @@
     "./schematics/collection.json",
     "./schematics/ng-add/schema.json",
     "./schematics/ng-add/index.cjs",
-"./LICENSE",
-    "./CHANGELOG.md"
+    "./LICENSE",
+    "./CHANGELOG.md",
+    "./README.md"
   ],
   "lib": {
     "entryFile": "src/public-api.ts"

@@ -101,3 +101,4 @@ Status labels summarize explicit status wording in the record at its recorded da
 | [D94](D094-1-0-0-rc-2-is-published-on-annotated-tags-the-four-next-tags-are-aligned.md) | `1.0.0-rc.2` is published on annotated tags, the four `next` tags are aligned onto it, and its tarballs ship a CHANGELOG that stops at `rc.1` | Recorded | 2026-11-04 | Release |
 | [D95](D095-popup-core-extraction-after-the-1-0-final.md) | extract a shared popup core after the 1.0 final; retain conformance | Recorded | 2026-11-05 | Popup |
 | [D96](D096-popup-ships-in-the-1-0-rc-4-release-line.md) | Popup ships in the 1.0 release line at rc.4 | Recorded | 2026-11-05 | Popup / Release |
+| [D97](D097-all-libraries-share-the-1-0-rc-line.md) | all Rivinia libraries share the 1.0 RC line | Owner-approved for local RC preparation | 2026-11-05 | Release / Packages |

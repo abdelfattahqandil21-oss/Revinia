@@ -7,7 +7,8 @@
     "./schematics/ng-add/schema.json",
     "./schematics/ng-add/index.cjs",
     "./cli/rivinia-i18n-keys.mjs",
-    "./LICENSE"
+    "./LICENSE",
+    "./README.md"
   ],
   "lib": {
     "entryFile": "src/public-api.ts"

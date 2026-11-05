@@ -16,7 +16,7 @@
  *  5. every `exports` target is in the packed file list.
  *
  * Usage: node scripts/check-pack.mjs [pkg ... | directory ...]
- * With no argument it checks the five 1.0 packages in `dist/`.
+ * With no argument it checks every synchronized 1.0 package in `dist/`.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-export const PACKAGES = Object.freeze(['theme', 'select', 'menu', 'i18n', 'popup']);
+export const PACKAGES = Object.freeze(['theme', 'select', 'menu', 'i18n', 'popup', 'datepicker', 'env', 'http', 'toast', 'modal', 'table']);
 
 /**
  * The files npm would publish from `dir` (respects `files` and `.npmignore`).

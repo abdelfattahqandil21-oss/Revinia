@@ -4,7 +4,7 @@
 [![license](https://img.shields.io/npm/l/@rivinia/env.svg)](https://www.npmjs.com/package/@rivinia/env)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/main/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="140" />
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/env/v1.0.0/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="340" />
 </p>
 
 `@rivinia/env` provides the `BaseEnvironment` TypeScript contract and an
@@ -12,7 +12,7 @@ Angular CLI `ng add` schematic. It does not read environment values at
 runtime: Angular's build file replacements select a statically imported
 environment file.
 
-- Package version: **0.3.2**
+- Package version: **1.0.0**
 - No runtime providers or services; the package supplies a type and CLI tooling.
 - The generated model imports `BaseEnvironment` from this package.
 
@@ -141,3 +141,7 @@ AppEnvironment with the fields your app needs.
 ## License
 
 MIT.
+
+## Further reading
+
+[Package design and usage notes](https://github.com/abdelfattahqandil21-oss/Revinia/blob/env/v1.0.0/docs/engineering/TOOLING-OWNERSHIP.md).
