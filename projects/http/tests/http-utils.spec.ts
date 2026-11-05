@@ -15,7 +15,7 @@ describe('joinUrl', () => {
     expect(joinUrl('https://api.example.com/', '')).toBe('https://api.example.com');
   });
 
-  it.fails('HTTP-URL-001: collapses repeated boundary slashes and preserves query strings', () => {
+  it('HTTP-URL-001: collapses repeated boundary slashes and preserves query strings', () => {
     expect(joinUrl('https://api.example.com///', '///users?q=a%20b')).toBe(
       'https://api.example.com/users?q=a%20b',
     );

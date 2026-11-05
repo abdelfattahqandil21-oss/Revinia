@@ -6,8 +6,8 @@ export function joinUrl(baseUrl: string, endpoint: string): string {
   if (/^https?:\/\//i.test(endpoint)) {
     return endpoint;
   }
-  const base = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-  const path = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+  const base = baseUrl.replace(/\/+$/, '');
+  const path = endpoint.replace(/^\/+/, '');
   return path ? `${base}/${path}` : base;
 }
 
