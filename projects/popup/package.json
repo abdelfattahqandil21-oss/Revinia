@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/popup",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Headless shared popup mechanics for Rivinia Angular components.",
   "license": "MIT",
   "repository": {
