@@ -46,7 +46,11 @@ available on `main`:
    versions before publishing anything. If a matching version/integrity was
    already published during an interrupted run, it safely skips that package;
    a same-version integrity mismatch stops the release. After each publish it
-   checks the registry integrity against the inspected tarball.
+   retries registry reads briefly until the published integrity is visible,
+   then checks it against the inspected tarball. A tooling-only follow-up on
+   `main` may run the verified package tags again when no package or build input
+   changed after those tags; release tags remain pinned to their original
+   package source commit.
 
 The GitHub workflow has `id-token: write` only in its protected publish job.
 npm automatically creates provenance for public packages published from this

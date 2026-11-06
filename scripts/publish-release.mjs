@@ -5,6 +5,8 @@ import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { assertReleaseSource } from './release-source.mjs';
+import { verifyPublishedIntegrity } from './publish-registry-verification.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const args = Object.fromEntries(process.argv.slice(2).reduce((pairs, value, index, values) => {
@@ -23,12 +25,24 @@ if (manifest.version !== version || manifest.distTag !== distTag || manifest.pac
 const expectedNames = ['popup', 'theme', 'select', 'menu', 'i18n', 'datepicker', 'env', 'http', 'toast', 'modal', 'table'].map((name) => `@rivinia/${name}`);
 if (manifest.packages.map((item) => item.name).join('\n') !== expectedNames.join('\n')) throw new Error('Artifact manifest must contain the exact synchronized package set in release order');
 const head = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' });
-if (head.status !== 0 || head.stdout.trim() !== manifest.sourceCommit) throw new Error('Publisher checkout does not match the verified artifact commit');
+if (head.status !== 0) throw new Error('Unable to resolve publisher checkout HEAD');
+const headCommit = head.stdout.trim();
+const tagCommits = [];
 for (const item of manifest.packages) {
   const short = item.name.slice('@rivinia/'.length);
   const tag = spawnSync('git', ['rev-parse', `${short}/v${version}^{commit}`], { cwd: root, encoding: 'utf8' });
-  if (tag.status !== 0 || tag.stdout.trim() !== manifest.sourceCommit) throw new Error(`${short}/v${version} no longer resolves to the verified commit`);
+  if (tag.status !== 0) throw new Error(`${short}/v${version} no longer resolves to a commit`);
+  tagCommits.push(tag.stdout.trim());
 }
+const changedPaths = spawnSync('git', ['diff', '--name-only', `${manifest.sourceCommit}..${headCommit}`], { cwd: root, encoding: 'utf8' });
+if (changedPaths.status !== 0) throw new Error('Unable to compare the tagged release source with main');
+const sourceCommit = assertReleaseSource({
+  headCommit,
+  tagCommits,
+  changedPaths: changedPaths.stdout.trim().split('\n').filter(Boolean),
+  isAncestor: spawnSync('git', ['merge-base', '--is-ancestor', manifest.sourceCommit, headCommit], { cwd: root }).status === 0,
+});
+if (sourceCommit !== manifest.sourceCommit) throw new Error('Release artifact source commit does not match the package tags');
 
 function npm(args, allowMissing = false) {
   const result = spawnSync('npm', [...args, '--registry=https://registry.npmjs.org/'], { cwd: root, encoding: 'utf8' });
@@ -58,8 +72,12 @@ for (const item of manifest.packages) {
 
 for (const { item, tarball } of pending) {
   npm(['publish', tarball, '--access', 'public', '--tag', distTag]);
-  const published = npm(['view', `${item.name}@${version}`, 'dist.integrity', '--json']);
-  if (published !== item.integrity) throw new Error(`${item.name}@${version}: registry integrity did not match inspected tarball after publish`);
+  await verifyPublishedIntegrity({
+    name: item.name,
+    version,
+    expectedIntegrity: item.integrity,
+    readIntegrity: () => npm(['view', `${item.name}@${version}`, 'dist.integrity', '--json'], true),
+  });
   console.log(`Published and verified ${item.name}@${version} (${item.integrity}).`);
 }
 console.log(`Release ${version} completed for ${manifest.packages.length} packages with dist-tag ${distTag}.`);

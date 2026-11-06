@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { isAllowedRuntimeImport } from './release-archive.mjs';
+import { assertReleaseSource } from './release-source.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const packages = [
@@ -74,13 +75,21 @@ function inspectArchive(tarball, packedFiles, expectedName, expectedVersion) {
 const releaseGroup = JSON.parse(readFileSync(join(root, 'release-groups.json'), 'utf8')).groups.find((group) => group.id === 'rivinia-1.0');
 if (releaseGroup?.packages?.length !== packages.length) throw new Error('Expected exactly eleven synchronized release packages');
 const head = run('git', ['rev-parse', 'HEAD']);
+const tags = packages.map((name) => `${name}/v${version}`);
+const tagCommits = tags.map((tag) => run('git', ['rev-parse', `${tag}^{commit}`]));
+const sourceCommit = assertReleaseSource({
+  headCommit: head,
+  tagCommits,
+  changedPaths: run('git', ['diff', '--name-only', `${tagCommits[0]}..${head}`]).split('\n').filter(Boolean),
+  isAncestor: spawnSync('git', ['merge-base', '--is-ancestor', tagCommits[0], head], { cwd: root }).status === 0,
+});
 for (const name of packages) {
   const pkg = `@rivinia/${name}`;
   if (!releaseGroup.packages.includes(pkg)) throw new Error(`${pkg} is not in release-groups.json`);
   const manifest = JSON.parse(readFileSync(join(root, 'projects', name, 'package.json'), 'utf8'));
   if (manifest.name !== pkg || manifest.version !== version) throw new Error(`${pkg} manifest does not match release ${version}`);
   const tag = `${name}/v${version}`;
-  if (run('git', ['rev-parse', `${tag}^{commit}`]) !== head) throw new Error(`${tag} must resolve to the workflow HEAD ${head}`);
+  if (run('git', ['rev-parse', `${tag}^{commit}`]) !== sourceCommit) throw new Error(`${tag} must resolve to the release source commit ${sourceCommit}`);
 }
 
 run('pnpm', ['check:governance']);
@@ -101,7 +110,7 @@ for (const name of packages) {
   }
   const tarball = join(artifactDir, `${name}.tgz`);
   renameSync(join(artifactDir, packed.filename), tarball);
-  run('node', ['scripts/check-versioned-doc-links.mjs', pkg, version, `--tarball=${tarball}`, '--verify-tag-snapshot', '--require-tag']);
+  run('node', ['scripts/check-versioned-doc-links.mjs', pkg, version, `--tarball=${tarball}`, '--verify-tag-snapshot']);
   if (name === 'theme') run('node', ['scripts/check-theme-package.mjs', tarball]);
   const bytes = readFileSync(tarball);
   const manifest = JSON.parse(readFileSync(join(dist, 'package.json'), 'utf8'));
@@ -128,5 +137,5 @@ run('node', [
   '--specifier', '@rivinia/i18n/ui',
   '--absent-package', '@rivinia/select',
 ]);
-writeFileSync(join(artifactDir, 'release-manifest.json'), `${JSON.stringify({ version, distTag, sourceCommit: head, packages: records }, null, 2)}\n`);
-console.log(`Prepared ${records.length} inspected tarballs for ${version} (${distTag}) from ${head}.`);
+writeFileSync(join(artifactDir, 'release-manifest.json'), `${JSON.stringify({ version, distTag, sourceCommit, packages: records }, null, 2)}\n`);
+console.log(`Prepared ${records.length} inspected tarballs for ${version} (${distTag}) from tagged source ${sourceCommit}.`);
