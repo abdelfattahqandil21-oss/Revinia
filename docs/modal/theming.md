@@ -2,7 +2,7 @@
 
 Package-specific tokens and the shared Rivinia theme entry point.
 
-[Back to @rivinia/modal README](https://github.com/abdelfattahqandil21-oss/Revinia/blob/modal/v1.0.1/projects/modal/README.md)
+[Back to @rivinia/modal README](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/modal/v1.0.1/projects/modal/README.md)
 
 ### The library's own tokens
 
@@ -18,4 +18,4 @@ Package-specific tokens and the shared Rivinia theme entry point.
 | `--rv-modal-pad`      | `20px`                        | the dialog     |
 | `--rv-modal-width-md` | `32rem`                       | the dialog     |
 
-For the shared semantic tokens, CSS layers, and styling-stack setup, see [https://github.com/abdelfattahqandil21-oss/Revinia theming guide](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.1/docs/theme/README.md).
+For the shared semantic tokens, CSS layers, and styling-stack setup, see [https://github.com/abdelfattahqandil21-oss/Rivinia theming guide](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/theme/v1.0.1/docs/theme/README.md).

@@ -28,11 +28,11 @@ const MANIFEST = {
   version: '0.7.1',
   repository: {
     type: 'git',
-    url: 'git+https://github.com/abdelfattahqandil21-oss/Revinia.git',
+    url: 'git+https://github.com/abdelfattahqandil21-oss/Rivinia.git',
     directory: 'projects/select',
   },
-  homepage: 'https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/projects/select#readme',
-  bugs: { url: 'https://github.com/abdelfattahqandil21-oss/Revinia/issues' },
+  homepage: 'https://github.com/abdelfattahqandil21-oss/Rivinia/tree/main/projects/select#readme',
+  bugs: { url: 'https://github.com/abdelfattahqandil21-oss/Rivinia/issues' },
   engines: { node: '^22.22.3 || ^24.15.0 || >=26.0.0' },
   exports: {
     './package.json': { default: './package.json' },

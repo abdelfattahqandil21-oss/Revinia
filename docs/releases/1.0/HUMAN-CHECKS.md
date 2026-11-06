@@ -226,7 +226,7 @@ you repeat the steps on a real device.
 **Status: cannot start yet.** The four `1.0.0-rc.1` tarballs were packed,
 installed into a clean fixture from `file:` paths and everything automated passed
 on them — the numbers are row 9 of
-[`docs/releases/1.0/MERGES.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/releases/1.0/MERGES.md).
+[`docs/releases/1.0/MERGES.md`](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/main/docs/releases/1.0/MERGES.md).
 A fixture is not a product app: one route, no real submit flow, no browsing
 history. The soak is what turns an rc into `1.0.0`, and it needs the rcs on the
 registry, which is a human step.

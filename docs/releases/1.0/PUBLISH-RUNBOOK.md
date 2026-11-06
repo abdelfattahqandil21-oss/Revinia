@@ -129,7 +129,7 @@ dist.integrity    sha512-PiFduNZTSoDKUcu2PUMYKArZJoyR8MuJxUfOUQ3qr9FHm+sDpEw+DHv
 peerDependencies  @angular/core ^22.0.0 · and no peerDependenciesMeta at all
 dependencies      tslib ^2.3.0 · sideEffects false
 engines.node      ^22.22.3 || ^24.15.0 || >=26.0.0
-repository        git+https://github.com/abdelfattahqandil21-oss/Revinia.git, directory projects/menu
+repository        git+https://github.com/abdelfattahqandil21-oss/Rivinia.git, directory projects/menu
 homepage / bugs   .../projects/menu#readme · .../Revinia/issues
 exports           ./package.json · . · ./ui — all three targets present in the tarball's file list
 barrel names      6 on `.` (RiviniaMenu + 5 type-only), 11 on `./ui` (4 runtime + 7 type-only) — the freeze's counts
@@ -318,11 +318,11 @@ propagation, not the network: the packument was reachable the whole way and simp
 not list the version until it appeared. See the network rule above.
 
 This file is S8 step 5 of
-[`docs/specifications/1.0-readiness.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/specifications/1.0-readiness.md).
-Read [`docs/releases/1.0/RELEASE.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/releases/1.0/RELEASE.md)
+[`docs/specifications/1.0-readiness.md`](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/main/docs/specifications/1.0-readiness.md).
+Read [`docs/releases/1.0/RELEASE.md`](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/main/docs/releases/1.0/RELEASE.md)
 first: it explains the order and why `@rivinia/i18n` goes last. The checks each
 step must pass are in `AGENTS.md` (gates 1–8) and
-[`docs/releases/1.0/HUMAN-CHECKS.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/releases/1.0/HUMAN-CHECKS.md).
+[`docs/releases/1.0/HUMAN-CHECKS.md`](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/main/docs/releases/1.0/HUMAN-CHECKS.md).
 
 ## The rules that hold for every step
 

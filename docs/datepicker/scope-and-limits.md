@@ -2,7 +2,7 @@
 
 See the supported behavior and documented limits.
 
-[Back to @rivinia/datepicker README](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.1/projects/datepicker/README.md)
+[Back to @rivinia/datepicker README](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/datepicker/v1.0.1/projects/datepicker/README.md)
 
 ## Scope and limits
 

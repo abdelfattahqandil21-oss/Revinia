@@ -2,7 +2,7 @@
 
 Package-specific tokens and the shared Rivinia theme entry point.
 
-[Back to @rivinia/toast README](https://github.com/abdelfattahqandil21-oss/Revinia/blob/toast/v1.0.1/projects/toast/README.md)
+[Back to @rivinia/toast README](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/toast/v1.0.1/projects/toast/README.md)
 
 ### The library's own tokens
 
@@ -27,4 +27,4 @@ The kind colours chain to the semantic layer too:
 | `--rv-toast-info`    | `--rv-info`    |
 | `--rv-toast-warning` | `--rv-warning` |
 
-For shared semantic tokens and styling-stack setup, see [https://github.com/abdelfattahqandil21-oss/Revinia theming guide](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.1/docs/theme/README.md).
+For shared semantic tokens and styling-stack setup, see [https://github.com/abdelfattahqandil21-oss/Rivinia theming guide](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/theme/v1.0.1/docs/theme/README.md).

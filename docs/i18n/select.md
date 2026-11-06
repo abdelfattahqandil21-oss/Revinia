@@ -5,7 +5,7 @@ Back to [the README](../../projects/i18n/README.md) ·
 [the API](api.md)
 
 The toggle flips between exactly two languages. For `ar`, `en`, `de`, … this entry
-point composes [`@rivinia/select`](https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/projects/select)
+point composes [`@rivinia/select`](https://github.com/abdelfattahqandil21-oss/Rivinia/tree/main/projects/select)
 into a list rather than re-implementing one:
 
 ```bash
@@ -27,7 +27,7 @@ applies the select's premium skin.
 the re-exported `LanguageLike` / `RiviniaLanguageManager` (so a consumer importing
 only `/select` needs no `@rivinia/i18n/ui` on the side). The select is a composition
 over `@rivinia/select/ui`, and that surface is now frozen for 1.0 — see
-[`docs/releases/1.0/API-SURFACE.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/releases/1.0/API-SURFACE.md).
+[`docs/releases/1.0/API-SURFACE.md`](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/main/docs/releases/1.0/API-SURFACE.md).
 The exports here stay Experimental until the 1.0 review promotes them; what they are
 composed over no longer moves under them.
 
@@ -119,7 +119,7 @@ to one character per line (`English` becomes `En / gli / sh`). That is what this
 exists for — it was caught in the packed build in a browser, not by a build or a test
 double. Widen it with ordinary CSS — `rv-language-select { inline-size: 100% }` in a
 form row — and the panel follows the trigger within `rv-select`'s own limits. The
-[`i18n-e2e` suite](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/projects/i18n/testing/e2e/language-select.spec.ts)
+[`i18n-e2e` suite](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/main/projects/i18n/testing/e2e/language-select.spec.ts)
 measures the host, the panel and the row line count in Chromium and Firefox, and both
 geometry tests fail when the floor is removed.
 
@@ -134,7 +134,7 @@ hint when the two differ. The id is not repeated when the label already is the i
 
 Everything else about the popup — the keyboard model, the `role="menu"` with
 `menuitemradio` rows, the filter box, placement and the two browser floors — belongs to
-[`@rivinia/select`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/select/accessibility.md)
+[`@rivinia/select`](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/main/docs/select/accessibility.md)
 and is measured by that package's suite, not this one.
 
 ## Styling hooks

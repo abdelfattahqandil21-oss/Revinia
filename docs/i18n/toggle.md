@@ -224,7 +224,7 @@ punctuation inside the element that holds the name and keep the whole label in o
 element. As the first character of an LTR fragment a comma is pushed to the far edge
 of an RTL button, far from the name it closes, and the button's `gap` then separates
 it from that name in both directions. The proof page under
-[`projects/i18n/testing/app/src`](https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/projects/i18n/testing/app/src/app/toggle)
+[`projects/i18n/testing/app/src`](https://github.com/abdelfattahqandil21-oss/Rivinia/tree/main/projects/i18n/testing/app/src/app/toggle)
 renders exactly this case.
 
 ## SSR and the language name
@@ -309,7 +309,7 @@ Neither recipe is covered by this release's test matrix; the select in particula
 the supported shape for three or more languages, not something the toggle turns into.
 
 - **Inside a menu.** The toggle is a plain `<button>` in normal flow, so it can sit
-  in a panel that already exists — [`@rivinia/menu/ui`](https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/projects/menu)
+  in a panel that already exists — [`@rivinia/menu/ui`](https://github.com/abdelfattahqandil21-oss/Rivinia/tree/main/projects/menu)
   ships the menu primitives. The menu's focus trap and keyboard model with this
   control inside it have **not** been tested.
 - **Beside a native `<select>`.** For three or more languages, prefer the ready-made

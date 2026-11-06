@@ -2,7 +2,7 @@
 
 Generate typed environment files and build configurations.
 
-[Back to @rivinia/env README](https://github.com/abdelfattahqandil21-oss/Revinia/blob/env/v1.0.1/projects/env/README.md)
+[Back to @rivinia/env README](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/env/v1.0.1/projects/env/README.md)
 
 ## Install and scaffold
 
