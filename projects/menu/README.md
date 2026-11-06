@@ -131,6 +131,5 @@ real Safari) are in
 | The menu's tokens, classes, `data-*` hooks and forced-colours behaviour                              | [docs/menu/theming.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.1/docs/menu/theming.md)         |
 | Theming every Rivinia component — the cascade, light and dark, where an override has to live         | [docs/theme/README.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.1/docs/theme/README.md)         |
 
-Migration notes for each version live in
-[CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.1/projects/menu/CHANGELOG.md).
+Release history: [CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.0.1/projects/menu/CHANGELOG.md).
 MIT licensed.

@@ -169,6 +169,5 @@ real Safari) are in
 | The select's tokens, classes, `data-*` hooks and forced-colors behaviour                     | [docs/select/theming.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.1/docs/select/theming.md)             |
 | Theming every Rivinia component — the cascade, light and dark, where an override has to live | [docs/theme/README.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.1/docs/theme/README.md)                 |
 
-Migration notes for each version live in
-[CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.1/projects/select/CHANGELOG.md).
+Release history: [CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.1/projects/select/CHANGELOG.md).
 MIT licensed.

@@ -18,6 +18,6 @@ All eleven packages in `rivinia-1.0` advance together from `1.0.0` to a docs-onl
 
 - All eleven package READMEs use the shared 200-line hard cap.
 - Package ownership remains unchanged; code and package boundaries are not affected.
-- Select and Menu continue to depend on Popup at `^1.0.0`, which accepts Popup `1.0.1`; i18n's optional Select peer must also accept `1.0.1`.
+- Select and Menu continue to depend on Popup at `^1.0.0`, which accepts Popup `1.0.1`; i18n's optional Select peer must also accept `1.0.1`. `check:governance` validates these compatibility ranges against the synchronized package version.
 - Release candidates must pass the package build, unit, docs, governance, pack, exact-tarball, and clean-consumer gates before owner approval.
 - Human review must open each new page on GitHub once to verify rendering. Existing screen-reader, real-device, and native Safari checks remain tracked by the stable release checklist.

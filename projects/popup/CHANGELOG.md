@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.1 (prepared; not published)
+## 1.0.1
 
 - Documentation links updated to the 1.0.1 tag.
 - Removed the stale pre-release status from the README.

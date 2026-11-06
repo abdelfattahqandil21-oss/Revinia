@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.1 (prepared; not published)
+## 1.0.1
 
 - Documentation: README restructured into docs/table/ pages; stale pre-1.0 wording removed.
 

@@ -101,6 +101,5 @@ else was never measured.
 | Browser floors and what each feature is for                                                                    | [docs/browser-support.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.1/docs/browser-support.md)             |
 | Building and checking this package                                                                             | [docs/theme/contributing.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.1/docs/theme/contributing.md)       |
 
-Migration notes for each version live in
-[CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.1/projects/theme/CHANGELOG.md).
+Release history: [CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/theme/v1.0.1/projects/theme/CHANGELOG.md).
 MIT licensed.

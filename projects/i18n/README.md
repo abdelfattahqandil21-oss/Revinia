@@ -163,6 +163,5 @@ surface ordered by API.
 | Reference — the surface | [the API](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.1/docs/i18n/api.md) · [the language toggle](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.1/docs/i18n/toggle.md) · [the language picker](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.1/docs/i18n/select.md)                               |
 | Theming                 | [Rivinia theming](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.1/docs/theme/README.md)                                                                                                                                                                                                                                                     |
 
-Migration notes for each version live in
-[CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.1/projects/i18n/CHANGELOG.md).
+Release history: [CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/i18n/v1.0.1/projects/i18n/CHANGELOG.md).
 MIT licensed.
