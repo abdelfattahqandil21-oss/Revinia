@@ -71,7 +71,16 @@ for (const item of manifest.packages) {
 }
 
 for (const { item, tarball } of pending) {
-  npm(['publish', tarball, '--access', 'public', '--tag', distTag]);
+  try {
+    npm(['publish', tarball, '--access', 'public', '--tag', distTag]);
+    console.log(`Submitted ${item.name}@${version}; registry verification follows after all packages are submitted.`);
+  } catch (error) {
+    if (!/EPUBLISHCONFLICT|cannot publish over|previously published version|cannot overwrite/i.test(error.message)) throw error;
+    console.log(`${item.name}@${version} already exists at the publish endpoint; verifying its integrity.`);
+  }
+}
+
+for (const { item } of pending) {
   await verifyPublishedIntegrity({
     name: item.name,
     version,
