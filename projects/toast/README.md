@@ -5,6 +5,8 @@
 
 A signal-based Angular toast queue with an optional ready-made UI.
 
+Package version: **1.0.1**
+
 ```ts
 import { Component } from '@angular/core';
 import { injectRiviniaToast } from '@rivinia/toast';
