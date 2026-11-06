@@ -1,5 +1,9 @@
 # @rivinia/i18n
 
+## 1.0.2
+
+- Fixed the `ng add` language selection: it now offers a multi-select prompt and generates valid config when browser-language detection is enabled.
+
 ## 1.0.1
 
 - Documentation links updated to the 1.0.1 tag.

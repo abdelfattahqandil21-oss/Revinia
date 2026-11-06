@@ -1,5 +1,9 @@
 # @rivinia/theme
 
+## 1.0.2
+
+- No package-specific consumer changes; version synchronized under the Rivinia 1.0 release group.
+
 ## 1.0.1
 
 - Documentation links updated to the 1.0.1 tag.

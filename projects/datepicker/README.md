@@ -5,7 +5,7 @@
 
 A headless Gregorian date and time picker for Angular, with an optional ready-made UI.
 
-Package version: **1.0.1**
+Package version: **1.0.2**
 
 ```ts
 import { Component, signal } from '@angular/core';
@@ -54,18 +54,18 @@ The UI and controller are independent; use either or combine them.
 
 | Topic                      | Read                                                                                                                                  |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Overview                   | [Overview](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.1/docs/datepicker/overview.md)                     |
-| Picker layout and widths   | [Picker layout and widths](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.1/docs/datepicker/layout.md)       |
-| Install                    | [Install](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.1/docs/datepicker/installation.md)                  |
-| API reference              | [API reference](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.1/docs/datepicker/api.md)                     |
-| Quick start                | [Quick start](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.1/docs/datepicker/quick-start.md)               |
-| Formatting dates and times | [Formatting dates and times](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.1/docs/datepicker/formatting.md) |
-| Headless usage             | [Headless usage](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.1/docs/datepicker/headless.md)               |
-| Forms                      | [Forms](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.1/docs/datepicker/forms.md)                           |
-| Keyboard and RTL           | [Keyboard and RTL](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.1/docs/datepicker/keyboard-and-rtl.md)     |
-| Theming                    | [Theming](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.1/docs/datepicker/theming.md)                       |
-| Accessibility              | [Accessibility](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.1/docs/datepicker/accessibility.md)           |
-| Scope and limits           | [Scope and limits](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.1/docs/datepicker/scope-and-limits.md)     |
-| Date and time              | [Date and time](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.1/docs/datepicker/date-and-time.md)           |
-| Time zones and DST         | [Time zones and DST](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.1/docs/datepicker/time-zones-and-dst.md) |
-| Design notes               | [Design notes](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.1/docs/datepicker/design-notes.md)             |
+| Overview                   | [Overview](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.2/docs/datepicker/overview.md)                     |
+| Picker layout and widths   | [Picker layout and widths](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.2/docs/datepicker/layout.md)       |
+| Install                    | [Install](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.2/docs/datepicker/installation.md)                  |
+| API reference              | [API reference](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.2/docs/datepicker/api.md)                     |
+| Quick start                | [Quick start](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.2/docs/datepicker/quick-start.md)               |
+| Formatting dates and times | [Formatting dates and times](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.2/docs/datepicker/formatting.md) |
+| Headless usage             | [Headless usage](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.2/docs/datepicker/headless.md)               |
+| Forms                      | [Forms](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.2/docs/datepicker/forms.md)                           |
+| Keyboard and RTL           | [Keyboard and RTL](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.2/docs/datepicker/keyboard-and-rtl.md)     |
+| Theming                    | [Theming](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.2/docs/datepicker/theming.md)                       |
+| Accessibility              | [Accessibility](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.2/docs/datepicker/accessibility.md)           |
+| Scope and limits           | [Scope and limits](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.2/docs/datepicker/scope-and-limits.md)     |
+| Date and time              | [Date and time](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.2/docs/datepicker/date-and-time.md)           |
+| Time zones and DST         | [Time zones and DST](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.2/docs/datepicker/time-zones-and-dst.md) |
+| Design notes               | [Design notes](https://github.com/abdelfattahqandil21-oss/Revinia/blob/datepicker/v1.0.2/docs/datepicker/design-notes.md)             |

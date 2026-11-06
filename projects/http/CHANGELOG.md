@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2
+
+- No package-specific consumer changes; version synchronized under the Rivinia 1.0 release group.
+
 ## 1.0.1
 
 - Documentation: README restructured into docs/http/ pages; stale pre-1.0 wording removed.

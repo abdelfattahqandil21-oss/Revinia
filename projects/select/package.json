@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/select",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Headless select behavior for Angular: options, search filter, single/multi value.",
   "keywords": [
     "angular",
@@ -16,7 +16,7 @@
     "url": "git+https://github.com/abdelfattahqandil21-oss/Revinia.git",
     "directory": "projects/select"
   },
-  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/select/v1.0.0/projects/select#readme",
+  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/select/v1.0.2/projects/select#readme",
   "bugs": {
     "url": "https://github.com/abdelfattahqandil21-oss/Revinia/issues"
   },

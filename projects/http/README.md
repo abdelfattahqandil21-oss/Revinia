@@ -5,7 +5,7 @@
 
 A typed Angular HTTP client for Observable requests and reactive resources.
 
-Package version: **1.0.1**
+Package version: **1.0.2**
 
 ```ts
 import { Service } from '@angular/core';
@@ -47,8 +47,8 @@ ng add @rivinia/http
 
 | Topic | Read |
 | --- | --- |
-| URLs and services | [URLs and services](https://github.com/abdelfattahqandil21-oss/Revinia/blob/http/v1.0.1/docs/http/urls-and-services.md) |
-| Reactive resources | [Reactive resources](https://github.com/abdelfattahqandil21-oss/Revinia/blob/http/v1.0.1/docs/http/resources.md) |
-| Response envelopes and errors | [Response envelopes and errors](https://github.com/abdelfattahqandil21-oss/Revinia/blob/http/v1.0.1/docs/http/envelopes-and-errors.md) |
-| API reference | [API reference](https://github.com/abdelfattahqandil21-oss/Revinia/blob/http/v1.0.1/docs/http/api.md) |
-| Testing | [Testing](https://github.com/abdelfattahqandil21-oss/Revinia/blob/http/v1.0.1/docs/http/testing.md) |
+| URLs and services | [URLs and services](https://github.com/abdelfattahqandil21-oss/Revinia/blob/http/v1.0.2/docs/http/urls-and-services.md) |
+| Reactive resources | [Reactive resources](https://github.com/abdelfattahqandil21-oss/Revinia/blob/http/v1.0.2/docs/http/resources.md) |
+| Response envelopes and errors | [Response envelopes and errors](https://github.com/abdelfattahqandil21-oss/Revinia/blob/http/v1.0.2/docs/http/envelopes-and-errors.md) |
+| API reference | [API reference](https://github.com/abdelfattahqandil21-oss/Revinia/blob/http/v1.0.2/docs/http/api.md) |
+| Testing | [Testing](https://github.com/abdelfattahqandil21-oss/Revinia/blob/http/v1.0.2/docs/http/testing.md) |

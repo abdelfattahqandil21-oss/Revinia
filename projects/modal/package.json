@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/modal",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Headless modal manager for Angular: stack/queue strategies, typed results, guards, ownership.",
   "keywords": [
     "angular",
@@ -22,7 +22,7 @@
     "url": "git+https://github.com/abdelfattahqandil21-oss/Revinia.git",
     "directory": "projects/modal"
   },
-  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/modal/v1.0.0/projects/modal#readme",
+  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/modal/v1.0.2/projects/modal#readme",
   "bugs": {
     "url": "https://github.com/abdelfattahqandil21-oss/Revinia/issues"
   },

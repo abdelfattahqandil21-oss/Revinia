@@ -1,7 +1,7 @@
 import { Rule, SchematicContext, SchematicsException, Tree } from '@angular-devkit/schematics';
 
 export interface NgAddOptions {
-  languages?: string;
+  languages?: string | string[];
   detectBrowser?: boolean;
   project?: string;
 }
@@ -31,7 +31,7 @@ const STARTER = (ids: string[], detectBrowser: boolean): string => {
       return `      { id: '${id}', nativeName: '${nativeName}', dir: '${dir}' },`;
     })
     .join('\n');
-  const detect = detectBrowser ? ',\n    detectBrowser: true' : '';
+  const detect = detectBrowser ? '\n    detectBrowser: true' : '';
   return (
     `provideRiviniaI18n({\n` +
     `    // Dictionaries: public/i18n/{id}.json (default jsonLoader)\n` +
@@ -46,7 +46,16 @@ const STARTER = (ids: string[], detectBrowser: boolean): string => {
  * Never trusts raw input: strips quotes/whitespace, lowercases, validates
  * BCP-47-ish tags, dedupes. Throws a clear error instead of emitting code.
  */
-export function parseLanguageIds(raw: string | undefined): string[] {
+export function parseLanguageIds(raw: string | string[] | undefined): string[] {
+  if (Array.isArray(raw)) {
+    const ids = [...new Set(raw.map((id) => id.trim().toLowerCase()).filter(Boolean))];
+    if (ids.length === 0) return ['ar', 'en'];
+    const bad = ids.filter((id) => !/^[a-z]{2,8}(-[a-z0-9]{2,8})?$/.test(id));
+    if (bad.length > 0) {
+      throw new SchematicsException(`[rivinia/i18n] invalid language id(s): ${bad.join(', ')}.`);
+    }
+    return ids;
+  }
   if (!raw || raw.trim() === '') return ['ar', 'en'];
   // Accept bare lists (`ar, en`), quoted parts (`'ar', "en"`), and bracketed
   // arrays (`[ar, en]`, `['ar','en']`) — then validate strictly regardless.

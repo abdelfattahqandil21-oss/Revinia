@@ -5,7 +5,7 @@
 
 A headless Angular table controller with typed columns, spans, selection, and optional grid UI.
 
-Package version: **1.0.1**
+Package version: **1.0.2**
 
 ```ts
 import { Component } from '@angular/core';
@@ -56,14 +56,14 @@ The UI and controller are independent; use either or combine them.
 
 | Topic | Read |
 | --- | --- |
-| Overview | [Overview](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.1/docs/table/overview.md) |
-| Install | [Install](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.1/docs/table/installation.md) |
-| Quick start | [Quick start](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.1/docs/table/quick-start.md) |
-| Columns | [Columns](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.1/docs/table/columns.md) |
-| Row and column spans | [Row and column spans](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.1/docs/table/spans.md) |
-| Selection | [Selection](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.1/docs/table/selection.md) |
-| Paging and state | [Paging and state](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.1/docs/table/paging-and-state.md) |
-| Ready-made UI | [Ready-made UI](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.1/docs/table/ready-made-ui.md) |
-| Theming | [Theming](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.1/docs/table/theming.md) |
-| Accessibility | [Accessibility](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.1/docs/table/accessibility.md) |
-| Scope and limits | [Scope and limits](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.1/docs/table/scope-and-limits.md) |
+| Overview | [Overview](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.2/docs/table/overview.md) |
+| Install | [Install](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.2/docs/table/installation.md) |
+| Quick start | [Quick start](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.2/docs/table/quick-start.md) |
+| Columns | [Columns](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.2/docs/table/columns.md) |
+| Row and column spans | [Row and column spans](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.2/docs/table/spans.md) |
+| Selection | [Selection](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.2/docs/table/selection.md) |
+| Paging and state | [Paging and state](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.2/docs/table/paging-and-state.md) |
+| Ready-made UI | [Ready-made UI](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.2/docs/table/ready-made-ui.md) |
+| Theming | [Theming](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.2/docs/table/theming.md) |
+| Accessibility | [Accessibility](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.2/docs/table/accessibility.md) |
+| Scope and limits | [Scope and limits](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.2/docs/table/scope-and-limits.md) |
