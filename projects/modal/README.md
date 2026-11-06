@@ -30,9 +30,9 @@ npm install @rivinia/modal
 
 ## Quick start
 
-1. Install the package and configure its provider or schematic when required.
-2. Use the entry point shown in the example above.
-3. Mount the host and open a modal from the screen.
+1. Register `provideRiviniaModal()` and mount `RiviniaModalHost`.
+2. Open typed modal content from a component.
+3. Render the modal host and handle its typed result.
 
 ## Two ways to use it
 
