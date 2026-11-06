@@ -30,9 +30,9 @@ npm install @rivinia/datepicker
 
 ## Quick start
 
-1. Install the package and configure its provider or schematic when required.
-2. Use the entry point shown in the example above.
-3. Render the field on the screen and pick a date.
+1. Install the package and import `RiviniaDatepickerComponent`.
+2. Bind a `RiviniaDate | null` signal to `[(value)]`.
+3. Render the field and select a date.
 
 ## Two ways to use it
 
