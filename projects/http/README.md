@@ -31,9 +31,9 @@ ng add @rivinia/http
 
 ## Quick start
 
-1. Install the package and configure its provider or schematic when required.
-2. Use the entry point shown in the example above.
-3. Subscribe in the feature and render the response.
+1. Configure `provideHttpClient()` and `provideRiviniaHttp()`.
+2. Inject `RiviniaHttp` in a service and compose an endpoint URL.
+3. Render the typed response in a feature.
 
 ## Compatibility
 
