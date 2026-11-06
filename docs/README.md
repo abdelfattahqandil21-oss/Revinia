@@ -6,7 +6,7 @@ Use the package README in `projects/<package>/` for its public setup and API. Th
 
 | Need | Canonical location | Status and ownership |
 | --- | --- | --- |
-| Package APIs and consumer guidance | `projects/<package>/README.md`, `docs/{i18n,menu,select,theme}/` | Current; maintained with the package |
+| Package APIs and consumer guidance | `projects/<package>/README.md`, `docs/{datepicker,env,http,i18n,menu,modal,select,table,theme,toast}/` | Current; maintained with the package |
 | Architecture policy and workflows | [`engineering/README.md`](engineering/README.md) | Current policy and procedures |
 | Durable architecture decisions | [Decision index](decisions/README.md); stable entry point [`DECISIONS.md`](DECISIONS.md) | Append-only records, one file per decision |
 | Feature specifications and designs | `projects/<package>/specifications/` plus the [cross-library index](specifications/README.md) | Package-owned records stay with their owners; each record states its status |
