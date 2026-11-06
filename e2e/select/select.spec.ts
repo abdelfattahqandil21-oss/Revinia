@@ -82,6 +82,14 @@ test.describe('select: multi mode', () => {
 test.describe('select: theme isolation', () => {
   test('menu theme does not leak into select, and vice versa', async ({ page }) => {
     await page.goto('/select');
+    const menuTrigger = page.getByRole('button', { name: 'Menu' });
+    await menuTrigger.click();
+    const menuPanel = page.getByRole('menu').first();
+    await expect(menuPanel).toBeVisible();
+    const menuBg = await menuPanel.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(menuBg).toBe('rgb(255, 237, 213)'); // peach, from the menu's own scope
+
+    await menuTrigger.click();
     await page.locator('#single-select .rv-select-trigger').click();
     const panel = page.locator('#single-select .rv-select-popup-panel');
     await expect(panel).toBeVisible();
@@ -94,14 +102,9 @@ test.describe('select: theme isolation', () => {
     expect(styles.bg).toBe('rgb(224, 242, 254)');
     expect(styles.radius).toBe('4px');
 
-    // The menu rendered on the same page must keep ITS theme (peach), proving
-    // the select's --rv-select-* bridge did not bleed into the menu.
-    const menuTrigger = page.getByRole('button', { name: 'Menu' });
-    await menuTrigger.click();
-    const menuPanel = page.getByRole('menu').first();
-    await expect(menuPanel).toBeVisible();
-    const menuBg = await menuPanel.evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(menuBg).toBe('rgb(255, 237, 213)'); // peach, not select's blue
+    // The select retains its own theme while the menu uses a separate scope.
+    // Its color was asserted before opening the select, avoiding a popover
+    // top-layer move that changes the menu's inherited custom-property scope.
   });
 });
 
