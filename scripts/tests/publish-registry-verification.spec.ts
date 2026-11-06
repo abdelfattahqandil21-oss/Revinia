@@ -27,6 +27,21 @@ describe('post-publish registry verification', () => {
     })).rejects.toThrow('registry integrity mismatch after publish');
   });
 
+  it('allows three minutes for registry propagation by default', async () => {
+    const readIntegrity = vi.fn().mockResolvedValueOnce(null).mockResolvedValue('sha512-expected');
+    const wait = vi.fn().mockResolvedValue(undefined);
+
+    await expect(verifyPublishedIntegrity({
+      name: '@rivinia/theme',
+      version: '1.0.1',
+      expectedIntegrity: 'sha512-expected',
+      readIntegrity,
+      wait,
+    })).resolves.toBe('sha512-expected');
+    expect(readIntegrity).toHaveBeenCalledTimes(2);
+    expect(wait).toHaveBeenCalledTimes(1);
+  });
+
   it('fails after the bounded propagation window if the version stays absent', async () => {
     const wait = vi.fn().mockResolvedValue(undefined);
     await expect(verifyPublishedIntegrity({
