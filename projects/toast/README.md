@@ -31,9 +31,9 @@ ng add @rivinia/toast
 
 ## Quick start
 
-1. Install the package and configure its provider or schematic when required.
-2. Use the entry point shown in the example above.
-3. Render the list and show a notification from the screen.
+1. Register `provideRiviniaToast()` and import `RiviniaToastList`.
+2. Inject the toast service in a component.
+3. Render the list and show a notification.
 
 ## Two ways to use it
 
