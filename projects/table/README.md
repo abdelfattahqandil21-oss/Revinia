@@ -5,6 +5,8 @@
 
 A headless Angular table controller with typed columns, spans, selection, and optional grid UI.
 
+Package version: **1.0.1**
+
 ```ts
 import { Component } from '@angular/core';
 import { createTable, tableColumn } from '@rivinia/table';
