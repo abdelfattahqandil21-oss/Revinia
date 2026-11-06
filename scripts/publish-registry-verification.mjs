@@ -1,5 +1,5 @@
-/** Retry registry reads because publish can become visible after a short delay. */
-export async function verifyPublishedIntegrity({ name, version, expectedIntegrity, readIntegrity, attempts = 12, delayMs = 5000, wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
+/** Retry registry reads for up to three minutes because scoped publishes can propagate slowly. */
+export async function verifyPublishedIntegrity({ name, version, expectedIntegrity, readIntegrity, attempts = 36, delayMs = 5000, wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     const publishedIntegrity = await readIntegrity();
     if (publishedIntegrity === expectedIntegrity) return publishedIntegrity;
