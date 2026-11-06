@@ -5,6 +5,8 @@
 
 A headless Gregorian date and time picker for Angular, with an optional ready-made UI.
 
+Package version: **1.0.1**
+
 ```ts
 import { Component, signal } from '@angular/core';
 import { RiviniaDatepickerComponent } from '@rivinia/datepicker/ui';
