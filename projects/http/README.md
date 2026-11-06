@@ -5,6 +5,8 @@
 
 A typed Angular HTTP client for Observable requests and reactive resources.
 
+Package version: **1.0.1**
+
 ```ts
 import { Service } from '@angular/core';
 import { injectRiviniaHttp, joinUrl } from '@rivinia/http';
