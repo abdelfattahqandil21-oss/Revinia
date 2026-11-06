@@ -208,3 +208,21 @@ The rendering half, usable without the trigger.
 | ----------- | ------------- | ------------------------- |
 | `picked`    | `RiviniaDate` | The user committed a day. |
 | `dismissed` | `void`        | The user pressed Escape.  |
+
+## CSS classes and state hooks
+
+Class names are a stable override surface: `.rv-datepicker-field`,
+`.rv-datepicker-trigger`, `.rv-datepicker-clear`, `.rv-datepicker-panel`,
+`.rv-calendar`, `.rv-calendar-header`, `.rv-calendar-nav`,
+`.rv-calendar-heading`, `.rv-calendar-grid`, `.rv-calendar-weekday`,
+`.rv-calendar-day`, `.rv-calendar-option`, `.rv-datetimepicker-panel`,
+`.rv-datetimepicker-zone`, `.rv-datetimepicker-warning`,
+`.rv-datetimepicker-action`, `.rv-datetimepicker-offsets`,
+`.rv-datetimepicker-offset`, `.rv-time-row`, `.rv-time-fields`,
+`.rv-time-input`, `.rv-time-meridiem`, `.rv-time-meridiem-button`,
+`.rv-time-toggle`, `.rv-time-options`, `.rv-time-option-column`,
+`.rv-time-option-heading`, `.rv-time-option-list`, `.rv-time-option`,
+`.rv-time-actions`, `.rv-time-now`, `.rv-time-ok`. State hooks: `data-open`,
+`data-disabled`, `data-theme` (host), `data-date`, `aria-selected`,
+`aria-current="date"`, `data-month`, `data-year`, `aria-pressed` (meridiem and
+DST-offset choice), `aria-valuenow` (spinbuttons).

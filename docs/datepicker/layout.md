@@ -29,3 +29,7 @@ readable calendar:
 
 Set `--rv-datepicker-panel-width` **together with** `--rv-calendar-day-size` if
 you resize the cells; otherwise the panel grows and the grid stays centred.
+
+All sizes are **`rem`**, so the picker follows the user's text-size preference
+and the application's root font size. Only hairlines (`1px`), focus rings
+(`2px`) and the 16px icon box stay in `px`.
