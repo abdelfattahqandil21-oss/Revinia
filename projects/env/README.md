@@ -87,5 +87,3 @@ MIT.
 | Topic | Read |
 | --- | --- |
 | Scaffold environments | [Scaffold environments](https://github.com/abdelfattahqandil21-oss/Revinia/blob/env/v1.0.1/docs/env/scaffolding.md) |
-| Use the selected environment | [Use the selected environment](https://github.com/abdelfattahqandil21-oss/Revinia/blob/env/v1.0.1/docs/env/selected-environment.md) |
-| API reference | [API reference](https://github.com/abdelfattahqandil21-oss/Revinia/blob/env/v1.0.1/docs/env/api.md) |
