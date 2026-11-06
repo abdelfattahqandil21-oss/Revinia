@@ -1,19 +1,19 @@
 # The 1.0 API surface
 
-S8 of [`docs/specifications/1.0-readiness.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/specifications/1.0-readiness.md),
+S8 of [`docs/specifications/1.0-readiness.md`](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/main/docs/specifications/1.0-readiness.md),
 under D88. This is the list of names and defaults the four 1.0 packages ship with.
 Every symbol below was read off the entry point that publishes it, and
-[`scripts/api-surface.mjs`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/scripts/api-surface.mjs)
+[`scripts/api-surface.mjs`](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/main/scripts/api-surface.mjs)
 plus its snapshot
-[`scripts/api-surface.snapshot.json`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/scripts/api-surface.snapshot.json)
+[`scripts/api-surface.snapshot.json`](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/main/scripts/api-surface.snapshot.json)
 pin the eight lists, so changing one is a deliberate diff rather than an accident
 in a refactor. **79 published names across 8 entry points.**
 
 What this document freezes is what gets published, and publishing is a human step:
 the commands are in
-[`docs/releases/1.0/PUBLISH-RUNBOOK.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/releases/1.0/PUBLISH-RUNBOOK.md)
+[`docs/releases/1.0/PUBLISH-RUNBOOK.md`](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/main/docs/releases/1.0/PUBLISH-RUNBOOK.md)
 and the soak that promotes an rc to `1.0.0` is **S8 — the soak** in
-[`docs/releases/1.0/HUMAN-CHECKS.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/releases/1.0/HUMAN-CHECKS.md).
+[`docs/releases/1.0/HUMAN-CHECKS.md`](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/main/docs/releases/1.0/HUMAN-CHECKS.md).
 Neither has been run — except that the runbook's step 2 ran for
 **all four packages** on 2026-11-03: `1.0.0-rc.1` of each is on `next`, cut from the
 tags `theme/v1.0.0-rc.1` at `3cb8b51`, `select/v1.0.0-rc.1` at `1e78c6c`, and
@@ -150,7 +150,7 @@ writing the freeze.
 ## `@rivinia/i18n` — 35
 
 The consumer-facing tier table (Stable / Experimental / Internal) is in
-[`docs/i18n/api.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/i18n/api.md).
+[`docs/i18n/api.md`](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/main/docs/i18n/api.md).
 The freeze adds one thing it does not say: which of those names carry no contract.
 
 | Group                 | Symbols                                                                                                                                                          | Verdict                                                                                                                          |

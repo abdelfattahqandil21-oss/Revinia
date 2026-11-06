@@ -1,5 +1,9 @@
 # @rivinia/i18n
 
+## 1.0.3
+
+- Correct package repository, documentation, homepage, and issue links after the GitHub repository rename.
+
 ## 1.0.2
 
 - Fixed the `ng add` language selection: it now offers a multi-select prompt and generates valid config when browser-language detection is enabled.

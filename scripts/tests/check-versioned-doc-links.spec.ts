@@ -38,7 +38,7 @@ function fixture(ref = 'menu/v1.2.3', changelogVersion = '1.2.3') {
   writeFileSync(join(root, 'projects', 'menu', 'package.json'), JSON.stringify({ name: '@rivinia/menu', version: '1.2.3' }));
   writeFileSync(
     join(root, 'projects', 'menu', 'README.md'),
-    `Package version: **1.2.3**\n[API](https://github.com/abdelfattahqandil21-oss/Revinia/blob/${ref}/docs/menu/api.md)\n`,
+    `Package version: **1.2.3**\n[API](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/${ref}/docs/menu/api.md)\n`,
   );
   writeFileSync(join(root, 'projects', 'menu', 'CHANGELOG.md'), `## ${changelogVersion}\n`);
   writeFileSync(join(root, 'docs', 'menu', 'api.md'), '# API\n');
@@ -81,7 +81,7 @@ describe('versioned package documentation links', () => {
   it('rejects tree/main and reference-style moving repository links', () => {
     const root = fixture();
     const path = join(root, 'projects', 'menu', 'README.md');
-    writeFileSync(path, '[API]: https://github.com/abdelfattahqandil21-oss/Revinia/tree/main/docs/menu/api.md\n');
+    writeFileSync(path, '[API]: https://github.com/abdelfattahqandil21-oss/Rivinia/tree/main/docs/menu/api.md\n');
     expect(validateVersionedDocLinks({ root, packageName: '@rivinia/menu', version: '1.2.3' }).join('\n')).toContain(
       'menu/v1.2.3',
     );
@@ -92,8 +92,8 @@ describe('versioned package documentation links', () => {
     const path = join(root, 'projects', 'menu', 'README.md');
     writeFileSync(path, [
       'Package version: **1.2.3**',
-      '[API](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.2.3/docs/menu/api.md)',
-      '[Moving](https://github.com/AbdelfattahQandil21-oss/Revinia/blob/main/docs/menu/api.md)',
+      '[API](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/menu/v1.2.3/docs/menu/api.md)',
+      '[Moving](https://github.com/AbdelfattahQandil21-oss/Rivinia/blob/main/docs/menu/api.md)',
       '',
     ].join('\n'));
     expect(validateVersionedDocLinks({ root, packageName: '@rivinia/menu', version: '1.2.3' }).join('\n')).toContain(
@@ -107,8 +107,8 @@ describe('versioned package documentation links', () => {
     writeFileSync(
       path,
       'Package version: **1.2.3**\n' +
-        '[API](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.2.3/docs/menu/api.md)\n' +
-        '[Raw API](https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/menu/v1.2.3/docs/menu/api.md)\n',
+        '[API](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/menu/v1.2.3/docs/menu/api.md)\n' +
+        '[Raw API](https://raw.githubusercontent.com/abdelfattahqandil21-oss/Rivinia/menu/v1.2.3/docs/menu/api.md)\n',
     );
     expect(validateVersionedDocLinks({ root, packageName: '@rivinia/menu', version: '1.2.3' })).toEqual([]);
   });
@@ -118,7 +118,7 @@ describe('versioned package documentation links', () => {
     const path = join(root, 'projects', 'menu', 'README.md');
     writeFileSync(
       path,
-      'Package version: **1.2.3**\n[API](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.2.3/docs/menu/api.md)\n[Logo](https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/main/docs/menu/api.md)\n',
+      'Package version: **1.2.3**\n[API](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/menu/v1.2.3/docs/menu/api.md)\n[Logo](https://raw.githubusercontent.com/abdelfattahqandil21-oss/Rivinia/main/docs/menu/api.md)\n',
     );
     expect(validateVersionedDocLinks({ root, packageName: '@rivinia/menu', version: '1.2.3' }).join('\n')).toContain(
       'asset links must use menu/v1.2.3',
@@ -156,14 +156,14 @@ describe('versioned package documentation links', () => {
     writeTarball(tarballPath, {
       'package/package.json': manifest,
       'package/CHANGELOG.md': changelog,
-      'package/README.md': 'Package version: **1.2.3**\n[API](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.2.3/docs/menu/api.md)\n',
+      'package/README.md': 'Package version: **1.2.3**\n[API](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/menu/v1.2.3/docs/menu/api.md)\n',
     });
     expect(validateVersionedDocLinks({ root, packageName: '@rivinia/menu', version: '1.2.3', tarballPath })).toEqual([]);
 
     writeTarball(tarballPath, {
       'package/package.json': manifest,
       'package/CHANGELOG.md': changelog,
-      'package/README.md': 'Package version: **1.2.3**\n[API](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/menu/api.md)\n',
+      'package/README.md': 'Package version: **1.2.3**\n[API](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/main/docs/menu/api.md)\n',
     });
     expect(validateVersionedDocLinks({ root, packageName: '@rivinia/menu', version: '1.2.3', tarballPath }).join('\n')).toContain(
       'menu/v1.2.3',
@@ -203,7 +203,7 @@ describe('versioned package documentation links', () => {
     writeTarball(tarballPath, {
       'package/package.json': JSON.stringify({ name: '@rivinia/menu', version: '1.2.3' }),
       'package/CHANGELOG.md': '## 1.2.3\n',
-      'package/README.md': 'Package version: **1.2.3**\n[API](https://github.com/abdelfattahqandil21-oss/Revinia/blob/menu/v1.2.3/docs/menu/api.md)\n\nChanged after the tag.\n',
+      'package/README.md': 'Package version: **1.2.3**\n[API](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/menu/v1.2.3/docs/menu/api.md)\n\nChanged after the tag.\n',
     });
     expect(validateVersionedDocLinks({
       root, packageName: '@rivinia/menu', version: '1.2.3', tarballPath, verifyTagSnapshot: true,

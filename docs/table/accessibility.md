@@ -2,7 +2,7 @@
 
 Understand the controls’ accessible names, roles, and focus behavior.
 
-[Back to @rivinia/table README](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.1/projects/table/README.md)
+[Back to @rivinia/table README](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/table/v1.0.1/projects/table/README.md)
 
 ## Accessibility
 

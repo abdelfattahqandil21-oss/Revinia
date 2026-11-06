@@ -2,7 +2,7 @@
 
 Build the first working example from the package quick start.
 
-[Back to @rivinia/table README](https://github.com/abdelfattahqandil21-oss/Revinia/blob/table/v1.0.1/projects/table/README.md)
+[Back to @rivinia/table README](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/table/v1.0.1/projects/table/README.md)
 
 ## Quick start
 

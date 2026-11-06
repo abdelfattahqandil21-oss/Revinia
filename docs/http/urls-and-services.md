@@ -2,7 +2,7 @@
 
 Configure HTTP and compose typed endpoint services.
 
-[Back to @rivinia/http README](https://github.com/abdelfattahqandil21-oss/Revinia/blob/http/v1.0.1/projects/http/README.md)
+[Back to @rivinia/http README](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/http/v1.0.1/projects/http/README.md)
 
 ## Install and configure
 

@@ -2,7 +2,7 @@
 
 Understand top-layer rendering and list management.
 
-[Back to @rivinia/toast README](https://github.com/abdelfattahqandil21-oss/Revinia/blob/toast/v1.0.1/projects/toast/README.md)
+[Back to @rivinia/toast README](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/toast/v1.0.1/projects/toast/README.md)
 
 ## The list is in the top layer
 

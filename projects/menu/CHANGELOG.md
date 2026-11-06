@@ -1,5 +1,9 @@
 # @rivinia/menu
 
+## 1.0.3
+
+- Correct package repository, documentation, homepage, and issue links after the GitHub repository rename.
+
 ## 1.0.2
 
 - No package-specific consumer changes; version synchronized under the Rivinia 1.0 release group.
@@ -106,7 +110,7 @@ No change to the headless controller, the panel's CSS or its positioning.
 This is a **minor** release: the pointer-open interaction changed on purpose.
 **Nothing to do unless you relied on a click pre-selecting the first row.**
 The full release entry is in the repository
-[CHANGELOG](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/CHANGELOG.md);
+[CHANGELOG](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/main/CHANGELOG.md);
 what a consumer needs is here.
 
 The panel is now `border-box` with a `22rem` cap (`--rv-menu-max-width`), and

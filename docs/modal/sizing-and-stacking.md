@@ -2,7 +2,7 @@
 
 Tune modal sizing and understand stack ownership.
 
-[Back to @rivinia/modal README](https://github.com/abdelfattahqandil21-oss/Revinia/blob/modal/v1.0.1/projects/modal/README.md)
+[Back to @rivinia/modal README](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/modal/v1.0.1/projects/modal/README.md)
 
 ## Sizing, stacking and who opened it
 

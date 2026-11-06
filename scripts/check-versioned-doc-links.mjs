@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const repoSlug = 'abdelfattahqandil21-oss/Revinia';
+const repoSlug = 'abdelfattahqandil21-oss/Rivinia';
 
 function isExactSemver(version) {
   if (typeof version !== 'string') return false;
@@ -113,7 +113,8 @@ export function validateVersionedDocLinks({
 
   let checkedDocs = 0;
   const linkedPaths = new Set();
-  const repoUrlPattern = /https:\/\/(?:github\.com\/abdelfattahqandil21-oss\/Revinia|raw\.githubusercontent\.com\/abdelfattahqandil21-oss\/Revinia)\/[A-Za-z0-9._~!$&'*+,;=:@%\/-]+/gi;
+  const escapedRepoSlug = repoSlug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const repoUrlPattern = new RegExp(`https://(?:github\\.com/${escapedRepoSlug}|raw\\.githubusercontent\\.com/${escapedRepoSlug})/[A-Za-z0-9._~!$&'*+,;=:@%/-]+`, 'gi');
   for (const match of readme.matchAll(repoUrlPattern)) {
     const raw = match[0].replace(/[.,;]+$/, '');
     const url = new URL(raw);

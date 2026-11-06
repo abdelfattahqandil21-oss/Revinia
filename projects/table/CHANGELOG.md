@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.3
+
+- Correct package repository, documentation, homepage, and issue links after the GitHub repository rename.
+
 ## 1.0.2
 
 - No package-specific consumer changes; version synchronized under the Rivinia 1.0 release group.

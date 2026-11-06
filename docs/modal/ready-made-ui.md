@@ -2,7 +2,7 @@
 
 Render a modal with the optional UI entry point.
 
-[Back to @rivinia/modal README](https://github.com/abdelfattahqandil21-oss/Revinia/blob/modal/v1.0.1/projects/modal/README.md)
+[Back to @rivinia/modal README](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/modal/v1.0.1/projects/modal/README.md)
 
 ## Ready-made UI
 

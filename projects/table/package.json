@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/table",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Headless Angular table: typed columns, sorting, filtering, pagination, selection and real row/column spans.",
   "keywords": [
     "angular",
@@ -21,7 +21,7 @@
     "url": "git+https://github.com/abdelfattahqandil21-oss/Rivinia.git",
     "directory": "projects/table"
   },
-  "homepage": "https://github.com/abdelfattahqandil21-oss/Rivinia/tree/table/v1.0.2/projects/table#readme",
+  "homepage": "https://github.com/abdelfattahqandil21-oss/Rivinia/tree/table/v1.0.3/projects/table#readme",
   "bugs": {
     "url": "https://github.com/abdelfattahqandil21-oss/Rivinia/issues"
   },

@@ -1,5 +1,9 @@
 # @rivinia/select
 
+## 1.0.3
+
+- Correct package repository, documentation, homepage, and issue links after the GitHub repository rename.
+
 ## 1.0.2
 
 - No package-specific consumer changes; version synchronized under the Rivinia 1.0 release group.
@@ -53,7 +57,7 @@ in `README.md`. No input, output, export, role, token or behavior changed.
 - **A custom `listTemplate` must give its rows a `menuitem*` role and
   `tabindex="-1"`.** Without them the menu owns elements it may not own and the
   scrollport is not focusable (measured: critical + serious). The recipe in
-  [`docs/select/recipes.md`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/main/docs/select/recipes.md)
+  [`docs/select/recipes.md`](https://github.com/abdelfattahqandil21-oss/Rivinia/blob/main/docs/select/recipes.md)
   shows the attributes.
 - **The trigger's name includes the visible value.** `aria-labelledby` composes
   the caption (or `ariaLabel`) with the value, so the accessible name always
