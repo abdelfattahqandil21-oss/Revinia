@@ -1,5 +1,9 @@
 # @rivinia/select
 
+## 1.0.1 (prepared; not published)
+
+- Documentation links updated to the 1.0.1 tag.
+
 ## 1.0.0
 
 - First stable release. Popup mechanics are provided by @rivinia/popup; Select keeps its documented host-specific keyboard and focus behavior.

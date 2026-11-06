@@ -4,12 +4,12 @@
 [![license](https://img.shields.io/npm/l/@rivinia/select.svg)](https://www.npmjs.com/package/@rivinia/select)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/select/v1.0.0/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="340" />
+  <img src="https://raw.githubusercontent.com/abdelfattahqandil21-oss/Revinia/select/v1.0.1/assets/rivinia-abstract-mark-light.svg" alt="Rivinia" width="340" />
 </p>
 
 Angular select fields: an optional ready-made UI and the headless controller
 behind it — an option registry, an accent-insensitive filter, and a single or
-multi value. Package version: **1.0.0**.
+multi value. Package version: **1.0.1**.
 
 The `1.0.0` stable release follows the 1.0 release candidates; 0.x was experimental.
 
@@ -44,7 +44,7 @@ That is the whole field: type to filter, Tab into the list, Enter to pick,
 Escape back to the trigger, and a panel that stays attached to its trigger in a
 right-to-left form inside a left-to-right app. No service providers, no global
 styles to configure. The same page under
-[`projects/menu-e2e/src/app/pages/select.ts`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.0/projects/menu-e2e/src/app/pages/select.ts)
+[`projects/menu-e2e/src/app/pages/select.ts`](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.1/projects/menu-e2e/src/app/pages/select.ts)
 is what the popup conformance suite drives — `npx ng build menu-e2e` runs it
 locally.
 
@@ -154,21 +154,21 @@ which is the path this suite measures three times a day.
 `@rivinia/select` needs no feature to work that Angular itself does not need.
 The floor dates, the `@supports` gate, and what has never been run (including
 real Safari) are in
-[browser support](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.0/docs/browser-support.md).
+[browser support](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.1/docs/browser-support.md).
 
 ## Go further
 
 | Topic                                                                                        | Read                                                                                                                               |
 | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Every input, output, controller member and type, per entry point                             | [docs/select/api.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.0/docs/select/api.md)                     |
-| Signal Forms, Reactive Forms, `ngModel`, value types, ownership rules                        | [docs/select/forms.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.0/docs/select/forms.md)                 |
-| Keys, focus, the shipped ARIA, and the verification gaps                                     | [docs/select/accessibility.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.0/docs/select/accessibility.md) |
-| Headless: the controller surface and a complete custom dropdown                              | [docs/select/headless.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.0/docs/select/headless.md)           |
-| `optionTemplate` rows, paged data, a virtualised list, your own entrance animation           | [docs/select/recipes.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.0/docs/select/recipes.md)             |
-| `simple` vs `premium`, what premium actually paints, and its measured byte cost              | [docs/select/variants.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.0/docs/select/variants.md)           |
-| The select's tokens, classes, `data-*` hooks and forced-colors behaviour                     | [docs/select/theming.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.0/docs/select/theming.md)             |
-| Theming every Rivinia component — the cascade, light and dark, where an override has to live | [docs/theme/README.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.0/docs/theme/README.md)                 |
+| Every input, output, controller member and type, per entry point                             | [docs/select/api.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.1/docs/select/api.md)                     |
+| Signal Forms, Reactive Forms, `ngModel`, value types, ownership rules                        | [docs/select/forms.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.1/docs/select/forms.md)                 |
+| Keys, focus, the shipped ARIA, and the verification gaps                                     | [docs/select/accessibility.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.1/docs/select/accessibility.md) |
+| Headless: the controller surface and a complete custom dropdown                              | [docs/select/headless.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.1/docs/select/headless.md)           |
+| `optionTemplate` rows, paged data, a virtualised list, your own entrance animation           | [docs/select/recipes.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.1/docs/select/recipes.md)             |
+| `simple` vs `premium`, what premium actually paints, and its measured byte cost              | [docs/select/variants.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.1/docs/select/variants.md)           |
+| The select's tokens, classes, `data-*` hooks and forced-colors behaviour                     | [docs/select/theming.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.1/docs/select/theming.md)             |
+| Theming every Rivinia component — the cascade, light and dark, where an override has to live | [docs/theme/README.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.1/docs/theme/README.md)                 |
 
 Migration notes for each version live in
-[CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.0/projects/select/CHANGELOG.md).
+[CHANGELOG.md](https://github.com/abdelfattahqandil21-oss/Revinia/blob/select/v1.0.1/projects/select/CHANGELOG.md).
 MIT licensed.
