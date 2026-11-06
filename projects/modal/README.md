@@ -5,6 +5,8 @@
 
 An Angular modal manager with typed results, lifecycle policies, and optional ready-made UI.
 
+Package version: **1.0.1**
+
 ```ts
 const handle = this.manager.openModal<DeleteData, boolean>(this.deleteTemplate, {
   data: { id: user.id, name: user.name },
