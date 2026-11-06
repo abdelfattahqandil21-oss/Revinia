@@ -5,6 +5,8 @@
 
 A typed application environment contract and Angular CLI schematic.
 
+Package version: **1.0.1**
+
 ```ts
 import type { BaseEnvironment } from '@rivinia/env';
 export interface AppEnvironment extends BaseEnvironment {
