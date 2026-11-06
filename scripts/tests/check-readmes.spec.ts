@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { checkReadme, LINE_BUDGET, readManifest } from '../check-readmes.mjs';
+import { checkReadme, LINE_BUDGET, PACKAGES, readManifest } from '../check-readmes.mjs';
 
 /**
  * Two README rules are mechanical and fail the build:
@@ -28,6 +28,15 @@ function readme(text: string, allowOverBudget = false) {
 const lines = (count: number) => Array.from({ length: count }, () => 'text').join('\n');
 
 describe('line budget', () => {
+  it.each(PACKAGES)('fails a 201-line README for %s', (pkg) => {
+    const report = checkReadme({
+      pkg,
+      text: lines(LINE_BUDGET + 1),
+      manifest: { name: `@rivinia/${pkg}`, version: '1.0.0' },
+    });
+    expect(report.ok).toBe(false);
+    expect(report.problems.join('\n')).toMatch(/201 lines/);
+  });
   it(`fails a README longer than ${LINE_BUDGET} lines`, () => {
     const report = readme(lines(LINE_BUDGET + 1));
     expect(report.ok).toBe(false);
