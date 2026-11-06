@@ -196,9 +196,15 @@ export function validateGovernance({ root = repositoryRoot } = {}) {
         const short = name.slice('@rivinia/'.length);
         const manifest = readJson(`projects/${short}/package.json`, `projects/${short}/package.json`);
         const actual = manifest?.dependencies?.['@rivinia/popup'];
-        const expected = `^${groupVersion}`;
-        if (actual !== expected) {
-          problems.push(`projects/${short}/package.json: @rivinia/popup must be a regular dependency at ${expected}, got ${String(actual)}`);
+        const popupVersion = readJson('projects/popup/package.json', 'projects/popup/package.json')?.version;
+        const popupRange = typeof actual === 'string' && /^\^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(actual);
+        const popupRelease = typeof popupVersion === 'string' && /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(popupVersion);
+        const compatible = popupRange && popupRelease
+          && popupRange[1] === popupRelease[1]
+          && (Number(popupRange[2]) < Number(popupRelease[2])
+            || (Number(popupRange[2]) === Number(popupRelease[2]) && Number(popupRange[3]) <= Number(popupRelease[3])));
+        if (!compatible) {
+          problems.push(`projects/${short}/package.json: @rivinia/popup must be a regular caret dependency that accepts Popup ${String(popupVersion)}, got ${String(actual)}`);
         }
       }
     }

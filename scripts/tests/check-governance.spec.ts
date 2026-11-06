@@ -81,19 +81,28 @@ describe('governance validation', () => {
     expect(validateGovernance({ root }).join('\n')).toContain('versions are not synchronized');
   });
 
-  it('allows only the approved popup at 0.0.0 during synchronized group development', () => {
+  it('allows the approved popup at 0.0.0 during synchronized group development', () => {
     const root = fixture();
     writeFileSync(join(root, 'projects', 'popup', 'package.json'), JSON.stringify({ name: '@rivinia/popup', version: '0.0.0' }));
+    for (const short of ['select', 'menu']) {
+      const path = join(root, 'projects', short, 'package.json');
+      const manifest = JSON.parse(readFileSync(path, 'utf8'));
+      manifest.dependencies['@rivinia/popup'] = '^0.0.0';
+      writeFileSync(path, JSON.stringify(manifest));
+    }
     expect(validateGovernance({ root })).toEqual([]);
   });
 
-  it('rejects a select or menu popup dependency range that is not aligned with the group version', () => {
+  it('accepts a compatible Popup caret range and rejects a range that excludes its version', () => {
     const root = fixture();
     const path = join(root, 'projects', 'select', 'package.json');
     const manifest = JSON.parse(readFileSync(path, 'utf8'));
-    manifest.dependencies['@rivinia/popup'] = '^1.0.1';
+    manifest.dependencies['@rivinia/popup'] = '^1.0.0';
     writeFileSync(path, JSON.stringify(manifest));
-    expect(validateGovernance({ root }).join('\n')).toContain('@rivinia/popup must be a regular dependency at ^1.0.0');
+    expect(validateGovernance({ root })).toEqual([]);
+    manifest.dependencies['@rivinia/popup'] = '^2.0.0';
+    writeFileSync(path, JSON.stringify(manifest));
+    expect(validateGovernance({ root }).join('\n')).toContain('@rivinia/popup must be a regular caret dependency that accepts Popup 1.0.0');
   });
 
   it('rejects malformed package metadata instead of accepting matching arbitrary strings', () => {

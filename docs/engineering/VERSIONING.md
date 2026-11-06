@@ -12,25 +12,42 @@ A package's `projects/<name>/package.json` declares its workspace version. npm r
 
 ### Unified 1.0 group
 
-The synchronized group contains:
+The current synchronized group contains all eleven packages:
 
 - `@rivinia/menu`
 - `@rivinia/select`
 - `@rivinia/theme`
 - `@rivinia/i18n`
+- `@rivinia/popup`
+- `@rivinia/datepicker`
+- `@rivinia/env`
+- `@rivinia/http`
+- `@rivinia/modal`
+- `@rivinia/table`
+- `@rivinia/toast`
 
-Their workspace release versions must be identical at release. `@rivinia/popup` remains at `0.0.0` during development and is aligned only for a release. Any group release candidate or stable release is prepared and verified as a five-package set, with one shared version and coordinated release evidence. Package-specific immutable tags remain namespaced (`menu/v<version>`, etc.); the tags point to the same approved release commit unless the release owner records a justified exception. This policy does not authorize creating tags or publishing.
+All eleven workspace release versions must be identical at release. Package-specific immutable tags remain namespaced (`menu/v<version>`, etc.); the tags point to the same approved release commit unless the release owner records a justified exception. This policy does not authorize creating tags or publishing.
 
-- `@rivinia/popup` joined by D95 and ships in the group at release.
-- By explicit owner decision D97, the remaining six libraries also join `rivinia-1.0` for the all-library release line. The owner has requested local preparation of synchronized `1.0.0`; this does not assert that any stable package has been published. The independent packages retain their own API and dependency boundaries while their release versions are synchronized.
+- The original four members were menu, select, theme, and i18n. Popup joined by D95; D97 admitted the remaining six libraries to the same synchronized `rivinia-1.0` line. The group keeps independent package APIs and dependency boundaries; synchronization changes release coordination only.
 
 Introducing the shared popup runtime capability is a backward-compatible capability addition and uses a synchronized minor bump. SemVer's dependency FAQ classifies dependency updates without public API changes as compatible and says the bump level depends on whether the dependency update introduces functionality; dependency metadata alone without new capability may use patch. See [SemVer 2.0.0 FAQ](https://semver.org/#what-should-i-do-if-i-update-my-own-dependencies-without-changing-the-public-api).
 
-The remaining six packages—datepicker, env, http, modal, table and toast—remain independently versioned. The release group is checked by `pnpm check:governance`; the registry is not contacted by that local gate.
+The eleven-member group is checked by `pnpm check:governance`; the registry is not contacted by that local gate.
+
+### Publication channel
+
+The `.github/workflows/publish.yml` workflow is manually dispatched from `main`
+after all eleven immutable package tags point to the same approved commit. It
+builds and inspects exact tarballs, then publishes them through npm Trusted
+Publishing (GitHub OIDC) behind the `npm-production` Environment. No local npm
+write token or OTP is part of this process. See the
+[GitHub publishing runbook](../releases/1.0/GITHUB-PUBLISHING.md) for one-time
+account setup and release steps. A workflow dispatch remains an explicitly
+approved release action.
 
 ## Current support and verification matrix
 
-The table separates owner-declared lifecycle from what the audited source actually verified. D97 admitted the remaining six packages to the synchronized line. Current local work prepares the eleven-package `1.0.0` candidate; registry state remains the published versions shown in the left column until release. `Verified at base` means the prior audit ran those listed local gates at the exact base SHA; it is not a promise that the package is maintained for a range of versions.
+The table below is a historical snapshot at base `75c5038` from 2026-11-03. It separates owner-declared lifecycle from what that audit verified and predates D97/D98. The current local candidate is `1.0.1` across all eleven packages; the npm `latest` column in the root README remains `1.0.0` until publication. `Verified at base` is exact historical evidence, not a support promise.
 
 | Package | npm `latest` published | Workspace version at base | Release policy / support claim | Exact source verification evidence |
 | --- | --- | --- | --- | --- |
@@ -75,4 +92,4 @@ The support/EOL policy for older and future major lines is **REQUIRES PRODUCT DE
 
 A release record binds package name, exact version, tag/commit, exact tarball filename and hashes, packed file list, API compatibility result, tests, docs snapshot, consumer build and registry readback. See [testing architecture](TESTING-ARCHITECTURE.md), [versioned documentation](VERSIONED-DOCUMENTATION.md), and [changelog policy](CHANGELOG-POLICY.md).
 
-Current verified snapshot (2026-11-03): all four workspace manifests are `1.0.0-rc.2`; official npm `latest` is `1.0.0-rc.2` for all four. npm `next` is `rc.1` for menu/select and `rc.2` for theme/i18n. The `next` drift is recorded, not changed here. Refresh before any release decision.
+Historical verified snapshot (2026-11-03): the initial four workspace manifests and npm `latest` tags were `1.0.0-rc.2`; npm `next` was `rc.1` for menu/select and `rc.2` for theme/i18n. Refresh live registry state before any release decision.
