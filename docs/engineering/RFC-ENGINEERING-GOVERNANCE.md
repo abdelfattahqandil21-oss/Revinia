@@ -10,8 +10,7 @@
 
 ### Owner-approved constraints
 
-- The synchronized release group contains exactly `@rivinia/menu`, `@rivinia/select`, `@rivinia/theme`, and `@rivinia/i18n`. Every member uses the same release version.
-- All other publishable packages remain independently versioned unless explicitly admitted through the policy in [VERSIONING.md](VERSIONING.md).
+- The initial synchronized group was `@rivinia/menu`, `@rivinia/select`, `@rivinia/theme`, and `@rivinia/i18n`. D97 subsequently admitted the remaining seven packages; the current `rivinia-1.0` group contains all eleven packages listed in [release-groups.json](../../release-groups.json), all at one version.
 - Major versions are compatibility boundaries. Compatibility information spans source/API, tests, consumer docs, skills, changelogs and release evidence.
 - Keep `projects/` and the current E2E layout. Do not copy all source or test suites per major.
 - Keep public API, package manifests/versions, release tags, registry state and runtime code unchanged in this governance task.
@@ -64,7 +63,7 @@ consumer-facing docs: projects/<library>/README.md + docs/<topic>/
 shared checks: scripts/ + root package scripts
 ```
 
-The repository has ten publishable Angular libraries, two E2E Angular applications, and no cross-library integration app beyond the optional i18n/select composition. Root `e2e/` is already the shared menu/select/popup suite; i18n keeps its own harness and suite beside its app. Keep this hybrid: it follows executable ownership today, avoids duplicated browser infrastructure, and does not warrant a disruptive move. Extract one shared runner only if multiple suites demonstrably need the same runner lifecycle and a before/after proof preserves Angular/Playwright configuration.
+The repository has eleven publishable Angular libraries, two E2E Angular applications, and no cross-library integration app beyond the optional i18n/select composition. Root `e2e/` is already the shared menu/select/popup suite; i18n keeps its own harness and suite beside its app. Keep this hybrid: it follows executable ownership today, avoids duplicated browser infrastructure, and does not warrant a disruptive move. Extract one shared runner only if multiple suites demonstrably need the same runner lifecycle and a before/after proof preserves Angular/Playwright configuration.
 
 ## Instruction precedence and discovery
 
@@ -85,7 +84,7 @@ Codex discovers root-to-working-directory `AGENTS.md` instructions and merges de
 - **One E2E tree per package and major:** rejected; it duplicates harnesses/suites and ignores the current shared popup coverage.
 - **Move all browser specs under `projects/`:** rejected; root `e2e/` currently owns menu/select cross-component behavior, while i18n tests correctly live beside the i18n app.
 - **Copy docs and skills into each package/major:** rejected; use exact tagged release snapshots and compatibility metadata to avoid source duplication.
-- **Treat every package as one release group:** rejected; only four packages have approved synchronized release semantics.
+- **Keep the initial four packages as the sole release group:** superseded by D97, which admits all eleven packages to the synchronized `rivinia-1.0` group.
 - **Assume a hosted docs site:** rejected; platform and URL contract remain open.
 
 ## Migration dependency graph
@@ -107,8 +106,8 @@ side-by-side compatibility proof → explicit approval → migration → rollbac
 - What support/end-of-life and security-fix policy applies to older 1.x and future major versions? The existing 0.x line was intentionally deprecated; that does not define future-major maintenance.
 - Should npm `next` always move in lockstep for all release-group members? Current registry snapshot has menu/select at rc.1 and theme/i18n at rc.2 while `latest` is rc.2 for all. No registry state is changed here.
 - What hosted documentation platform, if any, should serve immutable release snapshots?
-- Who approves public API baselines for the six independently versioned packages?
-- Which CI provider/environment is authoritative? No tracked workflow was found in the audit.
+- Who approves public API baselines for the eleven synchronized packages?
+- Which maintainers should be assigned as code owners and release approvers?
 - Which package owners are assigned to named maintainers?
 
 ## Rollback

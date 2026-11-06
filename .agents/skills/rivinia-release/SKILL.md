@@ -30,10 +30,10 @@ and a gate that was not run is reported as _not run_, never as _passed_.
    `projects/<pkg>/package.json`.
 3. **Never modify a published version.** A published version is immutable; a
    fix ships as a new version.
-4. For `menu`, `select`, `theme` or `i18n`, verify all four manifests use the
-   same version and treat them as one release set. Other packages remain
-   independently versioned. `release-groups.json` is the machine-readable
-   membership record; `pnpm check:governance` validates it.
+4. Read `release-groups.json` and treat every listed package as one release
+   set. The current `rivinia-1.0` group has eleven members at the same version;
+   its package APIs and dependency boundaries remain independent.
+   `pnpm check:governance` validates the approved membership and versions.
 5. Distinguish maintainer-approved supported ranges from exact package
    versions actually verified. Read the exact consumer/package version before
    recommending version-specific APIs; minor features are not present across
@@ -134,10 +134,17 @@ feeling that it got smaller.
 State what the version contains in one sentence, so the user can tell whether
 it is the version they meant.
 
-## 8 — Publish from a tag
+## 8 — Publish from a tag through GitHub
 
-Per the git workflow (D17): release from `main`, with a namespaced tag
-`<pkg>/v<semver>`. Tags are immutable — a fix ships as a new version.
+Per the git workflow (D17): release from `main`, with all eleven namespaced
+tags `<pkg>/v<semver>` resolving to the same reviewed commit. Tags are
+immutable — a fix ships as a new version. After the exact package/version,
+public access, dist-tag, and inspected file lists have explicit owner approval,
+dispatch `.github/workflows/publish.yml` from `main`. The
+`npm-production` Environment approval gates the OIDC publish job. Do not run
+`npm publish` locally or create tags unless separately authorized. See
+[`docs/releases/1.0/GITHUB-PUBLISHING.md`](../../../docs/releases/1.0/GITHUB-PUBLISHING.md)
+for npm Trusted Publisher and GitHub settings.
 
 ## 9 — After publishing
 

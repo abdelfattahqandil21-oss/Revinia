@@ -12,7 +12,7 @@
 | Browser E2E | Real browser interaction, focus, layout, ARIA and cross-component composition | Shared `e2e/menu`, `e2e/select`, `e2e/popup`; app in `projects/menu-e2e` | Build package dependencies and exact app first, then Playwright in named browser |
 | i18n browser | Translation, direction, language selection and SSR/CSR integration | `projects/i18n/testing/e2e` and independent `i18n-e2e` app under `projects/i18n/testing/app` | Build i18n, build correct CSR/SSR target, then configured suite |
 | Cross-package integration | Public package imports/optional peer composition | Current i18n/select integration and consumer fixtures | Import only documented package exports; test with/without optional peer when relevant |
-| API compatibility | Exported symbols/types/entry points | `scripts/api-surface.mjs` currently snapshots four 1.0 packages | Review snapshots against the base/tag; do not auto-accept regenerated output |
+| API compatibility | Exported symbols/types/entry points | `scripts/api-surface.mjs` snapshots the eleven synchronized 1.0 packages | Review snapshots against the base/tag; do not auto-accept regenerated output |
 | Packed consumer | What npm actually ships | `npm pack`, `scripts/consumer-smoke.mjs`, tracked template at `scripts/fixtures/consumer-smoke/` | Install exact tarball files (not workspace links), compile supplied public imports, run the production Angular build, record package versions and SHA-256, then clean the external temp consumer |
 | Docs examples | Consumer snippets and links | Package READMEs and `docs/<topic>/` | Run against exact packed version and check exact-tag links |
 | Skill examples | Agent advice against package APIs | Skill metadata and examples | Verify each example at its declared exact package version |
@@ -54,9 +54,9 @@ Keep source and test suites singular where possible. Use fixtures/configuration 
 
 ## Known coverage gaps
 
-- `scripts/api-surface.mjs` covers the four-package 1.0 scope, not all ten libraries.
-- The tracked CI workflow runs docs/governance, builds, and unit tests. A separate Chromium E2E job is advisory (`continue-on-error`) while CI stability is established; it does not imply cross-browser coverage.
-- Root E2E was Chromium-only in the audit snapshot; WebKit/full cross-browser support is not implied.
+- `scripts/api-surface.mjs` retains the historical initial four-package 1.0 snapshot; the test does not itself enforce all eleven manifests in D97's synchronized release group. Do not regenerate or broaden the API snapshot without a separate reviewed baseline decision.
+- `pnpm validate:ci` is the shared required local/GitHub gate: it checks docs/governance, all eleven synchronized package builds and unit suites, package metadata, and the shared Chromium E2E suite. `ubuntu-24.04`, Node `.node-version`, and the root pnpm pin define the CI baseline.
+- Firefox and WebKit suites remain available in the root Playwright configuration but are not part of the fast required PR gate; run them in full release validation. Native Safari is a separate manual check.
 - The packed-consumer runner has been exercised for `@rivinia/i18n@1.0.0-rc.2` core/UI entry points without optional `@rivinia/select`; other packages still need their own exact-tarball runs before a release claim.
 - Full `check:popup-mutations` was not run in the audit; its prerequisite fix needs its own reviewable change.
 

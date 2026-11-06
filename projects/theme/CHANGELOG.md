@@ -1,5 +1,9 @@
 # @rivinia/theme
 
+## 1.0.1
+
+- Documentation links updated to the 1.0.1 tag.
+
 ## 1.0.0
 
 - First stable release of the semantic CSS token system, its stylesheet adapters, and the light/dark theme contract.

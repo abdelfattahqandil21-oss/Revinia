@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/env",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Typed application environments for Angular (dev/staging/prod) with an ng-add schematic.",
   "keywords": [
     "angular",

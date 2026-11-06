@@ -70,7 +70,7 @@ Use existing package-manager and Node tooling; do not add a semver dependency so
 
 ## Maintainer checklist
 
-Before package changes, read ownership and API boundaries. For a member of the unified group, check all four package manifests and coordinate the shared version. For an independent package, preserve independent versioning. Compare public API snapshots; test package source, browser/integration contracts, packed tarball and clean consumer; update exact-version docs and package changelog; record command outputs and hashes. A release action remains separately owner-approved.
+Before package changes, read ownership and API boundaries. For any member of the unified group, check all eleven package manifests and coordinate the shared version. Compare public API snapshots; test package source, browser/integration contracts, packed tarball and clean consumer; update exact-version docs and package changelog; record command outputs and hashes. A release action remains separately owner-approved.
 
 ## Runtime discovery
 

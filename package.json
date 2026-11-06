@@ -21,6 +21,7 @@
     "build:select": "ng build select",
     "build:theme": "ng build theme",
     "build:datepicker": "ng build datepicker",
+    "build:popup": "ng build popup",
     "test:schematics": "vitest run projects/http/schematics projects/toast/schematics projects/i18n/schematics projects/modal/schematics projects/env/schematics",
     "test:theme": "vitest run projects/theme/tests",
     "check:docs": "node scripts/check-docs.mjs",
@@ -37,7 +38,8 @@
     "check:governance": "node scripts/check-governance.mjs",
     "check:skills": "node scripts/check-skill-compatibility.mjs",
     "check:versioned-doc-links": "node scripts/check-versioned-doc-links.mjs",
-    "test:scripts": "vitest run scripts/tests"
+    "test:scripts": "vitest run scripts/tests",
+    "validate:ci": "node scripts/validate-ci.mjs"
   },
   "private": true,
   "packageManager": "pnpm@12.8.1",

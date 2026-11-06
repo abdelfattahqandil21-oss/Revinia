@@ -1,5 +1,9 @@
 # @rivinia/menu
 
+## 1.0.1
+
+- Documentation links updated to the 1.0.1 tag.
+
 ## 1.0.0
 
 - First stable release. Popup mechanics are provided by @rivinia/popup; Menu keeps its documented host-specific keyboard and focus behavior.

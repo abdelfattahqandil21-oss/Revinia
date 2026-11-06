@@ -1,5 +1,9 @@
 # @rivinia/i18n
 
+## 1.0.1
+
+- Documentation links updated to the 1.0.1 tag.
+
 ## 1.0.0
 
 - First stable release. The optional @rivinia/select peer remains optional and accepts the stable 1.0 line.

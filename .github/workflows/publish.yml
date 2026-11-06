@@ -1,0 +1,81 @@
+name: Publish Rivinia release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact version present in all eleven package manifests and tags
+        required: true
+        type: string
+      dist_tag:
+        description: npm distribution tag for this release
+        required: true
+        type: choice
+        options: [latest, next]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-rivinia-${{ github.event.inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify and pack exact tagged release
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm validate:ci
+      - name: Inspect tagged packages and create exact tarballs
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_DIST_TAG: ${{ inputs.dist_tag }}
+        run: node scripts/prepare-release.mjs --version "$RELEASE_VERSION" --dist-tag "$RELEASE_DIST_TAG" --artifact-dir "$RUNNER_TEMP/rivinia-release"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: rivinia-release-${{ inputs.version }}
+          path: ${{ runner.temp }}/rivinia-release
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish inspected tarballs to npm
+    needs: verify
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: npm-production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - name: Install npm with OIDC dist-tag support
+        run: npm install --global npm@11.21.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: rivinia-release-${{ inputs.version }}
+          path: ${{ runner.temp }}/rivinia-release
+      - name: Verify artifact hashes, preflight registry, and publish
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_DIST_TAG: ${{ inputs.dist_tag }}
+        run: node scripts/publish-release.mjs --version "$RELEASE_VERSION" --dist-tag "$RELEASE_DIST_TAG" --artifact-dir "$RUNNER_TEMP/rivinia-release"

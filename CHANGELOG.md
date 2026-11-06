@@ -1,3 +1,7 @@
+# 1.0.1 (prepared; not published)
+
+- Documentation: synchronized package READMEs and version-pinned links updated for the docs-only 1.0.1 candidate.
+
 # 1.0.0-rc.4 (prepared; not published)
 
 - Add `@rivinia/popup` to the synchronized 1.0 release line.

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- Documentation links updated to the 1.0.1 tag.
+- Removed the stale pre-release status from the README.
+
 ## 1.0.0
 
 - First stable release of the shared positioning and dismissal core. Select and Menu consume it as a regular runtime dependency.

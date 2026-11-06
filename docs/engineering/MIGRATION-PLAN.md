@@ -27,7 +27,7 @@ No public API, package version, runtime source, package export, release tag, reg
 | Fix popup mutation prerequisite order | Build exact menu/select and menu-e2e outputs before baseline; preserve assertions | Empty-dist + stale-dist runs, clean control and full mutants | Revert gate-only change | Deferred separate change |
 | Isolate schematic compiler output | Maintainer approval for protected env schematic path | Source-tree diff clean; schematic tests; package tarball file/byte comparison; clean consumer | Revert tooling/config change; restore exact tracked generated artifacts if needed | **REQUIRES PRODUCT DECISION** for env schematic edits |
 | Release-tagged README docs links | Exact next release version/tag and current docs content | Link/path checker; example build against exact tarball; packed README inspection | Revert before release; published artifacts immutable | Planned for next unpublished releases |
-| API snapshots beyond four current 1.0 packages | Owner-approved API baselines | Per-package export comparison and consumer imports | Revert snapshot/tooling change | Deferred |
+| API snapshots beyond the historical initial four 1.0 packages | Owner-approved API baselines | Per-package export comparison and consumer imports | Revert snapshot/tooling change | Deferred; D97 synchronized releases but did not approve new API baselines |
 | Hosted docs platform or directory reorganization | Platform/ownership decisions and configuration compatibility proof | Build/link/redirect checks on before/after snapshots | Keep tag source snapshots; restore previous routing | **REQUIRES PRODUCT DECISION** |
 | Colocate the exclusive i18n harness | Preserve `i18n-e2e` as a separate Angular project and keep its build outputs and browser behavior | i18n unit suite, CSR/SSR builds, SSR runtime, configured browser matrix, package build/pack, docs and compatibility checks | Revert the path/config/docs commit; retain the old report bytes | **Verified 2026-11-03** |
 | Colocate package-owned specifications | Keep package README/changelogs and published exports at their existing boundaries; preserve append-only decisions | Full local Markdown link check, `check:docs`, docs index review; pack configuration confirms specs are not package assets | Revert spec moves and restore compatibility pointers | **Verified 2026-11-03** |
@@ -45,14 +45,14 @@ The i18n pilot moved its exclusive app, assets, Playwright suite/config and SSR 
 
 Package-owned designs/specifications are now under `projects/{i18n,menu,select,table,theme}/specifications/`; `docs/specifications/README.md` remains the cross-package status index. The former `docs/specifications/<file>.md` and package-root `SPEC-*` paths are short pointers to preserve append-only decision links. Specification contents were not duplicated, package assets/exports remain unchanged, and the link/docs gates passed after the move.
 
-`scripts/consumer-smoke.mjs` now uses a tracked Angular template and creates each actual consumer under the system temp directory. Unit tests cover exact tarball installation, import generation, lockfile matching, and cleanup after install/build failure or a violated optional-peer absence. A real install/build passed for `@rivinia/i18n@1.0.0-rc.2` with core/UI imports and `@rivinia/select` absent; artifact SHA-256 was `b3816670efe2536938e97ec2484b853f2a7cd48cbe34219997d674523c23e8df`. This proves the runner and this one package path, not all ten package consumers.
+`scripts/consumer-smoke.mjs` now uses a tracked Angular template and creates each actual consumer under the system temp directory. Unit tests cover exact tarball installation, import generation, lockfile matching, and cleanup after install/build failure or a violated optional-peer absence. A real install/build passed for `@rivinia/i18n@1.0.0-rc.2` with core/UI imports and `@rivinia/select` absent; artifact SHA-256 was `b3816670efe2536938e97ec2484b853f2a7cd48cbe34219997d674523c23e8df`. This proves the runner and this one package path, not all eleven package consumers.
 
 Executed for this governance follow-up:
 
 | Command | Result |
 | --- | --- |
 | `npm run test:scripts` | Passed, 98 tests in 8 files |
-| `npm run check:governance` | Passed, 13 governance files and four synchronized manifests |
+| `npm run check:governance` | Passed, 13 governance files and four synchronized manifests at the historical audit base |
 | `npm run check:docs` | Passed with 0 failures and 41 existing warnings |
 | `node --check scripts/check-governance.mjs` and `node --check scripts/check-versioned-doc-links.mjs` | Passed |
 | `git diff --check` | Passed |
@@ -64,7 +64,7 @@ Executed for this governance follow-up:
 
 Run and record:
 
-- `npm run check:governance` — verifies required governance documents/metadata and that the exact four group members have synchronized workspace versions. `pnpm check:governance` is equivalent after pnpm's workspace install/build-script policy is resolved.
+- `npm run check:governance` — historical audit command; the current checker validates the eleven packages in `release-groups.json`. `pnpm check:governance` is equivalent after pnpm's workspace install/build-script policy is resolved.
 - `pnpm check:docs` — ensures existing package docs/API symbol references still pass after added governance docs.
 - `git diff --check` and `git status --short --branch` — whitespace and ownership boundary.
 
