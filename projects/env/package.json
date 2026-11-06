@@ -16,12 +16,12 @@
   "schematics": "./schematics/collection.json",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/abdelfattahqandil21-oss/Revinia.git",
+    "url": "git+https://github.com/abdelfattahqandil21-oss/Rivinia.git",
     "directory": "projects/env"
   },
-  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/env/v1.0.2/projects/env#readme",
+  "homepage": "https://github.com/abdelfattahqandil21-oss/Rivinia/tree/env/v1.0.2/projects/env#readme",
   "bugs": {
-    "url": "https://github.com/abdelfattahqandil21-oss/Revinia/issues"
+    "url": "https://github.com/abdelfattahqandil21-oss/Rivinia/issues"
   },
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
