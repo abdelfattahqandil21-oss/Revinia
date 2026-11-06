@@ -5,6 +5,7 @@ import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { isAllowedRuntimeImport } from './release-archive.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const packages = [
@@ -62,8 +63,7 @@ function inspectArchive(tarball, packedFiles, expectedName, expectedVersion) {
       const specifier = match[1];
       if (specifier.startsWith('.') || specifier.startsWith('/')) continue;
       imports.add(specifier);
-      const dependency = [...declared].some((name) => specifier === name || specifier.startsWith(`${name}/`));
-      if (specifier === 'tslib' || specifier.startsWith('tslib/') || !dependency) {
+      if (!isAllowedRuntimeImport(specifier, expectedName, declared)) {
         throw new Error(`${expectedName}: undeclared or forbidden FESM runtime import ${specifier}`);
       }
     }
