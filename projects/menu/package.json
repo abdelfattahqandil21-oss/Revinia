@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/menu",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Headless menu behavior for Angular: open state, keyboard navigation, item registry.",
   "keywords": [
     "angular",
