@@ -13,12 +13,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/abdelfattahqandil21-oss/Revinia.git",
+    "url": "git+https://github.com/abdelfattahqandil21-oss/Rivinia.git",
     "directory": "projects/select"
   },
-  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/select/v1.0.2/projects/select#readme",
+  "homepage": "https://github.com/abdelfattahqandil21-oss/Rivinia/tree/select/v1.0.2/projects/select#readme",
   "bugs": {
-    "url": "https://github.com/abdelfattahqandil21-oss/Revinia/issues"
+    "url": "https://github.com/abdelfattahqandil21-oss/Rivinia/issues"
   },
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
