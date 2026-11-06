@@ -27,8 +27,8 @@ describe('post-publish registry verification', () => {
     })).rejects.toThrow('registry integrity mismatch after publish');
   });
 
-  it('allows three minutes for registry propagation by default', async () => {
-    const readIntegrity = vi.fn().mockResolvedValueOnce(null).mockResolvedValue('sha512-expected');
+  it('allows delayed registry propagation by default', async () => {
+    const readIntegrity = vi.fn(async () => readIntegrity.mock.calls.length < 120 ? null : 'sha512-expected');
     const wait = vi.fn().mockResolvedValue(undefined);
 
     await expect(verifyPublishedIntegrity({
@@ -38,8 +38,8 @@ describe('post-publish registry verification', () => {
       readIntegrity,
       wait,
     })).resolves.toBe('sha512-expected');
-    expect(readIntegrity).toHaveBeenCalledTimes(2);
-    expect(wait).toHaveBeenCalledTimes(1);
+    expect(readIntegrity).toHaveBeenCalledTimes(120);
+    expect(wait).toHaveBeenCalledTimes(119);
   });
 
   it('fails after the bounded propagation window if the version stays absent', async () => {

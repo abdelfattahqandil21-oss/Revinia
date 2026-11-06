@@ -72,6 +72,10 @@ for (const item of manifest.packages) {
 
 for (const { item, tarball } of pending) {
   npm(['publish', tarball, '--access', 'public', '--tag', distTag]);
+  console.log(`Submitted ${item.name}@${version}; registry verification follows after all packages are submitted.`);
+}
+
+for (const { item } of pending) {
   await verifyPublishedIntegrity({
     name: item.name,
     version,
