@@ -25,7 +25,7 @@ const STARTER = (ids, detectBrowser) => {
         return `      { id: '${id}', nativeName: '${nativeName}', dir: '${dir}' },`;
     })
         .join('\n');
-    const detect = detectBrowser ? ',\n    detectBrowser: true' : '';
+    const detect = detectBrowser ? '\n    detectBrowser: true' : '';
     return (`provideRiviniaI18n({\n` +
         `    // Dictionaries: public/i18n/{id}.json (default jsonLoader)\n` +
         `    defaultLanguage: '${ids[0]}',\n` +
@@ -38,6 +38,16 @@ const STARTER = (ids, detectBrowser) => {
  * BCP-47-ish tags, dedupes. Throws a clear error instead of emitting code.
  */
 function parseLanguageIds(raw) {
+    if (Array.isArray(raw)) {
+        const ids = [...new Set(raw.map((id) => id.trim().toLowerCase()).filter(Boolean))];
+        if (ids.length === 0)
+            return ['ar', 'en'];
+        const bad = ids.filter((id) => !/^[a-z]{2,8}(-[a-z0-9]{2,8})?$/.test(id));
+        if (bad.length > 0) {
+            throw new schematics_1.SchematicsException(`[rivinia/i18n] invalid language id(s): ${bad.join(', ')}.`);
+        }
+        return ids;
+    }
     if (!raw || raw.trim() === '')
         return ['ar', 'en'];
     // Accept bare lists (`ar, en`), quoted parts (`'ar', "en"`), and bracketed

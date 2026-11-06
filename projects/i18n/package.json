@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/i18n",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Headless Angular language manager: signals, RTL, SSR-safe loaders, fallback language, missing-key reporting, ICU plurals, typed keys.",
   "keywords": [
     "angular",
@@ -17,7 +17,7 @@
     "url": "git+https://github.com/abdelfattahqandil21-oss/Revinia.git",
     "directory": "projects/i18n"
   },
-  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/i18n/v1.0.0/projects/i18n#readme",
+  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/i18n/v1.0.2/projects/i18n#readme",
   "bugs": {
     "url": "https://github.com/abdelfattahqandil21-oss/Revinia/issues"
   },

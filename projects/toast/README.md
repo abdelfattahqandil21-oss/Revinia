@@ -5,7 +5,7 @@
 
 A signal-based Angular toast queue with an optional ready-made UI.
 
-Package version: **1.0.1**
+Package version: **1.0.2**
 
 ```ts
 import { Component } from '@angular/core';
@@ -55,9 +55,9 @@ The UI and controller are independent; use either or combine them.
 
 | Topic | Read |
 | --- | --- |
-| Ready-made UI | [Ready-made UI](https://github.com/abdelfattahqandil21-oss/Revinia/blob/toast/v1.0.1/docs/toast/ready-made-ui.md) |
-| Headless usage | [Headless usage](https://github.com/abdelfattahqandil21-oss/Revinia/blob/toast/v1.0.1/docs/toast/headless.md) |
-| Theming | [Theming](https://github.com/abdelfattahqandil21-oss/Revinia/blob/toast/v1.0.1/docs/toast/theming.md) |
-| Top layer and managed list | [Top layer and managed list](https://github.com/abdelfattahqandil21-oss/Revinia/blob/toast/v1.0.1/docs/toast/top-layer-and-managed-list.md) |
-| API reference | [API reference](https://github.com/abdelfattahqandil21-oss/Revinia/blob/toast/v1.0.1/docs/toast/api.md) |
-| Testing | [Testing](https://github.com/abdelfattahqandil21-oss/Revinia/blob/toast/v1.0.1/docs/toast/testing.md) |
+| Ready-made UI | [Ready-made UI](https://github.com/abdelfattahqandil21-oss/Revinia/blob/toast/v1.0.2/docs/toast/ready-made-ui.md) |
+| Headless usage | [Headless usage](https://github.com/abdelfattahqandil21-oss/Revinia/blob/toast/v1.0.2/docs/toast/headless.md) |
+| Theming | [Theming](https://github.com/abdelfattahqandil21-oss/Revinia/blob/toast/v1.0.2/docs/toast/theming.md) |
+| Top layer and managed list | [Top layer and managed list](https://github.com/abdelfattahqandil21-oss/Revinia/blob/toast/v1.0.2/docs/toast/top-layer-and-managed-list.md) |
+| API reference | [API reference](https://github.com/abdelfattahqandil21-oss/Revinia/blob/toast/v1.0.2/docs/toast/api.md) |
+| Testing | [Testing](https://github.com/abdelfattahqandil21-oss/Revinia/blob/toast/v1.0.2/docs/toast/testing.md) |

@@ -5,18 +5,34 @@
   "type": "object",
   "properties": {
     "languages": {
-      "type": "string",
-      "description": "Comma-separated language ids — bare (ar, en), quoted ('ar', 'en') or bracketed ([ar, en]). First id becomes the default language. Dictionaries load from public/i18n/{id}.json by default.",
+      "type": ["array", "string"],
+      "description": "Languages to configure. Select them from the prompt or pass comma-separated codes. The first language becomes the default. Dictionaries load from public/i18n/{id}.json by default.",
+      "default": ["ar", "en"],
+      "items": {
+        "type": "string",
+        "enum": ["ar", "en", "fr", "de", "es", "he", "fa", "ur"]
+      },
       "x-prompt": {
-        "message": "Language ids for this project (ar, en — brackets and quotes also fine)?",
-        "type": "input"
+        "message": "Which languages should this app support? Select all that apply.",
+        "type": "list",
+        "multiselect": true,
+        "items": [
+          { "value": "ar", "label": "Arabic (العربية)" },
+          { "value": "en", "label": "English" },
+          { "value": "fr", "label": "French (Français)" },
+          { "value": "de", "label": "German (Deutsch)" },
+          { "value": "es", "label": "Spanish (Español)" },
+          { "value": "he", "label": "Hebrew (עברית)" },
+          { "value": "fa", "label": "Persian (فارسی)" },
+          { "value": "ur", "label": "Urdu (اردو)" }
+        ]
       }
     },
     "detectBrowser": {
       "type": "boolean",
-      "description": "Match navigator.languages on first visit (stored preference always wins).",
+      "description": "On the visitor's first visit, choose a language from their browser settings. A saved language choice always takes priority.",
       "x-prompt": {
-        "message": "Detect the browser language on first visit?",
+        "message": "Use the visitor's browser language on their first visit? A saved choice still takes priority.",
         "type": "confirmation"
       }
     },

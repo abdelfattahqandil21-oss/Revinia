@@ -1,6 +1,6 @@
 {
   "name": "@rivinia/http",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Headless typed HTTP client for Angular: envelope unwrapping, plain Observables and httpResource.",
   "keywords": [
     "angular",
@@ -27,7 +27,7 @@
     "url": "git+https://github.com/abdelfattahqandil21-oss/Revinia.git",
     "directory": "projects/http"
   },
-  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/http/v1.0.0/projects/http#readme",
+  "homepage": "https://github.com/abdelfattahqandil21-oss/Revinia/tree/http/v1.0.2/projects/http#readme",
   "bugs": {
     "url": "https://github.com/abdelfattahqandil21-oss/Revinia/issues"
   },

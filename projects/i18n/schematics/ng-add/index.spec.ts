@@ -1,6 +1,7 @@
 import { EmptyTree } from '@angular-devkit/schematics';
 import { SchematicTestRunner, UnitTestTree } from '@angular-devkit/schematics/testing';
 import { describe, expect, it } from 'vitest';
+import schema from './schema.json';
 
 const COLLECTION = new URL('../collection.json', import.meta.url).pathname;
 
@@ -27,6 +28,17 @@ async function run(options: object, base?: UnitTestTree) {
 }
 
 describe('ng-add', () => {
+  it('explains language selection and browser detection prompts', () => {
+    expect(schema.properties.languages['x-prompt'].multiselect).toBe(true);
+    expect(schema.properties.languages['x-prompt'].items).toHaveLength(8);
+    expect(schema.properties.detectBrowser['x-prompt'].message).toContain(
+      "Use the visitor's browser language on their first visit?",
+    );
+    expect(schema.properties.detectBrowser['x-prompt'].message).toContain(
+      'A saved choice still takes priority.',
+    );
+  });
+
   it('does not duplicate an import the app already has in another shape', async () => {
     const t = new EmptyTree();
     t.create(
@@ -86,6 +98,7 @@ describe('ng-add', () => {
     const content = tree.readContent('/src/app/app.config.ts');
     expect(content).toContain(`defaultLanguage: 'en',`);
     expect(content).toContain('detectBrowser: true');
+    expect(content).not.toContain('],,');
   });
 
   it('parses the exact messy input users type (quotes, spaces, case)', async () => {
@@ -106,6 +119,14 @@ describe('ng-add', () => {
     }
     const quoted = await run({ languages: `['ar', 'en']` });
     expect(quoted.readContent('/src/app/app.config.ts')).toContain(`defaultLanguage: 'ar',`);
+  });
+
+  it('accepts the language array returned by the multiselect prompt', async () => {
+    const tree = await run({ languages: ['ar', 'en'] });
+    const content = tree.readContent('/src/app/app.config.ts');
+    expect(content).toContain(`defaultLanguage: 'ar',`);
+    expect(content).toContain(`{ id: 'en', nativeName: 'English', dir: 'ltr' },`);
+    expect(content).not.toContain('],,');
   });
 
   it('rejects invalid ids instead of emitting broken code', async () => {

@@ -41,10 +41,10 @@ Select and Menu intentionally retain their different behavior policies.
 
 ## Compatibility
 
-Package version: **1.0.1**. This is the first public release of the
-shared popup core. See the [core specification](https://github.com/abdelfattahqandil21-oss/Revinia/blob/popup/v1.0.1/projects/popup/specifications/popup-core.md)
-and [release notes](https://github.com/abdelfattahqandil21-oss/Revinia/blob/popup/v1.0.1/projects/popup/CHANGELOG.md). The
-[release policy](https://github.com/abdelfattahqandil21-oss/Revinia/blob/popup/v1.0.1/docs/engineering/VERSIONING.md)
+Package version: **1.0.2**. This is the first public release of the
+shared popup core. See the [core specification](https://github.com/abdelfattahqandil21-oss/Revinia/blob/popup/v1.0.2/projects/popup/specifications/popup-core.md)
+and [release notes](https://github.com/abdelfattahqandil21-oss/Revinia/blob/popup/v1.0.2/projects/popup/CHANGELOG.md). The
+[release policy](https://github.com/abdelfattahqandil21-oss/Revinia/blob/popup/v1.0.2/docs/engineering/VERSIONING.md)
 describes synchronized package versioning.
 
 
